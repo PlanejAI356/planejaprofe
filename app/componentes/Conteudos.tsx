@@ -1,6 +1,8 @@
 "use client";
 
 import { useState } from "react";
+import BarraProgresso from "./BarraProgresso";
+import { usarPlanejamentoGratis } from "../lib/profile";
 
 type DataAula = {
   data: string;
@@ -23,6 +25,7 @@ export default function Conteudos({
   const [modo, setModo] = useState("");
   const [tema, setTema] = useState("");
   const [resultadoIA, setResultadoIA] = useState("");
+  const [carregando, setCarregando] = useState(false);
 
   const aulas = Array.isArray(datasSelecionadas)
     ? datasSelecionadas.flatMap((item) =>
@@ -40,6 +43,16 @@ export default function Conteudos({
   async function gerarPlanoIA() {
     if (!tema.trim()) {
       alert("Digite o tema geral antes de gerar com IA.");
+      return;
+    }
+
+    setCarregando(true);
+
+    const permissao = await usarPlanejamentoGratis();
+
+    if (!permissao.permitido) {
+      setCarregando(false);
+      alert(permissao.mensagem);
       return;
     }
 
@@ -67,117 +80,130 @@ export default function Conteudos({
     } catch (erro) {
       alert("Erro ao gerar plano");
     }
+
+    setCarregando(false);
   }
 
   function continuar() {
-  if (tipoPlanejamento === "mensal") {
-    if (!resultadoIA.trim()) {
-      alert("Digite os conteúdos do mês antes de continuar.");
+    if (tipoPlanejamento === "mensal") {
+      if (!resultadoIA.trim()) {
+        alert("Digite os conteúdos do mês antes de continuar.");
+        return;
+      }
+
+      localStorage.setItem("temasPlano", resultadoIA);
+      localStorage.setItem("tipoPlanejamento", "mensal");
+      onContinuar();
       return;
     }
 
-    localStorage.setItem("temasPlano", resultadoIA);
+    const textoParaSalvar = resultadoIA || textoAulas;
+
+    if (!textoParaSalvar.trim()) {
+      alert("Informe ou gere os temas das aulas antes de continuar.");
+      return;
+    }
+
+    localStorage.setItem("temasPlano", textoParaSalvar);
+    localStorage.setItem("tipoPlanejamento", "aula");
     onContinuar();
-    return;
   }
-
-  const textoParaSalvar = resultadoIA || textoAulas;
-
-  if (!textoParaSalvar.trim()) {
-    alert("Informe ou gere os temas das aulas antes de continuar.");
-    return;
-  }
-
-  localStorage.setItem("temasPlano", textoParaSalvar);
-  onContinuar();
-}
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Conteúdos</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
+        <BarraProgresso etapaAtual="conteudos" />
 
-      <label className="font-bold block mb-2">Tema geral:</label>
+        <label className="font-bold block mb-2 text-slate-800">
+          Tema geral:
+        </label>
 
-      <input
-        type="text"
-        placeholder="Ex: Água"
-        value={tema}
-        onChange={(e) => setTema(e.target.value)}
-        className="border p-3 rounded-xl w-full mb-4"
-      />
+        <input
+          type="text"
+          placeholder="Ex: Água"
+          value={tema}
+          onChange={(e) => setTema(e.target.value)}
+          className="w-full rounded-2xl border border-slate-200 px-5 py-4 text-lg shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition mb-5"
+        />
 
-      {tipoPlanejamento === "aula" && (
-        <>
-          <div className="grid grid-cols-2 gap-3 mb-6">
-            <button
-              onClick={() => {
-                setModo("ia");
-                gerarPlanoIA();
-              }}
-              className="bg-purple-600 text-white p-3 rounded-xl font-semibold cursor-pointer"
-            >
-              ✨ Destrinchar com IA
-            </button>
-
-            <button
-              onClick={() => {
-                setModo("manual");
-                setResultadoIA(textoAulas);
-              }}
-              className="bg-slate-700 text-white p-3 rounded-xl font-semibold cursor-pointer"
-            >
-              ✍️ Informar os temas das aulas
-            </button>
-          </div>
-
-          {modo && (
-            <div className="bg-slate-100 p-4 rounded-xl">
-              <h2 className="font-bold mb-3">Conteúdos das aulas</h2>
-
-              <textarea
-                value={resultadoIA || textoAulas}
-                onChange={(e) => {
-                  setResultadoIA(e.target.value);
-                  localStorage.setItem("temasPlano", e.target.value);
+        {tipoPlanejamento === "aula" && (
+          <>
+            <div className="grid grid-cols-2 gap-3 mb-6">
+              <button
+                onClick={() => {
+                  setModo("ia");
+                  gerarPlanoIA();
                 }}
-                placeholder="AULA 01 - 06/07/2026 - Tema da aula"
-                className="border p-3 rounded-xl w-full min-h-[250px]"
-              />
+                disabled={carregando}
+                className="bg-gradient-to-r from-blue-600 to-green-600 shadow-lg hover:scale-[1.02] transition-all text-white p-3 rounded-xl font-semibold cursor-pointer disabled:opacity-60"
+              >
+                {carregando ? "Gerando..." : "✨ Destrinchar com IA"}
+              </button>
+
+              <button
+                onClick={() => {
+                  setModo("manual");
+                  setResultadoIA(textoAulas);
+                }}
+                className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all p-3 rounded-xl font-semibold cursor-pointer"
+              >
+                ✍️ Informar os temas das aulas
+              </button>
             </div>
-          )}
-        </>
-      )}
 
-      {tipoPlanejamento === "mensal" && (
-        <div className="bg-slate-100 p-4 rounded-xl">
-          <h2 className="font-bold mb-3">Conteúdos do mês</h2>
+            {modo && (
+              <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 shadow-sm">
+                <h2 className="font-bold mb-3 text-slate-800">
+                  Conteúdos das aulas
+                </h2>
 
-          <textarea
-            value={resultadoIA}
-            onChange={(e) => {
-              setResultadoIA(e.target.value);
-              localStorage.setItem("temasPlano", e.target.value);
-            }}
-            placeholder="Digite ou edite os conteúdos do mês..."
-            className="border p-3 rounded-xl w-full min-h-[250px]"
-          />
+                <textarea
+                  value={resultadoIA || textoAulas}
+                  onChange={(e) => {
+                    setResultadoIA(e.target.value);
+                    localStorage.setItem("temasPlano", e.target.value);
+                  }}
+                  placeholder="AULA 01 - 06/07/2026 - Tema da aula"
+                  className="w-full rounded-2xl border border-slate-200 p-4 min-h-[260px] resize-none outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+              </div>
+            )}
+          </>
+        )}
+
+        {tipoPlanejamento === "mensal" && (
+          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 shadow-sm">
+            <h2 className="font-bold mb-3 text-slate-800">
+              Conteúdos do mês
+            </h2>
+
+            <textarea
+              value={resultadoIA}
+              onChange={(e) => {
+                setResultadoIA(e.target.value);
+                localStorage.setItem("temasPlano", e.target.value);
+              }}
+              placeholder="Digite ou edite os conteúdos do mês..."
+              className="w-full rounded-2xl border border-slate-200 p-4 min-h-[260px] resize-none outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+            />
+          </div>
+        )}
+
+        <div className="grid md:grid-cols-2 gap-3 mt-6">
+          <button
+            onClick={onVoltar}
+            className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm p-3 rounded-xl w-full cursor-pointer font-semibold"
+          >
+            Voltar para o Calendário
+          </button>
+
+          <button
+            onClick={continuar}
+            className="bg-gradient-to-r from-blue-600 to-green-600 shadow-lg hover:scale-[1.01] transition-all text-white p-3 rounded-xl w-full font-semibold cursor-pointer"
+          >
+            Continuar para o Plano Completo
+          </button>
         </div>
-      )}
-
-      <div className="grid md:grid-cols-2 gap-3 mt-6">
-        <button
-          onClick={onVoltar}
-          className="bg-slate-300 text-black p-3 rounded-xl w-full cursor-pointer"
-        >
-          Voltar para o Calendário
-        </button>
-
-        <button
-          onClick={continuar}
-          className="bg-green-600 text-white p-3 rounded-xl w-full font-semibold cursor-pointer"
-        >
-          Continuar para o Plano Completo
-        </button>
       </div>
     </div>
   );

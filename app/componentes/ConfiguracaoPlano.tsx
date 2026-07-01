@@ -1,6 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import {
+  etapasEnsino,
+  turmasEducacaoInfantil,
+  areasCreche,
+  camposPreEscola,
+  disciplinasFundamental,
+  seriesEnsinoMedio,
+  disciplinasEnsinoMedio,
+} from "../dados/etapasEnsino";
+import {
+  Baby,
+  BookOpen,
+  Backpack,
+  GraduationCap,
+  CheckCircle2,
+} from "lucide-react";
 
 type ConfiguracaoPlanoProps = {
   ano: string;
@@ -27,225 +43,284 @@ export default function ConfiguracaoPlano({
   onContinuar,
 }: ConfiguracaoPlanoProps) {
   const [etapaEnsino, setEtapaEnsino] = useState("");
-  const [serieSelecionada, setSerieSelecionada] = useState("");
+  const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
+const anosFundamental1 = ["1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
 
-  const seriesFund1 = ["1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
-  const seriesFund2 = ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
-
-  const disciplinas = [
-    "Português",
-    "Matemática",
-    "Ciências",
-    "História",
-    "Geografia",
-    "Arte",
-    "Educação Física",
-    "Ensino Religioso",
-    "Inglês",
-    "Filosofia",
-    "Computação",
-    "Projeto de Vida",
-    "Empreendedorismo",
-    "Robótica",
-    "Tecnologia",
-  ];
-
+const anosFundamental2 = ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
   const meses = [
-    { nome: "Janeiro", numero: 1 },
-    { nome: "Fevereiro", numero: 2 },
-    { nome: "Março", numero: 3 },
-    { nome: "Abril", numero: 4 },
-    { nome: "Maio", numero: 5 },
-    { nome: "Junho", numero: 6 },
-    { nome: "Julho", numero: 7 },
-    { nome: "Agosto", numero: 8 },
-    { nome: "Setembro", numero: 9 },
-    { nome: "Outubro", numero: 10 },
-    { nome: "Novembro", numero: 11 },
-    { nome: "Dezembro", numero: 12 },
+    "Janeiro",
+    "Fevereiro",
+    "Março",
+    "Abril",
+    "Maio",
+    "Junho",
+    "Julho",
+    "Agosto",
+    "Setembro",
+    "Outubro",
+    "Novembro",
+    "Dezembro",
   ];
 
-  const series =
-    etapaEnsino === "fund1"
-      ? seriesFund1
-      : etapaEnsino === "fund2"
-      ? seriesFund2
+  const botaoBase =
+    "rounded-2xl border px-4 py-4 text-left transition-all duration-200 font-semibold";
+
+  const botaoSelecionado = "border-green-600 bg-green-600 text-white shadow-md";
+  const botaoNormal =
+    "border-slate-200 bg-white text-slate-700 hover:border-green-300 hover:bg-green-50";
+
+  const opcoesTurma =
+    etapaEnsino === "Educação Infantil"
+      ? turmasEducacaoInfantil
+      : etapaEnsino === "Ensino Fundamental I"
+      ? anosFundamental1
+      : etapaEnsino === "Ensino Fundamental II"
+      ? anosFundamental2
+      : etapaEnsino === "Ensino Médio"
+      ? seriesEnsinoMedio
       : [];
 
-  function continuar() {
-  if (
-    !etapaEnsino ||
-    !serieSelecionada ||
-    !disciplinaSelecionada ||
-    !tipoPlanejamento ||
-    !mesSelecionado
-  ) {
-    alert("Preencha etapa, série, disciplina, tipo de planejamento e mês antes de continuar.");
-    return;
-  }
+  const opcoesDisciplina =
+    etapaEnsino === "Educação Infantil"
+      ? turmaSelecionada === "Creche"
+        ? areasCreche
+        : turmaSelecionada === "Pré-escola I" ||
+          turmaSelecionada === "Pré-escola II"
+        ? camposPreEscola
+        : []
+      : etapaEnsino === "Ensino Fundamental I" ||
+        etapaEnsino === "Ensino Fundamental II"
+      ? disciplinasFundamental
+      : etapaEnsino === "Ensino Médio"
+      ? disciplinasEnsinoMedio
+      : [];
 
-  localStorage.setItem("serieSelecionada", serieSelecionada);
-  localStorage.setItem("disciplinaSelecionada", disciplinaSelecionada);
-  localStorage.setItem("tipoPlanejamento", tipoPlanejamento);
-  localStorage.setItem(
-    "etapaEnsino",
-    etapaEnsino === "fund1" ? "Fundamental I" : "Fundamental II"
-  );
-
-  localStorage.removeItem("temasPlano");
-  localStorage.removeItem("objetivosPlano");
-  localStorage.removeItem("metodologiaPlano");
-  localStorage.removeItem("avaliacaoPlano");
-  localStorage.removeItem("referenciasPlano");
-  localStorage.removeItem("atividadePlano");
-
-  onContinuar();
-}
+  const podeContinuar =
+    etapaEnsino &&
+    turmaSelecionada &&
+    disciplinaSelecionada &&
+    ano &&
+    mesSelecionado !== null &&
+    tipoPlanejamento;
 
   return (
-    <div className="max-w-5xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Configuração do Plano</h1>
+    <main className="min-h-screen bg-slate-50 px-4 py-6">
+      <div className="mx-auto max-w-5xl">
+        
 
-      <h2 className="font-bold mb-2">Etapa de Ensino</h2>
+        <div className="mt-6 rounded-3xl bg-white p-6 shadow-sm border border-slate-100">
+          <h1 className="text-2xl font-extrabold text-slate-800 mb-2">
+            
+          </h1>
 
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={() => {
-            setEtapaEnsino("fund1");
-            setSerieSelecionada("");
-          }}
-          className={`px-4 py-2 rounded-xl cursor-pointer ${
-            etapaEnsino === "fund1"
-              ? "bg-blue-600 text-white"
-              : "bg-slate-200"
-          }`}
-        >
-          Fundamental I
-        </button>
+          <p className="text-slate-500 mb-6">
+            Escolha a etapa, turma, área ou disciplina para gerar o planejamento.
+          </p>
 
-        <button
-          onClick={() => {
-            setEtapaEnsino("fund2");
-            setSerieSelecionada("");
-          }}
-          className={`px-4 py-2 rounded-xl cursor-pointer ${
-            etapaEnsino === "fund2"
-              ? "bg-blue-600 text-white"
-              : "bg-slate-200"
-          }`}
-        >
-          Fundamental II
-        </button>
-      </div>
+          <section className="mb-6">
+            <h2 className="font-bold text-slate-800 mb-3">
+              🎓 Etapa de Ensino
+            </h2>
 
-      {etapaEnsino && (
-        <>
-          <h2 className="font-bold mb-2">Série</h2>
+            <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+              {etapasEnsino.map((etapa) => (
+                <button
+                  key={etapa}
+                  type="button"
+                  onClick={() => {
+                    setEtapaEnsino(etapa);
+                    setTurmaSelecionada("");
+                    setDisciplinaSelecionada("");
+                  }}
+                  className={`${botaoBase} ${
+                    etapaEnsino === etapa ? botaoSelecionado : botaoNormal
+                  }`}
+                >
+                  <div className="flex flex-col items-center gap-3">
 
-          <div className="flex flex-wrap gap-2 mb-6">
-            {series.map((serie) => (
+  {etapa === "Educação Infantil" && (
+    <Baby size={50} className="text-orange-400" />
+  )}
+
+  {etapa === "Ensino Fundamental I" && (
+    <BookOpen size={50} className="text-green-500" />
+  )}
+
+  {etapa === "Ensino Fundamental II" && (
+    <Backpack size={50} className="text-blue-500" />
+  )}
+
+  {etapa === "Ensino Médio" && (
+    <GraduationCap size={50} className="text-violet-500" />
+  )}
+
+  <span className="text-lg font-bold">
+    {etapa}
+  </span>
+
+  <span className="text-sm text-slate-500">
+    {etapa === "Educação Infantil"
+      ? "Creche e Pré-escola"
+      : etapa === "Ensino Fundamental I"
+      ? "1º ao 5º Ano"
+      : etapa === "Ensino Fundamental II"
+      ? "6º ao 9º Ano"
+      : "1ª à 3ª Série"}
+  </span>
+
+</div>
+                </button>
+              ))}
+            </div>
+          </section>
+
+          {etapaEnsino && (
+            <section className="mb-6">
+              <h2 className="font-bold text-slate-800 mb-3">
+                {etapaEnsino === "Educação Infantil"
+                  ? "👶 Turma da Educação Infantil"
+                  : "📚 Ano ou Série"}
+              </h2>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                {opcoesTurma.map((turma) => (
+                  <button
+                    key={turma}
+                    type="button"
+                    onClick={() => {
+                      setTurmaSelecionada(turma);
+                      setDisciplinaSelecionada("");
+                    }}
+                    className={`${botaoBase} ${
+                      turmaSelecionada === turma
+                        ? botaoSelecionado
+                        : botaoNormal
+                    }`}
+                  >
+                    {turma}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {turmaSelecionada && (
+            <section className="mb-6">
+              <h2 className="font-bold text-slate-800 mb-3">
+                {etapaEnsino === "Educação Infantil"
+                  ? "🌱 Área de Aprendizagem / Campo de Experiência"
+                  : "📘 Disciplina"}
+              </h2>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {opcoesDisciplina.map((disciplina) => (
+                  <button
+                    key={disciplina}
+                    type="button"
+                    onClick={() => setDisciplinaSelecionada(disciplina)}
+                    className={`${botaoBase} ${
+                      disciplinaSelecionada === disciplina
+                        ? botaoSelecionado
+                        : botaoNormal
+                    }`}
+                  >
+                    {disciplina}
+                  </button>
+                ))}
+              </div>
+            </section>
+          )}
+
+          <section className="mb-6">
+            <h2 className="font-bold text-slate-800 mb-3">📅 Ano Letivo</h2>
+
+            <input
+              value={ano}
+              onChange={(e) => setAno(e.target.value)}
+              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-green-500"
+              placeholder="Ex: 2026"
+            />
+          </section>
+
+          <section className="mb-6">
+            <h2 className="font-bold text-slate-800 mb-3">🗓️ Mês</h2>
+
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              {meses.map((mes, index) => (
+                <button
+                  key={mes}
+                  type="button"
+                  onClick={() => {
+                    setMesSelecionado(index);
+                    setNomeMes(mes);
+                  }}
+                  className={`${botaoBase} ${
+                    mesSelecionado === index ? botaoSelecionado : botaoNormal
+                  }`}
+                >
+                  {mes}
+                </button>
+              ))}
+            </div>
+          </section>
+
+          <section className="mb-8">
+            <h2 className="font-bold text-slate-800 mb-3">
+              📝 Tipo de Planejamento
+            </h2>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               <button
-                key={serie}
-                onClick={() => setSerieSelecionada(serie)}
-                className={`p-2 rounded cursor-pointer ${
-                  serieSelecionada === serie
-                    ? "bg-blue-600 text-white"
-                    : "bg-slate-100"
+                type="button"
+                onClick={() => setTipoPlanejamento("aula")}
+                className={`${botaoBase} ${
+                  tipoPlanejamento === "aula"
+                    ? botaoSelecionado
+                    : botaoNormal
                 }`}
               >
-                {serie}
+                Plano por Aula
               </button>
-            ))}
+
+              <button
+                type="button"
+                onClick={() => setTipoPlanejamento("mensal")}
+                className={`${botaoBase} ${
+                  tipoPlanejamento === "mensal"
+                    ? botaoSelecionado
+                    : botaoNormal
+                }`}
+              >
+                Plano Mensal
+              </button>
+            </div>
+          </section>
+
+          <div className="flex justify-between gap-3">
+            <button
+              type="button"
+              onClick={onVoltar}
+              className="rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-600 hover:bg-slate-100"
+            >
+              Voltar
+            </button>
+
+            <button
+              type="button"
+              onClick={onContinuar}
+              disabled={!podeContinuar}
+              className={`rounded-2xl px-5 py-3 font-bold ${
+                podeContinuar
+                  ? "bg-green-600 text-white hover:bg-green-700"
+                  : "bg-slate-200 text-slate-400 cursor-not-allowed"
+              }`}
+            >
+              Continuar
+            </button>
           </div>
-        </>
-      )}
-
-      <h2 className="font-bold mb-2">Disciplina</h2>
-
-      <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mb-6">
-        {disciplinas.map((disciplina) => (
-          <button
-            key={disciplina}
-            onClick={() => setDisciplinaSelecionada(disciplina)}
-            className={`p-2 rounded cursor-pointer ${
-              disciplinaSelecionada === disciplina
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100"
-            }`}
-          >
-            {disciplina}
-          </button>
-        ))}
+        </div>
       </div>
-
-      <h2 className="font-bold mb-2">Tipo de Planejamento</h2>
-
-      <div className="flex gap-3 mb-6">
-        <button
-          onClick={() => setTipoPlanejamento("aula")}
-          className={`px-4 py-2 rounded-xl cursor-pointer ${
-            tipoPlanejamento === "aula"
-              ? "bg-blue-600 text-white"
-              : "bg-slate-200"
-          }`}
-        >
-          Planejamento por Aula
-        </button>
-
-        <button
-          onClick={() => setTipoPlanejamento("mensal")}
-          className={`px-4 py-2 rounded-xl cursor-pointer ${
-            tipoPlanejamento === "mensal"
-              ? "bg-blue-600 text-white"
-              : "bg-slate-200"
-          }`}
-        >
-          Planejamento Mensal
-        </button>
-      </div>
-
-      <h2 className="font-bold mb-2">Ano</h2>
-
-      <input
-        type="number"
-        value={ano}
-        onChange={(e) => setAno(e.target.value)}
-        className="border p-2 rounded mb-6 w-full"
-      />
-
-      <h2 className="font-bold mb-2">Mês</h2>
-
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-8">
-        {meses.map((mes) => (
-          <button
-            key={mes.numero}
-            onClick={() => {
-              setMesSelecionado(mes.numero);
-              setNomeMes(mes.nome);
-            }}
-            className={`p-2 rounded cursor-pointer ${
-              mesSelecionado === mes.numero
-                ? "bg-blue-600 text-white"
-                : "bg-slate-100"
-            }`}
-          >
-            {mes.nome}
-          </button>
-        ))}
-      </div>
-<button
-  onClick={onVoltar}
-  className="bg-slate-300 text-black px-6 py-3 rounded-xl w-full cursor-pointer mb-3"
->
-  Voltar
-</button>
-      <button
-        onClick={continuar}
-        className="bg-purple-600 text-white px-6 py-3 rounded-xl w-full cursor-pointer"
-      >
-        Continuar para o Calendário
-      </button>
-    </div>
+    </main>
   );
 }

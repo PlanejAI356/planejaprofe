@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Inicio from "./componentes/Inicio";
-import ConfiguracaoPlano from "./componentes/ConfiguracaoPlano";
+import ConfiguracaoPlano from "./componentes/ConfiguracaoPlanoV2";
 import Calendario from "./componentes/Calendario";
 import Conteudos from "./componentes/Conteudos";
 import PlanoCompleto from "./componentes/PlanoCompleto";
 import Exportacao from "./componentes/Exportacao";
+import TopoProfessor from "./componentes/TopoProfessor";
+import { supabase } from "./lib/supabase";
 
 type DataAula = {
   data: string;
@@ -14,25 +16,78 @@ type DataAula = {
 };
 
 export default function Home() {
+  const [carregandoAuth, setCarregandoAuth] = useState(true);
   const [etapa, setEtapa] = useState("inicio");
 
   const [ano, setAno] = useState("2026");
   const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
   const [nomeMes, setNomeMes] = useState("");
   const [tipoPlanejamento, setTipoPlanejamento] = useState("");
- const [datasSelecionadas, setDatasSelecionadas] = useState<DataAula[]>([]);
+  const [datasSelecionadas, setDatasSelecionadas] = useState<DataAula[]>([]);
 
-function mudarEtapa(novaEtapa: string) {
-  console.log("Mudando para:", novaEtapa);
-  setEtapa(novaEtapa);
-}
+  useEffect(() => {
+    async function verificarLogin() {
+      const { data } = await supabase.auth.getSession();
+
+      if (!data.session) {
+        window.location.href = "/login";
+        return;
+      }
+
+      setCarregandoAuth(false);
+    }
+
+    verificarLogin();
+  }, []);
+
+  function mudarEtapa(novaEtapa: string) {
+    console.log("Mudando para:", novaEtapa);
+    setEtapa(novaEtapa);
+  }
+
+  function limparPlanoSalvo() {
+    localStorage.removeItem("temasPlano");
+    localStorage.removeItem("objetivosPlano");
+    localStorage.removeItem("metodologiaPlano");
+    localStorage.removeItem("avaliacaoPlano");
+    localStorage.removeItem("referenciasPlano");
+    localStorage.removeItem("atividadePlano");
+  }
+
+  async function sair() {
+    await supabase.auth.signOut();
+    window.location.href = "/login";
+  }
+
+  if (carregandoAuth) {
+    return (
+      <main className="min-h-screen flex items-center justify-center bg-slate-50">
+        <p className="text-slate-600 font-semibold">Carregando PlanejAI...</p>
+      </main>
+    );
+  }
 
   return (
     <main>
+      <div className="flex justify-end p-4">
+        <button
+  onClick={sair}
+  className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
+>
+  Sair
+</button>
+      </div>
+
+      {etapa !== "inicio" && <TopoProfessor />}
+
       {etapa === "inicio" && (
         <Inicio
           onComecar={() => {
+            limparPlanoSalvo();
             setTipoPlanejamento("");
+            setDatasSelecionadas([]);
+            setMesSelecionado(null);
+            setNomeMes("");
             setEtapa("configuracao");
           }}
         />
@@ -78,14 +133,14 @@ function mudarEtapa(novaEtapa: string) {
 
       {etapa === "planoCompleto" && (
         <PlanoCompleto
-  onVoltar={() => mudarEtapa("conteudos")}
-  onExportar={() => mudarEtapa("exportacao")}
-/>
+          onVoltar={() => mudarEtapa("conteudos")}
+          onExportar={() => mudarEtapa("exportacao")}
+        />
       )}
 
       {etapa === "exportacao" && (
-  <Exportacao onVoltar={() => mudarEtapa("planoCompleto")} />
-)}
+        <Exportacao onVoltar={() => mudarEtapa("planoCompleto")} />
+      )}
     </main>
   );
 }

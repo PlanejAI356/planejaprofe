@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import BarraProgresso from "./BarraProgresso";
 
 type PlanoCompletoProps = {
   onExportar?: () => void;
@@ -15,42 +16,63 @@ export default function PlanoCompleto({
 
   const [temasSalvos, setTemasSalvos] = useState("");
   const [objetivos, setObjetivos] = useState("");
+  const [recursos, setRecursos] = useState("");
   const [metodologia, setMetodologia] = useState("");
   const [avaliacao, setAvaliacao] = useState("");
   const [referencias, setReferencias] = useState("");
   const [atividade, setAtividade] = useState("");
+  const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+const [sugestoesMetodologia, setSugestoesMetodologia] = useState("");
+  const [ehCreche, setEhCreche] = useState(false);
 
   useEffect(() => {
     setTemasSalvos(localStorage.getItem("temasPlano") || "");
     setObjetivos(localStorage.getItem("objetivosPlano") || "");
+    setRecursos(localStorage.getItem("recursosPlano") || "");
     setMetodologia(localStorage.getItem("metodologiaPlano") || "");
     setAvaliacao(localStorage.getItem("avaliacaoPlano") || "");
     setReferencias(localStorage.getItem("referenciasPlano") || "");
     setAtividade(localStorage.getItem("atividadePlano") || "");
+
+    const turma = localStorage.getItem("turmaInfantilDetalhe") || "";
+
+    setEhCreche(
+      turma === "Berçário" ||
+        turma === "Maternal I" ||
+        turma === "Maternal II"
+    );
   }, []);
 
   async function gerarParte(tipo: string) {
     const resposta = await fetch("/api/gerar-plano", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json",
-  },
-  body: JSON.stringify({
-    tipo,
-    aulas: temasSalvos,
-    serie: localStorage.getItem("serieSelecionada") || "",
-    disciplina: localStorage.getItem("disciplinaSelecionada") || "",
-    etapa: localStorage.getItem("etapaEnsino") || "",
-    tipoPlanejamento:
-      localStorage.getItem("tipoPlanejamento") || "aula",
-  }),
-});
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        tipo,
+        aulas: temasSalvos,
+        serie:
+          localStorage.getItem("turmaInfantilDetalhe") ||
+          localStorage.getItem("serieSelecionada") ||
+          "",
+        disciplina: localStorage.getItem("disciplinaSelecionada") || "",
+        etapa: localStorage.getItem("etapaEnsino") || "",
+        tipoPlanejamento: localStorage.getItem("tipoPlanejamento") || "aula",
+        sugestoesMetodologia,
+      }),
+    });
 
     const dados = await resposta.json();
 
     if (tipo === "objetivos") {
       setObjetivos(dados.texto);
       localStorage.setItem("objetivosPlano", dados.texto);
+    }
+
+    if (tipo === "recursos") {
+      setRecursos(dados.texto);
+      localStorage.setItem("recursosPlano", dados.texto);
     }
 
     if (tipo === "metodologia") {
@@ -86,6 +108,7 @@ export default function PlanoCompleto({
   function textoAtual() {
     if (aba === "temas") return temasSalvos;
     if (aba === "objetivos") return objetivos;
+    if (aba === "recursos") return recursos;
     if (aba === "metodologia") return metodologia;
     if (aba === "avaliacao") return avaliacao;
     if (aba === "referencias") return referencias;
@@ -103,6 +126,11 @@ export default function PlanoCompleto({
     if (aba === "objetivos") {
       setObjetivos("");
       localStorage.removeItem("objetivosPlano");
+    }
+
+    if (aba === "recursos") {
+      setRecursos("");
+      localStorage.removeItem("recursosPlano");
     }
 
     if (aba === "metodologia") {
@@ -129,8 +157,10 @@ export default function PlanoCompleto({
   const botaoAba = (id: string, nome: string) => (
     <button
       onClick={() => setAba(id)}
-      className={`px-4 py-2 rounded-xl cursor-pointer ${
-        aba === id ? "bg-blue-600 text-white" : "bg-slate-200"
+      className={`px-5 py-3 rounded-2xl font-semibold transition-all cursor-pointer ${
+        aba === id
+          ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-md"
+          : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-blue-300"
       }`}
     >
       {nome}
@@ -138,126 +168,196 @@ export default function PlanoCompleto({
   );
 
   return (
-    <div className="max-w-6xl mx-auto p-6">
-      <h1 className="text-3xl font-bold mb-6">Plano Completo</h1>
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
+      <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
+        <BarraProgresso etapaAtual="planoCompleto" />
 
-      <div className="flex flex-wrap gap-2 mb-6">
-        {botaoAba("temas", "Temas")}
-        {botaoAba("objetivos", "Objetivos e Habilidades")}
-        {botaoAba("metodologia", "Metodologia")}
-        {botaoAba("avaliacao", "Avaliação")}
-        {botaoAba("referencias", "Referências")}
-        {botaoAba("atividade", "Atividade para Casa")}
-      </div>
-
-      <div className="bg-slate-100 p-4 rounded-xl">
-        <div className="flex gap-2 mb-3">
-          <button
-            onClick={gerarAbaAtual}
-            className="bg-purple-600 text-white px-4 py-2 rounded-xl cursor-pointer"
-          >
-            ✨ Gerar com IA
-          </button>
-
-          <button
-            onClick={copiarTexto}
-            className="bg-slate-700 text-white px-4 py-2 rounded-xl cursor-pointer"
-          >
-            📋 Copiar
-          </button>
-
-          <button
-            onClick={refazerTexto}
-            className="bg-slate-200 px-4 py-2 rounded-xl cursor-pointer"
-          >
-            🔄 Refazer
-          </button>
+        <div className="flex flex-wrap gap-2 mb-6">
+          {ehCreche ? (
+            <>
+              {botaoAba("temas", "Tema")}
+              {botaoAba("objetivos", "Objetivos de Aprendizagem")}
+              {botaoAba("recursos", "Recursos e Materiais")}
+              {botaoAba("metodologia", "Metodologia (Desenvolvimento)")}
+              {botaoAba("avaliacao", "Avaliação Formativa")}
+            </>
+          ) : (
+            <>
+              {botaoAba("temas", "Temas")}
+              {botaoAba("objetivos", "Objetivos e Habilidades")}
+              {botaoAba("metodologia", "Metodologia")}
+              {botaoAba("avaliacao", "Avaliação")}
+              {botaoAba("referencias", "Referências")}
+              {botaoAba("atividade", "Atividade para Casa")}
+            </>
+          )}
         </div>
 
-        {aba === "temas" && (
-          <textarea
-            value={temasSalvos}
-            onChange={(e) => {
-              setTemasSalvos(e.target.value);
-              localStorage.setItem("temasPlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Temas das aulas..."
-          />
-        )}
+        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-4">
+          <div className="flex gap-2 mb-3">
+            <button
+              onClick={gerarAbaAtual}
+              className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-md hover:scale-[1.02] transition"
+            >
+              ✨ Gerar com IA
+            </button>
+            {aba === "metodologia" && (
+  <button
+    onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
+    className="bg-amber-500 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-sm hover:bg-amber-600"
+  >
+    💡 Minhas Sugestões
+  </button>
+)}
 
-        {aba === "objetivos" && (
-          <textarea
-            value={objetivos}
-            onChange={(e) => {
-              setObjetivos(e.target.value);
-              localStorage.setItem("objetivosPlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Clique em Gerar com IA para criar objetivos e habilidades..."
-          />
-        )}
+            <button
+              onClick={copiarTexto}
+              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
+            >
+              📋 Copiar
+            </button>
 
-        {aba === "metodologia" && (
-          <textarea
-            value={metodologia}
-            onChange={(e) => {
-              setMetodologia(e.target.value);
-              localStorage.setItem("metodologiaPlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Clique em Gerar com IA para criar a metodologia..."
-          />
-        )}
+            <button
+              onClick={refazerTexto}
+              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
+            >
+              🔄 Refazer
+            </button>
+          </div>
 
-        {aba === "avaliacao" && (
-          <textarea
-            value={avaliacao}
-            onChange={(e) => {
-              setAvaliacao(e.target.value);
-              localStorage.setItem("avaliacaoPlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Clique em Gerar com IA para criar a avaliação..."
-          />
-        )}
+          {aba === "temas" && (
+  <textarea
+    value={temasSalvos}
+    onChange={(e) => {
+      setTemasSalvos(e.target.value);
+      localStorage.setItem("temasPlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder="Temas das aulas..."
+  />
+)}
 
-        {aba === "referencias" && (
-          <textarea
-            value={referencias}
-            onChange={(e) => {
-              setReferencias(e.target.value);
-              localStorage.setItem("referenciasPlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Clique em Gerar com IA para criar as referências..."
-          />
-        )}
+{aba === "objetivos" && (
+  <textarea
+    value={objetivos}
+    onChange={(e) => {
+      setObjetivos(e.target.value);
+      localStorage.setItem("objetivosPlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder={
+      ehCreche
+        ? "Clique em Gerar com IA para criar objetivos de aprendizagem..."
+        : "Clique em Gerar com IA para criar objetivos e habilidades..."
+    }
+  />
+)}
 
-        {aba === "atividade" && (
-          <textarea
-            value={atividade}
-            onChange={(e) => {
-              setAtividade(e.target.value);
-              localStorage.setItem("atividadePlano", e.target.value);
-            }}
-            className="w-full min-h-[350px] border p-3 rounded-xl"
-            placeholder="Clique em Gerar com IA para criar a atividade para casa..."
-          />
-        )}
+{aba === "recursos" && (
+  <textarea
+    value={recursos}
+    onChange={(e) => {
+      setRecursos(e.target.value);
+      localStorage.setItem("recursosPlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder="Clique em Gerar com IA para criar recursos e materiais..."
+  />
+)}
+
+{aba === "metodologia" && (
+  <>
+    {mostrarSugestoes && (
+      <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+        <h3 className="font-bold text-amber-700 mb-2">
+          💡 Minhas Sugestões
+        </h3>
+
+        <p className="text-sm text-slate-600 mb-3">
+          Escreva como você gostaria que a IA elaborasse a metodologia.
+          Essas informações serão utilizadas para personalizar o planejamento.
+        </p>
+
+        <textarea
+          value={sugestoesMetodologia}
+          onChange={(e) => setSugestoesMetodologia(e.target.value)}
+          placeholder="Exemplo: Quero uma aula com roda de conversa, música, pintura, brincadeiras e atividade em grupo."
+          className="w-full min-h-[120px] border rounded-xl p-3"
+        />
       </div>
-<button
-  onClick={onVoltar}
-  className="bg-slate-300 text-black px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
->
-  Voltar para Conteúdos
-</button>
-      <button
-        onClick={onExportar}
-        className="bg-green-600 text-white px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
-      >
-        Ir para Exportação
-      </button>
+    )}
+
+    <textarea
+      value={metodologia}
+      onChange={(e) => {
+        setMetodologia(e.target.value);
+        localStorage.setItem("metodologiaPlano", e.target.value);
+      }}
+      className="w-full min-h-[350px] border p-3 rounded-xl"
+      placeholder={
+        ehCreche
+          ? "Clique em Gerar com IA para criar a metodologia de desenvolvimento..."
+          : "Clique em Gerar com IA para criar a metodologia..."
+      }
+    />
+  </>
+)}
+
+{aba === "avaliacao" && (
+  <textarea
+    value={avaliacao}
+    onChange={(e) => {
+      setAvaliacao(e.target.value);
+      localStorage.setItem("avaliacaoPlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder={
+      ehCreche
+        ? "Clique em Gerar com IA para criar a avaliação formativa..."
+        : "Clique em Gerar com IA para criar a avaliação..."
+    }
+  />
+)}
+
+{!ehCreche && aba === "referencias" && (
+  <textarea
+    value={referencias}
+    onChange={(e) => {
+      setReferencias(e.target.value);
+      localStorage.setItem("referenciasPlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder="Clique em Gerar com IA para criar as referências..."
+  />
+)}
+
+{!ehCreche && aba === "atividade" && (
+  <textarea
+    value={atividade}
+    onChange={(e) => {
+      setAtividade(e.target.value);
+      localStorage.setItem("atividadePlano", e.target.value);
+    }}
+    className="w-full min-h-[350px] border p-3 rounded-xl"
+    placeholder="Clique em Gerar com IA para criar a atividade para casa..."
+  />
+)}
+        </div>
+
+        <button
+          onClick={onVoltar}
+          className="bg-slate-300 text-black px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
+        >
+          Voltar para Conteúdos
+        </button>
+
+        <button
+          onClick={onExportar}
+          className="bg-green-600 text-white px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
+        >
+          Ir para Exportação
+        </button>
+      </div>
     </div>
   );
 }
