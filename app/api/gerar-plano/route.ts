@@ -16,6 +16,7 @@ export async function POST(req: Request) {
     const serie = body.serie || "";
     const disciplina = body.disciplina || "";
     const sugestoesMetodologia = body.sugestoesMetodologia || "";
+    const ehBnccComputacao = disciplina ===
 
     const ehCreche =
       serie === "Berçário" ||
@@ -23,7 +24,6 @@ export async function POST(req: Request) {
       serie === "Maternal II";
 
     let comando = "";
-
     if (tipo === "temas") {
       comando = `
 Você é um assistente pedagógico.
@@ -38,19 +38,24 @@ Disciplina/Campo de experiência: ${disciplina}
 Datas das aulas:
 ${aulas}
 
-Regras:
-- Gere somente os temas das aulas.
-- Respeite a turma informada.
-- Não avance conteúdos além do nível da turma.
-- Organize os temas do mais simples para o mais complexo.
-- Mantenha exatamente as datas recebidas.
-- Não gere objetivos.
-- Não gere habilidades.
-- Não gere metodologia.
-- Não gere avaliação.
-- Use exatamente o formato:
-AULA 01 - DATA - TEMA DA AULA
-AULA 02 - DATA - TEMA DA AULA
+REGRAS OBRIGATÓRIAS:
+
+- Escreva exatamente uma aula por linha.
+- Nunca deixe linhas em branco entre as aulas.
+- Escreva todos os temas em LETRAS MAIÚSCULAS.
+- Cada tema deve ser específico e aprofundar um aspecto diferente do conteúdo.
+- Não utilizar temas genéricos como "Introdução", "Conceitos", "Revisão", exceto quando o professor solicitar.
+- Organize os temas em sequência pedagógica, do mais simples ao mais complexo.
+- Nunca repetir o mesmo assunto em duas aulas.
+- Respeitar rigorosamente a etapa de ensino, a série e a disciplina.
+- Não gerar explicações.
+- Gerar apenas o título da aula.
+
+FORMATO OBRIGATÓRIO:
+
+AULA 01 | DATA | TEMA ESPECÍFICO
+AULA 02 | DATA | TEMA ESPECÍFICO
+AULA 03 | DATA | TEMA ESPECÍFICO
 `;
     }
 
@@ -314,7 +319,8 @@ REGRAS:
 - Se houver sugestões do professor, usar essas sugestões para personalizar a metodologia.
 - Não propor atividades longas ou complexas.
 - Não usar prova, cópia, leitura extensa ou atividade escrita formal.
-- Não usar "o professor", "a professora" ou "o docente".
+- Nunca utilizar a expressão "o professor" ou "a professora".
+- Escrever diretamente a metodologia.
 - Usar linguagem de planejamento.
 - Não gerar avaliação.
 
