@@ -16,8 +16,8 @@ export async function POST(req: Request) {
     const serie = body.serie || "";
     const disciplina = body.disciplina || "";
     const sugestoesMetodologia = body.sugestoesMetodologia || "";
-    const ehBnccComputacao = disciplina ===
-
+    const ehBnccComputacao = disciplina === "BNCC da Computação";
+    
     const ehCreche =
       serie === "Berçário" ||
       serie === "Maternal I" ||
