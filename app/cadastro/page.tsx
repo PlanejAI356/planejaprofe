@@ -103,6 +103,16 @@ export default function CadastroPage() {
             {carregando ? "Criando conta..." : "Criar conta"}
           </button>
         </form>
+        <div className="mt-6 text-center text-sm text-slate-600">
+  <p>Já possui uma conta?</p>
+
+  <a
+    href="/login"
+    className="inline-block mt-2 font-bold text-blue-600 hover:text-green-600"
+  >
+    Entrar
+  </a>
+</div>
       </div>
     </main>
   );
