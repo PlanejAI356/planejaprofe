@@ -51,27 +51,22 @@ export default function Inicio({ onComecar }: InicioProps) {
           />
 
           <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-3">
-  PlanejAI
-</h1>
+            PlanejAI
+          </h1>
 
-<h2 className="text-xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-4">
-  Menos tempo planejando. <br className="hidden md:block" />
-  <span className="text-green-600">Mais tempo ensinando.</span>
-</h2>
-
-<p className="max-w-3xl mx-auto text-sm md:text-base text-slate-600 leading-relaxed mb-6">
-  Crie planos de aula completos, personalizados e alinhados à{" "}
-  <span className="font-bold text-green-600">BNCC</span>{" "}
-  com o apoio da{" "}
-  <span className="font-bold text-blue-600">Inteligência Artificial</span>{" "}
-  em poucos minutos.
-</p>s
+          <h2 className="text-xl md:text-3xl font-extrabold text-slate-900 leading-tight mb-4">
+            Menos tempo planejando. <br className="hidden md:block" />
+            <span className="text-green-600">Mais tempo ensinando.</span>
+          </h2>
 
           <p className="max-w-3xl mx-auto text-sm md:text-base text-slate-600 leading-relaxed mb-6">
-            Use o poder da{" "}
-            <span className="font-bold text-blue-600">Inteligência Artificial</span>{" "}
-            para criar planos completos, personalizados e alinhados à{" "}
-            <span className="font-bold text-green-600">BNCC</span> em poucos minutos.
+            Crie planos de aula completos, personalizados e alinhados à{" "}
+            <span className="font-bold text-green-600">BNCC</span>{" "}
+            com o apoio da{" "}
+            <span className="font-bold text-blue-600">
+              Inteligência Artificial
+            </span>{" "}
+            em poucos minutos.
           </p>
 
           <button
