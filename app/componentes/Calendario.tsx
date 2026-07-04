@@ -28,17 +28,17 @@ export default function Calendario({
   const [datas, setDatas] = useState<DataAula[]>([]);
 
   function quantidadeDiasDoMes() {
-    return new Date(Number(ano), mesSelecionado, 0).getDate();
+    return new Date(Number(ano), mesSelecionado + 1, 0).getDate();
   }
 
   function espacosAntesDoPrimeiroDia() {
-    const primeiroDia = new Date(Number(ano), mesSelecionado - 1, 1).getDay();
+    const primeiroDia = new Date(Number(ano), mesSelecionado, 1).getDay();
     return primeiroDia === 0 ? 6 : primeiroDia - 1;
   }
 
   function formatarData(dia: number) {
     const diaFormatado = String(dia).padStart(2, "0");
-    const mesFormatado = String(mesSelecionado).padStart(2, "0");
+    const mesFormatado = String(mesSelecionado + 1).padStart(2, "0");
     return `${diaFormatado}/${mesFormatado}/${ano}`;
   }
 
@@ -123,7 +123,7 @@ export default function Calendario({
   }
 
   function corDoDia(dia: number) {
-    const dataAtual = new Date(Number(ano), mesSelecionado - 1, dia);
+    const dataAtual = new Date(Number(ano), mesSelecionado, dia);
     const diaSemana = dataAtual.getDay();
     const selecionado = dadosDoDia(dia);
 
