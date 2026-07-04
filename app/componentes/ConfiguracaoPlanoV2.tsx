@@ -460,7 +460,7 @@ const ehCreche =
         <section className="mb-5">
           <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
             <NotebookPen size={20} className="text-green-600" />
-            Tipo de Planejamento
+            TESTE PLANEJAI 
           </h2>
 
           <div className="grid grid-cols-2 gap-4">
