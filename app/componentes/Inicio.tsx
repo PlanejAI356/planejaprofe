@@ -41,13 +41,13 @@ export default function Inicio({ onComecar }: InicioProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4 md:p-8">
-      <div className="relative w-full max-w-5xl bg-white rounded-[32px] shadow-2xl border border-slate-100 overflow-hidden py-6 md:py-12 md:px-14 text-center">
+    <div className="h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
+     <div className="relative w-full max-w-4xl bg-white rounded-[28px] shadow-xl border border-slate-100 py-6 px-8 text-center">
         <div className="relative z-10">
           <img
             src="/logo-planejai.png"
             alt="PlanejAI"
-            className="w-24 md:w-28 mx-auto mb-3"
+            className="w-20 mx-auto mb-2"
           />
 
           <h1 className="text-2xl md:text-4xl font-extrabold text-slate-900 leading-tight mb-3">
@@ -71,7 +71,7 @@ export default function Inicio({ onComecar }: InicioProps) {
 
           <button
             onClick={iniciarNovoPlano}
-            className="bg-gradient-to-r from-blue-600 to-green-600 text-white w-48 py-2.5 rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition cursor-pointer"
+            className="bg-gradient-to-r from-blue-600 to-green-600 text-white w-44 py-2 rounded-2xl rounded-2xl font-bold text-lg shadow-xl hover:scale-105 transition cursor-pointer"
           >
             🚀 COMEÇAR
           </button>
