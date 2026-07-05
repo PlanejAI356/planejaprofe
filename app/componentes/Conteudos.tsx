@@ -26,6 +26,8 @@ export default function Conteudos({
   const [tema, setTema] = useState("");
   const [resultadoIA, setResultadoIA] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [mostrarModalPremium, setMostrarModalPremium] = useState(false);
+  const [mensagemPremium, setMensagemPremium] = useState("");
 
   const aulas = Array.isArray(datasSelecionadas)
     ? datasSelecionadas.flatMap((item) =>
@@ -52,7 +54,8 @@ export default function Conteudos({
 
     if (!permissao.permitido) {
       setCarregando(false);
-      alert(permissao.mensagem);
+      setMensagemPremium(permissao.mensagem);
+      setMostrarModalPremium(true);
       return;
     }
 
@@ -111,6 +114,51 @@ export default function Conteudos({
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
+      {mostrarModalPremium && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 text-center">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-3xl">
+              🚀
+            </div>
+
+            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">
+              Limite do Plano Gratuito
+            </h2>
+
+            <p className="text-slate-600 mb-5">
+              {mensagemPremium ||
+                "Você utilizou seus 3 planejamentos gratuitos. Assine o Plano Premium para continuar."}
+            </p>
+
+            <div className="bg-slate-50 rounded-2xl p-4 text-left text-sm text-slate-700 mb-5">
+              <p className="font-bold mb-2">O Plano Premium inclui:</p>
+              <p>✅ Planejamentos com IA</p>
+              <p>✅ Planos completos e editáveis</p>
+              <p>✅ Mais praticidade para sua rotina</p>
+              <p>✅ Exportação do planejamento</p>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <button
+                onClick={() => setMostrarModalPremium(false)}
+                className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 hover:bg-slate-50"
+              >
+                Voltar
+              </button>
+
+              <button
+                onClick={() => {
+                  window.location.href = "/assinatura";
+                }}
+                className="rounded-xl bg-gradient-to-r from-blue-600 to-green-600 px-4 py-3 font-bold text-white shadow-lg hover:scale-[1.02] transition"
+              >
+                Assinar Agora
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
         <BarraProgresso etapaAtual="conteudos" />
 
