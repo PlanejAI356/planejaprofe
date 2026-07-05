@@ -27,13 +27,7 @@ export default function Home() {
 
   useEffect(() => {
     async function verificarLogin() {
-      const { data } = await supabase.auth.getSession();
-
-      if (!data.session) {
-        window.location.href = "/login";
-        return;
-      }
-
+      await supabase.auth.getSession();
       setCarregandoAuth(false);
     }
 
@@ -69,17 +63,18 @@ export default function Home() {
 
   return (
     <main>
-      <div className="flex justify-end p-4">
-        <button
-  onClick={sair}
-  className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
->
-  Sair
-</button>
-      </div>
+     {etapa !== "inicio" && (
+  <div className="flex justify-between items-center px-6 py-2 bg-white border-b border-slate-200">
+    <TopoProfessor />
 
-      {etapa !== "inicio" && <TopoProfessor />}
-
+    <button
+      onClick={sair}
+      className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
+    >
+      Sair
+    </button>
+  </div>
+)}
       {etapa === "inicio" && (
         <Inicio
           onComecar={() => {
