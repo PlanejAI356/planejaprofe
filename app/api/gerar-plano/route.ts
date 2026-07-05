@@ -73,27 +73,42 @@ Aulas:
 ${aulas}
 
 REGRAS:
-- Não usar AULA 01.
-- Não usar AULA 02.
-- Não usar datas.
-- Não numerar os conteúdos.
-- Usar somente uma marcação com hífen no início de cada conteúdo.
-- Gerar objetivos adequados para Berçário, Maternal I ou Maternal II.
-- Considerar cuidado, brincadeira, interação, linguagem, movimento, exploração sensorial, autonomia e convivência.
-- Não usar habilidades do Ensino Fundamental.
-- Não usar códigos EF.
-- Usar linguagem simples, lúdica e adequada à Creche.
-- Relacionar os objetivos ao campo de experiência informado.
+REGRAS OBRIGATÓRIAS:
+
+- Respeitar rigorosamente a série e a disciplina.
+- Utilizar apenas o código da BNCC, sem descrição.
+- Gerar de 3 a 5 objetivos por aula.
+- Todos os objetivos devem ficar na mesma linha.
+- Separar os objetivos por ponto e vírgula (;).
+- Cada objetivo deve iniciar obrigatoriamente com verbo no infinitivo e com LETRA MAIÚSCULA.
+
+Exemplos:
+Identificar...
+Compreender...
+Relacionar...
+Analisar...
+Interpretar...
+Reconhecer...
+Comparar...
+Explicar...
+Desenvolver...
+Investigar...
+Observar...
+Construir...
+
+- Nunca iniciar um objetivo com letra minúscula.
+- Nunca escrever "identificar", "compreender" ou qualquer outro verbo em minúsculo.
+- Não repetir o mesmo verbo várias vezes na mesma aula.
+- Não inventar datas.
+- Manter exatamente a aula e a data recebida.
+- Não deixar linhas em branco entre as aulas.
 - Não gerar metodologia.
-- Não gerar recursos.
 - Não gerar avaliação.
 - Não gerar referências.
-- Manter exatamente a aula e a data recebida.
-- Cada aula deve ficar em uma linha.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 - DATA - OBJETIVOS DE APRENDIZAGEM: objetivo 1; objetivo 2; objetivo 3.
-AULA 02 - DATA - OBJETIVOS DE APRENDIZAGEM: objetivo 1; objetivo 2; objetivo 3.
+AULA 01 | DATA | HABILIDADE BNCC: EF00XX00 - OBJETIVOS: Identificar...; Compreender...; Relacionar...; Analisar...
+AULA 02 | DATA | HABILIDADE BNCC: EF00XX00 - OBJETIVOS: Explicar...; Reconhecer...; Comparar...; Desenvolver...
 `;
       } else if (etapaEnsino === "Educação Infantil") {
         comando = `
@@ -425,34 +440,30 @@ ${aulas}
 
 REGRAS OBRIGATÓRIAS:
 - Gerar uma metodologia diferente para cada aula.
+- Criar uma metodologia objetiva, clara e viável para uma única aula.
+- Cada metodologia deve ter aproximadamente 80 a 120 palavras.
 - Se o professor escreveu sugestões, utilize essas sugestões para montar a metodologia.
-- Respeite ao máximo as ideias do professor.
-- Caso não existam sugestões, crie uma metodologia adequada ao conteúdo.
-- As sugestões devem complementar a metodologia, sem copiar literalmente o texto do professor.
+- Respeitar ao máximo as ideias do professor, sem copiar literalmente o texto.
 - Relacionar a metodologia diretamente ao tema da aula.
-- Iniciar com perguntas introdutórias relacionadas ao tema.
+- Iniciar com 1 ou 2 perguntas introdutórias relacionadas ao tema.
 - Levantar os conhecimentos prévios dos estudantes.
-- Desenvolver a explicação de forma dialogada.
+- Desenvolver a explicação de forma dialogada e participativa.
 - Relacionar o conteúdo ao cotidiano sempre que possível.
-- Sugerir atividade compatível com a série.
-- Finalizar com uma síntese da aula.
-- Utilizar linguagem de planejamento docente.
-- Não repetir sempre "roda de conversa".
-- Não repetir sempre "cartaz".
-- Não repetir sempre "atividade prática".
-- Não descrever atividades longas que ocupem várias aulas.
-- Ser objetiva, clara e viável para uma única aula.
-- Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
+- Finalizar com uma atividade de fixação, síntese ou discussão.
+- Variar as estratégias entre as aulas.
+- Não repetir sempre "roda de conversa", "cartaz" ou "atividade prática".
+- Usar apenas recursos comuns da sala de aula, como quadro, livro didático, caderno, textos, imagens e exercícios.
+- Não sugerir vídeos, slides, data show, laboratório, maquetes, experimentos, jogos, pesquisas, celulares, computadores ou recursos especiais, exceto quando o professor solicitar nas sugestões.
 - Não usar "o professor", "a professora" ou "o docente".
+- Não repetir o tema da aula dentro da metodologia.
 - Não deixar linhas em branco entre uma aula e outra.
 - Utilizar apenas uma quebra de linha entre as aulas.
-- Não inserir linhas vazias.
 - O texto deve ser contínuo e pronto para copiar para o Word.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 - DATA - TEMA DA AULA. Metodologia da aula.
-AULA 02 - DATA - TEMA DA AULA. Metodologia da aula.
-AULA 03 - DATA - TEMA DA AULA. Metodologia da aula.
+AULA 01 - DATA. Metodologia da aula.
+AULA 02 - DATA. Metodologia da aula.
+AULA 03 - DATA. Metodologia da aula.
 `;
   }
 }
@@ -731,18 +742,41 @@ Formato obrigatório:
     }
 
     const resposta = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "user",
-          content: comando,
-        },
-      ],
-    });
+  model: "gpt-4.1-mini",
+  messages: [
+    {
+      role: "user",
+      content: comando,
+    },
+  ],
+});
 
-    return Response.json({
-      texto: resposta.choices[0].message.content || "",
-    });
+let texto = resposta.choices[0].message.content || "";
+
+// Corrige automaticamente os verbos dos objetivos
+if (tipo === "objetivos") {
+  texto = texto.replace(
+    /(OBJETIVOS:\s*)(.*)/gi,
+    (_, inicio, objetivos) => {
+      const corrigidos = objetivos
+        .split(";")
+        .map((obj: string) => {
+          obj = obj.trim();
+
+          if (!obj) return "";
+
+          return obj.charAt(0).toUpperCase() + obj.slice(1);
+        })
+        .join("; ");
+
+      return inicio + corrigidos;
+    }
+  );
+}
+
+return Response.json({
+  texto,
+});
   } catch (erro) {
     console.error("ERRO NA IA:", erro);
 
