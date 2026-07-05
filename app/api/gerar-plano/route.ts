@@ -293,7 +293,7 @@ AULA 02 - DATA - TEMA DA AULA. Recursos e materiais: recurso 1; recurso 2; recur
 }
 
 if (tipo === "metodologia") {
-  if (ehCreche && tipoPlanejamento === "mensal") {
+  if (tipoPlanejamento === "mensal" && ehCreche) {
     comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
@@ -314,15 +314,20 @@ REGRAS:
 - Não usar datas.
 - Não numerar os conteúdos.
 - Usar somente uma marcação com hífen no início de cada conteúdo.
-- Criar uma metodologia lúdica, afetiva e adequada à Creche para cada conteúdo.
-- Considerar acolhida, música, brincadeiras, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
+- Criar uma metodologia lúdica, afetiva e adequada à Creche.
+- Iniciar com acolhida e perguntas simples relacionadas ao tema.
+- Considerar música, brincadeiras, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
+- Respeitar o tempo, o ritmo e a segurança das crianças.
 - Se houver sugestões do professor, usar essas sugestões para personalizar a metodologia.
 - Não propor atividades longas ou complexas.
 - Não usar prova, cópia, leitura extensa ou atividade escrita formal.
-- Nunca utilizar a expressão "o professor" ou "a professora".
+- Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
+- Nunca utilizar a expressão "o professor", "a professora" ou "o docente".
 - Escrever diretamente a metodologia.
 - Usar linguagem de planejamento.
 - Não gerar avaliação.
+- Não deixar linhas em branco entre os conteúdos.
+- Usar apenas uma quebra de linha entre um conteúdo e outro.
 
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: Metodologia: desenvolvimento da vivência.
@@ -344,16 +349,19 @@ ${aulas}
 
 REGRAS:
 - A metodologia deve ser lúdica, afetiva e adequada à Creche.
-- Considerar acolhida, roda de conversa curta, música, brincadeira, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
+- Iniciar com acolhida e perguntas simples relacionadas ao tema.
+- Considerar roda de conversa curta, música, brincadeira, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
 - Respeitar o tempo, o ritmo e a segurança das crianças.
 - Se houver sugestões do professor, usar essas sugestões para personalizar a metodologia.
 - Não usar linguagem de Ensino Fundamental.
 - Não propor atividades longas ou complexas.
 - Não usar prova, cópia, leitura extensa ou atividade escrita formal.
+- Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
 - Não usar "o professor", "a professora" ou "o docente".
 - Usar linguagem de planejamento.
 - Manter exatamente a aula e a data recebida.
 - Cada aula deve ficar em uma linha.
+- Não deixar linhas em branco entre uma aula e outra.
 
 FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Metodologia: desenvolvimento da vivência.
@@ -381,13 +389,21 @@ REGRAS OBRIGATÓRIAS:
 - NÃO numerar os conteúdos.
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - Usar exatamente os conteúdos escritos pelo professor.
-- Criar uma metodologia para cada conteúdo.
-- A metodologia deve ser objetiva, viável e relacionada ao conteúdo.
+- Criar uma metodologia específica para cada conteúdo.
+- Iniciar com perguntas introdutórias relacionadas ao tema.
+- Levantar os conhecimentos prévios dos estudantes.
+- Desenvolver a explicação de forma dialogada.
+- Relacionar o conteúdo ao cotidiano sempre que possível.
+- Sugerir uma atividade compatível com a série.
+- Finalizar com uma síntese do conteúdo.
 - Variar as estratégias entre os conteúdos.
 - Não repetir sempre "roda de conversa", "cartaz" ou "atividade prática".
 - Não descrever atividades longas que ocupem várias aulas.
+- Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
 - Não usar "o professor", "a professora" ou "o docente".
 - Usar linguagem de planejamento.
+- Não deixar linhas em branco entre os conteúdos.
+- Usar apenas uma quebra de linha entre um conteúdo e outro.
 
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: metodologia relacionada ao conteúdo.
@@ -414,18 +430,29 @@ REGRAS OBRIGATÓRIAS:
 - Caso não existam sugestões, crie uma metodologia adequada ao conteúdo.
 - As sugestões devem complementar a metodologia, sem copiar literalmente o texto do professor.
 - Relacionar a metodologia diretamente ao tema da aula.
+- Iniciar com perguntas introdutórias relacionadas ao tema.
+- Levantar os conhecimentos prévios dos estudantes.
+- Desenvolver a explicação de forma dialogada.
+- Relacionar o conteúdo ao cotidiano sempre que possível.
+- Sugerir atividade compatível com a série.
+- Finalizar com uma síntese da aula.
 - Utilizar linguagem de planejamento docente.
 - Não repetir sempre "roda de conversa".
 - Não repetir sempre "cartaz".
 - Não repetir sempre "atividade prática".
 - Não descrever atividades longas que ocupem várias aulas.
 - Ser objetiva, clara e viável para uma única aula.
+- Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
 - Não usar "o professor", "a professora" ou "o docente".
-- Não colocar espaçamento entre AULA 01 e AULA 02.
+- Não deixar linhas em branco entre uma aula e outra.
+- Utilizar apenas uma quebra de linha entre as aulas.
+- Não inserir linhas vazias.
+- O texto deve ser contínuo e pronto para copiar para o Word.
 
 FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Metodologia da aula.
 AULA 02 - DATA - TEMA DA AULA. Metodologia da aula.
+AULA 03 - DATA - TEMA DA AULA. Metodologia da aula.
 `;
   }
 }
