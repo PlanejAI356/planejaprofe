@@ -40,14 +40,15 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     );
   }, []);
 
-  function ajustarEspacamento(texto: string) {
-    return texto
-      .replace(/\r\n/g, "\n")
-      .replace(/[ \t]+\n/g, "\n")
-      .replace(/\n[ \t]+/g, "\n")
-      .replace(/\n{3,}/g, "\n\n")
-      .trim();
-  }
+ function ajustarEspacamento(texto: string) {
+  return texto
+    .replace(/\r\n/g, "\n")
+    .replace(/[ \t]+\n/g, "\n")
+    .replace(/\n[ \t]+/g, "\n")
+    .replace(/\n{2,}(?=AULA\s\d+)/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
   async function gerarParte(tipo: string) {
     const resposta = await fetch("/api/gerar-plano", {
