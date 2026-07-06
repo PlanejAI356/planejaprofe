@@ -21,11 +21,11 @@ export default function Assinatura() {
 
       const dados = await resposta.json();
 
-      if (dados.sandbox_init_point || dados.init_point) {
-        window.location.href = dados.sandbox_init_point || dados.init_point;
-      } else {
-        alert("Não foi possível criar o pagamento.");
-      }
+     if (dados.init_point) {
+  window.location.href = dados.init_point;
+} else {
+  alert("Não foi possível criar o pagamento.");
+}
     } catch (erro) {
       console.error(erro);
       alert("Erro ao conectar com o Mercado Pago.");
