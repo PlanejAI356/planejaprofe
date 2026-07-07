@@ -3,7 +3,7 @@ import { MercadoPagoConfig, Payment } from "mercadopago";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MP_ACCESS_TOKEN!,
+  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN!,
 });
 
 export async function POST(req: Request) {
