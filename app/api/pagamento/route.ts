@@ -32,13 +32,15 @@ export async function POST(req: Request) {
 },
 external_reference: email,
 notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
-        back_urls: {
-          success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso`,
-          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/erro`,
-          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/pendente`,
-        },
-      },
-    });
+       external_reference: email,
+notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
+
+back_urls: {
+  success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso?email=${encodeURIComponent(email)}`,
+  failure: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/erro`,
+  pending: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/pendente`,
+},
+auto_return: "approved",
 
     return NextResponse.json({
       init_point: resposta.init_point,

@@ -14,7 +14,7 @@ export async function POST(req: Request) {
 
     const paymentId = body?.data?.id;
 
-    if (!paymentId) {
+    if (!paymentId || paymentId === "123456") {
       return NextResponse.json({ recebido: true });
     }
 
@@ -27,25 +27,27 @@ export async function POST(req: Request) {
       const email = pagamento.external_reference;
 
       if (email) {
-        await supabaseAdmin
+        const { data, error } = await supabaseAdmin
           .from("profiles")
           .update({
             plano: "premium",
             planos_restantes: 999999,
           })
-          .eq("email", email);
+          .eq("email", email)
+          .select();
+
+        console.log("Resultado Supabase:", { data, error });
+
+        if (error) {
+          console.error("Erro ao atualizar Supabase:", error);
+        }
       }
     }
 
-    return NextResponse.json({
-      recebido: true,
-    });
+    return NextResponse.json({ recebido: true });
   } catch (error) {
     console.error("Erro no webhook:", error);
 
-    return NextResponse.json(
-      { erro: "Erro no webhook" },
-      { status: 500 }
-    );
+    return NextResponse.json({ recebido: true });
   }
 }
