@@ -214,7 +214,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
                 onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
                 className="bg-amber-500 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-sm hover:bg-amber-600"
               >
-                💡 Minhas Sugestões
+               ✨ Meu estilo de aula
               </button>
             )}
 
@@ -282,18 +282,22 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
               {mostrarSugestoes && (
                 <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
                   <h3 className="font-bold text-amber-700 mb-2">
-                    💡 Minhas Sugestões
-                  </h3>
+  ✨ Meu estilo de aula
+</h3>
 
-                  <p className="text-sm text-slate-600 mb-3">
-                    Escreva como você gostaria que a IA elaborasse a metodologia.
-                    Essas informações serão utilizadas para personalizar o planejamento.
-                  </p>
+<p className="text-sm text-slate-600 mb-3">
+  Descreva como você costuma conduzir suas aulas. O PlanejAI seguirá esse estilo para gerar uma metodologia mais curta, clara e personalizada.
+</p>
 
                   <textarea
                     value={sugestoesMetodologia}
                     onChange={(e) => setSugestoesMetodologia(e.target.value)}
-                    placeholder="Exemplo: Quero uma aula com roda de conversa, música, pintura, brincadeiras e atividade em grupo."
+                    placeholder={`Exemplo:
+Sempre começo com perguntas norteadoras.
+Faço uma conversa inicial sobre o tema.
+Depois utilizo o livro didático.
+Realizo uma explicação dialogada.
+Finalizo com atividade no caderno e correção coletiva.`}
                     className="w-full min-h-[120px] border rounded-xl p-3"
                   />
                 </div>

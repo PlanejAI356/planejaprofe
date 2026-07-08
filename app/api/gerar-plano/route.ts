@@ -439,31 +439,34 @@ Aulas:
 ${aulas}
 
 REGRAS OBRIGATÓRIAS:
-- Gerar uma metodologia diferente para cada aula.
-- Criar uma metodologia objetiva, clara e viável para uma única aula.
-- Cada metodologia deve ter aproximadamente 80 a 120 palavras.
-- Se o professor escreveu sugestões, utilize essas sugestões para montar a metodologia.
-- Respeitar ao máximo as ideias do professor, sem copiar literalmente o texto.
+
+- Gerar uma metodologia única para cada aula, evitando repetir a estrutura ou o texto utilizado nas demais aulas.
+- A metodologia deve ser curta, objetiva e pronta para ser utilizada pelo professor.
+- Cada metodologia deve ter aproximadamente de 4 a 6 linhas.
+- Escrever toda a metodologia em apenas um único parágrafo.
+- Se o professor escreveu um texto em "Meu estilo de aula", seguir esse estilo rigorosamente.
+- Nunca substituir o estilo informado pelo professor por outro.
+- Apenas adaptar o conteúdo da aula ao estilo informado.
+- Se o professor não informar um estilo, utilizar uma metodologia simples e objetiva.
 - Relacionar a metodologia diretamente ao tema da aula.
-- Iniciar com 1 ou 2 perguntas introdutórias relacionadas ao tema.
-- Levantar os conhecimentos prévios dos estudantes.
-- Desenvolver a explicação de forma dialogada e participativa.
-- Relacionar o conteúdo ao cotidiano sempre que possível.
-- Finalizar com uma atividade de fixação, síntese ou discussão.
-- Variar as estratégias entre as aulas.
-- Não repetir sempre "roda de conversa", "cartaz" ou "atividade prática".
-- Usar apenas recursos comuns da sala de aula, como quadro, livro didático, caderno, textos, imagens e exercícios.
-- Não sugerir vídeos, slides, data show, laboratório, maquetes, experimentos, jogos, pesquisas, celulares, computadores ou recursos especiais, exceto quando o professor solicitar nas sugestões.
+- Não repetir o tema dentro da metodologia.
+- Não utilizar frases longas.
+- Não utilizar recursos tecnológicos, vídeos, projetor, laboratório ou materiais especiais, exceto quando o professor solicitar.
+- Utilizar apenas recursos comuns da sala de aula.
 - Não usar "o professor", "a professora" ou "o docente".
-- Não repetir o tema da aula dentro da metodologia.
-- Não deixar linhas em branco entre uma aula e outra.
-- Utilizar apenas uma quebra de linha entre as aulas.
-- O texto deve ser contínuo e pronto para copiar para o Word.
+- Não deixar linhas em branco entre as aulas.
+- Utilizar apenas uma quebra de linha entre uma aula e outra.
+- Gerar metodologias diversificadas ao longo do planejamento.
+- Variar as estratégias de ensino entre as aulas, evitando repetições.
+- Alternar, quando adequado ao conteúdo, entre leitura, investigação, resolução de problemas, atividades em grupo, atividades individuais, debates, produção de textos, análise de imagens, experimentos simples, pesquisas, estudos de caso, mapas conceituais e exercícios de fixação.
+- Mesmo seguindo o estilo informado pelo professor, evitar repetir a mesma sequência de ações em todas as aulas.
+- Cada metodologia deve estar diretamente relacionada ao objetivo e ao conteúdo da aula.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 - DATA. Metodologia da aula.
-AULA 02 - DATA. Metodologia da aula.
-AULA 03 - DATA. Metodologia da aula.
+
+AULA 01 - DATA. Metodologia.
+AULA 02 - DATA. Metodologia.
+AULA 03 - DATA. Metodologia.
 `;
   }
 }
