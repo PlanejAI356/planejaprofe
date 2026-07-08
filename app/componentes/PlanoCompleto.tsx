@@ -202,12 +202,14 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
         <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-4">
           <div className="flex flex-wrap gap-2 mb-3">
-            <button
-              onClick={gerarAbaAtual}
-              className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-md hover:scale-[1.02] transition"
-            >
-              ✨ Gerar com IA
-            </button>
+            {aba !== "temas" && (
+  <button
+    onClick={gerarAbaAtual}
+    className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-md hover:scale-[1.02] transition"
+  >
+    ✨ Gerar com IA
+  </button>
+)}
 
             {aba === "metodologia" && (
               <button
@@ -225,12 +227,14 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
               📋 Copiar
             </button>
 
-            <button
-              onClick={refazerTexto}
-              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
-            >
-              🔄 Refazer
-            </button>
+            {aba !== "temas" && (
+              <button
+                onClick={refazerTexto}
+                className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
+              >
+                🔄 Refazer
+              </button>
+            )}
           </div>
 
           {aba === "temas" && (

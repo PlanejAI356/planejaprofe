@@ -15,15 +15,15 @@ export async function POST(req: Request) {
     const etapaEnsino = body.etapa || body.etapaEnsino || "";
     const serie = body.serie || "";
     const disciplina = body.disciplina || "";
-    const sugestoesMetodologia = body.sugestoesMetodologia || "";
-    const ehBnccComputacao = disciplina === "BNCC da Computação";
-    
+    const estiloAula = body.estiloAula || body.sugestoesMetodologia || "";
+
     const ehCreche =
       serie === "Berçário" ||
       serie === "Maternal I" ||
       serie === "Maternal II";
 
     let comando = "";
+
     if (tipo === "temas") {
       comando = `
 Você é um assistente pedagógico.
@@ -39,7 +39,6 @@ Datas das aulas:
 ${aulas}
 
 REGRAS OBRIGATÓRIAS:
-
 - Escreva exatamente uma aula por linha.
 - Nunca deixe linhas em branco entre as aulas.
 - Escreva todos os temas em LETRAS MAIÚSCULAS.
@@ -52,7 +51,6 @@ REGRAS OBRIGATÓRIAS:
 - Gerar apenas o título da aula.
 
 FORMATO OBRIGATÓRIO:
-
 AULA 01 | DATA | TEMA ESPECÍFICO
 AULA 02 | DATA | TEMA ESPECÍFICO
 AULA 03 | DATA | TEMA ESPECÍFICO
@@ -60,8 +58,8 @@ AULA 03 | DATA | TEMA ESPECÍFICO
     }
 
     if (tipo === "objetivos") {
-  if (ehCreche && tipoPlanejamento === "mensal") {
-    comando = `
+      if (ehCreche && tipoPlanejamento === "mensal") {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie objetivos de aprendizagem adequados para Creche.
@@ -69,46 +67,28 @@ Crie objetivos de aprendizagem adequados para Creche.
 Turma: ${serie}
 Campo de experiência: ${disciplina}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
-REGRAS:
 REGRAS OBRIGATÓRIAS:
-
-- Respeitar rigorosamente a série e a disciplina.
-- Utilizar apenas o código da BNCC, sem descrição.
-- Gerar de 3 a 5 objetivos por aula.
+- Respeitar rigorosamente a turma e o campo de experiência.
+- Usar códigos da Educação Infantil quando possível, iniciados por EI.
+- Gerar de 3 a 5 objetivos por conteúdo.
 - Todos os objetivos devem ficar na mesma linha.
 - Separar os objetivos por ponto e vírgula (;).
 - Cada objetivo deve iniciar obrigatoriamente com verbo no infinitivo e com LETRA MAIÚSCULA.
-
-Exemplos:
-Identificar...
-Compreender...
-Relacionar...
-Analisar...
-Interpretar...
-Reconhecer...
-Comparar...
-Explicar...
-Desenvolver...
-Investigar...
-Observar...
-Construir...
-
-- Nunca iniciar um objetivo com letra minúscula.
-- Nunca escrever "identificar", "compreender" ou qualquer outro verbo em minúsculo.
-- Não repetir o mesmo verbo várias vezes na mesma aula.
-- Não inventar datas.
-- Manter exatamente a aula e a data recebida.
-- Não deixar linhas em branco entre as aulas.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também nos objetivos.
+- Se o professor informar que prefere objetivos curtos, detalhados ou com determinada estrutura, respeitar esse padrão.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar referências.
+- Não deixar linhas em branco.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 | DATA | HABILIDADE BNCC: EF00XX00 - OBJETIVOS: Identificar...; Compreender...; Relacionar...; Analisar...
-AULA 02 | DATA | HABILIDADE BNCC: EF00XX00 - OBJETIVOS: Explicar...; Reconhecer...; Comparar...; Desenvolver...
+- CONTEÚDO: OBJETIVOS DE APRENDIZAGEM: EI00XX00 - Identificar...; Explorar...; Desenvolver...
 `;
       } else if (etapaEnsino === "Educação Infantil") {
         comando = `
@@ -118,6 +98,9 @@ Crie objetivos de aprendizagem para as aulas abaixo, respeitando a BNCC da Educa
 
 Turma: ${serie}
 Campo de experiência ou área de aprendizagem: ${disciplina}
+
+Meu estilo de aula:
+${estiloAula}
 
 Aulas:
 ${aulas}
@@ -129,6 +112,8 @@ REGRAS:
 - Usar códigos da Educação Infantil quando possível, iniciados por EI.
 - Relacionar os objetivos ao campo de experiência informado.
 - Usar linguagem simples, lúdica e adequada à infância.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também nos objetivos.
+- Se o professor informar que prefere objetivos curtos, detalhados ou com determinada estrutura, respeitar esse padrão.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar referências.
@@ -148,6 +133,9 @@ Crie habilidades e objetivos para as aulas abaixo, respeitando a área/disciplin
 Disciplina: ${disciplina}
 Série: ${serie}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
@@ -158,6 +146,8 @@ REGRAS:
 - Os objetivos devem ser mais aprofundados, com análise, interpretação, argumentação e aplicação.
 - Gerar de 3 a 5 objetivos por aula.
 - Os objetivos devem ficar na mesma linha, separados por ponto e vírgula.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também nos objetivos.
+- Se o professor informar que prefere objetivos curtos, detalhados ou com determinada estrutura, respeitar esse padrão.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar referências.
@@ -168,7 +158,6 @@ FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - HABILIDADE: EM00XX00 - OBJETIVOS: objetivo 1; objetivo 2; objetivo 3.
 AULA 02 - DATA - HABILIDADE: EM00XX00 - OBJETIVOS: objetivo 1; objetivo 2; objetivo 3.
 `;
-
       } else if (tipoPlanejamento === "mensal") {
         comando = `
 Você é um assistente pedagógico.
@@ -178,21 +167,26 @@ Crie habilidades BNCC e objetivos para cada conteúdo mensal informado pelo prof
 Disciplina: ${disciplina}
 Série: ${serie}
 
+Meu estilo de aula:
+${estiloAula}
+
 Conteúdos do mês:
 ${aulas}
 
-Regras:
+REGRAS:
 - Não usar AULA 01, AULA 02 ou datas.
 - Usar apenas uma marcação com hífen no início de cada conteúdo.
 - Listar a habilidade BNCC usando apenas o código.
 - Gerar de 3 a 5 objetivos para cada conteúdo.
 - Os objetivos devem ficar na mesma linha, separados por ponto e vírgula.
 - Respeitar a série informada.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também nos objetivos.
+- Se o professor informar que prefere objetivos curtos, detalhados ou com determinada estrutura, respeitar esse padrão.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar referências.
 
-Formato obrigatório:
+FORMATO OBRIGATÓRIO:
 - CONTEÚDO: HABILIDADE BNCC: EF00XX00 - OBJETIVOS: objetivo 1; objetivo 2; objetivo 3.
 `;
       } else {
@@ -204,10 +198,13 @@ Crie a habilidade BNCC e os objetivos para cada aula abaixo.
 Disciplina: ${disciplina}
 Série: ${serie}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
-Regras:
+REGRAS:
 - Respeite a série informada.
 - Use apenas o código da BNCC, sem descrição.
 - Nunca coloque apenas um objetivo.
@@ -216,11 +213,13 @@ Regras:
 - Mantenha exatamente a aula e a data recebida.
 - Não colocar espaçamento entre aula 01 e aula 02.
 - Não invente datas.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também nos objetivos.
+- Se o professor informar que prefere objetivos curtos, detalhados ou com determinada estrutura, respeitar esse padrão.
 - Não gere metodologia.
 - Não gere avaliação.
 - Não gere referências.
 
-Formato obrigatório:
+FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - HABILIDADE BNCC: EF00XX00 - OBJETIVOS: objetivo 1; objetivo 2; objetivo 3.
 AULA 02 - DATA - HABILIDADE BNCC: EF00XX00 - OBJETIVOS: objetivo 1; objetivo 2; objetivo 3.
 `;
@@ -228,14 +227,17 @@ AULA 02 - DATA - HABILIDADE BNCC: EF00XX00 - OBJETIVOS: objetivo 1; objetivo 2; 
     }
 
     if (tipo === "recursos") {
-  if (ehCreche && tipoPlanejamento === "mensal") {
-    comando = `
+      if (ehCreche && tipoPlanejamento === "mensal") {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie recursos e materiais para cada conteúdo mensal informado.
 
 Turma: ${serie}
 Campo de experiência: ${disciplina}
+
+Meu estilo de aula:
+${estiloAula}
 
 Conteúdos do mês:
 ${aulas}
@@ -248,6 +250,8 @@ REGRAS:
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - Usar materiais simples, seguros e adequados para bebês e crianças pequenas.
 - Relacionar os recursos ao conteúdo informado.
+- Se o professor informar recursos em "Meu estilo de aula", respeitar essa preferência.
+- Priorizar recursos citados pelo professor, como livro didático, quadro, material concreto, experimentos simples ou materiais próprios.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar objetivos.
@@ -255,8 +259,8 @@ REGRAS:
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: Recursos e materiais: material 1; material 2; material 3.
 `;
-  } else if (ehCreche) {
-    comando = `
+      } else if (ehCreche) {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie recursos e materiais para cada aula abaixo.
@@ -264,12 +268,17 @@ Crie recursos e materiais para cada aula abaixo.
 Turma: ${serie}
 Campo de experiência: ${disciplina}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
 REGRAS:
 - Usar materiais simples, seguros e adequados para bebês e crianças pequenas.
 - Relacionar os recursos ao tema da aula.
+- Se o professor informar recursos em "Meu estilo de aula", respeitar essa preferência.
+- Priorizar recursos citados pelo professor, como livro didático, quadro, material concreto, experimentos simples ou materiais próprios.
 - Manter exatamente a aula e a data recebida.
 - Cada aula deve ficar em uma linha.
 - Não gerar metodologia.
@@ -280,8 +289,8 @@ FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Recursos e materiais: material 1; material 2; material 3.
 AULA 02 - DATA - TEMA DA AULA. Recursos e materiais: material 1; material 2; material 3.
 `;
-  } else {
-    comando = `
+      } else {
+        comando = `
 Você é um assistente pedagógico.
 
 Crie recursos e materiais para as aulas abaixo.
@@ -289,12 +298,17 @@ Crie recursos e materiais para as aulas abaixo.
 Disciplina: ${disciplina}
 Série: ${serie}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
 REGRAS:
 - Listar materiais didáticos simples e viáveis.
 - Relacionar os recursos ao tema da aula.
+- Se o professor informar recursos em "Meu estilo de aula", respeitar essa preferência.
+- Priorizar recursos citados pelo professor, como livro didático, quadro, caderno, textos, imagens, material concreto, experimentos simples ou materiais próprios.
 - Não gerar metodologia.
 - Não gerar avaliação.
 - Não gerar objetivos.
@@ -304,12 +318,12 @@ FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Recursos e materiais: recurso 1; recurso 2; recurso 3.
 AULA 02 - DATA - TEMA DA AULA. Recursos e materiais: recurso 1; recurso 2; recurso 3.
 `;
-  }
-}
+      }
+    }
 
-if (tipo === "metodologia") {
-  if (tipoPlanejamento === "mensal" && ehCreche) {
-    comando = `
+    if (tipo === "metodologia") {
+      if (tipoPlanejamento === "mensal" && ehCreche) {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie a metodologia de desenvolvimento para cada conteúdo mensal informado.
@@ -317,8 +331,8 @@ Crie a metodologia de desenvolvimento para cada conteúdo mensal informado.
 Turma: ${serie}
 Campo de experiência: ${disciplina}
 
-Sugestões do professor:
-${sugestoesMetodologia}
+Meu estilo de aula:
+${estiloAula}
 
 Conteúdos do mês:
 ${aulas}
@@ -330,10 +344,9 @@ REGRAS:
 - Não numerar os conteúdos.
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - Criar uma metodologia lúdica, afetiva e adequada à Creche.
-- Iniciar com acolhida e perguntas simples relacionadas ao tema.
-- Considerar música, brincadeiras, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
-- Respeitar o tempo, o ritmo e a segurança das crianças.
-- Se houver sugestões do professor, usar essas sugestões para personalizar a metodologia.
+- Se o professor informar "Meu estilo de aula", seguir rigorosamente esse estilo.
+- Nunca substituir o estilo informado por outro.
+- Adaptar apenas o conteúdo ao estilo do professor.
 - Não propor atividades longas ou complexas.
 - Não usar prova, cópia, leitura extensa ou atividade escrita formal.
 - Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
@@ -347,8 +360,8 @@ REGRAS:
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: Metodologia: desenvolvimento da vivência.
 `;
-  } else if (ehCreche) {
-    comando = `
+      } else if (ehCreche) {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie a metodologia de desenvolvimento para cada aula abaixo.
@@ -356,18 +369,17 @@ Crie a metodologia de desenvolvimento para cada aula abaixo.
 Turma: ${serie}
 Campo de experiência: ${disciplina}
 
-Sugestões do professor:
-${sugestoesMetodologia}
+Meu estilo de aula:
+${estiloAula}
 
 Aulas:
 ${aulas}
 
 REGRAS:
 - A metodologia deve ser lúdica, afetiva e adequada à Creche.
-- Iniciar com acolhida e perguntas simples relacionadas ao tema.
-- Considerar roda de conversa curta, música, brincadeira, exploração sensorial, movimento, contação de história, manipulação de objetos e interação.
-- Respeitar o tempo, o ritmo e a segurança das crianças.
-- Se houver sugestões do professor, usar essas sugestões para personalizar a metodologia.
+- Se o professor informar "Meu estilo de aula", seguir rigorosamente esse estilo.
+- Nunca substituir o estilo informado por outro.
+- Adaptar apenas o conteúdo ao estilo do professor.
 - Não usar linguagem de Ensino Fundamental.
 - Não propor atividades longas ou complexas.
 - Não usar prova, cópia, leitura extensa ou atividade escrita formal.
@@ -382,8 +394,8 @@ FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Metodologia: desenvolvimento da vivência.
 AULA 02 - DATA - TEMA DA AULA. Metodologia: desenvolvimento da vivência.
 `;
-  } else if (tipoPlanejamento === "mensal") {
-    comando = `
+      } else if (tipoPlanejamento === "mensal") {
+        comando = `
 Você é um assistente pedagógico.
 
 Crie uma metodologia para cada conteúdo mensal informado pelo professor.
@@ -391,8 +403,8 @@ Crie uma metodologia para cada conteúdo mensal informado pelo professor.
 Disciplina: ${disciplina}
 Série: ${serie}
 
-Sugestões do professor:
-${sugestoesMetodologia}
+Meu estilo de aula:
+${estiloAula}
 
 Conteúdos do mês:
 ${aulas}
@@ -405,14 +417,12 @@ REGRAS OBRIGATÓRIAS:
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - Usar exatamente os conteúdos escritos pelo professor.
 - Criar uma metodologia específica para cada conteúdo.
-- Iniciar com perguntas introdutórias relacionadas ao tema.
-- Levantar os conhecimentos prévios dos estudantes.
-- Desenvolver a explicação de forma dialogada.
-- Relacionar o conteúdo ao cotidiano sempre que possível.
-- Sugerir uma atividade compatível com a série.
-- Finalizar com uma síntese do conteúdo.
-- Variar as estratégias entre os conteúdos.
-- Não repetir sempre "roda de conversa", "cartaz" ou "atividade prática".
+- Se o professor informar "Meu estilo de aula", seguir rigorosamente esse estilo.
+- Nunca substituir o estilo informado por outro.
+- Adaptar apenas o conteúdo ao estilo do professor.
+- Gerar metodologias diversificadas ao longo do planejamento.
+- Variar as estratégias de ensino entre os conteúdos, evitando repetições.
+- Não repetir a mesma sequência metodológica em conteúdos consecutivos.
 - Não descrever atividades longas que ocupem várias aulas.
 - Não usar vídeos, internet, projetor ou recursos digitais, exceto se o professor solicitar.
 - Não usar "o professor", "a professora" ou "o docente".
@@ -423,8 +433,8 @@ REGRAS OBRIGATÓRIAS:
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: metodologia relacionada ao conteúdo.
 `;
-  } else {
-    comando = `
+      } else {
+        comando = `
 Você é um assistente pedagógico.
 
 Crie a metodologia para cada aula abaixo.
@@ -432,20 +442,19 @@ Crie a metodologia para cada aula abaixo.
 Disciplina: ${disciplina}
 Série: ${serie}
 
-Sugestões do professor:
-${sugestoesMetodologia}
+Meu estilo de aula:
+${estiloAula}
 
 Aulas:
 ${aulas}
 
 REGRAS OBRIGATÓRIAS:
-
 - Gerar uma metodologia única para cada aula, evitando repetir a estrutura ou o texto utilizado nas demais aulas.
 - A metodologia deve ser curta, objetiva e pronta para ser utilizada pelo professor.
 - Cada metodologia deve ter aproximadamente de 4 a 6 linhas.
 - Escrever toda a metodologia em apenas um único parágrafo.
-- Se o professor escreveu um texto em "Meu estilo de aula", seguir esse estilo rigorosamente.
-- Nunca substituir o estilo informado pelo professor por outro.
+- Se o professor informar "Meu estilo de aula", seguir rigorosamente esse estilo.
+- Nunca substituir o estilo informado por outro.
 - Apenas adaptar o conteúdo da aula ao estilo informado.
 - Se o professor não informar um estilo, utilizar uma metodologia simples e objetiva.
 - Relacionar a metodologia diretamente ao tema da aula.
@@ -458,28 +467,30 @@ REGRAS OBRIGATÓRIAS:
 - Utilizar apenas uma quebra de linha entre uma aula e outra.
 - Gerar metodologias diversificadas ao longo do planejamento.
 - Variar as estratégias de ensino entre as aulas, evitando repetições.
-- Alternar, quando adequado ao conteúdo, entre leitura, investigação, resolução de problemas, atividades em grupo, atividades individuais, debates, produção de textos, análise de imagens, experimentos simples, pesquisas, estudos de caso, mapas conceituais e exercícios de fixação.
+- Não repetir a mesma sequência metodológica em aulas consecutivas, mesmo quando o tema for semelhante.
 - Mesmo seguindo o estilo informado pelo professor, evitar repetir a mesma sequência de ações em todas as aulas.
 - Cada metodologia deve estar diretamente relacionada ao objetivo e ao conteúdo da aula.
 
 FORMATO OBRIGATÓRIO:
-
 AULA 01 - DATA. Metodologia.
 AULA 02 - DATA. Metodologia.
 AULA 03 - DATA. Metodologia.
 `;
-  }
-}
+      }
+    }
 
-if (tipo === "avaliacao") {
-  if (ehCreche && tipoPlanejamento === "mensal") {
-    comando = `
+    if (tipo === "avaliacao") {
+      if (ehCreche && tipoPlanejamento === "mensal") {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie uma avaliação formativa para cada conteúdo mensal informado.
 
 Turma: ${serie}
 Campo de experiência: ${disciplina}
+
+Meu estilo de aula:
+${estiloAula}
 
 Conteúdos do mês:
 ${aulas}
@@ -491,18 +502,21 @@ REGRAS:
 - Não numerar os conteúdos.
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - A avaliação deve ser formativa, contínua e por observação.
+- Usar linguagem natural de planejamento, sem parecer texto robotizado.
+- Não repetir o nome do conteúdo dentro da avaliação.
 - Observar participação, interação, comunicação, curiosidade, exploração dos materiais, movimento, autonomia, cuidado, convivência e envolvimento.
-- Relacionar a avaliação ao conteúdo informado.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também na avaliação.
+- Não repetir exatamente o mesmo texto em todos os conteúdos.
+- Variar os aspectos observados entre participação, interação, autonomia, comunicação, cuidado, convivência e envolvimento.
 - Não escrever no passado.
 - Não criar perguntas.
 - Não criar atividades.
-- Usar linguagem simples e adequada à Educação Infantil.
 
 FORMATO OBRIGATÓRIO:
-- Nome do conteúdo: Avaliação formativa por observação da participação, interação, exploração dos materiais, comunicação e envolvimento na vivência proposta.
+- Nome do conteúdo: Avaliação formativa por observação da participação, interação, comunicação e envolvimento nas vivências propostas.
 `;
-  } else if (ehCreche) {
-    comando = `
+      } else if (ehCreche) {
+        comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
 
 Crie uma avaliação formativa para cada aula abaixo.
@@ -510,15 +524,21 @@ Crie uma avaliação formativa para cada aula abaixo.
 Turma: ${serie}
 Campo de experiência: ${disciplina}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
 REGRAS:
 - A avaliação deve ser formativa, contínua e por observação.
 - Não usar nota, prova, conceito ou classificação.
+- Usar linguagem natural de planejamento, sem parecer texto robotizado.
+- Não repetir o tema da aula dentro da avaliação.
 - Observar participação, interação, comunicação, curiosidade, exploração dos materiais, movimento, autonomia, cuidado, convivência e envolvimento.
-- Relacionar a avaliação ao tema da aula.
-- Usar linguagem simples e adequada ao planejamento da Educação Infantil.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também na avaliação.
+- Não repetir exatamente o mesmo texto em todas as aulas.
+- Variar os aspectos observados entre participação, interação, autonomia, comunicação, cuidado, convivência e envolvimento.
 - Não escrever no passado.
 - Não criar perguntas.
 - Não criar atividades.
@@ -526,106 +546,18 @@ REGRAS:
 - Cada aula deve ficar em uma linha.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 - DATA - TEMA DA AULA. Avaliação formativa por observação da participação, interação, exploração dos materiais, comunicação e envolvimento na vivência proposta.
-AULA 02 - DATA - TEMA DA AULA. Avaliação formativa por observação da participação, interação, exploração dos materiais, comunicação e envolvimento na vivência proposta.
+AULA 01 - DATA - TEMA DA AULA. Avaliação formativa por observação da participação, interação, comunicação e envolvimento nas vivências propostas.
+AULA 02 - DATA - TEMA DA AULA. Avaliação formativa por observação da participação, interação, comunicação e envolvimento nas vivências propostas.
 `;
-  } else if (tipoPlanejamento === "mensal") {
-    comando = `
-Você é um assistente pedagógico.
-
-Crie uma avaliação para cada conteúdo mensal informado pelo professor.
-
-Conteúdos do mês:
-${aulas}
-
-REGRAS OBRIGATÓRIAS:
-- NÃO usar AULA 01.
-- NÃO usar AULA 02.
-- NÃO usar datas.
-- NÃO numerar os conteúdos.
-- Usar somente uma marcação com hífen no início de cada conteúdo.
-- Usar exatamente os conteúdos escritos pelo professor.
-- Criar uma avaliação diferente para cada conteúdo.
-- A avaliação deve estar relacionada ao conteúdo.
-- Não escrever "A avaliação considerou".
-- Não escrever "A avaliação focou".
-- Não escrever "A avaliação destacou".
-- Não escrever no passado.
-- Não criar perguntas.
-- Não criar atividades.
-- Usar linguagem de planejamento.
-- Escrever diretamente o que será observado.
-
-FORMATO OBRIGATÓRIO:
-- Nome do conteúdo: Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
-`;
-  } else {
-    comando = `
-Você é um assistente pedagógico.
-
-Crie uma avaliação para cada aula abaixo.
-
-Aulas:
-${aulas}
-
-REGRAS OBRIGATÓRIAS:
-- Cada aula deve ficar em uma linha.
-- Nunca juntar AULA 01 com AULA 02.
-- Não escrever "A avaliação considerou".
-- Não escrever "A avaliação focou".
-- Não escrever "A avaliação destacou".
-- Não escrever no passado.
-- Não criar perguntas.
-- Não criar atividades.
-- Usar linguagem de planejamento.
-- Cada avaliação deve ser diferente.
-- Relacionar a avaliação ao tema da aula.
-- Escrever diretamente o que será observado.
-
-FORMATO OBRIGATÓRIO:
-AULA 01 - DATA - TEMA DA AULA. Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
-AULA 02 - DATA - TEMA DA AULA. Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
-`;
-      }
-    }
-
-    if (tipo === "avaliacao") {
-      if (ehCreche && tipoPlanejamento === "mensal") {
-  comando = `
-Você é um assistente pedagógico especializado em Educação Infantil - Creche.
-
-Crie uma avaliação formativa para cada conteúdo mensal informado.
-
-Turma: ${serie}
-Campo de experiência: ${disciplina}
-
-Conteúdos do mês:
-${aulas}
-
-REGRAS:
-- Não usar AULA 01.
-- Não usar AULA 02.
-- Não usar datas.
-- Não numerar os conteúdos.
-- Usar somente uma marcação com hífen no início de cada conteúdo.
-- A avaliação deve ser formativa, contínua e por observação.
-- Não usar nota, prova, conceito ou classificação.
-- Relacionar a avaliação ao conteúdo informado.
-- Não escrever no passado.
-- Não criar perguntas.
-- Não criar atividades.
-
-FORMATO OBRIGATÓRIO:
-- Nome do conteúdo: Avaliação formativa por observação da participação, interação, exploração dos materiais, comunicação e envolvimento na vivência proposta.
-`;
-} else if (ehCreche) {
-  
       } else if (tipoPlanejamento === "mensal") {
         comando = `
 Você é um assistente pedagógico.
 
 Crie uma avaliação para cada conteúdo mensal informado pelo professor.
 
+Meu estilo de aula:
+${estiloAula}
+
 Conteúdos do mês:
 ${aulas}
 
@@ -636,19 +568,23 @@ REGRAS OBRIGATÓRIAS:
 - NÃO numerar os conteúdos.
 - Usar somente uma marcação com hífen no início de cada conteúdo.
 - Usar exatamente os conteúdos escritos pelo professor.
-- Criar uma avaliação diferente para cada conteúdo.
-- A avaliação deve estar relacionada ao conteúdo.
+- A avaliação é a observação que o professor faz em sala de aula.
+- Usar linguagem natural, simples e pedagógica, sem parecer texto robotizado.
+- Não repetir o nome do conteúdo dentro da avaliação.
 - Não escrever "A avaliação considerou".
 - Não escrever "A avaliação focou".
 - Não escrever "A avaliação destacou".
 - Não escrever no passado.
 - Não criar perguntas.
 - Não criar atividades.
-- Usar linguagem de planejamento.
-- Escrever diretamente o que será observado.
+- Observar participação, atenção, envolvimento, realização das atividades, oralidade, interação e compreensão.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também na avaliação.
+- Não repetir exatamente o mesmo texto em todos os conteúdos.
+- Variar os aspectos observados, como participação, argumentação, resolução de problemas, trabalho em equipe, autonomia, oralidade, organização, criatividade e compreensão.
+- Cada avaliação deve ser curta e ficar em uma única linha.
 
 FORMATO OBRIGATÓRIO:
-- Nome do conteúdo: Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
+- Nome do conteúdo: Avaliação por observação da participação, envolvimento, realização das atividades e compreensão demonstrada em sala.
 `;
       } else {
         comando = `
@@ -656,26 +592,34 @@ Você é um assistente pedagógico.
 
 Crie uma avaliação para cada aula abaixo.
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
 REGRAS OBRIGATÓRIAS:
 - Cada aula deve ficar em uma linha.
 - Nunca juntar AULA 01 com AULA 02.
+- A avaliação é a observação que o professor faz em sala de aula.
+- Usar linguagem natural, simples e pedagógica, sem parecer texto robotizado.
+- Não repetir o conteúdo ou o tema da aula dentro da avaliação.
 - Não escrever "A avaliação considerou".
 - Não escrever "A avaliação focou".
 - Não escrever "A avaliação destacou".
 - Não escrever no passado.
 - Não criar perguntas.
 - Não criar atividades.
-- Usar linguagem de planejamento.
-- Cada avaliação deve ser diferente.
-- Relacionar a avaliação ao tema da aula.
+- Observar participação, atenção, envolvimento, realização das atividades, oralidade, interação e compreensão.
+- Se o professor informar "Meu estilo de aula", respeitar esse estilo também na avaliação.
+- Não repetir exatamente o mesmo texto em todas as aulas.
+- Variar os aspectos observados, como participação, argumentação, resolução de problemas, trabalho em equipe, autonomia, oralidade, organização, criatividade e compreensão.
+- Cada avaliação deve ser curta e ficar em uma única linha.
 - Escrever diretamente o que será observado.
 
 FORMATO OBRIGATÓRIO:
-AULA 01 - DATA - TEMA DA AULA. Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
-AULA 02 - DATA - TEMA DA AULA. Avaliação por observação da participação, atenção, envolvimento, realização das atividades e compreensão do conteúdo trabalhado.
+AULA 01 - DATA. Avaliação por observação da participação, atenção, envolvimento e realização das atividades propostas em sala.
+AULA 02 - DATA. Avaliação por observação da interação, compreensão e participação durante o desenvolvimento da aula.
 `;
       }
     }
@@ -689,7 +633,10 @@ Crie as referências para o plano de aula.
 Disciplina: ${disciplina}
 Série: ${serie}
 
-Regras:
+Meu estilo de aula:
+${estiloAula}
+
+REGRAS:
 - Não utilizar tópicos.
 - Não utilizar marcadores.
 - Não utilizar listas numeradas.
@@ -699,8 +646,13 @@ Regras:
 - Gerar apenas as referências gerais do planejamento.
 - Cada referência deve ficar em uma linha.
 - Não repetir referências.
+- Se o professor informar livro, apostila, material próprio ou referência específica em "Meu estilo de aula", incluir essas referências.
+- Utilizar preferencialmente o livro informado pelo professor em "Meu estilo de aula".
+- Caso nenhum livro seja informado, utilizar apenas "Livro didático da disciplina".
+- Não inventar nome de livro específico se o professor não informar.
+- Manter obrigatoriamente a referência da BNCC.
 
-Formato obrigatório:
+FORMATO OBRIGATÓRIO:
 BRASIL. Base Nacional Comum Curricular (BNCC). Brasília: MEC, 2018.
 Livro didático da disciplina.
 Materiais complementares utilizados pelo professor.
@@ -716,17 +668,26 @@ Crie atividades para casa organizadas por semana, com base nas aulas abaixo.
 Disciplina: ${disciplina}
 Série: ${serie}
 
+Meu estilo de aula:
+${estiloAula}
+
 Aulas:
 ${aulas}
 
-Regras:
+REGRAS:
+- Gerar obrigatoriamente 4 semanas.
+- Sempre usar o formato 1ª SEMANA, 2ª SEMANA, 3ª SEMANA e 4ª SEMANA.
 - Não usar Aula 01, Aula 02 ou datas.
 - Organizar por semana.
-- Gerar uma atividade para cada semana trabalhada.
+- Se houver poucas aulas, distribuir os temas entre as 4 semanas sem repetir atividades iguais.
 - As atividades devem respeitar a série informada.
-- As atividades devem estar relacionadas aos temas trabalhados naquela semana.
+- As atividades devem estar relacionadas aos temas trabalhados.
 - As atividades devem ser curtas e possíveis de realizar em casa.
+- Variar os tipos de atividade entre as quatro semanas.
+- Evitar repetir exercícios do mesmo formato.
+- Distribuir os conteúdos de forma equilibrada entre as semanas.
 - Não repetir o mesmo tipo de atividade em todas as semanas.
+- Se o professor informar em "Meu estilo de aula" que não passa atividade todos os dias ou não passa atividade para casa, respeitar isso.
 - Não gerar objetivos.
 - Não gerar metodologia.
 - Não gerar avaliação.
@@ -736,7 +697,7 @@ Regras:
 - Não utilizar espaçamento extra.
 - Utilizar apenas uma quebra de linha entre uma semana e outra.
 
-Formato obrigatório:
+FORMATO OBRIGATÓRIO:
 1ª SEMANA - Atividade para casa.
 2ª SEMANA - Atividade para casa.
 3ª SEMANA - Atividade para casa.
@@ -745,41 +706,40 @@ Formato obrigatório:
     }
 
     const resposta = await openai.chat.completions.create({
-  model: "gpt-4.1-mini",
-  messages: [
-    {
-      role: "user",
-      content: comando,
-    },
-  ],
-});
+      model: "gpt-4.1-mini",
+      messages: [
+        {
+          role: "user",
+          content: comando,
+        },
+      ],
+    });
 
-let texto = resposta.choices[0].message.content || "";
+    let texto = resposta.choices[0].message.content || "";
 
-// Corrige automaticamente os verbos dos objetivos
-if (tipo === "objetivos") {
-  texto = texto.replace(
-    /(OBJETIVOS:\s*)(.*)/gi,
-    (_, inicio, objetivos) => {
-      const corrigidos = objetivos
-        .split(";")
-        .map((obj: string) => {
-          obj = obj.trim();
+    if (tipo === "objetivos") {
+      texto = texto.replace(
+        /(OBJETIVOS:\s*)(.*)/gi,
+        (_, inicio, objetivos) => {
+          const corrigidos = objetivos
+            .split(";")
+            .map((obj: string) => {
+              obj = obj.trim();
 
-          if (!obj) return "";
+              if (!obj) return "";
 
-          return obj.charAt(0).toUpperCase() + obj.slice(1);
-        })
-        .join("; ");
+              return obj.charAt(0).toUpperCase() + obj.slice(1);
+            })
+            .join("; ");
 
-      return inicio + corrigidos;
+          return inicio + corrigidos;
+        }
+      );
     }
-  );
-}
 
-return Response.json({
-  texto,
-});
+    return Response.json({
+      texto,
+    });
   } catch (erro) {
     console.error("ERRO NA IA:", erro);
 
