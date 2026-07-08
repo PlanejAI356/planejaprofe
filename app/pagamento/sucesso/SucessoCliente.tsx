@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useSearchParams } from "next/navigation";
 
 export default function SucessoCliente() {
-  const searchParams = useSearchParams();
   const [mensagem, setMensagem] = useState("Confirmando pagamento...");
 
   useEffect(() => {
     async function confirmarPagamento() {
+      const params = new URLSearchParams(window.location.search);
+
       const paymentId =
-        searchParams.get("payment_id") ||
-        searchParams.get("collection_id");
+        params.get("payment_id") ||
+        params.get("collection_id");
 
       if (!paymentId) {
         setMensagem("Pagamento aprovado, mas não recebemos o código de confirmação.");
@@ -34,7 +34,7 @@ export default function SucessoCliente() {
     }
 
     confirmarPagamento();
-  }, [searchParams]);
+  }, []);
 
   return (
     <main style={{ padding: 40 }}>
