@@ -66,7 +66,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
         disciplina: localStorage.getItem("disciplinaSelecionada") || "",
         etapa: localStorage.getItem("etapaEnsino") || "",
         tipoPlanejamento: localStorage.getItem("tipoPlanejamento") || "aula",
-        sugestoesMetodologia,
+        estiloAula: sugestoesMetodologia,
       }),
     });
 
@@ -211,7 +211,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   </button>
 )}
 
-            {aba === "metodologia" && (
+            {aba !== "temas" && (
               <button
                 onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
                 className="bg-amber-500 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-sm hover:bg-amber-600"
@@ -236,6 +236,30 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
               </button>
             )}
           </div>
+
+          {aba !== "temas" && mostrarSugestoes && (
+            <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
+              <h3 className="font-bold text-amber-700 mb-2">
+                ✨ Meu estilo de aula
+              </h3>
+
+              <p className="text-sm text-slate-600 mb-3">
+                Escreva aqui como o professor quer que essa parte seja gerada. Esse estilo será usado na aba atual.
+              </p>
+
+              <textarea
+                value={sugestoesMetodologia}
+                onChange={(e) => setSugestoesMetodologia(e.target.value)}
+                placeholder={`Exemplo:
+Quero uma linguagem simples, natural e de sala de aula.
+Não quero texto robotizado.
+Quero frases curtas, claras e objetivas.
+Na avaliação, não repetir o conteúdo da aula.
+Na atividade para casa, organizar em 4 semanas.`}
+                className="w-full min-h-[120px] border rounded-xl p-3"
+              />
+            </div>
+          )}
 
           {aba === "temas" && (
             <textarea
@@ -283,30 +307,6 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
           {aba === "metodologia" && (
             <>
-              {mostrarSugestoes && (
-                <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-                  <h3 className="font-bold text-amber-700 mb-2">
-  ✨ Meu estilo de aula
-</h3>
-
-<p className="text-sm text-slate-600 mb-3">
-  Descreva como você costuma conduzir suas aulas. O PlanejAI seguirá esse estilo para gerar uma metodologia mais curta, clara e personalizada.
-</p>
-
-                  <textarea
-                    value={sugestoesMetodologia}
-                    onChange={(e) => setSugestoesMetodologia(e.target.value)}
-                    placeholder={`Exemplo:
-Sempre começo com perguntas norteadoras.
-Faço uma conversa inicial sobre o tema.
-Depois utilizo o livro didático.
-Realizo uma explicação dialogada.
-Finalizo com atividade no caderno e correção coletiva.`}
-                    className="w-full min-h-[120px] border rounded-xl p-3"
-                  />
-                </div>
-              )}
-
               <textarea
                 value={metodologia}
                 onChange={(e) => {
