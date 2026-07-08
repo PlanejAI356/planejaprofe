@@ -47,14 +47,14 @@ export async function POST(req: Request) {
       sandbox_init_point: resposta.sandbox_init_point,
     });
   } catch (error: any) {
-    console.log("ERRO COMPLETO:");
-    console.dir(error, { depth: null });
+  console.error("ERRO COMPLETO:", JSON.stringify(error, null, 2));
 
-    return NextResponse.json(
-      {
-        erro: error.message,
-      },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      erro: error?.message,
+      detalhes: error?.cause || error,
+    },
+    { status: 500 }
+  );
+}
 }
