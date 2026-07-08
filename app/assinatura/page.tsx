@@ -21,11 +21,11 @@ export default function Assinatura() {
 
       const dados = await resposta.json();
 
-     if (dados.init_point) {
-  window.location.href = dados.init_point;
-} else {
-  alert("Não foi possível criar o pagamento.");
-}
+      if (dados.init_point) {
+        window.location.href = dados.init_point;
+      } else {
+        alert("Não foi possível criar o pagamento.");
+      }
     } catch (erro) {
       console.error(erro);
       alert("Erro ao conectar com o Mercado Pago.");
@@ -116,6 +116,17 @@ export default function Assinatura() {
             >
               Assinar Premium
             </button>
+
+            <button
+              onClick={() => (window.location.href = "/pagamento/sucesso")}
+              className="w-full mt-3 rounded-2xl border-2 border-green-500 text-green-700 bg-white hover:bg-green-50 py-3 font-extrabold transition"
+            >
+              ✅ Já paguei, continuar
+            </button>
+
+            <p className="text-xs text-slate-500 text-center mt-3">
+              Após pagar o Pix, clique aqui para voltar ao PlanejAI.
+            </p>
           </div>
         </div>
       </div>
