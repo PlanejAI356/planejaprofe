@@ -13,6 +13,7 @@ export async function GET() {
 
 export async function POST(req: Request) {
   const { email } = await req.json();
+
   try {
     const preference = new Preference(client);
 
@@ -28,19 +29,18 @@ export async function POST(req: Request) {
           },
         ],
         payer: {
-  email,
-},
-external_reference: email,
-notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
-       external_reference: email,
-notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
-
-back_urls: {
-  success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso?email=${encodeURIComponent(email)}`,
-  failure: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/erro`,
-  pending: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/pendente`,
-},
-auto_return: "approved",
+          email,
+        },
+        external_reference: email,
+        notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
+        back_urls: {
+          success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso?email=${encodeURIComponent(email)}`,
+          failure: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/erro`,
+          pending: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/pendente`,
+        },
+        auto_return: "approved",
+      },
+    });
 
     return NextResponse.json({
       init_point: resposta.init_point,
