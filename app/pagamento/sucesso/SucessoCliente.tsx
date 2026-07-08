@@ -1,45 +1,74 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/app/lib/supabase";
 
 export default function SucessoCliente() {
-  const [mensagem, setMensagem] = useState("Confirmando pagamento...");
+  const [mensagem, setMensagem] = useState("Verificando pagamento...");
 
-  useEffect(() => {
-    async function confirmarPagamento() {
-      const params = new URLSearchParams(window.location.search);
+  async function verificarPremium() {
+    const { data: userData } = await supabase.auth.getUser();
+    const email = userData.user?.email;
 
-      const paymentId =
-        params.get("payment_id") ||
-        params.get("collection_id");
-
-      if (!paymentId) {
-        setMensagem("Pagamento aprovado, mas não recebemos o código de confirmação.");
-        return;
-      }
-
-      const resposta = await fetch("/api/pagamento/confirmar", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ paymentId }),
-      });
-
-      const dados = await resposta.json();
-
-      if (dados.ok) {
-        setMensagem("Pagamento confirmado! Seu Plano Premium foi liberado.");
-      } else {
-        setMensagem("Pagamento recebido, mas ainda não conseguimos liberar automaticamente.");
-      }
+    if (!email) {
+      setMensagem("Você precisa estar logado para confirmar o pagamento.");
+      return;
     }
 
-    confirmarPagamento();
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("plano, planos_restantes")
+      .eq("email", email)
+      .single();
+
+    if (error) {
+      setMensagem("Ainda estamos verificando seu pagamento...");
+      return;
+    }
+
+    if (data?.plano === "premium") {
+      setMensagem("Pagamento confirmado! Redirecionando para o PlanejAI...");
+
+      setTimeout(() => {
+        window.location.href = "/";
+      }, 1500);
+
+      return;
+    }
+
+    setMensagem("Aguardando confirmação do pagamento...");
+  }
+
+  useEffect(() => {
+    verificarPremium();
+
+    const intervalo = setInterval(() => {
+      verificarPremium();
+    }, 5000);
+
+    return () => clearInterval(intervalo);
   }, []);
 
   return (
     <main style={{ padding: 40 }}>
       <h1>✅ Pagamento aprovado!</h1>
       <p>{mensagem}</p>
+
+      <button
+        onClick={verificarPremium}
+        style={{
+          marginTop: 20,
+          padding: "12px 20px",
+          borderRadius: 10,
+          border: "none",
+          background: "#16a34a",
+          color: "white",
+          fontWeight: "bold",
+          cursor: "pointer",
+        }}
+      >
+        Verificar novamente
+      </button>
     </main>
   );
 }
