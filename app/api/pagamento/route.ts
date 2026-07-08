@@ -12,9 +12,16 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
-  const { email } = await req.json();
-
   try {
+    const { email } = await req.json();
+
+    if (!email) {
+      return NextResponse.json(
+        { erro: "Email não informado" },
+        { status: 400 }
+      );
+    }
+
     const preference = new Preference(client);
 
     const resposta = await preference.create({
@@ -34,27 +41,24 @@ export async function POST(req: Request) {
         external_reference: email,
         notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
         back_urls: {
-          success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso?email=${encodeURIComponent(email)}`,
+          success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso`,
           failure: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/erro`,
           pending: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/pendente`,
         },
-        auto_return: "approved",
       },
     });
 
     return NextResponse.json({
       init_point: resposta.init_point,
-      sandbox_init_point: resposta.sandbox_init_point,
     });
   } catch (error: any) {
-  console.error("ERRO COMPLETO:", JSON.stringify(error, null, 2));
+    console.error("ERRO PAGAMENTO:", error);
 
-  return NextResponse.json(
-    {
-      erro: error?.message,
-      detalhes: error?.cause || error,
-    },
-    { status: 500 }
-  );
-}
+    return NextResponse.json(
+      {
+        erro: error?.message || "Erro ao criar pagamento",
+      },
+      { status: 500 }
+    );
+  }
 }
