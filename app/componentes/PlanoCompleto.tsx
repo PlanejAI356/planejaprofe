@@ -250,13 +250,40 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
               <textarea
                 value={sugestoesMetodologia}
                 onChange={(e) => setSugestoesMetodologia(e.target.value)}
-                placeholder={`Exemplo:
-Quero uma linguagem simples, natural e de sala de aula.
-Não quero texto robotizado.
-Quero frases curtas, claras e objetivas.
-Na avaliação, não repetir o conteúdo da aula.
-Na atividade para casa, organizar em 4 semanas.`}
-                className="w-full min-h-[120px] border rounded-xl p-3"
+                placeholder={
+  aba === "objetivos"
+    ? `Exemplo:
+Quero objetivos claros e específicos.
+Utilize apenas o código da BNCC.
+Evite repetir os mesmos verbos.
+Relacione os objetivos com o tema da aula.`
+
+    : aba === "recursos"
+    ? `Exemplo:
+Utilize quadro, livro didático, caderno e materiais de baixo custo.
+Evite recursos tecnológicos quando não forem necessários.`
+
+    : aba === "metodologia"
+    ? `Exemplo:
+Sempre começo com perguntas norteadoras.
+Faço uma conversa inicial.
+Utilizo o livro didático.
+Finalizo com atividade no caderno.`
+
+    : aba === "avaliacao"
+    ? `Exemplo:
+Quero uma avaliação realizada durante a aula.
+Avaliar participação, interesse e realização das atividades.
+Não repetir o conteúdo da aula.`
+
+    : aba === "referencias"
+    ? `Exemplo:
+Utilize a BNCC, o livro didático adotado pela escola e documentos oficiais.`
+
+    : `Exemplo:
+Organize as atividades para casa em 4 semanas.
+Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
+}
               />
             </div>
           )}
