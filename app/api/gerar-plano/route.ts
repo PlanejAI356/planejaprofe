@@ -705,6 +705,9 @@ REGRAS:
 - Atividades curtas, possíveis para alunos com poucos recursos.
 - Cada semana deve ocupar apenas uma linha.
 - Não deixar linhas em branco entre as semanas.
+- Cada semana deve ficar em uma linha separada.
+- Depois de cada semana, usar quebra de linha.
+- Nunca escrever duas semanas na mesma linha.
 
 FORMATO OBRIGATÓRIO:
 1ª SEMANA - Atividade curta no caderno.

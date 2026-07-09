@@ -47,6 +47,9 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     .replace(/\n[ \t]+/g, "\n")
     .replace(/\n{2,}(?=AULA\s\d+)/g, "\n")
     .replace(/\n{3,}/g, "\n\n")
+    .replace(/(2ª SEMANA)/g, "\n$1")
+.replace(/(3ª SEMANA)/g, "\n$1")
+.replace(/(4ª SEMANA)/g, "\n$1")
     .trim();
 }
 
