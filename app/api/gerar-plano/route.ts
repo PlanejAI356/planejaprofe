@@ -696,12 +696,21 @@ REGRAS:
 - Cada semana deve ocupar apenas uma linha.
 - Não utilizar espaçamento extra.
 - Utilizar apenas uma quebra de linha entre uma semana e outra.
+- Não usar celular.
+- Não usar aplicativo.
+- Não usar internet.
+- Não usar computador.
+- Não pedir pesquisa online.
+- Usar apenas caderno, lápis, livro didático ou observação simples em casa.
+- Atividades curtas, possíveis para alunos com poucos recursos.
+- Cada semana deve ocupar apenas uma linha.
+- Não deixar linhas em branco entre as semanas.
 
 FORMATO OBRIGATÓRIO:
-1ª SEMANA - Atividade para casa.
-2ª SEMANA - Atividade para casa.
-3ª SEMANA - Atividade para casa.
-4ª SEMANA - Atividade para casa.
+1ª SEMANA - Atividade curta no caderno.
+2ª SEMANA - Atividade curta no caderno.
+3ª SEMANA - Atividade curta no caderno.
+4ª SEMANA - Atividade curta no caderno.
 `;
     }
 
