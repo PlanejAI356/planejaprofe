@@ -39,9 +39,25 @@ export default function Home() {
     verificarLogin();
   }, []);
 
-  function mudarEtapa(novaEtapa: string) {
-    setEtapa(novaEtapa);
+  function limparPlanoAnterior() {
+  localStorage.removeItem("temasPlano");
+  localStorage.removeItem("objetivosPlano");
+  localStorage.removeItem("recursosPlano");
+  localStorage.removeItem("metodologiaPlano");
+  localStorage.removeItem("avaliacaoPlano");
+  localStorage.removeItem("referenciasPlano");
+  localStorage.removeItem("atividadePlano");
+
+  setDatasSelecionadas([]);
+}
+
+function mudarEtapa(novaEtapa: string) {
+  if (novaEtapa === "configuracao") {
+    limparPlanoAnterior();
   }
+
+  setEtapa(novaEtapa);
+}
 
   async function sair() {
     await supabase.auth.signOut();
@@ -79,8 +95,8 @@ export default function Home() {
           setNomeMes={setNomeMes}
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
-          onVoltar={() => setEtapa("configuracao")}
-          onContinuar={() => setEtapa("calendario")}
+          onVoltar={() => mudarEtapa("configuracao")}
+          onContinuar={() => mudarEtapa("calendario")}
         />
       )}
 
@@ -109,7 +125,7 @@ export default function Home() {
 
       {etapa === "planoCompleto" && (
         <PlanoCompleto
-          onVoltar={() => mudarEtapa("conteudos")}
+          onVoltar={() => setEtapa("planoCompleto")}
           onExportar={() => mudarEtapa("exportacao")}
         />
       )}

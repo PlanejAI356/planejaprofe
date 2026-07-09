@@ -16,7 +16,7 @@ export default function CadastroPage() {
     e.preventDefault();
     setCarregando(true);
 
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
   email: email.trim(),
   password: senha.trim(),
   options: {
@@ -27,6 +27,8 @@ export default function CadastroPage() {
   },
 });
 
+console.log(data);
+
     setCarregando(false);
 
     if (error) {
@@ -34,14 +36,15 @@ export default function CadastroPage() {
       return;
     }
 
-    alert("Conta criada! Verifique seu e-mail para confirmar o cadastro.");
+    alert("Cadastro realizado com sucesso! Agora faça login para acessar o PlanejAI.");
+window.location.href = "/login";
   }
 
   return (
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-md">
         <h1 className="text-3xl font-extrabold text-center text-slate-900 mb-2">
-          Criar conta
+          Criar contagit add .
         </h1>
 
         <p className="text-center text-slate-500 mb-6">
