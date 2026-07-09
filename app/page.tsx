@@ -96,7 +96,18 @@ function mudarEtapa(novaEtapa: string) {
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
           onVoltar={() => mudarEtapa("configuracao")}
-          onContinuar={() => mudarEtapa("calendario")}
+          onContinuar={() => {
+  localStorage.removeItem("temasPlano");
+  localStorage.removeItem("objetivosPlano");
+  localStorage.removeItem("recursosPlano");
+  localStorage.removeItem("metodologiaPlano");
+  localStorage.removeItem("avaliacaoPlano");
+  localStorage.removeItem("referenciasPlano");
+  localStorage.removeItem("atividadePlano");
+
+  setDatasSelecionadas([]);
+  mudarEtapa("calendario");
+}}
         />
       )}
 
