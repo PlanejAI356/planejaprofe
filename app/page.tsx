@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Inicio from "./componentes/Inicio";
 import ConfiguracaoPlano from "./componentes/ConfiguracaoPlanoV2";
 import Calendario from "./componentes/Calendario";
 import Conteudos from "./componentes/Conteudos";
@@ -17,7 +18,7 @@ type DataAula = {
 export default function Home() {
   const [carregandoAuth, setCarregandoAuth] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
-  const [etapa, setEtapa] = useState("configuracao");
+  const [etapa, setEtapa] = useState("inicio");
 
   const [ano, setAno] = useState("2026");
   const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
@@ -32,15 +33,15 @@ export default function Home() {
       if (data.session) {
         setUsuarioLogado(true);
 
-        // Quem já está cadastrado continua usando normalmente.
+        // Quem já está cadastrado entra direto no PlanejAI.
         localStorage.removeItem("testeGratisConcluido");
+        setEtapa("configuracao");
         setCarregandoAuth(false);
         return;
       }
 
       setUsuarioLogado(false);
 
-      // O visitante que já concluiu o teste precisa criar uma conta.
       const testeConcluido =
         localStorage.getItem("testeGratisConcluido") === "true";
 
@@ -49,7 +50,8 @@ export default function Home() {
         return;
       }
 
-      // Visitante novo entra diretamente no teste grátis.
+      // Quem não está cadastrado vê primeiro a tela de apresentação.
+      setEtapa("inicio");
       setCarregandoAuth(false);
     }
 
@@ -57,15 +59,34 @@ export default function Home() {
   }, []);
 
   function limparPlanoAnterior() {
-    localStorage.removeItem("temasPlano");
-    localStorage.removeItem("objetivosPlano");
-    localStorage.removeItem("recursosPlano");
-    localStorage.removeItem("metodologiaPlano");
-    localStorage.removeItem("avaliacaoPlano");
-    localStorage.removeItem("referenciasPlano");
-    localStorage.removeItem("atividadePlano");
+    const chaves = [
+      "temasPlano",
+      "objetivosPlano",
+      "recursosPlano",
+      "metodologiaPlano",
+      "avaliacaoPlano",
+      "referenciasPlano",
+      "atividadePlano",
+      "temasGerados",
+      "conteudosMensais",
+      "serieSelecionada",
+      "disciplinaSelecionada",
+      "etapaEnsino",
+      "tipoPlanejamento",
+      "turmaInfantilDetalhe",
+    ];
+
+    chaves.forEach((chave) => localStorage.removeItem(chave));
 
     setDatasSelecionadas([]);
+    setMesSelecionado(null);
+    setNomeMes("");
+    setTipoPlanejamento("");
+  }
+
+  function iniciarTesteGratis() {
+    limparPlanoAnterior();
+    setEtapa("configuracao");
   }
 
   function mudarEtapa(novaEtapa: string) {
@@ -77,8 +98,6 @@ export default function Home() {
   }
 
   function abrirPlanoCompleto() {
-    // Quando o visitante chega ao plano completo,
-    // o teste gratuito é considerado utilizado.
     if (!usuarioLogado) {
       localStorage.setItem("testeGratisConcluido", "true");
     }
@@ -89,7 +108,7 @@ export default function Home() {
   function irParaExportacao() {
     if (!usuarioLogado) {
       alert(
-        "Seu plano gratuito está pronto! Crie sua conta para exportar e continuar usando o PlanejAI."
+        "Você concluiu seu teste do PlanejAI. Crie sua conta para exportar o plano e continuar usando."
       );
 
       window.location.href = "/cadastro";
@@ -114,6 +133,10 @@ export default function Home() {
     );
   }
 
+  if (etapa === "inicio" && !usuarioLogado) {
+    return <Inicio onComecar={iniciarTesteGratis} />;
+  }
+
   return (
     <main>
       <div className="flex justify-between items-center px-6 py-2 bg-white border-b border-slate-200">
@@ -128,7 +151,9 @@ export default function Home() {
           </button>
         ) : (
           <button
-            onClick={() => (window.location.href = "/login")}
+            onClick={() => {
+              window.location.href = "/login";
+            }}
             className="border border-blue-500 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
           >
             Já tenho uma conta
@@ -139,7 +164,7 @@ export default function Home() {
       {!usuarioLogado && (
         <div className="bg-green-50 border-b border-green-200 px-4 py-3 text-center">
           <p className="text-green-800 font-semibold">
-            🎁 Teste grátis: crie seu primeiro plano sem cadastro.
+            🎁 Teste do PlanejAI: crie seu primeiro plano sem cadastro.
           </p>
         </div>
       )}
@@ -154,7 +179,13 @@ export default function Home() {
           setNomeMes={setNomeMes}
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
-          onVoltar={() => mudarEtapa("configuracao")}
+          onVoltar={() => {
+            if (usuarioLogado) {
+              mudarEtapa("configuracao");
+            } else {
+              setEtapa("inicio");
+            }
+          }}
           onContinuar={() => {
             limparPlanoAnterior();
             setEtapa("calendario");
