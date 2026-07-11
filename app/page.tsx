@@ -16,6 +16,7 @@ type DataAula = {
 
 export default function Home() {
   const [carregandoAuth, setCarregandoAuth] = useState(true);
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [etapa, setEtapa] = useState("configuracao");
 
   const [ano, setAno] = useState("2026");
@@ -28,11 +29,27 @@ export default function Home() {
     async function verificarLogin() {
       const { data } = await supabase.auth.getSession();
 
-      if (!data.session) {
-        window.location.replace("/login");
+      if (data.session) {
+        setUsuarioLogado(true);
+
+        // Quem já está cadastrado continua usando normalmente.
+        localStorage.removeItem("testeGratisConcluido");
+        setCarregandoAuth(false);
         return;
       }
 
+      setUsuarioLogado(false);
+
+      // O visitante que já concluiu o teste precisa criar uma conta.
+      const testeConcluido =
+        localStorage.getItem("testeGratisConcluido") === "true";
+
+      if (testeConcluido) {
+        window.location.replace("/cadastro");
+        return;
+      }
+
+      // Visitante novo entra diretamente no teste grátis.
       setCarregandoAuth(false);
     }
 
@@ -40,24 +57,47 @@ export default function Home() {
   }, []);
 
   function limparPlanoAnterior() {
-  localStorage.removeItem("temasPlano");
-  localStorage.removeItem("objetivosPlano");
-  localStorage.removeItem("recursosPlano");
-  localStorage.removeItem("metodologiaPlano");
-  localStorage.removeItem("avaliacaoPlano");
-  localStorage.removeItem("referenciasPlano");
-  localStorage.removeItem("atividadePlano");
+    localStorage.removeItem("temasPlano");
+    localStorage.removeItem("objetivosPlano");
+    localStorage.removeItem("recursosPlano");
+    localStorage.removeItem("metodologiaPlano");
+    localStorage.removeItem("avaliacaoPlano");
+    localStorage.removeItem("referenciasPlano");
+    localStorage.removeItem("atividadePlano");
 
-  setDatasSelecionadas([]);
-}
-
-function mudarEtapa(novaEtapa: string) {
-  if (novaEtapa === "configuracao") {
-    limparPlanoAnterior();
+    setDatasSelecionadas([]);
   }
 
-  setEtapa(novaEtapa);
-}
+  function mudarEtapa(novaEtapa: string) {
+    if (novaEtapa === "configuracao") {
+      limparPlanoAnterior();
+    }
+
+    setEtapa(novaEtapa);
+  }
+
+  function abrirPlanoCompleto() {
+    // Quando o visitante chega ao plano completo,
+    // o teste gratuito é considerado utilizado.
+    if (!usuarioLogado) {
+      localStorage.setItem("testeGratisConcluido", "true");
+    }
+
+    setEtapa("planoCompleto");
+  }
+
+  function irParaExportacao() {
+    if (!usuarioLogado) {
+      alert(
+        "Seu plano gratuito está pronto! Crie sua conta para exportar e continuar usando o PlanejAI."
+      );
+
+      window.location.href = "/cadastro";
+      return;
+    }
+
+    setEtapa("exportacao");
+  }
 
   async function sair() {
     await supabase.auth.signOut();
@@ -67,7 +107,9 @@ function mudarEtapa(novaEtapa: string) {
   if (carregandoAuth) {
     return (
       <main className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-600 font-semibold">Carregando PlanejAI...</p>
+        <p className="text-slate-600 font-semibold">
+          Carregando PlanejAI...
+        </p>
       </main>
     );
   }
@@ -77,13 +119,30 @@ function mudarEtapa(novaEtapa: string) {
       <div className="flex justify-between items-center px-6 py-2 bg-white border-b border-slate-200">
         <TopoProfessor />
 
-        <button
-          onClick={sair}
-          className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
-        >
-          Sair
-        </button>
+        {usuarioLogado ? (
+          <button
+            onClick={sair}
+            className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
+          >
+            Sair
+          </button>
+        ) : (
+          <button
+            onClick={() => (window.location.href = "/login")}
+            className="border border-blue-500 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
+          >
+            Já tenho uma conta
+          </button>
+        )}
       </div>
+
+      {!usuarioLogado && (
+        <div className="bg-green-50 border-b border-green-200 px-4 py-3 text-center">
+          <p className="text-green-800 font-semibold">
+            🎁 Teste grátis: crie seu primeiro plano sem cadastro.
+          </p>
+        </div>
+      )}
 
       {etapa === "configuracao" && (
         <ConfiguracaoPlano
@@ -97,17 +156,9 @@ function mudarEtapa(novaEtapa: string) {
           setTipoPlanejamento={setTipoPlanejamento}
           onVoltar={() => mudarEtapa("configuracao")}
           onContinuar={() => {
-  localStorage.removeItem("temasPlano");
-  localStorage.removeItem("objetivosPlano");
-  localStorage.removeItem("recursosPlano");
-  localStorage.removeItem("metodologiaPlano");
-  localStorage.removeItem("avaliacaoPlano");
-  localStorage.removeItem("referenciasPlano");
-  localStorage.removeItem("atividadePlano");
-
-  setDatasSelecionadas([]);
-  mudarEtapa("calendario");
-}}
+            limparPlanoAnterior();
+            setEtapa("calendario");
+          }}
         />
       )}
 
@@ -130,19 +181,21 @@ function mudarEtapa(novaEtapa: string) {
           datasSelecionadas={datasSelecionadas}
           tipoPlanejamento={tipoPlanejamento}
           onVoltar={() => setEtapa("calendario")}
-          onContinuar={() => setEtapa("planoCompleto")}
+          onContinuar={abrirPlanoCompleto}
         />
       )}
 
       {etapa === "planoCompleto" && (
         <PlanoCompleto
-          onVoltar={() => setEtapa("planoCompleto")}
-          onExportar={() => mudarEtapa("exportacao")}
+          onVoltar={() => setEtapa("conteudos")}
+          onExportar={irParaExportacao}
         />
       )}
 
       {etapa === "exportacao" && (
-        <Exportacao onVoltar={() => mudarEtapa("planoCompleto")} />
+        <Exportacao
+          onVoltar={() => mudarEtapa("planoCompleto")}
+        />
       )}
     </main>
   );
