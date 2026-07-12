@@ -139,34 +139,48 @@ export default function Home() {
 
   return (
     <main>
-      <div className="flex justify-between items-center px-6 py-2 bg-white border-b border-slate-200">
-        <TopoProfessor />
+      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
+  {usuarioLogado ? (
+    <TopoProfessor />
+  ) : (
+    <div className="flex items-center gap-2">
+      <img
+        src="/logo-planejai.png"
+        alt="PlanejAI"
+        className="h-9 w-9 object-contain"
+      />
 
-        {usuarioLogado ? (
-          <button
-            onClick={sair}
-            className="border border-red-400 text-red-500 hover:bg-red-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
-          >
-            Sair
-          </button>
-        ) : (
-          <button
-            onClick={() => {
-              window.location.href = "/login";
-            }}
-            className="border border-blue-500 text-blue-600 hover:bg-blue-50 px-3 py-1.5 rounded-lg text-sm font-semibold"
-          >
-            Já tenho uma conta
-          </button>
-        )}
-      </div>
+      <span className="text-lg font-extrabold text-slate-900">
+        Planej<span className="text-green-600">AI</span>
+      </span>
+    </div>
+  )}
+
+  {usuarioLogado ? (
+    <button
+      onClick={sair}
+      className="shrink-0 rounded-lg border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50"
+    >
+      Sair
+    </button>
+  ) : (
+    <button
+      onClick={() => {
+        window.location.href = "/login";
+      }}
+      className="shrink-0 rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 sm:text-sm"
+    >
+      Já tenho conta
+    </button>
+  )}
+</div>
 
       {!usuarioLogado && (
-        <div className="bg-green-50 border-b border-green-200 px-4 py-3 text-center">
-          <p className="text-green-800 font-semibold">
-            🎁 Teste do PlanejAI: crie seu primeiro plano sem cadastro.
-          </p>
-        </div>
+        <div className="border-b border-green-200 bg-green-50 px-3 py-2 text-center">
+  <p className="text-sm font-semibold text-green-800">
+    🎁 Crie seu primeiro plano sem cadastro.
+  </p>
+</div>
       )}
 
       {etapa === "configuracao" && (
