@@ -37,7 +37,7 @@ export default function Inicio({ onComecar }: InicioProps) {
         <header className="flex h-14 shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src="/logo-planejai.png"
+             src="/hero-planejai.png"
               alt="PlanejAI"
               className="h-9 w-9 object-contain"
             />
@@ -103,32 +103,32 @@ export default function Inicio({ onComecar }: InicioProps) {
               <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-blue-100" />
 
               <div className="relative z-10 grid items-center gap-5 md:grid-cols-[0.75fr_1.25fr]">
-                <div className="text-center">
-                  <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-green-50 shadow-inner">
-                    <img
-                      src="/logo-planejai.png"
-                      alt="Logo PlanejAI"
-                      className="h-20 w-20 object-contain"
-                    />
-                  </div>
+  <div className="text-center">
+    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-green-50 shadow-inner">
+      <img
+        src="/logo-planejai.png"
+        alt="Logo PlanejAI"
+        className="h-20 w-20 object-contain"
+      />
+    </div>
 
-                  <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
-                    Planejamento mais simples
-                  </h2>
+    <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
+      Planejamento mais simples
+    </h2>
 
-                  <p className="mt-2 text-sm leading-relaxed text-slate-600">
-                    Escolha a etapa, a turma, as datas e o conteúdo.
-                  </p>
-                </div>
+    <p className="mt-2 text-sm leading-relaxed text-slate-600">
+      Escolha a etapa, a turma, as datas e o conteúdo.
+    </p>
+  </div>
 
-                <div className="overflow-hidden rounded-2xl border border-slate-200 bg-slate-50 p-3 shadow-inner">
-                  <img
-                    src="/tela-planejai.png"
-                    alt="Tela do PlanejAI"
-                    className="h-64 w-full rounded-xl object-cover object-top"
-                  />
-                </div>
-              </div>
+  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-inner">
+    <img
+      src="/hero-planejai.png"
+      alt="PlanejAI"
+      className="h-64 w-full object-cover object-center"
+    />
+  </div>
+</div>
             </div>
           </div>
         </section>
