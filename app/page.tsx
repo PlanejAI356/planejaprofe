@@ -201,9 +201,9 @@ export default function Home() {
             }
           }}
           onContinuar={() => {
-            limparPlanoAnterior();
-            setEtapa("calendario");
-          }}
+  setDatasSelecionadas([]);
+  setEtapa("calendario");
+}}
         />
       )}
 
