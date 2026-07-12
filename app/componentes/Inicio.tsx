@@ -37,8 +37,8 @@ export default function Inicio({ onComecar }: InicioProps) {
         <header className="flex h-14 shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-             src="/hero-planejai.png"
-              alt="PlanejAI"
+              src="/logo-planejai.png"
+              alt="Logo PlanejAI"
               className="h-9 w-9 object-contain"
             />
 
@@ -60,7 +60,7 @@ export default function Inicio({ onComecar }: InicioProps) {
 
         <section className="grid min-h-0 flex-1 items-center gap-5 md:grid-cols-[0.95fr_1.05fr]">
           <div>
-           <div className="mb-2 inline-flex items-center rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700">
+            <div className="mb-2 inline-flex items-center rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700">
               ✨ Planejamento com Inteligência Artificial
             </div>
 
@@ -98,72 +98,53 @@ export default function Inicio({ onComecar }: InicioProps) {
           </div>
 
           <div className="flex min-h-0 items-center justify-center">
-            <div className="relative w-full max-w-2xl overflow-hidden rounded-[30px] border border-slate-200 bg-white p-5 shadow-xl">
-              <div className="absolute -right-16 -top-16 h-44 w-44 rounded-full bg-green-100" />
-              <div className="absolute -bottom-20 -left-20 h-48 w-48 rounded-full bg-blue-100" />
-
-              <div className="relative z-10 grid items-center gap-5 md:grid-cols-[0.75fr_1.25fr]">
-  <div className="text-center">
-    <div className="mx-auto flex h-28 w-28 items-center justify-center rounded-full bg-gradient-to-br from-blue-50 to-green-50 shadow-inner">
-      <img
-        src="/logo-planejai.png"
-        alt="Logo PlanejAI"
-        className="h-20 w-20 object-contain"
-      />
-    </div>
-
-    <h2 className="mt-4 text-2xl font-extrabold text-slate-900">
-      Planejamento mais simples
-    </h2>
-
-    <p className="mt-2 text-sm leading-relaxed text-slate-600">
-      Escolha a etapa, a turma, as datas e o conteúdo.
-    </p>
-  </div>
-
-  <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-inner">
-    <img
-      src="/hero-planejai.png"
-      alt="PlanejAI"
-      className="h-64 w-full object-cover object-center"
-    />
-  </div>
-</div>
+            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-xl">
+              <img
+                src="/hero-planejai.png"
+                alt="Apresentação do PlanejAI"
+                className="h-auto max-h-[330px] w-full rounded-[22px] object-contain"
+              />
             </div>
           </div>
         </section>
 
-        <section className="grid shrink-0 gap-3 pb-2 md:grid-cols-3">
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-3xl">📖</div>
+        <section className="grid shrink-0 gap-2.5 pb-2 md:grid-cols-3">
+          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="text-2xl">📖</div>
+
             <div>
               <h3 className="font-bold text-slate-900">
                 Planos alinhados à BNCC
               </h3>
+
               <p className="text-sm text-slate-500">
                 Objetivos e habilidades organizados.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-3xl">⚡</div>
+          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="text-2xl">⚡</div>
+
             <div>
               <h3 className="font-bold text-slate-900">
                 Geração rápida
               </h3>
+
               <p className="text-sm text-slate-500">
                 Planejamento em poucos minutos.
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-3xl">📄</div>
+          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+            <div className="text-2xl">📄</div>
+
             <div>
               <h3 className="font-bold text-slate-900">
                 Exportação do plano
               </h3>
+
               <p className="text-sm text-slate-500">
                 Organize e exporte o planejamento.
               </p>
