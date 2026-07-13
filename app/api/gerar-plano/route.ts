@@ -78,12 +78,14 @@ REGRAS OBRIGATÓRIAS:
 
 - Responder somente em português do Brasil.
 - Utilizar exatamente os temas informados pelo professor como base.
-- Gerar somente de 4 a 5 conteúdos para o mês.
-- Cada conteúdo deve ser amplo o suficiente para ser trabalhado em várias aulas.
+- Gerar somente de 4 a 5 conteúdos para o planejamento mensal.
+- Gerar conteúdos adequados à etapa de ensino, série e disciplina informadas.
+- Cada conteúdo deve ser amplo o suficiente para ser desenvolvido em várias aulas.
 - Organizar os conteúdos do mais simples para o mais complexo.
-- Evitar dividir o tema em muitos tópicos pequenos.
+- Gerar conteúdos curtos e objetivos.
+- Escrever cada conteúdo iniciando com letra maiúscula.
 - Não repetir conteúdos semelhantes.
-- Um conteúdo por linha.
+- Escrever apenas um conteúdo por linha.
 - Não escrever "Aula 01".
 - Não escrever datas.
 - Não gerar objetivos.
@@ -92,16 +94,17 @@ REGRAS OBRIGATÓRIAS:
 - Não gerar avaliação.
 - Não gerar referências.
 - Não fazer introdução.
-- Não escrever explicações.
-- Não usar marcadores ou numeração.
-- Não escrever "Hello" nem qualquer texto em inglês.
+- Não escrever explicações antes ou depois da lista.
+- Não usar marcadores, numeração ou símbolos.
+- Não escrever textos em inglês.
+- Retornar somente a lista dos conteúdos.
 
 EXEMPLO:
 
 Conceito e função dos verbos
 Verbos de ação e de estado
-Tempos verbais: presente, passado e futuro
-Conjugação verbal e uso em frases
+Tempos verbais
+Conjugação verbal
 Verbos regulares e irregulares
 `;
 }
