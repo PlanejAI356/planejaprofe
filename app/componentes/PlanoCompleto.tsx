@@ -167,7 +167,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   const botaoAba = (id: string, nome: string) => (
     <button
       onClick={() => setAba(id)}
-      className={`px-5 py-3 rounded-2xl font-semibold transition-all cursor-pointer ${
+      className={`shrink-0 whitespace-nowrap px-5 py-3 rounded-2xl font-semibold transition-all cursor-pointer ${
         aba === id
           ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-md"
           : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-blue-300"
