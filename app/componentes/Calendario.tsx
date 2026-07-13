@@ -42,22 +42,64 @@ export default function Calendario({
     return `${diaFormatado}/${mesFormatado}/${ano}`;
   }
 
-  function obterDiaDaSemana(data: string) {
+  function converterParaDate(data: string) {
     const [dia, mes, anoData] = data.split("/").map(Number);
+    return new Date(anoData, mes - 1, dia);
+  }
+
+  function obterDiaDaSemana(data: string) {
     const nomes = ["DOM", "SEG", "TER", "QUA", "QUI", "SEX", "SÁB"];
-    return nomes[new Date(anoData, mes - 1, dia).getDay()];
+    return nomes[converterParaDate(data).getDay()];
+  }
+
+  function ehFimDeSemana(dia: number) {
+    const diaSemana = new Date(Number(ano), mesSelecionado, dia).getDay();
+    return diaSemana === 0 || diaSemana === 6;
   }
 
   function ordenarDatas(lista: DataAula[]) {
-    return [...lista].sort((a, b) => {
-      const [diaA, mesA, anoA] = a.data.split("/").map(Number);
-      const [diaB, mesB, anoB] = b.data.split("/").map(Number);
+    return [...lista].sort(
+      (a, b) =>
+        converterParaDate(a.data).getTime() -
+        converterParaDate(b.data).getTime()
+    );
+  }
 
-      return (
-        new Date(anoA, mesA - 1, diaA).getTime() -
-        new Date(anoB, mesB - 1, diaB).getTime()
-      );
-    });
+  function criarPeriodoMensal(dataInicial: string, dataFinal: string) {
+    const inicioOriginal = converterParaDate(dataInicial);
+    const fimOriginal = converterParaDate(dataFinal);
+
+    const inicio =
+      inicioOriginal.getTime() <= fimOriginal.getTime()
+        ? inicioOriginal
+        : fimOriginal;
+    const fim =
+      inicioOriginal.getTime() <= fimOriginal.getTime()
+        ? fimOriginal
+        : inicioOriginal;
+
+    const periodo: DataAula[] = [];
+    const dataAtual = new Date(inicio);
+
+    while (dataAtual.getTime() <= fim.getTime()) {
+      const diaSemana = dataAtual.getDay();
+
+      // No plano mensal, sábado e domingo não entram no período.
+      if (diaSemana !== 0 && diaSemana !== 6) {
+        const dia = String(dataAtual.getDate()).padStart(2, "0");
+        const mes = String(dataAtual.getMonth() + 1).padStart(2, "0");
+        const anoAtual = dataAtual.getFullYear();
+
+        periodo.push({
+          data: `${dia}/${mes}/${anoAtual}`,
+          aulas: 1,
+        });
+      }
+
+      dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+
+    return periodo;
   }
 
   function selecionarData(dia: number) {
@@ -65,11 +107,20 @@ export default function Calendario({
     const existe = datas.find((item) => item.data === data);
 
     if (tipoPlanejamento === "mensal") {
-      if (existe) {
-        setDatas(datas.filter((item) => item.data !== data));
-      } else {
-        setDatas([...datas, { data, aulas: 1 }]);
+      if (ehFimDeSemana(dia)) {
+        return;
       }
+
+      // Primeiro clique: define o início do período.
+      // Depois de um período completo, um novo clique inicia outra seleção.
+      if (datas.length === 0 || datas.length > 1) {
+        setDatas([{ data, aulas: 1 }]);
+        return;
+      }
+
+      // Segundo clique: define o fim e preenche apenas os dias úteis.
+      const dataInicial = datas[0].data;
+      setDatas(criarPeriodoMensal(dataInicial, data));
       return;
     }
 
@@ -127,6 +178,15 @@ export default function Calendario({
     const diaSemana = dataAtual.getDay();
     const selecionado = dadosDoDia(dia);
 
+    // No plano mensal, os fins de semana mantêm suas próprias cores.
+    if (tipoPlanejamento === "mensal" && diaSemana === 6) {
+      return "bg-yellow-100 text-yellow-800 cursor-not-allowed";
+    }
+
+    if (tipoPlanejamento === "mensal" && diaSemana === 0) {
+      return "bg-red-50 text-red-600 cursor-not-allowed";
+    }
+
     if (selecionado) return "bg-green-600 text-white shadow-md";
     if (diaSemana === 6) return "bg-yellow-100 text-yellow-800";
     if (diaSemana === 0) return "bg-red-50 text-red-600";
@@ -136,11 +196,20 @@ export default function Calendario({
 
   function continuar() {
     if (datas.length === 0) {
-      alert("Selecione pelo menos uma data de aula.");
+      alert(
+        tipoPlanejamento === "mensal"
+          ? "Selecione a data inicial e a data final do período."
+          : "Selecione pelo menos uma data de aula."
+      );
       return;
     }
 
-    onContinuar(datas);
+    if (tipoPlanejamento === "mensal" && datas.length === 1) {
+      alert("Agora selecione a data final do período mensal.");
+      return;
+    }
+
+    onContinuar(ordenarDatas(datas));
   }
 
   const datasOrdenadas = ordenarDatas(datas);
@@ -161,7 +230,7 @@ export default function Calendario({
           <p className="mt-2 text-slate-500 text-sm">
             {tipoPlanejamento === "aula"
               ? "Clique no dia para adicionar uma aula. Use + para duplicar e - para remover."
-              : "Selecione os dias que fazem parte do período do planejamento mensal."}
+              : "Clique primeiro na data inicial e depois na data final. Sábados e domingos não serão incluídos."}
           </p>
         </div>
 
@@ -189,14 +258,20 @@ export default function Calendario({
                 (_, index) => index + 1
               ).map((dia) => {
                 const item = dadosDoDia(dia);
+                const fimDeSemanaMensal =
+                  tipoPlanejamento === "mensal" && ehFimDeSemana(dia);
 
                 return (
                   <button
                     key={dia}
+                    type="button"
                     onClick={() => selecionarData(dia)}
-                    className={`min-h-[58px] rounded-2xl p-2 text-center cursor-pointer border border-slate-100 transition-all hover:scale-[1.02] ${corDoDia(
-                      dia
-                    )}`}
+                    disabled={fimDeSemanaMensal}
+                    className={`min-h-[58px] rounded-2xl p-2 text-center border border-slate-100 transition-all ${
+                      fimDeSemanaMensal
+                        ? "cursor-not-allowed"
+                        : "cursor-pointer hover:scale-[1.02]"
+                    } ${corDoDia(dia)}`}
                   >
                     <div className="font-extrabold">{dia}</div>
 
@@ -254,8 +329,10 @@ export default function Calendario({
 
                 <p className="text-sm text-slate-500">
                   {tipoPlanejamento === "mensal"
-                    ? datas.length > 0
+                    ? datas.length > 1
                       ? `${primeiraData} à ${ultimaData}`
+                      : datas.length === 1
+                      ? `Início: ${primeiraData}. Selecione a data final.`
                       : "Nenhum período selecionado"
                     : `${datas.length} dia(s) • ${totalAulas} aula(s)`}
                 </p>
@@ -263,6 +340,7 @@ export default function Calendario({
 
               {datas.length > 0 && (
                 <button
+                  type="button"
                   onClick={() => setDatas([])}
                   className="border border-red-200 text-red-600 bg-white px-4 py-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-red-50"
                 >
@@ -276,8 +354,40 @@ export default function Calendario({
                 <p>
                   Nenhuma data selecionada.
                   <br />
-                  Clique em um dia no calendário.
+                  {tipoPlanejamento === "mensal"
+                    ? "Clique na data inicial do período."
+                    : "Clique em um dia no calendário."}
                 </p>
+              </div>
+            ) : tipoPlanejamento === "mensal" ? (
+              <div className="min-h-[260px] flex flex-col justify-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-2xl bg-green-50 p-4 text-center text-green-700">
+                    <div className="text-xs font-bold uppercase">Início</div>
+                    <div className="mt-1 text-lg font-extrabold">
+                      {primeiraData}
+                    </div>
+                  </div>
+
+                  <div className="rounded-2xl bg-blue-50 p-4 text-center text-blue-700">
+                    <div className="text-xs font-bold uppercase">Fim</div>
+                    <div className="mt-1 text-lg font-extrabold">
+                      {datas.length > 1 ? ultimaData : "Selecione"}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-center text-sm text-green-800">
+                  {datas.length > 1 ? (
+                    <>
+                      <strong>{datas.length} dias úteis selecionados.</strong>
+                      <br />
+                      Sábados e domingos não fazem parte do período.
+                    </>
+                  ) : (
+                    <strong>Agora clique na data final do período.</strong>
+                  )}
+                </div>
               </div>
             ) : (
               <div className="max-h-[360px] overflow-y-auto pr-1 space-y-3">
@@ -297,6 +407,7 @@ export default function Calendario({
                       </div>
 
                       <button
+                        type="button"
                         onClick={() => removerData(item.data)}
                         className="text-red-500 font-bold cursor-pointer hover:text-red-700"
                       >
@@ -306,32 +417,30 @@ export default function Calendario({
 
                     <div className="flex items-center justify-between">
                       <span className="font-bold text-slate-700">
-                        {tipoPlanejamento === "mensal"
-                          ? "Selecionado"
-                          : `${item.aulas} aula(s)`}
+                        {item.aulas} aula(s)
                       </span>
 
-                      {tipoPlanejamento === "aula" && (
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => removerAulaPorData(item.data)}
-                            className="w-9 h-9 rounded-xl border border-slate-200 bg-white font-bold cursor-pointer hover:bg-slate-50"
-                          >
-                            -
-                          </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          type="button"
+                          onClick={() => removerAulaPorData(item.data)}
+                          className="w-9 h-9 rounded-xl border border-slate-200 bg-white font-bold cursor-pointer hover:bg-slate-50"
+                        >
+                          -
+                        </button>
 
-                          <span className="font-extrabold w-5 text-center">
-                            {item.aulas}
-                          </span>
+                        <span className="font-extrabold w-5 text-center">
+                          {item.aulas}
+                        </span>
 
-                          <button
-                            onClick={() => adicionarAulaPorData(item.data)}
-                            className="w-9 h-9 rounded-xl border border-blue-200 bg-white text-blue-600 font-bold cursor-pointer hover:bg-blue-50"
-                          >
-                            +
-                          </button>
-                        </div>
-                      )}
+                        <button
+                          type="button"
+                          onClick={() => adicionarAulaPorData(item.data)}
+                          className="w-9 h-9 rounded-xl border border-blue-200 bg-white text-blue-600 font-bold cursor-pointer hover:bg-blue-50"
+                        >
+                          +
+                        </button>
+                      </div>
                     </div>
                   </div>
                 ))}
@@ -342,7 +451,8 @@ export default function Calendario({
               <div className="mt-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-slate-700">
                 {tipoPlanejamento === "mensal" ? (
                   <p>
-                    <strong>Período:</strong> {primeiraData} à {ultimaData}
+                    <strong>Período:</strong> {primeiraData}
+                    {datas.length > 1 ? ` à ${ultimaData}` : ""}
                   </p>
                 ) : (
                   <p>
@@ -357,6 +467,7 @@ export default function Calendario({
 
         <div className="grid md:grid-cols-2 gap-3 mt-5">
           <button
+            type="button"
             onClick={onVoltar}
             className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl w-full cursor-pointer font-bold hover:bg-slate-50"
           >
@@ -364,6 +475,7 @@ export default function Calendario({
           </button>
 
           <button
+            type="button"
             onClick={continuar}
             className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-6 py-3 rounded-xl w-full font-bold cursor-pointer shadow-lg hover:scale-[1.01] transition"
           >

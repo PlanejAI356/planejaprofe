@@ -42,6 +42,22 @@ export default function Conteudos({
     )
     .join("\n");
 
+  function mostrarBloqueioPremium(mensagem: string) {
+    setMensagemPremium(mensagem);
+    setMostrarModalPremium(true);
+  }
+
+  async function verificarPermissao() {
+    const permissao = await usarPlanejamentoGratis();
+
+    if (!permissao.permitido) {
+      mostrarBloqueioPremium(permissao.mensagem);
+      return false;
+    }
+
+    return true;
+  }
+
   async function gerarPlanoIA() {
     if (!tema.trim()) {
       alert("Digite o tema geral antes de gerar com IA.");
@@ -50,12 +66,10 @@ export default function Conteudos({
 
     setCarregando(true);
 
-    const permissao = await usarPlanejamentoGratis();
+    const permitido = await verificarPermissao();
 
-    if (!permissao.permitido) {
+    if (!permitido) {
       setCarregando(false);
-      setMensagemPremium(permissao.mensagem);
-      setMostrarModalPremium(true);
       return;
     }
 
@@ -67,9 +81,11 @@ export default function Conteudos({
         },
         body: JSON.stringify({
           tipo: "temas",
-          tema,
+          tema: tema.trim(),
           aulas: textoAulas,
-          etapa: localStorage.getItem("etapaEnsino") || "Ensino Fundamental",
+          tipoPlanejamento: "aula",
+          etapa:
+            localStorage.getItem("etapaEnsino") || "Ensino Fundamental",
           serie: localStorage.getItem("serieSelecionada") || "6º ano",
           disciplina:
             localStorage.getItem("disciplinaSelecionada") || "Ciências",
@@ -78,24 +94,110 @@ export default function Conteudos({
 
       const dados = await resposta.json();
 
-      setResultadoIA(dados.texto);
-      localStorage.setItem("temasPlano", dados.texto);
+      if (!resposta.ok) {
+        throw new Error(dados?.erro || "Não foi possível gerar os temas.");
+      }
+
+      const textoGerado = dados?.texto?.trim();
+
+      if (!textoGerado) {
+        throw new Error("A IA não retornou os temas das aulas.");
+      }
+
+      setResultadoIA(textoGerado);
+      localStorage.setItem("temasPlano", textoGerado);
     } catch (erro) {
-      alert("Erro ao gerar plano");
+      console.error(erro);
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Ocorreu um erro ao gerar os temas."
+      );
+    } finally {
+      setCarregando(false);
+    }
+  }
+
+  async function gerarConteudosMensaisIA() {
+    if (!tema.trim()) {
+      alert(
+        "Digite um ou mais temas no campo Tema geral antes de gerar os conteúdos."
+      );
+      return;
     }
 
-    setCarregando(false);
+    setCarregando(true);
+
+    const permitido = await verificarPermissao();
+
+    if (!permitido) {
+      setCarregando(false);
+      return;
+    }
+
+    try {
+      const resposta = await fetch("/api/gerar-plano", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "conteudos_mensais",
+          tema: tema.trim(),
+          tipoPlanejamento: "mensal",
+          etapa:
+            localStorage.getItem("etapaEnsino") || "Ensino Fundamental",
+          serie: localStorage.getItem("serieSelecionada") || "6º ano",
+          disciplina:
+            localStorage.getItem("disciplinaSelecionada") || "Ciências",
+        }),
+      });
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados?.erro || "Não foi possível gerar os conteúdos do mês."
+        );
+      }
+
+      const textoGerado = dados?.texto?.trim();
+
+      if (!textoGerado) {
+        throw new Error("A IA não retornou os conteúdos do mês.");
+      }
+
+      setResultadoIA(textoGerado);
+
+      localStorage.setItem("temasPlano", textoGerado);
+      localStorage.setItem("conteudosMensais", textoGerado);
+    } catch (erro) {
+      console.error(erro);
+
+      alert(
+        erro instanceof Error
+          ? erro.message
+          : "Ocorreu um erro ao gerar os conteúdos mensais."
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   function continuar() {
     if (tipoPlanejamento === "mensal") {
       if (!resultadoIA.trim()) {
-        alert("Digite os conteúdos do mês antes de continuar.");
+        alert(
+          "Digite ou gere os conteúdos do mês antes de continuar."
+        );
         return;
       }
 
       localStorage.setItem("temasPlano", resultadoIA);
+      localStorage.setItem("conteudosMensais", resultadoIA);
       localStorage.setItem("tipoPlanejamento", "mensal");
+
       onContinuar();
       return;
     }
@@ -109,6 +211,7 @@ export default function Conteudos({
 
     localStorage.setItem("temasPlano", textoParaSalvar);
     localStorage.setItem("tipoPlanejamento", "aula");
+
     onContinuar();
   }
 
@@ -116,22 +219,25 @@ export default function Conteudos({
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
       {mostrarModalPremium && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl border border-slate-100 text-center">
+          <div className="w-full max-w-md rounded-3xl border border-slate-100 bg-white p-6 text-center shadow-2xl">
             <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-green-100 text-3xl">
               🚀
             </div>
 
-            <h2 className="text-2xl font-extrabold text-slate-900 mb-3">
+            <h2 className="mb-3 text-2xl font-extrabold text-slate-900">
               Limite do Plano Gratuito
             </h2>
 
-            <p className="text-slate-600 mb-5">
+            <p className="mb-5 text-slate-600">
               {mensagemPremium ||
                 "Você utilizou seus 3 planejamentos gratuitos. Assine o Plano Premium para continuar."}
             </p>
 
-            <div className="bg-slate-50 rounded-2xl p-4 text-left text-sm text-slate-700 mb-5">
-              <p className="font-bold mb-2">O Plano Premium inclui:</p>
+            <div className="mb-5 rounded-2xl bg-slate-50 p-4 text-left text-sm text-slate-700">
+              <p className="mb-2 font-bold">
+                O Plano Premium inclui:
+              </p>
+
               <p>✅ Planejamentos com IA</p>
               <p>✅ Planos completos e editáveis</p>
               <p>✅ Mais praticidade para sua rotina</p>
@@ -140,6 +246,7 @@ export default function Conteudos({
 
             <div className="grid grid-cols-2 gap-3">
               <button
+                type="button"
                 onClick={() => setMostrarModalPremium(false)}
                 className="rounded-xl border border-slate-200 bg-white px-4 py-3 font-bold text-slate-700 hover:bg-slate-50"
               >
@@ -147,10 +254,11 @@ export default function Conteudos({
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   window.location.href = "/assinatura";
                 }}
-                className="rounded-xl bg-gradient-to-r from-blue-600 to-green-600 px-4 py-3 font-bold text-white shadow-lg hover:scale-[1.02] transition"
+                className="rounded-xl bg-gradient-to-r from-blue-600 to-green-600 px-4 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02]"
               >
                 Assinar Agora
               </button>
@@ -159,49 +267,57 @@ export default function Conteudos({
         </div>
       )}
 
-      <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
+      <div className="mx-auto max-w-5xl rounded-[32px] border border-slate-100 bg-white p-5 shadow-xl md:p-6">
         <BarraProgresso etapaAtual="conteudos" />
 
-        <label className="font-bold block mb-2 text-slate-800">
+        <label className="mb-2 block font-bold text-slate-800">
           Tema geral:
         </label>
 
         <input
           type="text"
-          placeholder="Ex: Água"
+          placeholder={
+            tipoPlanejamento === "mensal"
+              ? "Ex.: Água, preservação ambiental e tratamento da água"
+              : "Ex.: Água"
+          }
           value={tema}
           onChange={(e) => setTema(e.target.value)}
-          className="w-full rounded-2xl border border-slate-200 px-5 py-4 text-lg shadow-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-100 outline-none transition mb-5"
+          className="mb-5 w-full rounded-2xl border border-slate-200 px-5 py-4 text-lg shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
         />
 
         {tipoPlanejamento === "aula" && (
           <>
-            <div className="grid grid-cols-2 gap-3 mb-6">
+            <div className="mb-6 grid grid-cols-1 gap-3 md:grid-cols-2">
               <button
+                type="button"
                 onClick={() => {
                   setModo("ia");
                   gerarPlanoIA();
                 }}
                 disabled={carregando}
-                className="bg-gradient-to-r from-blue-600 to-green-600 shadow-lg hover:scale-[1.02] transition-all text-white p-3 rounded-xl font-semibold cursor-pointer disabled:opacity-60"
+                className="cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-green-600 p-3 font-semibold text-white shadow-lg transition-all hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {carregando ? "Gerando..." : "✨ Destrinchar com IA"}
+                {carregando
+                  ? "Gerando..."
+                  : "✨ Destrinchar com IA"}
               </button>
 
               <button
+                type="button"
                 onClick={() => {
                   setModo("manual");
                   setResultadoIA(textoAulas);
                 }}
-                className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm hover:shadow-md transition-all p-3 rounded-xl font-semibold cursor-pointer"
+                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md"
               >
                 ✍️ Informar os temas das aulas
               </button>
             </div>
 
             {modo && (
-              <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 shadow-sm">
-                <h2 className="font-bold mb-3 text-slate-800">
+              <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 shadow-sm">
+                <h2 className="mb-3 font-bold text-slate-800">
                   Conteúdos das aulas
                 </h2>
 
@@ -209,10 +325,13 @@ export default function Conteudos({
                   value={resultadoIA || textoAulas}
                   onChange={(e) => {
                     setResultadoIA(e.target.value);
-                    localStorage.setItem("temasPlano", e.target.value);
+                    localStorage.setItem(
+                      "temasPlano",
+                      e.target.value
+                    );
                   }}
                   placeholder="AULA 01 - 06/07/2026 - Tema da aula"
-                  className="w-full rounded-2xl border border-slate-200 p-4 min-h-[260px] resize-none outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 />
               </div>
             )}
@@ -220,34 +339,64 @@ export default function Conteudos({
         )}
 
         {tipoPlanejamento === "mensal" && (
-          <div className="bg-slate-50 border border-slate-100 rounded-3xl p-5 shadow-sm">
-            <h2 className="font-bold mb-3 text-slate-800">
-              Conteúdos do mês
-            </h2>
+          <div className="rounded-3xl border border-slate-100 bg-slate-50 p-5 shadow-sm">
+            <div className="mb-4 flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <h2 className="font-bold text-slate-800">
+                  Conteúdos do mês
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Digite um ou mais temas acima e peça sugestões à IA.
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={gerarConteudosMensaisIA}
+                disabled={carregando}
+                className="shrink-0 cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-green-600 px-5 py-3 font-bold text-white shadow-lg transition hover:scale-[1.02] disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {carregando
+                  ? "Gerando conteúdos..."
+                  : "✨ Gerar conteúdos com IA"}
+              </button>
+            </div>
 
             <textarea
               value={resultadoIA}
               onChange={(e) => {
                 setResultadoIA(e.target.value);
-                localStorage.setItem("temasPlano", e.target.value);
+
+                localStorage.setItem(
+                  "temasPlano",
+                  e.target.value
+                );
+
+                localStorage.setItem(
+                  "conteudosMensais",
+                  e.target.value
+                );
               }}
-              placeholder="Digite ou edite os conteúdos do mês..."
-              className="w-full rounded-2xl border border-slate-200 p-4 min-h-[260px] resize-none outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              placeholder="Os conteúdos sugeridos pela IA aparecerão aqui. Você poderá editar o texto antes de continuar."
+              className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
             />
           </div>
         )}
 
-        <div className="grid md:grid-cols-2 gap-3 mt-6">
+        <div className="mt-6 grid gap-3 md:grid-cols-2">
           <button
+            type="button"
             onClick={onVoltar}
-            className="bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm p-3 rounded-xl w-full cursor-pointer font-semibold"
+            className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
           >
             Voltar para o Calendário
           </button>
 
           <button
+            type="button"
             onClick={continuar}
-            className="bg-gradient-to-r from-blue-600 to-green-600 shadow-lg hover:scale-[1.01] transition-all text-white p-3 rounded-xl w-full font-semibold cursor-pointer"
+            className="w-full cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-green-600 p-3 font-semibold text-white shadow-lg transition-all hover:scale-[1.01]"
           >
             Continuar para o Plano Completo
           </button>
