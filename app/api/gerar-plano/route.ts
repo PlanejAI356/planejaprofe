@@ -78,8 +78,11 @@ REGRAS OBRIGATÓRIAS:
 
 - Responder somente em português do Brasil.
 - Utilizar exatamente os temas informados pelo professor como base.
-- Desenvolver os conteúdos do mais simples para o mais complexo.
-- Gerar apenas os conteúdos do mês.
+- Gerar somente de 4 a 5 conteúdos para o mês.
+- Cada conteúdo deve ser amplo o suficiente para ser trabalhado em várias aulas.
+- Organizar os conteúdos do mais simples para o mais complexo.
+- Evitar dividir o tema em muitos tópicos pequenos.
+- Não repetir conteúdos semelhantes.
 - Um conteúdo por linha.
 - Não escrever "Aula 01".
 - Não escrever datas.
@@ -90,20 +93,16 @@ REGRAS OBRIGATÓRIAS:
 - Não gerar referências.
 - Não fazer introdução.
 - Não escrever explicações.
+- Não usar marcadores ou numeração.
 - Não escrever "Hello" nem qualquer texto em inglês.
 
 EXEMPLO:
 
-Classes de palavras
-Substantivos
-Adjetivos
-Artigos
-Pronomes
-Verbos
-Advérbios
-Preposições
-Conjunções
-Interjeições
+Conceito e função dos verbos
+Verbos de ação e de estado
+Tempos verbais: presente, passado e futuro
+Conjugação verbal e uso em frases
+Verbos regulares e irregulares
 `;
 }
     if (tipo === "objetivos") {
