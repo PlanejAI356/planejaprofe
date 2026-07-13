@@ -215,14 +215,18 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 )}
 
             {aba !== "temas" && (
-              <button
-                onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
-                className="bg-amber-500 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-sm hover:bg-amber-600"
-              >
-               ✨ Meu estilo de aula
-              </button>
-            )}
-
+  <button
+    type="button"
+    onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
+    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+      mostrarSugestoes
+        ? "border-blue-500 bg-blue-50 text-blue-700"
+        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+    }`}
+  >
+    🎯 Meu estilo
+  </button>
+)}
             <button
               onClick={copiarTexto}
               className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
@@ -242,52 +246,58 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
           {aba !== "temas" && mostrarSugestoes && (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-              <h3 className="font-bold text-amber-700 mb-2">
-                ✨ Meu estilo de aula
-              </h3>
+              <h3 className="mb-1 font-bold text-blue-700">
+  🎯 Meu estilo
+</h3>
 
-              <p className="text-sm text-slate-600 mb-3">
-                Escreva aqui como o professor quer que essa parte seja gerada. Esse estilo será usado na aba atual.
-              </p>
+<p className="mb-1 font-semibold text-slate-700">
+  Como você quer que esta parte do plano seja gerada?
+</p>
+
+<p className="mb-3 text-sm text-slate-600">
+  Conte à IA como você prefere que esta parte do plano seja elaborada.
+</p>
 
               <textarea
-                value={sugestoesMetodologia}
-                onChange={(e) => setSugestoesMetodologia(e.target.value)}
-                placeholder={
-  aba === "objetivos"
-    ? `Exemplo:
+  value={sugestoesMetodologia}
+  onChange={(e) => setSugestoesMetodologia(e.target.value)}
+  placeholder={
+    aba === "objetivos"
+      ? `Exemplo:
 Quero objetivos claros e específicos.
 Utilize apenas o código da BNCC.
 Evite repetir os mesmos verbos.
 Relacione os objetivos com o tema da aula.`
 
-    : aba === "recursos"
-    ? `Exemplo:
+      : aba === "recursos"
+      ? `Exemplo:
 Utilize quadro, livro didático, caderno e materiais de baixo custo.
 Evite recursos tecnológicos quando não forem necessários.`
 
-    : aba === "metodologia"
-    ? `Exemplo:
+      : aba === "metodologia"
+      ? `Exemplo:
 Sempre começo com perguntas norteadoras.
 Faço uma conversa inicial.
 Utilizo o livro didático.
 Finalizo com atividade no caderno.`
 
-    : aba === "avaliacao"
-    ? `Exemplo:
+      : aba === "avaliacao"
+      ? `Exemplo:
 Quero uma avaliação realizada durante a aula.
 Avaliar participação, interesse e realização das atividades.
 Não repetir o conteúdo da aula.`
 
-    : aba === "referencias"
-    ? `Exemplo:
+      : aba === "referencias"
+      ? `Exemplo:
 Utilize a BNCC, o livro didático adotado pela escola e documentos oficiais.`
 
-    : `Exemplo:
+      : `Exemplo:
 Organize as atividades para casa em 4 semanas.
 Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
-}
-              />
+  }
+  className="mt-2 w-full min-h-[180px] resize-y rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+/>
+              
             </div>
           )}
 
