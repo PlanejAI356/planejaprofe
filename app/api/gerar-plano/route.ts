@@ -56,7 +56,56 @@ AULA 02 | DATA | TEMA ESPECÍFICO
 AULA 03 | DATA | TEMA ESPECÍFICO
 `;
     }
+if (tipo === "conteudos_mensais") {
+  comando = `
+Você é um especialista em elaboração de planejamentos escolares.
 
+Crie apenas os conteúdos de um planejamento mensal.
+
+Tema(s) informado(s):
+${tema}
+
+Etapa:
+${etapaEnsino}
+
+Série:
+${serie}
+
+Disciplina:
+${disciplina}
+
+REGRAS OBRIGATÓRIAS:
+
+- Responder somente em português do Brasil.
+- Utilizar exatamente os temas informados pelo professor como base.
+- Desenvolver os conteúdos do mais simples para o mais complexo.
+- Gerar apenas os conteúdos do mês.
+- Um conteúdo por linha.
+- Não escrever "Aula 01".
+- Não escrever datas.
+- Não gerar objetivos.
+- Não gerar habilidades.
+- Não gerar metodologia.
+- Não gerar avaliação.
+- Não gerar referências.
+- Não fazer introdução.
+- Não escrever explicações.
+- Não escrever "Hello" nem qualquer texto em inglês.
+
+EXEMPLO:
+
+Classes de palavras
+Substantivos
+Adjetivos
+Artigos
+Pronomes
+Verbos
+Advérbios
+Preposições
+Conjunções
+Interjeições
+`;
+}
     if (tipo === "objetivos") {
       if (ehCreche && tipoPlanejamento === "mensal") {
         comando = `
