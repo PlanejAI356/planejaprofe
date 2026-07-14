@@ -36,11 +36,17 @@ export default function Inicio({ onComecar }: InicioProps) {
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-3">
         <header className="flex h-14 shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
-            <img
-              src="/logo-planejai.png"
-              alt="Logo PlanejAI"
-              className="h-9 w-9 object-contain"
-            />
+            <video
+  src="/video-planejai.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  controls={false}
+  className="h-auto max-h-[240px] w-full rounded-[22px] object-contain sm:max-h-[330px]"
+>
+  Seu navegador não suporta vídeo.
+</video>
 
             <span className="text-xl font-bold text-slate-900">
               Planej<span className="text-green-600">AI</span>
@@ -82,8 +88,12 @@ export default function Inicio({ onComecar }: InicioProps) {
                 onClick={iniciarTeste}
                 className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-3 text-base font-bold text-white shadow-lg transition hover:scale-[1.02]"
               >
-                🚀 Testar agora
+                🚀 Testar grátis
               </button>
+
+              <p className="text-center text-xs font-medium text-slate-500">
+                Crie seu primeiro plano completo sem cadastro.
+              </p>
 
               <button
                 type="button"
@@ -151,6 +161,47 @@ export default function Inicio({ onComecar }: InicioProps) {
             </div>
           </div>
         </section>
+
+        <section className="rounded-3xl bg-white border border-slate-200 shadow-sm p-6 mb-4">
+          <h2 className="text-2xl font-bold text-center text-slate-900">
+            Como funciona?
+          </h2>
+
+          <div className="mt-6 grid gap-4 md:grid-cols-4">
+            <div className="text-center">
+              <div className="text-3xl">1️⃣</div>
+              <h3 className="mt-2 font-bold">Escolha a etapa</h3>
+              <p className="text-sm text-slate-500">
+                Educação Infantil, Fundamental ou Ensino Médio.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-3xl">2️⃣</div>
+              <h3 className="mt-2 font-bold">Informe o tema</h3>
+              <p className="text-sm text-slate-500">
+                Personalize o planejamento com suas sugestões.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-3xl">3️⃣</div>
+              <h3 className="mt-2 font-bold">A IA cria o plano</h3>
+              <p className="text-sm text-slate-500">
+                Objetivos, BNCC, metodologia e avaliação.
+              </p>
+            </div>
+
+            <div className="text-center">
+              <div className="text-3xl">4️⃣</div>
+              <h3 className="mt-2 font-bold">Edite e exporte</h3>
+              <p className="text-sm text-slate-500">
+                Ajuste tudo do seu jeito e exporte em PDF.
+              </p>
+            </div>
+          </div>
+        </section>
+
 
         <p className="shrink-0 pb-1 text-center text-xs text-slate-500">
           🔒 Seus dados estão protegidos.
