@@ -36,17 +36,11 @@ export default function Inicio({ onComecar }: InicioProps) {
       <div className="mx-auto flex min-h-screen max-w-6xl flex-col px-4 py-3">
         <header className="flex h-14 shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
-            <video
-  src="/video-planejai.mp4"
-  autoPlay
-  muted
-  loop
-  playsInline
-  controls={false}
-  className="h-auto max-h-[240px] w-full rounded-[22px] object-contain sm:max-h-[330px]"
->
-  Seu navegador não suporta vídeo.
-</video>
+            <img
+              src="/logo-planejai.png"
+              alt="Logo PlanejAI"
+              className="h-9 w-9 object-contain"
+            />
 
             <span className="text-xl font-bold text-slate-900">
               Planej<span className="text-green-600">AI</span>
@@ -64,9 +58,9 @@ export default function Inicio({ onComecar }: InicioProps) {
           </button>
         </header>
 
-       <section className="grid flex-1 items-center gap-5 py-4 md:grid-cols-[0.95fr_1.05fr]">
+        <section className="grid flex-1 items-center gap-6 py-5 md:grid-cols-[0.9fr_1.1fr]">
           <div>
-            <div className="mb-2 inline-flex items-center rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700">
+            <div className="mb-3 inline-flex items-center rounded-full bg-green-100 px-3 py-1.5 text-xs font-bold text-green-700">
               ✨ Planejamento com Inteligência Artificial
             </div>
 
@@ -78,11 +72,10 @@ export default function Inicio({ onComecar }: InicioProps) {
             </h1>
 
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-slate-600 md:text-base">
-              Teste o PlanejAI e veja como a Inteligência Artificial pode
-              facilitar o seu planejamento.
+              Planejamentos personalizados com IA, alinhados à BNCC e do seu jeito.
             </p>
 
-            <div className="mt-4 flex max-w-md flex-col gap-2">
+            <div className="mt-5 flex max-w-md flex-col gap-2">
               <button
                 type="button"
                 onClick={iniciarTeste}
@@ -108,100 +101,21 @@ export default function Inicio({ onComecar }: InicioProps) {
           </div>
 
           <div className="flex min-h-0 items-center justify-center">
-            <div className="w-full max-w-xl overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-xl">
-              <img
-                src="/hero-planejai.png"
-                alt="Apresentação do PlanejAI"
-                className="h-auto max-h-[240px] w-full rounded-[22px] object-contain sm:max-h-[330px]"
-              />
+            <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-xl">
+              <video
+  src="/video-planejai.mp4"
+  autoPlay
+  muted
+  loop
+  playsInline
+  preload="metadata"
+  className="aspect-video w-full rounded-[22px] bg-slate-100 object-cover"
+>
+  Seu navegador não suporta vídeo.
+</video>
             </div>
           </div>
-        </section>
-
-        <section className="grid gap-2.5 pb-3 sm:grid-cols-3">
-          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-2xl">📖</div>
-
-            <div>
-              <h3 className="font-bold text-slate-900">
-                Planos alinhados à BNCC
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Objetivos e habilidades organizados.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-2xl">⚡</div>
-
-            <div>
-              <h3 className="font-bold text-slate-900">
-                Geração rápida
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Planejamento em poucos minutos.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2.5 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
-            <div className="text-2xl">📄</div>
-
-            <div>
-              <h3 className="font-bold text-slate-900">
-                Exportação do plano
-              </h3>
-
-              <p className="text-sm text-slate-500">
-                Organize e exporte o planejamento.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        <section className="rounded-3xl bg-white border border-slate-200 shadow-sm p-6 mb-4">
-          <h2 className="text-2xl font-bold text-center text-slate-900">
-            Como funciona?
-          </h2>
-
-          <div className="mt-6 grid gap-4 md:grid-cols-4">
-            <div className="text-center">
-              <div className="text-3xl">1️⃣</div>
-              <h3 className="mt-2 font-bold">Escolha a etapa</h3>
-              <p className="text-sm text-slate-500">
-                Educação Infantil, Fundamental ou Ensino Médio.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-3xl">2️⃣</div>
-              <h3 className="mt-2 font-bold">Informe o tema</h3>
-              <p className="text-sm text-slate-500">
-                Personalize o planejamento com suas sugestões.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-3xl">3️⃣</div>
-              <h3 className="mt-2 font-bold">A IA cria o plano</h3>
-              <p className="text-sm text-slate-500">
-                Objetivos, BNCC, metodologia e avaliação.
-              </p>
-            </div>
-
-            <div className="text-center">
-              <div className="text-3xl">4️⃣</div>
-              <h3 className="mt-2 font-bold">Edite e exporte</h3>
-              <p className="text-sm text-slate-500">
-                Ajuste tudo do seu jeito e exporte em PDF.
-              </p>
-            </div>
-          </div>
-        </section>
-
+               </section>
 
         <p className="shrink-0 pb-1 text-center text-xs text-slate-500">
           🔒 Seus dados estão protegidos.
