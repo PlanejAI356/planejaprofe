@@ -29,28 +29,15 @@ export default function Home() {
   useEffect(() => {
     async function verificarLogin() {
       const { data } = await supabase.auth.getSession();
+      const logado = Boolean(data.session);
 
-      if (data.session) {
-        setUsuarioLogado(true);
+      setUsuarioLogado(logado);
 
-        // Quem já está cadastrado entra direto no PlanejAI.
+      if (logado) {
         localStorage.removeItem("testeGratisConcluido");
-        setEtapa("configuracao");
-        setCarregandoAuth(false);
-        return;
       }
 
-      setUsuarioLogado(false);
-
-      const testeConcluido =
-        localStorage.getItem("testeGratisConcluido") === "true";
-
-      if (testeConcluido) {
-        window.location.replace("/cadastro");
-        return;
-      }
-
-      // Quem não está cadastrado vê primeiro a tela de apresentação.
+      // Sempre abre na página inicial.
       setEtapa("inicio");
       setCarregandoAuth(false);
     }
@@ -74,27 +61,37 @@ export default function Home() {
       "etapaEnsino",
       "tipoPlanejamento",
       "turmaInfantilDetalhe",
+      "datasSelecionadas",
+      "quantidadeAulas",
+      "periodoSelecionado",
+      "mesSelecionado",
+      "nomeMes",
+      "planoAtualContabilizado",
     ];
 
     chaves.forEach((chave) => localStorage.removeItem(chave));
 
+    // Não apagar "referenciasSalvasProfessor",
+    // pois essas referências devem permanecer para os próximos planos.
+
+    setAno("2026");
     setDatasSelecionadas([]);
     setMesSelecionado(null);
     setNomeMes("");
     setTipoPlanejamento("");
   }
 
-  function iniciarTesteGratis() {
-    limparPlanoAnterior();
-    setEtapa("configuracao");
-  }
-
-  function mudarEtapa(novaEtapa: string) {
-    if (novaEtapa === "configuracao") {
-      limparPlanoAnterior();
+  function iniciarPlano() {
+    if (
+      !usuarioLogado &&
+      localStorage.getItem("testeGratisConcluido") === "true"
+    ) {
+      window.location.href = "/cadastro";
+      return;
     }
 
-    setEtapa(novaEtapa);
+    limparPlanoAnterior();
+    setEtapa("configuracao");
   }
 
   function abrirPlanoCompleto() {
@@ -120,67 +117,70 @@ export default function Home() {
 
   async function sair() {
     await supabase.auth.signOut();
-    window.location.href = "/login";
+    window.location.href = "/";
   }
 
   if (carregandoAuth) {
     return (
-      <main className="min-h-screen flex items-center justify-center bg-slate-50">
-        <p className="text-slate-600 font-semibold">
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="font-semibold text-slate-600">
           Carregando PlanejAI...
         </p>
       </main>
     );
   }
 
-  if (etapa === "inicio" && !usuarioLogado) {
-    return <Inicio onComecar={iniciarTesteGratis} />;
+  // A página inicial aparece sempre, inclusive para usuários cadastrados.
+  if (etapa === "inicio") {
+    return <Inicio onComecar={iniciarPlano} />;
   }
 
   return (
     <main>
       <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
-  {usuarioLogado ? (
-    <TopoProfessor />
-  ) : (
-    <div className="flex items-center gap-2">
-      <img
-        src="/logo-planejai.png"
-        alt="PlanejAI"
-        className="h-9 w-9 object-contain"
-      />
+        {usuarioLogado ? (
+          <TopoProfessor />
+        ) : (
+          <div className="flex items-center gap-2">
+            <img
+              src="/logo-planejai.png"
+              alt="PlanejAI"
+              className="h-9 w-9 object-contain"
+            />
 
-      <span className="text-lg font-extrabold text-slate-900">
-        Planej<span className="text-green-600">AI</span>
-      </span>
-    </div>
-  )}
+            <span className="text-lg font-extrabold text-slate-900">
+              Planej<span className="text-green-600">AI</span>
+            </span>
+          </div>
+        )}
 
-  {usuarioLogado ? (
-    <button
-      onClick={sair}
-      className="shrink-0 rounded-lg border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50"
-    >
-      Sair
-    </button>
-  ) : (
-    <button
-      onClick={() => {
-        window.location.href = "/login";
-      }}
-      className="shrink-0 rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 sm:text-sm"
-    >
-      Já tenho conta
-    </button>
-  )}
-</div>
+        {usuarioLogado ? (
+          <button
+            type="button"
+            onClick={sair}
+            className="shrink-0 rounded-lg border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50"
+          >
+            Sair
+          </button>
+        ) : (
+          <button
+            type="button"
+            onClick={() => {
+              window.location.href = "/login";
+            }}
+            className="shrink-0 rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 sm:text-sm"
+          >
+            Já tenho conta
+          </button>
+        )}
+      </div>
 
       {!usuarioLogado && (
         <div className="border-b border-green-200 bg-green-50 px-3 py-2 text-center">
-  <p className="text-sm font-semibold text-green-800">
-    🎁 Crie seu primeiro plano sem cadastro.
-  </p>
-</div>
+          <p className="text-sm font-semibold text-green-800">
+            🎁 Crie seu primeiro plano sem cadastro.
+          </p>
+        </div>
       )}
 
       {etapa === "configuracao" && (
@@ -193,17 +193,11 @@ export default function Home() {
           setNomeMes={setNomeMes}
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
-          onVoltar={() => {
-            if (usuarioLogado) {
-              mudarEtapa("configuracao");
-            } else {
-              setEtapa("inicio");
-            }
-          }}
+          onVoltar={() => setEtapa("inicio")}
           onContinuar={() => {
-  setDatasSelecionadas([]);
-  setEtapa("calendario");
-}}
+            setDatasSelecionadas([]);
+            setEtapa("calendario");
+          }}
         />
       )}
 
@@ -238,9 +232,7 @@ export default function Home() {
       )}
 
       {etapa === "exportacao" && (
-        <Exportacao
-          onVoltar={() => mudarEtapa("planoCompleto")}
-        />
+        <Exportacao onVoltar={() => setEtapa("planoCompleto")} />
       )}
     </main>
   );
