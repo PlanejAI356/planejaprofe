@@ -29,15 +29,27 @@ export default function Home() {
   useEffect(() => {
     async function verificarLogin() {
       const { data } = await supabase.auth.getSession();
-      const logado = Boolean(data.session);
 
-      setUsuarioLogado(logado);
-
-      if (logado) {
+      if (data.session) {
+        setUsuarioLogado(true);
         localStorage.removeItem("testeGratisConcluido");
+
+        // Usuário que acabou de entrar vai para a configuração do plano.
+        setEtapa("configuracao");
+        setCarregandoAuth(false);
+        return;
       }
 
-      // Sempre abre na página inicial.
+      setUsuarioLogado(false);
+
+      const testeConcluido =
+        localStorage.getItem("testeGratisConcluido") === "true";
+
+      if (testeConcluido) {
+        window.location.replace("/cadastro");
+        return;
+      }
+
       setEtapa("inicio");
       setCarregandoAuth(false);
     }
@@ -71,9 +83,7 @@ export default function Home() {
 
     chaves.forEach((chave) => localStorage.removeItem(chave));
 
-    // Não apagar "referenciasSalvasProfessor",
-    // pois essas referências devem permanecer para os próximos planos.
-
+    // Mantém as referências mais usadas do professor.
     setAno("2026");
     setDatasSelecionadas([]);
     setMesSelecionado(null);
@@ -81,17 +91,17 @@ export default function Home() {
     setTipoPlanejamento("");
   }
 
-  function iniciarPlano() {
-    if (
-      !usuarioLogado &&
-      localStorage.getItem("testeGratisConcluido") === "true"
-    ) {
-      window.location.href = "/cadastro";
-      return;
-    }
-
+  function iniciarTesteGratis() {
     limparPlanoAnterior();
     setEtapa("configuracao");
+  }
+
+  function mudarEtapa(novaEtapa: string) {
+    if (novaEtapa === "configuracao") {
+      limparPlanoAnterior();
+    }
+
+    setEtapa(novaEtapa);
   }
 
   function abrirPlanoCompleto() {
@@ -130,9 +140,8 @@ export default function Home() {
     );
   }
 
-  // A página inicial aparece sempre, inclusive para usuários cadastrados.
-  if (etapa === "inicio") {
-    return <Inicio onComecar={iniciarPlano} />;
+  if (etapa === "inicio" && !usuarioLogado) {
+    return <Inicio onComecar={iniciarTesteGratis} />;
   }
 
   return (
@@ -193,7 +202,13 @@ export default function Home() {
           setNomeMes={setNomeMes}
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
-          onVoltar={() => setEtapa("inicio")}
+          onVoltar={() => {
+            if (usuarioLogado) {
+              mudarEtapa("configuracao");
+            } else {
+              setEtapa("inicio");
+            }
+          }}
           onContinuar={() => {
             setDatasSelecionadas([]);
             setEtapa("calendario");
