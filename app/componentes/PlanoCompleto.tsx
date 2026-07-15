@@ -285,25 +285,27 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     🎯 Meu estilo
   </button>
 )}
-{aba === "referencias" && (
-  <button
-    type="button"
-    onClick={() => setMostrarReferencias(!mostrarReferencias)}
-    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
-      mostrarReferencias
-        ? "border-blue-500 bg-blue-50 text-blue-700"
-        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
-    }`}
-  >
-    📚 Minhas referências
-  </button>
-)}
+
             <button
               onClick={copiarTexto}
               className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
             >
               📋 Copiar
             </button>
+
+            {aba === "referencias" && (
+              <button
+                type="button"
+                onClick={() => setMostrarReferencias(!mostrarReferencias)}
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+                  mostrarReferencias
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+                }`}
+              >
+                {mostrarReferencias ? "🙈 Esconder referências" : "📚 Minhas referências"}
+              </button>
+            )}
 
             {aba !== "temas" && (
               <button
@@ -452,7 +454,7 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
             />
           )}
 
-          {!ehCreche && aba === "referencias" && (
+          {!ehCreche && aba === "referencias" && mostrarReferencias && (
             <div className="space-y-4">
               <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
                 <h3 className="font-bold text-blue-800">
