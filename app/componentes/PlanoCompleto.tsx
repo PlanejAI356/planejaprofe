@@ -19,6 +19,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   const [referencias, setReferencias] = useState("");
   const [atividade, setAtividade] = useState("");
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
+  const [mostrarReferencias, setMostrarReferencias] = useState(false);
   const [sugestoesMetodologia, setSugestoesMetodologia] = useState("");
   const [ehCreche, setEhCreche] = useState(false);
   const [referenciasSalvasProfessor, setReferenciasSalvasProfessor] = useState("");
@@ -282,6 +283,19 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     }`}
   >
     🎯 Meu estilo
+  </button>
+)}
+{aba === "referencias" && (
+  <button
+    type="button"
+    onClick={() => setMostrarReferencias(!mostrarReferencias)}
+    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+      mostrarReferencias
+        ? "border-blue-500 bg-blue-50 text-blue-700"
+        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+    }`}
+  >
+    📚 Minhas referências
   </button>
 )}
             <button
