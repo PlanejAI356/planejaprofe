@@ -102,13 +102,12 @@ export default function Inicio({ onComecar }: InicioProps) {
 
           <div className="flex min-h-0 items-center justify-center">
             <div className="w-full max-w-2xl overflow-hidden rounded-[28px] border border-slate-200 bg-white p-2 shadow-xl">
-              <video
+             <video
   src="/video-planejai.mp4"
   autoPlay
   muted
   loop
   playsInline
-  controls
   className="w-full h-auto rounded-[22px]"
 />
             </div>
