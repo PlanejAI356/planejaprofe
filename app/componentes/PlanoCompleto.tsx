@@ -285,27 +285,25 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     🎯 Meu estilo
   </button>
 )}
-
+{aba === "referencias" && (
+  <button
+    type="button"
+    onClick={() => setMostrarReferencias(!mostrarReferencias)}
+    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+      mostrarReferencias
+        ? "border-blue-500 bg-blue-50 text-blue-700"
+        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+    }`}
+  >
+    📚 Minhas referências
+  </button>
+)}
             <button
               onClick={copiarTexto}
               className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
             >
               📋 Copiar
             </button>
-
-            {aba === "referencias" && (
-              <button
-                type="button"
-                onClick={() => setMostrarReferencias(!mostrarReferencias)}
-                className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
-                  mostrarReferencias
-                    ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
-                }`}
-              >
-                {mostrarReferencias ? "🙈 Esconder referências" : "📚 Minhas referências"}
-              </button>
-            )}
 
             {aba !== "temas" && (
               <button
@@ -454,50 +452,52 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
             />
           )}
 
-          {!ehCreche && aba === "referencias" && mostrarReferencias && (
+          {!ehCreche && aba === "referencias" && (
             <div className="space-y-4">
-              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
-                <h3 className="font-bold text-blue-800">
-                  📚 Minhas referências mais usadas
-                </h3>
+              {mostrarReferencias && (
+                <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                  <h3 className="font-bold text-blue-800">
+                    📚 Minhas referências mais usadas
+                  </h3>
 
-                <p className="mt-1 text-sm text-slate-600">
-                  Salve aqui os livros, documentos e materiais que você costuma
-                  utilizar. Eles ficarão disponíveis nos próximos planejamentos.
-                </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Salve aqui os livros, documentos e materiais que você costuma
+                    utilizar. Eles ficarão disponíveis nos próximos planejamentos.
+                  </p>
 
-                <textarea
-                  value={referenciasSalvasProfessor}
-                  onChange={(e) =>
-                    setReferenciasSalvasProfessor(e.target.value)
-                  }
-                  className="mt-3 min-h-[130px] w-full resize-y rounded-xl border border-blue-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                  placeholder={`Exemplo:
+                  <textarea
+                    value={referenciasSalvasProfessor}
+                    onChange={(e) =>
+                      setReferenciasSalvasProfessor(e.target.value)
+                    }
+                    className="mt-3 min-h-[130px] w-full resize-y rounded-xl border border-blue-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                    placeholder={`Exemplo:
 BRASIL. Base Nacional Comum Curricular (BNCC).
 Livro didático adotado pela escola.
 Materiais complementares utilizados pelo professor.`}
-                />
+                  />
 
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={salvarReferenciasProfessor}
-                    className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
-                  >
-                    💾 Salvar referências
-                  </button>
-
-                  {referenciasSalvasProfessor && (
+                  <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={limparReferenciasProfessor}
-                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                      onClick={salvarReferenciasProfessor}
+                      className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
                     >
-                      🗑️ Limpar salvas
+                      💾 Salvar referências
                     </button>
-                  )}
+
+                    {referenciasSalvasProfessor && (
+                      <button
+                        type="button"
+                        onClick={limparReferenciasProfessor}
+                        className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                      >
+                        🗑️ Limpar salvas
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <textarea
                 value={referencias}
