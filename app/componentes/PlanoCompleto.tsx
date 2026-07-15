@@ -21,6 +21,8 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [sugestoesMetodologia, setSugestoesMetodologia] = useState("");
   const [ehCreche, setEhCreche] = useState(false);
+  const [referenciasSalvasProfessor, setReferenciasSalvasProfessor] = useState("");
+  const [gerando, setGerando] = useState(false);
 
   useEffect(() => {
     setTemasSalvos(ajustarEspacamento(localStorage.getItem("temasPlano") || ""));
@@ -30,6 +32,9 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     setAvaliacao(ajustarEspacamento(localStorage.getItem("avaliacaoPlano") || ""));
     setReferencias(ajustarEspacamento(localStorage.getItem("referenciasPlano") || ""));
     setAtividade(ajustarEspacamento(localStorage.getItem("atividadePlano") || ""));
+    setReferenciasSalvasProfessor(
+      ajustarEspacamento(localStorage.getItem("referenciasSalvasProfessor") || "")
+    );
 
     const turma = localStorage.getItem("turmaInfantilDetalhe") || "";
 
@@ -54,57 +59,104 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 }
 
   async function gerarParte(tipo: string) {
-    const resposta = await fetch("/api/gerar-plano", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        tipo,
-        aulas: temasSalvos,
-        serie:
-          localStorage.getItem("turmaInfantilDetalhe") ||
-          localStorage.getItem("serieSelecionada") ||
-          "",
-        disciplina: localStorage.getItem("disciplinaSelecionada") || "",
-        etapa: localStorage.getItem("etapaEnsino") || "",
-        tipoPlanejamento: localStorage.getItem("tipoPlanejamento") || "aula",
-        estiloAula: sugestoesMetodologia,
-      }),
-    });
+    if (gerando) return;
 
-    const dados = await resposta.json();
-    const textoLimpo = ajustarEspacamento(dados.texto || "");
+    setGerando(true);
 
-    if (tipo === "objetivos") {
-      setObjetivos(textoLimpo);
-      localStorage.setItem("objetivosPlano", textoLimpo);
+    try {
+      const estiloAula =
+        tipo === "referencias" && referenciasSalvasProfessor.trim()
+          ? referenciasSalvasProfessor
+          : sugestoesMetodologia;
+
+      const resposta = await fetch("/api/gerar-plano", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo,
+          aulas: temasSalvos,
+          serie:
+            localStorage.getItem("turmaInfantilDetalhe") ||
+            localStorage.getItem("serieSelecionada") ||
+            "",
+          disciplina: localStorage.getItem("disciplinaSelecionada") || "",
+          etapa: localStorage.getItem("etapaEnsino") || "",
+          tipoPlanejamento:
+            localStorage.getItem("tipoPlanejamento") || "aula",
+          estiloAula,
+        }),
+      });
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível gerar o conteúdo.");
+      }
+
+      const dados = await resposta.json();
+      const textoLimpo = ajustarEspacamento(dados.texto || "");
+
+      if (!textoLimpo) {
+        throw new Error("A IA não retornou conteúdo. Tente novamente.");
+      }
+
+      if (tipo === "objetivos") {
+        setObjetivos(textoLimpo);
+        localStorage.setItem("objetivosPlano", textoLimpo);
+      }
+
+      if (tipo === "recursos") {
+        setRecursos(textoLimpo);
+        localStorage.setItem("recursosPlano", textoLimpo);
+      }
+
+      if (tipo === "metodologia") {
+        setMetodologia(textoLimpo);
+        localStorage.setItem("metodologiaPlano", textoLimpo);
+      }
+
+      if (tipo === "avaliacao") {
+        setAvaliacao(textoLimpo);
+        localStorage.setItem("avaliacaoPlano", textoLimpo);
+      }
+
+      if (tipo === "referencias") {
+        setReferencias(textoLimpo);
+        localStorage.setItem("referenciasPlano", textoLimpo);
+      }
+
+      if (tipo === "atividade") {
+        setAtividade(textoLimpo);
+        localStorage.setItem("atividadePlano", textoLimpo);
+      }
+    } catch (erro) {
+      const mensagem =
+        erro instanceof Error
+          ? erro.message
+          : "Ocorreu um erro ao gerar o conteúdo.";
+
+      alert(mensagem);
+    } finally {
+      setGerando(false);
+    }
+  }
+
+  function salvarReferenciasProfessor() {
+    const textoLimpo = ajustarEspacamento(referenciasSalvasProfessor);
+
+    if (!textoLimpo) {
+      alert("Escreva pelo menos uma referência antes de salvar.");
+      return;
     }
 
-    if (tipo === "recursos") {
-      setRecursos(textoLimpo);
-      localStorage.setItem("recursosPlano", textoLimpo);
-    }
+    setReferenciasSalvasProfessor(textoLimpo);
+    localStorage.setItem("referenciasSalvasProfessor", textoLimpo);
+    alert("Referências salvas para os próximos planejamentos.");
+  }
 
-    if (tipo === "metodologia") {
-      setMetodologia(textoLimpo);
-      localStorage.setItem("metodologiaPlano", textoLimpo);
-    }
-
-    if (tipo === "avaliacao") {
-      setAvaliacao(textoLimpo);
-      localStorage.setItem("avaliacaoPlano", textoLimpo);
-    }
-
-    if (tipo === "referencias") {
-      setReferencias(textoLimpo);
-      localStorage.setItem("referenciasPlano", textoLimpo);
-    }
-
-    if (tipo === "atividade") {
-      setAtividade(textoLimpo);
-      localStorage.setItem("atividadePlano", textoLimpo);
-    }
+  function limparReferenciasProfessor() {
+    setReferenciasSalvasProfessor("");
+    localStorage.removeItem("referenciasSalvasProfessor");
   }
 
   function gerarAbaAtual() {
@@ -208,9 +260,14 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
             {aba !== "temas" && (
   <button
     onClick={gerarAbaAtual}
-    className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-4 py-2 rounded-xl cursor-pointer font-semibold shadow-md hover:scale-[1.02] transition"
+    disabled={gerando}
+    className={`px-4 py-2 rounded-xl font-semibold shadow-md transition ${
+      gerando
+        ? "cursor-not-allowed bg-slate-400 text-white"
+        : "cursor-pointer bg-gradient-to-r from-blue-600 to-green-600 text-white hover:scale-[1.02]"
+    }`}
   >
-    ✨ Gerar com IA
+    {gerando ? "⏳ Gerando..." : "✨ Gerar com IA"}
   </button>
 )}
 
@@ -382,16 +439,64 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
           )}
 
           {!ehCreche && aba === "referencias" && (
-            <textarea
-              value={referencias}
-              onChange={(e) => {
-                setReferencias(e.target.value);
-                localStorage.setItem("referenciasPlano", ajustarEspacamento(e.target.value));
-              }}
-              onBlur={() => setReferencias(ajustarEspacamento(referencias))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
-              placeholder="Clique em Gerar com IA para criar as referências..."
-            />
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-blue-200 bg-blue-50 p-4">
+                <h3 className="font-bold text-blue-800">
+                  📚 Minhas referências mais usadas
+                </h3>
+
+                <p className="mt-1 text-sm text-slate-600">
+                  Salve aqui os livros, documentos e materiais que você costuma
+                  utilizar. Eles ficarão disponíveis nos próximos planejamentos.
+                </p>
+
+                <textarea
+                  value={referenciasSalvasProfessor}
+                  onChange={(e) =>
+                    setReferenciasSalvasProfessor(e.target.value)
+                  }
+                  className="mt-3 min-h-[130px] w-full resize-y rounded-xl border border-blue-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  placeholder={`Exemplo:
+BRASIL. Base Nacional Comum Curricular (BNCC).
+Livro didático adotado pela escola.
+Materiais complementares utilizados pelo professor.`}
+                />
+
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={salvarReferenciasProfessor}
+                    className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
+                  >
+                    💾 Salvar referências
+                  </button>
+
+                  {referenciasSalvasProfessor && (
+                    <button
+                      type="button"
+                      onClick={limparReferenciasProfessor}
+                      className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
+                    >
+                      🗑️ Limpar salvas
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              <textarea
+                value={referencias}
+                onChange={(e) => {
+                  setReferencias(e.target.value);
+                  localStorage.setItem(
+                    "referenciasPlano",
+                    ajustarEspacamento(e.target.value)
+                  );
+                }}
+                onBlur={() => setReferencias(ajustarEspacamento(referencias))}
+                className="w-full min-h-[350px] border p-3 rounded-xl"
+                placeholder="Clique em Gerar com IA para criar as referências..."
+              />
+            </div>
           )}
 
           {!ehCreche && aba === "atividade" && (
