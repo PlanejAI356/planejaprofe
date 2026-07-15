@@ -108,11 +108,9 @@ export default function Inicio({ onComecar }: InicioProps) {
   muted
   loop
   playsInline
-  preload="metadata"
-  className="aspect-video w-full rounded-[22px] bg-slate-100 object-cover"
->
-  Seu navegador não suporta vídeo.
-</video>
+  controls
+  className="w-full h-auto rounded-[22px]"
+/>
             </div>
           </div>
                </section>
