@@ -18,6 +18,8 @@ type DataAula = {
 export default function Home() {
   const [carregandoAuth, setCarregandoAuth] = useState(true);
   const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [contabilizandoPlano, setContabilizandoPlano] = useState(false);
+
   const [etapa, setEtapa] = useState("inicio");
 
   const [ano, setAno] = useState("2026");
@@ -28,13 +30,18 @@ export default function Home() {
 
   useEffect(() => {
     async function verificarLogin() {
-      const { data } = await supabase.auth.getSession();
+      const { data, error } = await supabase.auth.getSession();
+
+      if (error) {
+        console.error("Erro ao verificar login:", error);
+      }
 
       if (data.session) {
         setUsuarioLogado(true);
         localStorage.removeItem("testeGratisConcluido");
 
-        // Usuário que acabou de entrar vai para a configuração do plano.
+        // Ao entrar na conta, abre a seleção/configuração do plano.
+        // Aqui não contabiliza plano.
         setEtapa("configuracao");
         setCarregandoAuth(false);
         return;
@@ -81,9 +88,11 @@ export default function Home() {
       "planoAtualContabilizado",
     ];
 
-    chaves.forEach((chave) => localStorage.removeItem(chave));
+    chaves.forEach((chave) => {
+      localStorage.removeItem(chave);
+    });
 
-    // Mantém as referências mais usadas do professor.
+    // Não apaga login, nome do professor ou referências salvas.
     setAno("2026");
     setDatasSelecionadas([]);
     setMesSelecionado(null);
@@ -91,17 +100,81 @@ export default function Home() {
     setTipoPlanejamento("");
   }
 
+  async function contabilizarPlano() {
+  const {
+    data: { user },
+    error: erroUsuario,
+  } = await supabase.auth.getUser();
+
+  if (erroUsuario) {
+    console.error("Erro ao identificar usuário:", erroUsuario);
+    throw erroUsuario;
+  }
+
+  if (!user) {
+    console.error("Nenhum usuário logado.");
+    return;
+  }
+
+  const { data: perfil, error: erroBusca } = await supabase
+    .from("profiles")
+    .select("planos_feitos")
+    .eq("id", user.id)
+    .single();
+
+  if (erroBusca) {
+    console.error("Erro ao buscar quantidade de planos:", erroBusca);
+    throw erroBusca;
+  }
+
+  const quantidadeAtual = Number(perfil?.planos_feitos ?? 0);
+
+  const { error: erroAtualizacao } = await supabase
+    .from("profiles")
+    .update({
+      planos_feitos: quantidadeAtual + 1,
+    })
+    .eq("id", user.id);
+
+  if (erroAtualizacao) {
+    console.error("Erro ao contabilizar plano:", erroAtualizacao);
+    throw erroAtualizacao;
+  }
+
+  console.log("Plano contabilizado com sucesso.");
+}
+  async function clicarEmSerie() {
+    if (contabilizandoPlano) {
+      return;
+    }
+
+    setContabilizandoPlano(true);
+
+    try {
+      // Professores logados terão o plano contabilizado.
+      if (usuarioLogado) {
+        await contabilizarPlano();
+      }
+
+      // Depois de contabilizar, limpa o planejamento anterior.
+      limparPlanoAnterior();
+
+      // Volta para a etapa de escolha/configuração da série.
+      setEtapa("configuracao");
+    } catch (error) {
+      console.error(error);
+
+      alert(
+        "Não foi possível contabilizar o plano. Verifique a conexão e tente novamente."
+      );
+    } finally {
+      setContabilizandoPlano(false);
+    }
+  }
+
   function iniciarTesteGratis() {
     limparPlanoAnterior();
     setEtapa("configuracao");
-  }
-
-  function mudarEtapa(novaEtapa: string) {
-    if (novaEtapa === "configuracao") {
-      limparPlanoAnterior();
-    }
-
-    setEtapa(novaEtapa);
   }
 
   function abrirPlanoCompleto() {
@@ -122,11 +195,20 @@ export default function Home() {
       return;
     }
 
+    // A exportação não contabiliza.
+    // A contabilização acontece ao clicar em Série.
     setEtapa("exportacao");
   }
 
   async function sair() {
-    await supabase.auth.signOut();
+    const { error } = await supabase.auth.signOut();
+
+    if (error) {
+      console.error("Erro ao sair:", error);
+      alert("Não foi possível sair da conta. Tente novamente.");
+      return;
+    }
+
     window.location.href = "/";
   }
 
@@ -204,7 +286,7 @@ export default function Home() {
           setTipoPlanejamento={setTipoPlanejamento}
           onVoltar={() => {
             if (usuarioLogado) {
-              mudarEtapa("configuracao");
+              clicarEmSerie();
             } else {
               setEtapa("inicio");
             }
@@ -222,7 +304,7 @@ export default function Home() {
           mesSelecionado={mesSelecionado}
           nomeMes={nomeMes}
           tipoPlanejamento={tipoPlanejamento}
-          onVoltar={() => setEtapa("configuracao")}
+          onVoltar={clicarEmSerie}
           onContinuar={(datas: DataAula[]) => {
             setDatasSelecionadas(datas);
             setEtapa("conteudos");
