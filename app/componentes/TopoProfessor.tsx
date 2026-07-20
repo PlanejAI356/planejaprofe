@@ -33,13 +33,6 @@ export default function TopoProfessor() {
           />
 
         </div>
-
-        <img
-          src="/logo-planejai.png"
-          alt="PlanejAI"
-          className="h-10 w-auto"
-        />
-
       </div>
     </header>
   );
