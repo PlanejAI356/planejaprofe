@@ -44,10 +44,10 @@ export default function Inicio({ onComecar }: InicioProps) {
         <header className="flex h-14 shrink-0 items-center justify-between">
           <div className="flex items-center gap-2">
             <img
-              src="/logo-planejai.png"
-              alt="Logo PlanejAI"
-              className="h-9 w-9 object-contain"
-            />
+  src="/logo-planejai-nova.png"
+  alt="PlanejAI"
+  className="h-10 w-10 object-contain"
+/>
 
             <span className="text-xl font-bold text-slate-900">
               Planej<span className="text-green-600">AI</span>
