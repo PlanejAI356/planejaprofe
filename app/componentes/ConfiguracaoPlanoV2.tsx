@@ -28,10 +28,12 @@ type ConfiguracaoPlanoProps = {
   setTipoPlanejamento: (valor: string) => void;
   onContinuar: () => void;
   onVoltar: () => void;
+  onSelecionarSerie: () => void;
 };
 
 export default function ConfiguracaoPlano({
   onVoltar,
+  onSelecionarSerie,
   ano,
   setAno,
   mesSelecionado,
@@ -272,6 +274,7 @@ const ehCreche =
                   type="button"
                   onClick={() => {
   setTurmaSelecionada(turma);
+  onSelecionarSerie();
   localStorage.setItem("serieSelecionada", turma);
 
   setTurmaInfantilDetalhe("");

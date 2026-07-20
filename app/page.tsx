@@ -129,13 +129,18 @@ export default function Home() {
 
   const quantidadeAtual = Number(perfil?.planos_feitos ?? 0);
 
-  const { error: erroAtualizacao } = await supabase
+  const { data: perfilAtualizado,error: erroAtualizacao } = await supabase
     .from("profiles")
     .update({
       planos_feitos: quantidadeAtual + 1,
     })
-    .eq("id", user.id);
+    .eq("id", user.id)
+    .select("id,planos_feitos")
+    .maybeSingle();
 
+    if (!perfilAtualizado) {
+      throw new Error("O perfil do usuário não foi encontrado para contabilizar o plano")
+    }
   if (erroAtualizacao) {
     console.error("Erro ao contabilizar plano:", erroAtualizacao);
     throw erroAtualizacao;
@@ -284,6 +289,8 @@ export default function Home() {
           setNomeMes={setNomeMes}
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
+          onSelecionarSerie={clicarEmSerie}
+          
           onVoltar={() => {
             if (usuarioLogado) {
               clicarEmSerie();
