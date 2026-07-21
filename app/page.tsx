@@ -160,8 +160,6 @@ export default function Home() {
         await contabilizarPlano();
       }
 
-      limparPlanoAnterior();
-      setEtapa("configuracao");
     } catch (error) {
       console.error(error);
 
@@ -174,8 +172,6 @@ export default function Home() {
   }
 
   function iniciarTesteGratis() {
-    limparPlanoAnterior();
-    setEtapa("configuracao");
   }
 
   function abrirPlanoCompleto() {
