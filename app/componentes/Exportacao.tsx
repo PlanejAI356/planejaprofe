@@ -1,6 +1,5 @@
 "use client";
 
-import BarraProgresso from "./BarraProgresso";
 
 type ExportacaoProps = {
   onVoltar?: () => void;
@@ -140,7 +139,6 @@ ${atividade}
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
       <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
-        <BarraProgresso etapaAtual="exportacao" />
 
         <h1 className="text-2xl font-extrabold text-slate-900 mb-2">
           Exportação
