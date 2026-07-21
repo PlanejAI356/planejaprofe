@@ -73,6 +73,7 @@ export default function Calendario({
       inicioOriginal.getTime() <= fimOriginal.getTime()
         ? inicioOriginal
         : fimOriginal;
+
     const fim =
       inicioOriginal.getTime() <= fimOriginal.getTime()
         ? fimOriginal
@@ -84,7 +85,6 @@ export default function Calendario({
     while (dataAtual.getTime() <= fim.getTime()) {
       const diaSemana = dataAtual.getDay();
 
-      // No plano mensal, sábado e domingo não entram no período.
       if (diaSemana !== 0 && diaSemana !== 6) {
         const dia = String(dataAtual.getDate()).padStart(2, "0");
         const mes = String(dataAtual.getMonth() + 1).padStart(2, "0");
@@ -111,14 +111,11 @@ export default function Calendario({
         return;
       }
 
-      // Primeiro clique: define o início do período.
-      // Depois de um período completo, um novo clique inicia outra seleção.
       if (datas.length === 0 || datas.length > 1) {
         setDatas([{ data, aulas: 1 }]);
         return;
       }
 
-      // Segundo clique: define o fim e preenche apenas os dias úteis.
       const dataInicial = datas[0].data;
       setDatas(criarPeriodoMensal(dataInicial, data));
       return;
@@ -178,20 +175,22 @@ export default function Calendario({
     const diaSemana = dataAtual.getDay();
     const selecionado = dadosDoDia(dia);
 
-    // No plano mensal, os fins de semana mantêm suas próprias cores.
     if (tipoPlanejamento === "mensal" && diaSemana === 6) {
-      return "bg-yellow-100 text-yellow-800 cursor-not-allowed";
+      return "bg-amber-100 text-amber-800 cursor-not-allowed";
     }
 
     if (tipoPlanejamento === "mensal" && diaSemana === 0) {
       return "bg-red-50 text-red-600 cursor-not-allowed";
     }
 
-    if (selecionado) return "bg-green-600 text-white shadow-md";
-    if (diaSemana === 6) return "bg-yellow-100 text-yellow-800";
+    if (selecionado) {
+      return "bg-emerald-600 text-white border-emerald-600 shadow-md shadow-emerald-200";
+    }
+
+    if (diaSemana === 6) return "bg-amber-100 text-amber-800";
     if (diaSemana === 0) return "bg-red-50 text-red-600";
 
-    return "bg-white hover:bg-blue-50";
+    return "bg-white hover:bg-emerald-50 hover:border-emerald-200";
   }
 
   function continuar() {
@@ -218,35 +217,37 @@ export default function Calendario({
   const ultimaData = datasOrdenadas[datasOrdenadas.length - 1]?.data || "";
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
-      <div className="max-w-6xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-3 md:p-4">
-        <BarraProgresso etapaAtual="calendario" />
+    <div className="min-h-screen bg-gradient-to-br from-emerald-100 via-green-50 to-teal-100 p-3 md:p-5">
+      <div className="max-w-7xl mx-auto rounded-[30px] border border-emerald-200 bg-white p-3 md:p-4 shadow-2xl shadow-emerald-200/60">
+        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-green-50 p-2 shadow-sm">
+          <BarraProgresso etapaAtual="calendario" />
+        </div>
 
-        <div className="text-center mb-5">
-          <h1 className="text-xl md:text-2xl font-extrabold text-slate-900">
+        <div className="mb-3 mt-3 text-center">
+          <h1 className="text-xl font-extrabold text-slate-900 md:text-2xl">
             Calendário de {nomeMes} de {ano}
           </h1>
 
-          <p className="mt-2 text-slate-500 text-sm">
+          <p className="mt-1 text-xs text-slate-500 md:text-sm">
             {tipoPlanejamento === "aula"
               ? "Clique no dia para adicionar uma aula. Use + para duplicar e - para remover."
               : "Clique primeiro na data inicial e depois na data final. Sábados e domingos não serão incluídos."}
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-[1.25fr_0.75fr] gap-4">
-          <section className="bg-slate-50 border border-slate-100 rounded-3xl p-4">
-            <div className="grid grid-cols-7 gap-2 mb-2 text-center font-bold text-xs text-slate-600">
+        <div className="grid gap-3 lg:grid-cols-[1.35fr_0.85fr]">
+          <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3 shadow-sm">
+            <div className="mb-2 grid grid-cols-7 gap-1.5 text-center text-[11px] font-bold text-slate-600 md:text-xs">
               <div>SEG</div>
               <div>TER</div>
               <div>QUA</div>
               <div>QUI</div>
               <div>SEX</div>
-              <div className="text-yellow-700">SÁB</div>
+              <div className="text-amber-700">SÁB</div>
               <div className="text-red-700">DOM</div>
             </div>
 
-            <div className="grid grid-cols-7 gap-2">
+            <div className="grid grid-cols-7 gap-1.5">
               {Array.from({ length: espacosAntesDoPrimeiroDia() }).map(
                 (_, index) => (
                   <div key={`empty-${index}`} />
@@ -267,25 +268,29 @@ export default function Calendario({
                     type="button"
                     onClick={() => selecionarData(dia)}
                     disabled={fimDeSemanaMensal}
-                    className={`min-h-[58px] rounded-2xl p-2 text-center border border-slate-100 transition-all ${
+                    className={`min-h-[52px] rounded-xl border border-slate-100 p-1 text-center transition-all ${
                       fimDeSemanaMensal
                         ? "cursor-not-allowed"
-                        : "cursor-pointer hover:scale-[1.02]"
+                        : "cursor-pointer hover:-translate-y-0.5"
                     } ${corDoDia(dia)}`}
                   >
-                    <div className="font-extrabold">{dia}</div>
+                    <div className="text-sm font-extrabold md:text-base">
+                      {dia}
+                    </div>
 
                     {tipoPlanejamento === "aula" && item && (
-                      <div className="text-[11px] mt-1">
-                        <div>{item.aulas} aula(s)</div>
+                      <div className="mt-0.5 text-[10px] leading-tight">
+                        <div className="font-semibold">
+                          {item.aulas} aula(s)
+                        </div>
 
-                        <div className="flex justify-center gap-1 mt-1">
+                        <div className="mt-0.5 flex justify-center gap-1">
                           <span
                             onClick={(e) => {
                               e.stopPropagation();
                               removerAula(dia);
                             }}
-                            className="bg-white text-black px-2 rounded cursor-pointer"
+                            className="cursor-pointer rounded bg-white px-1.5 py-0.5 font-bold text-slate-800 shadow-sm"
                           >
                             -
                           </span>
@@ -295,7 +300,7 @@ export default function Calendario({
                               e.stopPropagation();
                               selecionarData(dia);
                             }}
-                            className="bg-white text-black px-2 rounded cursor-pointer"
+                            className="cursor-pointer rounded bg-white px-1.5 py-0.5 font-bold text-emerald-700 shadow-sm"
                           >
                             +
                           </span>
@@ -307,27 +312,29 @@ export default function Calendario({
               })}
             </div>
 
-            <div className="mt-4 grid grid-cols-3 gap-2 text-xs">
-              <div className="bg-yellow-100 text-yellow-800 rounded-xl p-2 text-center font-semibold">
+            <div className="mt-3 grid grid-cols-3 gap-2 text-[11px]">
+              <div className="rounded-lg bg-amber-100 p-1.5 text-center font-semibold text-amber-800">
                 Sábado
               </div>
-              <div className="bg-red-50 text-red-600 rounded-xl p-2 text-center font-semibold">
+
+              <div className="rounded-lg bg-red-50 p-1.5 text-center font-semibold text-red-600">
                 Domingo
               </div>
-              <div className="bg-green-600 text-white rounded-xl p-2 text-center font-semibold">
+
+              <div className="rounded-lg bg-emerald-600 p-1.5 text-center font-semibold text-white">
                 Selecionada
               </div>
             </div>
           </section>
 
-          <section className="bg-slate-50 border border-slate-100 rounded-3xl p-4">
-            <div className="flex items-center justify-between gap-2 mb-4">
+          <section className="rounded-2xl border border-emerald-100 bg-emerald-50/50 p-3 shadow-sm">
+            <div className="mb-3 flex items-center justify-between gap-2">
               <div>
-                <h2 className="text-xl font-extrabold text-slate-900">
+                <h2 className="text-lg font-extrabold text-slate-900">
                   Datas selecionadas
                 </h2>
 
-                <p className="text-sm text-slate-500">
+                <p className="text-xs text-slate-500">
                   {tipoPlanejamento === "mensal"
                     ? datas.length > 1
                       ? `${primeiraData} à ${ultimaData}`
@@ -342,7 +349,7 @@ export default function Calendario({
                 <button
                   type="button"
                   onClick={() => setDatas([])}
-                  className="border border-red-200 text-red-600 bg-white px-4 py-2 rounded-xl text-sm font-bold cursor-pointer hover:bg-red-50"
+                  className="cursor-pointer rounded-lg border border-red-200 bg-white px-3 py-1.5 text-xs font-bold text-red-600 hover:bg-red-50"
                 >
                   Limpar
                 </button>
@@ -350,7 +357,7 @@ export default function Calendario({
             </div>
 
             {datas.length === 0 ? (
-              <div className="min-h-[260px] flex items-center justify-center text-center text-slate-400 border border-dashed border-slate-200 rounded-2xl bg-white">
+              <div className="flex min-h-[210px] items-center justify-center rounded-xl border border-dashed border-emerald-200 bg-white text-center text-sm text-slate-400">
                 <p>
                   Nenhuma data selecionada.
                   <br />
@@ -360,24 +367,26 @@ export default function Calendario({
                 </p>
               </div>
             ) : tipoPlanejamento === "mensal" ? (
-              <div className="min-h-[260px] flex flex-col justify-center gap-4 rounded-2xl border border-slate-100 bg-white p-5 shadow-sm">
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-2xl bg-green-50 p-4 text-center text-green-700">
-                    <div className="text-xs font-bold uppercase">Início</div>
-                    <div className="mt-1 text-lg font-extrabold">
+              <div className="flex min-h-[210px] flex-col justify-center gap-3 rounded-xl border border-emerald-100 bg-white p-4 shadow-sm">
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="rounded-xl bg-emerald-50 p-3 text-center text-emerald-700">
+                    <div className="text-[10px] font-bold uppercase">
+                      Início
+                    </div>
+                    <div className="mt-1 text-base font-extrabold">
                       {primeiraData}
                     </div>
                   </div>
 
-                  <div className="rounded-2xl bg-blue-50 p-4 text-center text-blue-700">
-                    <div className="text-xs font-bold uppercase">Fim</div>
-                    <div className="mt-1 text-lg font-extrabold">
+                  <div className="rounded-xl bg-blue-50 p-3 text-center text-blue-700">
+                    <div className="text-[10px] font-bold uppercase">Fim</div>
+                    <div className="mt-1 text-base font-extrabold">
                       {datas.length > 1 ? ultimaData : "Selecione"}
                     </div>
                   </div>
                 </div>
 
-                <div className="rounded-2xl border border-green-100 bg-green-50 p-4 text-center text-sm text-green-800">
+                <div className="rounded-xl border border-emerald-100 bg-emerald-50 p-3 text-center text-xs text-emerald-800">
                   {datas.length > 1 ? (
                     <>
                       <strong>{datas.length} dias úteis selecionados.</strong>
@@ -390,18 +399,18 @@ export default function Calendario({
                 </div>
               </div>
             ) : (
-              <div className="max-h-[360px] overflow-y-auto pr-1 space-y-3">
+              <div className="grid grid-cols-1 gap-2 xl:grid-cols-2">
                 {datasOrdenadas.map((item) => (
                   <div
                     key={item.data}
-                    className="bg-white border border-slate-100 rounded-2xl p-3 flex flex-col gap-3 shadow-sm"
+                    className="rounded-xl border border-emerald-100 bg-white p-2 shadow-sm transition hover:border-emerald-200 hover:shadow-md"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="bg-green-50 text-green-700 rounded-xl px-3 py-2 text-center">
-                        <div className="text-xs font-bold">
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="min-w-[92px] rounded-lg bg-emerald-50 px-2 py-1 text-center text-emerald-700">
+                        <div className="text-[10px] font-bold">
                           {obterDiaDaSemana(item.data)}
                         </div>
-                        <div className="text-base font-extrabold">
+                        <div className="text-sm font-extrabold">
                           {item.data}
                         </div>
                       </div>
@@ -409,34 +418,35 @@ export default function Calendario({
                       <button
                         type="button"
                         onClick={() => removerData(item.data)}
-                        className="text-red-500 font-bold cursor-pointer hover:text-red-700"
+                        className="cursor-pointer text-sm font-bold text-red-500 hover:text-red-700"
+                        aria-label={`Remover ${item.data}`}
                       >
                         🗑
                       </button>
                     </div>
 
-                    <div className="flex items-center justify-between">
-                      <span className="font-bold text-slate-700">
+                    <div className="mt-2 flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-slate-700">
                         {item.aulas} aula(s)
                       </span>
 
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-1.5">
                         <button
                           type="button"
                           onClick={() => removerAulaPorData(item.data)}
-                          className="w-9 h-9 rounded-xl border border-slate-200 bg-white font-bold cursor-pointer hover:bg-slate-50"
+                          className="h-7 w-7 cursor-pointer rounded-lg border border-slate-200 bg-white text-sm font-bold hover:bg-slate-50"
                         >
                           -
                         </button>
 
-                        <span className="font-extrabold w-5 text-center">
+                        <span className="w-4 text-center text-sm font-extrabold">
                           {item.aulas}
                         </span>
 
                         <button
                           type="button"
                           onClick={() => adicionarAulaPorData(item.data)}
-                          className="w-9 h-9 rounded-xl border border-blue-200 bg-white text-blue-600 font-bold cursor-pointer hover:bg-blue-50"
+                          className="h-7 w-7 cursor-pointer rounded-lg border border-emerald-200 bg-white text-sm font-bold text-emerald-700 hover:bg-emerald-50"
                         >
                           +
                         </button>
@@ -448,7 +458,7 @@ export default function Calendario({
             )}
 
             {datas.length > 0 && (
-              <div className="mt-4 bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-slate-700">
+              <div className="mt-3 rounded-xl border border-emerald-100 bg-emerald-50 p-2.5 text-xs text-slate-700">
                 {tipoPlanejamento === "mensal" ? (
                   <p>
                     <strong>Período:</strong> {primeiraData}
@@ -465,11 +475,11 @@ export default function Calendario({
           </section>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-3 mt-5">
+        <div className="mt-3 grid gap-2 md:grid-cols-2">
           <button
             type="button"
             onClick={onVoltar}
-            className="bg-white border border-slate-200 text-slate-700 px-6 py-3 rounded-xl w-full cursor-pointer font-bold hover:bg-slate-50"
+            className="w-full cursor-pointer rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-2.5 font-bold text-emerald-800 hover:bg-emerald-100"
           >
             ← Voltar para Configuração
           </button>
@@ -477,7 +487,7 @@ export default function Calendario({
           <button
             type="button"
             onClick={continuar}
-            className="bg-gradient-to-r from-blue-600 to-green-600 text-white px-6 py-3 rounded-xl w-full font-bold cursor-pointer shadow-lg hover:scale-[1.01] transition"
+            className="w-full cursor-pointer rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-5 py-2.5 font-bold text-white shadow-lg shadow-emerald-200 transition hover:scale-[1.01]"
           >
             Continuar para os Conteúdos →
           </button>
