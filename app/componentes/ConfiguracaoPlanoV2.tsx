@@ -177,25 +177,28 @@ const ehCreche =
       ? maisDisciplinasFundamental2
       : [];
 
-  const selecionado = "border-green-500 bg-green-50 text-green-800 shadow-sm";
-  const normal =
-    "border-slate-200 bg-white text-slate-800 hover:border-green-300 hover:bg-green-50";
-  const card =
-    "relative rounded-2xl border px-4 py-3 font-bold transition-all duration-200";
+  const selecionado =
+  "border-green-500 bg-green-50 text-green-800 shadow-lg ring-2 ring-green-100";
+
+const normal =
+  "border-slate-200 bg-white text-slate-800 shadow-sm hover:border-green-400 hover:shadow-md hover:-translate-y-1";
+
+const card =
+  "relative rounded-2xl border px-4 py-3 font-bold transition-all duration-300";
 
   const podeMostrarCampoOuDisciplina =
     (etapaEnsino === "Educação Infantil" && turmaInfantilDetalhe) ||
     (etapaEnsino !== "Educação Infantil" && turmaSelecionada);
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-4">
-      <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-green-50 px-4 py-4">
+      <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
         <div className="mb-5 flex items-center gap-3">
           <ClipboardList className="text-green-600" size={34} />
           <div>
-            <h1 className="text-2xl font-extrabold text-slate-900">
-              Configuração do Plano
-            </h1>
+            <h1 className="text-3xl font-extrabold tracking-wide text-slate-900">
+  CONFIGURAÇÃO DO PLANO
+</h1>
             <p className="text-slate-500">
               Escolha a etapa, turma, área ou disciplina do planejamento.
             </p>
@@ -422,7 +425,7 @@ const ehCreche =
             <input
               value={ano}
               onChange={(e) => setAno(e.target.value)}
-              className="w-full rounded-2xl border border-slate-200 px-4 py-3 outline-none focus:border-green-500"
+              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg font-semibold shadow-sm outline-none transition-all duration-300 focus:border-green-500 focus:ring-4 focus:ring-green-100"
               placeholder="Ex: 2026"
             />
           </section>
@@ -513,7 +516,7 @@ const ehCreche =
           <button
             type="button"
             onClick={onVoltar}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-700 hover:bg-slate-100"
+            className="flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:bg-slate-100"
           >
             <ArrowLeft size={18} />
             Voltar
@@ -522,7 +525,7 @@ const ehCreche =
           <button
             type="button"
             onClick={onContinuar}
-            className="flex items-center gap-2 rounded-2xl bg-green-600 px-6 py-3 font-bold text-white hover:bg-green-700"
+            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-7 py-3 font-bold text-white shadow-lg transition-all duration-300 hover:scale-105"
           >
             Continuar
             <ArrowRight size={18} />

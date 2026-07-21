@@ -222,8 +222,8 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
       onClick={() => setAba(id)}
       className={`shrink-0 whitespace-nowrap px-5 py-3 rounded-2xl font-semibold transition-all cursor-pointer ${
         aba === id
-          ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-md"
-          : "bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:border-blue-300"
+          ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg ring-2 ring-blue-100"
+          : "bg-white border border-slate-200 text-slate-700 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-md hover:-translate-y-0.5 hover:border-blue-400 hover:bg-slate-50"
       }`}
     >
       {nome}
@@ -232,7 +232,7 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
-      <div className="max-w-5xl mx-auto bg-white rounded-[32px] shadow-xl border border-slate-100 p-5 md:p-6">
+      <div className="max-w-5xl mx-auto rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
         <BarraProgresso etapaAtual="planoCompleto" />
 
         <div className="flex flex-wrap gap-2 mb-6">
@@ -256,17 +256,17 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
           )}
         </div>
 
-        <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-4">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg">
           <div className="flex flex-wrap gap-2 mb-3">
             {aba !== "temas" && (
   <button
     onClick={gerarAbaAtual}
     disabled={gerando}
-    className={`px-4 py-2 rounded-xl font-semibold shadow-md transition ${
-      gerando
-        ? "cursor-not-allowed bg-slate-400 text-white"
-        : "cursor-pointer bg-gradient-to-r from-blue-600 to-green-600 text-white hover:scale-[1.02]"
-    }`}
+    className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${
+  gerando
+    ? "cursor-not-allowed bg-slate-400 text-white shadow-sm"
+    : "cursor-pointer bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-xl"
+}`}
   >
     {gerando ? "⏳ Gerando..." : "✨ Gerar com IA"}
   </button>
@@ -298,21 +298,23 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     📚 Minhas referências
   </button>
 )}
-            <button
-              onClick={copiarTexto}
-              className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
-            >
-              📋 Copiar
-            </button>
+           <button
+  type="button"
+  onClick={copiarTexto}
+  className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-lg"
+>
+  📋 Copiar
+</button>
 
-            {aba !== "temas" && (
-              <button
-                onClick={refazerTexto}
-                className="bg-white border border-slate-200 text-slate-700 px-4 py-2 rounded-xl cursor-pointer font-semibold hover:bg-slate-50 shadow-sm"
-              >
-                🔄 Refazer
-              </button>
-            )}
+{aba !== "temas" && (
+  <button
+    type="button"
+    onClick={refazerTexto}
+    className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow-lg"
+  >
+    🔄 Refazer
+  </button>
+)}
           </div>
 
           {aba !== "temas" && mostrarSugestoes && (
@@ -381,7 +383,7 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                 localStorage.setItem("temasPlano", textoLimpo);
               }}
               onBlur={() => setTemasSalvos(ajustarEspacamento(temasSalvos))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
+              className="w-full min-h-[350px] rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder="Temas das aulas..."
             />
           )}
@@ -394,7 +396,7 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                 localStorage.setItem("objetivosPlano", ajustarEspacamento(e.target.value));
               }}
               onBlur={() => setObjetivos(ajustarEspacamento(objetivos))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
+              className="w-full min-h-[350px] rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder={
                 ehCreche
                   ? "Clique em Gerar com IA para criar objetivos de aprendizagem..."

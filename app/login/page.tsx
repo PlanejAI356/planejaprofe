@@ -30,23 +30,26 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl shadow-xl border border-slate-100 p-8 w-full max-w-md">
-        <h1 className="text-3xl font-extrabold text-center text-slate-900 mb-2">
-          Entrar
+    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-100 via-white to-green-100 flex items-center justify-center p-4">
+      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-200/40 blur-3xl" />
+      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-green-200/50 blur-3xl" />
+
+      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-green-200 p-8 sm:p-10 w-full max-w-md">
+        <h1 className="text-4xl font-extrabold tracking-wide text-center text-slate-900 mb-2">
+          ENTRAR
         </h1>
 
-        <p className="text-center text-slate-500 mb-6">
+        <p className="text-center text-slate-500 mb-8">
           Acesse sua conta do PlanejAI.
         </p>
 
-        <form onSubmit={entrar} className="space-y-4">
+        <form onSubmit={entrar} className="space-y-5">
           <input
             type="email"
             placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-slate-200 rounded-xl px-4 py-3"
+            className="w-full border border-slate-300 rounded-xl px-4 py-4 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
           />
 
@@ -56,14 +59,15 @@ export default function LoginPage() {
               placeholder="Senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full border border-slate-200 rounded-xl px-4 py-3 pr-12"
+              className="w-full border border-slate-300 rounded-xl px-4 py-4 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
               required
             />
 
             <button
               type="button"
               onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500"
+              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-green-600"
+              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
             >
               {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
             </button>
@@ -81,22 +85,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={carregando}
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-3 rounded-xl font-bold cursor-pointer"
+            className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl text-lg font-bold transition hover:scale-[1.01] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {carregando ? "Entrando..." : "Entrar"}
           </button>
         </form>
-
-        <div className="mt-6 text-center text-sm text-slate-600">
-          <p>Ainda não tem uma conta?</p>
-
-          <a
-            href="/cadastro"
-            className="inline-block mt-2 font-bold text-blue-600 hover:text-green-600"
-          >
-            Criar uma conta
-          </a>
-        </div>
       </div>
     </main>
   );
