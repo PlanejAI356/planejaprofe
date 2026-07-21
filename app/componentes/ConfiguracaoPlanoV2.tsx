@@ -49,12 +49,6 @@ export default function ConfiguracaoPlano({
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
   const [mostrarMaisDisciplinas, setMostrarMaisDisciplinas] = useState(false);
 
-const ehCreche =
-  turmaSelecionada === "Creche" &&
-  (turmaInfantilDetalhe === "Berçário" ||
-    turmaInfantilDetalhe === "Maternal I" ||
-    turmaInfantilDetalhe === "Maternal II");
-    
   const etapasEnsino = [
     "Educação Infantil",
     "Ensino Fundamental I",
@@ -64,11 +58,9 @@ const ehCreche =
 
   const anosFundamental1 = ["1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
   const anosFundamental2 = ["6º Ano", "7º Ano", "8º Ano", "9º Ano"];
-
   const turmasEducacaoInfantil = ["Creche", "Pré-escola"];
   const turmasCreche = ["Berçário", "Maternal I", "Maternal II"];
   const turmasPreEscola = ["Pré I", "Pré II"];
-
   const seriesEnsinoMedio = ["1ª Série", "2ª Série", "3ª Série"];
 
   const camposExperiencia = [
@@ -90,10 +82,7 @@ const ehCreche =
     "Ensino Religioso",
   ];
 
-  const maisDisciplinasFundamental1 = [
-    "Inglês",
-    "BNCC da Computação",
-  ];
+  const maisDisciplinasFundamental1 = ["Inglês", "BNCC da Computação"];
 
   const disciplinasFundamental2 = [
     "Língua Portuguesa",
@@ -108,9 +97,7 @@ const ehCreche =
     "Filosofia",
   ];
 
-  const maisDisciplinasFundamental2 = [
-    "BNCC da Computação",
-  ];
+  const maisDisciplinasFundamental2 = ["BNCC da Computação"];
 
   const disciplinasEnsinoMedio = [
     "Língua Portuguesa",
@@ -178,39 +165,60 @@ const ehCreche =
       : [];
 
   const selecionado =
-  "border-green-500 bg-green-50 text-green-800 shadow-lg ring-2 ring-green-100";
+    "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-lg shadow-emerald-100 ring-2 ring-emerald-100";
 
-const normal =
-  "border-slate-200 bg-white text-slate-800 shadow-sm hover:border-green-400 hover:shadow-md hover:-translate-y-1";
+  const normal =
+    "border-slate-200 text-slate-800 shadow-sm hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5";
 
-const card =
-  "relative rounded-2xl border px-4 py-3 font-bold transition-all duration-300";
+  const card =
+    "relative rounded-2xl border px-4 py-3 font-bold transition-all duration-300";
 
   const podeMostrarCampoOuDisciplina =
     (etapaEnsino === "Educação Infantil" && turmaInfantilDetalhe) ||
     (etapaEnsino !== "Educação Infantil" && turmaSelecionada);
 
+  function estiloEtapa(etapa: string) {
+    if (etapaEnsino === etapa) return selecionado;
+
+    if (etapa === "Educação Infantil") {
+      return "border-orange-200 bg-orange-50/80 text-slate-800 shadow-sm hover:border-orange-300 hover:shadow-md hover:-translate-y-0.5";
+    }
+
+    if (etapa === "Ensino Fundamental I") {
+      return "border-emerald-200 bg-emerald-50/80 text-slate-800 shadow-sm hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5";
+    }
+
+    if (etapa === "Ensino Fundamental II") {
+      return "border-sky-200 bg-sky-50/80 text-slate-800 shadow-sm hover:border-sky-300 hover:shadow-md hover:-translate-y-0.5";
+    }
+
+    return "border-violet-200 bg-violet-50/80 text-slate-800 shadow-sm hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5";
+  }
+
   return (
-    <main className="min-h-screen bg-gradient-to-br from-blue-50 via-slate-50 to-green-50 px-4 py-4">
-      <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.12)]">
-        <div className="mb-5 flex items-center gap-3">
-          <ClipboardList className="text-green-600" size={34} />
+    <main className="min-h-[calc(100vh-70px)] overflow-x-hidden bg-gradient-to-br from-emerald-50 via-white to-green-100 px-3 py-3 md:px-5">
+      <div className="mx-auto max-w-7xl rounded-[28px] border border-emerald-100 bg-white p-4 shadow-[0_20px_60px_rgba(16,185,129,0.13)] md:p-5">
+        <div className="mb-4 flex items-center gap-3">
+          <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+            <ClipboardList size={34} />
+          </div>
+
           <div>
-            <h1 className="text-3xl font-extrabold tracking-wide text-slate-900">
-  CONFIGURAÇÃO DO PLANO
-</h1>
-            <p className="text-slate-500">
+            <h1 className="text-2xl font-extrabold tracking-wide text-slate-900 md:text-3xl">
+              CONFIGURAÇÃO DO PLANO
+            </h1>
+            <p className="text-sm text-slate-500 md:text-base">
               Escolha a etapa, turma, área ou disciplina do planejamento.
             </p>
           </div>
         </div>
 
-        <section className="mb-5">
-          <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
+        <section className="mb-4">
+          <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
             🎓 Etapa de Ensino
           </h2>
 
-          <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
             {etapasEnsino.map((etapa) => (
               <button
                 key={etapa}
@@ -222,33 +230,31 @@ const card =
                   setDisciplinaSelecionada("");
                   setMostrarMaisDisciplinas(false);
                 }}
-                className={`${card} h-32 text-center ${
-                  etapaEnsino === etapa ? selecionado : normal
-                }`}
+                className={`${card} h-28 text-center ${estiloEtapa(etapa)}`}
               >
                 {etapaEnsino === etapa && (
                   <CheckCircle2
-                    size={24}
-                    className="absolute right-4 top-4 text-green-600"
+                    size={21}
+                    className="absolute right-3 top-3 text-emerald-600"
                   />
                 )}
 
-                <div className="flex flex-col items-center gap-2">
+                <div className="flex flex-col items-center gap-1.5">
                   {etapa === "Educação Infantil" && (
-                    <Baby size={42} className="text-orange-400" />
+                    <Baby size={38} className="text-orange-500" />
                   )}
                   {etapa === "Ensino Fundamental I" && (
-                    <BookOpen size={42} className="text-green-500" />
+                    <BookOpen size={38} className="text-emerald-500" />
                   )}
                   {etapa === "Ensino Fundamental II" && (
-                    <Backpack size={42} className="text-sky-500" />
+                    <Backpack size={38} className="text-sky-500" />
                   )}
                   {etapa === "Ensino Médio" && (
-                    <GraduationCap size={42} className="text-violet-500" />
+                    <GraduationCap size={38} className="text-violet-500" />
                   )}
 
                   <span>{etapa}</span>
-                  <span className="text-sm font-medium text-slate-500">
+                  <span className="text-xs font-medium text-slate-500">
                     {etapa === "Educação Infantil"
                       ? "Creche e Pré-escola"
                       : etapa === "Ensino Fundamental I"
@@ -264,38 +270,35 @@ const card =
         </section>
 
         {etapaEnsino && (
-          <section className="mb-5">
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-              <Users size={20} className="text-green-600" />
+          <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+              <Users size={19} className="text-emerald-600" />
               {etapaEnsino === "Educação Infantil" ? "Segmento" : "Ano ou Série"}
             </h2>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {opcoesTurma.map((turma) => (
                 <button
                   key={turma}
                   type="button"
                   onClick={() => {
-  setTurmaSelecionada(turma);
-  onSelecionarSerie();
-  localStorage.setItem("serieSelecionada", turma);
-
-  setTurmaInfantilDetalhe("");
-  localStorage.removeItem("turmaInfantilDetalhe");
-
-  setDisciplinaSelecionada("");
-  setMostrarMaisDisciplinas(false);
-}} 
-                  className={`${card} min-w-[120px] ${
-                    turmaSelecionada === turma ? selecionado : normal
+                    setTurmaSelecionada(turma);
+                    onSelecionarSerie();
+                    localStorage.setItem("serieSelecionada", turma);
+                    setTurmaInfantilDetalhe("");
+                    localStorage.removeItem("turmaInfantilDetalhe");
+                    setDisciplinaSelecionada("");
+                    setMostrarMaisDisciplinas(false);
+                  }}
+                  className={`${card} min-w-[115px] py-2 ${
+                    turmaSelecionada === turma ? selecionado : normal + " bg-white"
                   }`}
                 >
                   {turma}
-
                   {turmaSelecionada === turma && (
                     <CheckCircle2
-                      size={22}
-                      className="absolute right-4 top-3 text-green-600"
+                      size={19}
+                      className="absolute right-3 top-2.5 text-emerald-600"
                     />
                   )}
                 </button>
@@ -305,35 +308,36 @@ const card =
         )}
 
         {etapaEnsino === "Educação Infantil" && turmaSelecionada && (
-          <section className="mb-5">
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-              <Users size={20} className="text-green-600" />
+          <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+              <Users size={19} className="text-emerald-600" />
               Turma
             </h2>
 
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-wrap gap-2">
               {(turmaSelecionada === "Creche" ? turmasCreche : turmasPreEscola).map(
                 (turma) => (
                   <button
                     key={turma}
                     type="button"
                     onClick={() => {
-  setTurmaInfantilDetalhe(turma);
-  localStorage.setItem("turmaInfantilDetalhe", turma);
-  localStorage.setItem("serieSelecionada", turma);
-  setDisciplinaSelecionada("");
-  localStorage.removeItem("disciplinaSelecionada");
-}}
-                    className={`${card} min-w-[120px] ${
-                      turmaInfantilDetalhe === turma ? selecionado : normal
+                      setTurmaInfantilDetalhe(turma);
+                      localStorage.setItem("turmaInfantilDetalhe", turma);
+                      localStorage.setItem("serieSelecionada", turma);
+                      setDisciplinaSelecionada("");
+                      localStorage.removeItem("disciplinaSelecionada");
+                    }}
+                    className={`${card} min-w-[115px] py-2 ${
+                      turmaInfantilDetalhe === turma
+                        ? selecionado
+                        : normal + " bg-white"
                     }`}
                   >
                     {turma}
-
                     {turmaInfantilDetalhe === turma && (
                       <CheckCircle2
-                        size={22}
-                        className="absolute right-4 top-3 text-green-600"
+                        size={19}
+                        className="absolute right-3 top-2.5 text-emerald-600"
                       />
                     )}
                   </button>
@@ -344,30 +348,34 @@ const card =
         )}
 
         {podeMostrarCampoOuDisciplina && (
-          <section className="mb-5">
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-              <Sprout size={20} className="text-green-600" />
+          <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+              <Sprout size={19} className="text-emerald-600" />
               {etapaEnsino === "Educação Infantil"
                 ? "Área de Aprendizagem / Campo de Experiência"
                 : "Disciplina"}
             </h2>
 
-            <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
               {opcoesDisciplina.map((disciplina) => (
                 <button
                   key={disciplina}
                   type="button"
-                  onClick={() => setDisciplinaSelecionada(disciplina)}
-                  className={`${card} min-h-[58px] ${
-                    disciplinaSelecionada === disciplina ? selecionado : normal
+                  onClick={() => {
+                    setDisciplinaSelecionada(disciplina);
+                    localStorage.setItem("disciplinaSelecionada", disciplina);
+                  }}
+                  className={`${card} min-h-[52px] py-2 ${
+                    disciplinaSelecionada === disciplina
+                      ? selecionado
+                      : normal + " bg-white"
                   }`}
                 >
                   {disciplina}
-
                   {disciplinaSelecionada === disciplina && (
                     <CheckCircle2
-                      size={22}
-                      className="absolute right-4 top-3 text-green-600"
+                      size={19}
+                      className="absolute right-3 top-2.5 text-emerald-600"
                     />
                   )}
                 </button>
@@ -380,7 +388,7 @@ const card =
                   onClick={() =>
                     setMostrarMaisDisciplinas(!mostrarMaisDisciplinas)
                   }
-                  className={`${card} min-h-[58px] border-dashed ${normal}`}
+                  className={`${card} min-h-[52px] border-dashed bg-white ${normal}`}
                 >
                   + Mais disciplinas
                 </button>
@@ -391,22 +399,21 @@ const card =
                   <button
                     key={disciplina}
                     type="button"
-                   onClick={() => {
-  setDisciplinaSelecionada(disciplina);
-  localStorage.setItem("disciplinaSelecionada", disciplina);
-}}
-                    className={`${card} min-h-[58px] ${
+                    onClick={() => {
+                      setDisciplinaSelecionada(disciplina);
+                      localStorage.setItem("disciplinaSelecionada", disciplina);
+                    }}
+                    className={`${card} min-h-[52px] py-2 ${
                       disciplinaSelecionada === disciplina
                         ? selecionado
-                        : normal
+                        : normal + " bg-white"
                     }`}
                   >
                     {disciplina}
-
                     {disciplinaSelecionada === disciplina && (
                       <CheckCircle2
-                        size={22}
-                        className="absolute right-4 top-3 text-green-600"
+                        size={19}
+                        className="absolute right-3 top-2.5 text-emerald-600"
                       />
                     )}
                   </button>
@@ -415,28 +422,28 @@ const card =
           </section>
         )}
 
-        <div className="mb-5 grid grid-cols-1 lg:grid-cols-[280px_1fr] gap-5">
+        <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[270px_1fr]">
           <section>
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-              <Calendar size={20} className="text-green-600" />
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+              <Calendar size={19} className="text-emerald-600" />
               Ano Letivo
             </h2>
 
             <input
               value={ano}
               onChange={(e) => setAno(e.target.value)}
-              className="w-full rounded-2xl border border-slate-300 bg-white px-4 py-3 text-lg font-semibold shadow-sm outline-none transition-all duration-300 focus:border-green-500 focus:ring-4 focus:ring-green-100"
+              className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-lg font-semibold shadow-sm outline-none transition-all duration-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
               placeholder="Ex: 2026"
             />
           </section>
 
           <section>
-            <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-              <CalendarDays size={20} className="text-green-600" />
+            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+              <CalendarDays size={19} className="text-emerald-600" />
               Mês
             </h2>
 
-            <div className="grid grid-cols-3 lg:grid-cols-6 gap-3">
+            <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
               {meses.map((mes, index) => (
                 <button
                   key={mes}
@@ -445,78 +452,83 @@ const card =
                     setMesSelecionado(index);
                     setNomeMes(mes);
                   }}
-                  className={`${card} py-3 ${
-                    mesSelecionado === index ? selecionado : normal
+                  className={`${card} py-2.5 ${
+                    mesSelecionado === index
+                      ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+                      : "border-emerald-100 bg-emerald-50/60 text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50"
                   }`}
                 >
                   {mes}
-
-                  {mesSelecionado === index && (
-                    <CheckCircle2
-                      size={20}
-                      className="absolute right-3 top-3 text-green-600"
-                    />
-                  )}
                 </button>
               ))}
             </div>
           </section>
         </div>
 
-        <section className="mb-5">
-          <h2 className="mb-3 flex items-center gap-2 font-bold text-slate-800">
-            <NotebookPen size={20} className="text-green-600" />
+        <section className="mb-4">
+          <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+            <NotebookPen size={19} className="text-emerald-600" />
             Tipo de Planejamento
           </h2>
 
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
             <button
               type="button"
               onClick={() => setTipoPlanejamento("aula")}
-              className={`${card} ${
-                tipoPlanejamento === "aula" ? selecionado : normal
+              className={`${card} min-h-[82px] text-left ${
+                tipoPlanejamento === "aula"
+                  ? selecionado
+                  : "border-emerald-100 bg-emerald-50/70 text-slate-800 shadow-sm hover:border-emerald-300 hover:shadow-md"
               }`}
             >
-              Plano por Aula
-              <p className="text-sm font-medium text-slate-500">
-                Planejamento detalhado para cada aula
-              </p>
+              <div className="pr-8">
+                <div className="font-extrabold">Plano por Aula</div>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  Selecione os dias do mês em que serão realizadas as aulas.
+                </p>
+              </div>
 
-              {tipoPlanejamento === "aula" && (
-                <CheckCircle2
-                  size={22}
-                  className="absolute right-4 top-4 text-green-600"
-                />
-              )}
+              <span
+                className={`absolute right-4 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 ${
+                  tipoPlanejamento === "aula"
+                    ? "border-emerald-600 bg-emerald-600 ring-4 ring-emerald-100"
+                    : "border-emerald-300 bg-white"
+                }`}
+              />
             </button>
 
             <button
               type="button"
               onClick={() => setTipoPlanejamento("mensal")}
-              className={`${card} ${
-                tipoPlanejamento === "mensal" ? selecionado : normal
+              className={`${card} min-h-[82px] text-left ${
+                tipoPlanejamento === "mensal"
+                  ? "border-sky-500 bg-sky-50 text-sky-900 shadow-lg shadow-sky-100 ring-2 ring-sky-100"
+                  : "border-sky-100 bg-sky-50/70 text-slate-800 shadow-sm hover:border-sky-300 hover:shadow-md"
               }`}
             >
-              Plano Mensal
-              <p className="text-sm font-medium text-slate-500">
-                Planejamento geral do mês
-              </p>
+              <div className="pr-8">
+                <div className="font-extrabold">Plano Mensal</div>
+                <p className="mt-1 text-sm font-medium text-slate-500">
+                  Selecione um período do mês para o planejamento.
+                </p>
+              </div>
 
-              {tipoPlanejamento === "mensal" && (
-                <CheckCircle2
-                  size={22}
-                  className="absolute right-4 top-4 text-green-600"
-                />
-              )}
+              <span
+                className={`absolute right-4 top-1/2 h-6 w-6 -translate-y-1/2 rounded-full border-2 ${
+                  tipoPlanejamento === "mensal"
+                    ? "border-sky-600 bg-sky-600 ring-4 ring-sky-100"
+                    : "border-sky-300 bg-white"
+                }`}
+              />
             </button>
           </div>
         </section>
 
-        <div className="flex justify-between">
+        <div className="flex items-center justify-between border-t border-emerald-100 pt-3">
           <button
             type="button"
             onClick={onVoltar}
-            className="flex items-center gap-2 rounded-2xl border border-slate-200 px-5 py-3 font-bold text-slate-700 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md hover:bg-slate-100"
+            className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-5 py-2.5 font-bold text-emerald-800 shadow-sm transition-all hover:bg-emerald-100"
           >
             <ArrowLeft size={18} />
             Voltar
@@ -525,9 +537,9 @@ const card =
           <button
             type="button"
             onClick={onContinuar}
-            className="flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-7 py-3 font-bold text-white shadow-lg transition-all duration-300 hover:scale-105"
+            className="flex items-center gap-2 rounded-xl bg-gradient-to-r from-emerald-600 to-green-600 px-7 py-2.5 font-bold text-white shadow-lg shadow-emerald-200 transition-all hover:scale-[1.02]"
           >
-            Continuar
+            Continuar para o Calendário
             <ArrowRight size={18} />
           </button>
         </div>
