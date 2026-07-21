@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import BarraProgresso from "./BarraProgresso";
 
 type DataAula = {
   data: string;
@@ -219,9 +218,6 @@ export default function Calendario({
   return (
     <div className="min-h-screen bg-gradient-to-br from-emerald-100 via-green-50 to-teal-100 p-3 md:p-5">
       <div className="max-w-7xl mx-auto rounded-[30px] border border-emerald-200 bg-white p-3 md:p-4 shadow-2xl shadow-emerald-200/60">
-        <div className="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-green-50 p-2 shadow-sm">
-          <BarraProgresso etapaAtual="calendario" />
-        </div>
 
         <div className="mb-3 mt-3 text-center">
           <h1 className="text-xl font-extrabold text-slate-900 md:text-2xl">
@@ -274,9 +270,9 @@ export default function Calendario({
                         : "cursor-pointer hover:-translate-y-0.5"
                     } ${corDoDia(dia)}`}
                   >
-                    <div className="text-sm font-extrabold md:text-base">
-                      {dia}
-                    </div>
+                    <div className="text-xl font-black text-slate-900 md:text-2xl">
+  {dia}
+</div>
 
                     {tipoPlanejamento === "aula" && item && (
                       <div className="mt-0.5 text-[10px] leading-tight">

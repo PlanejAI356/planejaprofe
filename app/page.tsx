@@ -39,9 +39,6 @@ export default function Home() {
       if (data.session) {
         setUsuarioLogado(true);
         localStorage.removeItem("testeGratisConcluido");
-
-        // Ao entrar na conta, abre a seleção/configuração do plano.
-        // Aqui não contabiliza plano.
         setEtapa("configuracao");
         setCarregandoAuth(false);
         return;
@@ -92,7 +89,6 @@ export default function Home() {
       localStorage.removeItem(chave);
     });
 
-    // Não apaga login, nome do professor ou referências salvas.
     setAno("2026");
     setDatasSelecionadas([]);
     setMesSelecionado(null);
@@ -101,53 +97,57 @@ export default function Home() {
   }
 
   async function contabilizarPlano() {
-  const {
-    data: { user },
-    error: erroUsuario,
-  } = await supabase.auth.getUser();
+    const {
+      data: { user },
+      error: erroUsuario,
+    } = await supabase.auth.getUser();
 
-  if (erroUsuario) {
-    console.error("Erro ao identificar usuário:", erroUsuario);
-    throw erroUsuario;
-  }
+    if (erroUsuario) {
+      console.error("Erro ao identificar usuário:", erroUsuario);
+      throw erroUsuario;
+    }
 
-  if (!user) {
-    console.error("Nenhum usuário logado.");
-    return;
-  }
+    if (!user) {
+      console.error("Nenhum usuário logado.");
+      return;
+    }
 
-  const { data: perfil, error: erroBusca } = await supabase
-    .from("profiles")
-    .select("planos_feitos")
-    .eq("id", user.id)
-    .single();
+    const { data: perfil, error: erroBusca } = await supabase
+      .from("profiles")
+      .select("planos_feitos")
+      .eq("id", user.id)
+      .single();
 
-  if (erroBusca) {
-    console.error("Erro ao buscar quantidade de planos:", erroBusca);
-    throw erroBusca;
-  }
+    if (erroBusca) {
+      console.error("Erro ao buscar quantidade de planos:", erroBusca);
+      throw erroBusca;
+    }
 
-  const quantidadeAtual = Number(perfil?.planos_feitos ?? 0);
+    const quantidadeAtual = Number(perfil?.planos_feitos ?? 0);
 
-  const { data: perfilAtualizado,error: erroAtualizacao } = await supabase
-    .from("profiles")
-    .update({
-      planos_feitos: quantidadeAtual + 1,
-    })
-    .eq("id", user.id)
-    .select("id,planos_feitos")
-    .maybeSingle();
+    const { data: perfilAtualizado, error: erroAtualizacao } = await supabase
+      .from("profiles")
+      .update({
+        planos_feitos: quantidadeAtual + 1,
+      })
+      .eq("id", user.id)
+      .select("id,planos_feitos")
+      .maybeSingle();
+
+    if (erroAtualizacao) {
+      console.error("Erro ao contabilizar plano:", erroAtualizacao);
+      throw erroAtualizacao;
+    }
 
     if (!perfilAtualizado) {
-      throw new Error("O perfil do usuário não foi encontrado para contabilizar o plano")
+      throw new Error(
+        "O perfil do usuário não foi encontrado para contabilizar o plano."
+      );
     }
-  if (erroAtualizacao) {
-    console.error("Erro ao contabilizar plano:", erroAtualizacao);
-    throw erroAtualizacao;
+
+    console.log("Plano contabilizado com sucesso.");
   }
 
-  console.log("Plano contabilizado com sucesso.");
-}
   async function clicarEmSerie() {
     if (contabilizandoPlano) {
       return;
@@ -156,15 +156,11 @@ export default function Home() {
     setContabilizandoPlano(true);
 
     try {
-      // Professores logados terão o plano contabilizado.
       if (usuarioLogado) {
         await contabilizarPlano();
       }
 
-      // Depois de contabilizar, limpa o planejamento anterior.
       limparPlanoAnterior();
-
-      // Volta para a etapa de escolha/configuração da série.
       setEtapa("configuracao");
     } catch (error) {
       console.error(error);
@@ -200,21 +196,7 @@ export default function Home() {
       return;
     }
 
-    // A exportação não contabiliza.
-    // A contabilização acontece ao clicar em Série.
     setEtapa("exportacao");
-  }
-
-  async function sair() {
-    const { error } = await supabase.auth.signOut();
-
-    if (error) {
-      console.error("Erro ao sair:", error);
-      alert("Não foi possível sair da conta. Tente novamente.");
-      return;
-    }
-
-    window.location.href = "/";
   }
 
   if (carregandoAuth) {
@@ -233,10 +215,10 @@ export default function Home() {
 
   return (
     <main>
-      <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
-        {usuarioLogado ? (
-          <TopoProfessor />
-        ) : (
+      {usuarioLogado ? (
+        <TopoProfessor />
+      ) : (
+        <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
           <div className="flex items-center gap-2">
             <img
               src="/logo-planejai.png"
@@ -248,17 +230,7 @@ export default function Home() {
               Planej<span className="text-green-600">AI</span>
             </span>
           </div>
-        )}
 
-        {usuarioLogado ? (
-          <button
-            type="button"
-            onClick={sair}
-            className="shrink-0 rounded-lg border border-red-400 px-3 py-1.5 text-sm font-semibold text-red-500 hover:bg-red-50"
-          >
-            Sair
-          </button>
-        ) : (
           <button
             type="button"
             onClick={() => {
@@ -268,8 +240,8 @@ export default function Home() {
           >
             Já tenho conta
           </button>
-        )}
-      </div>
+        </div>
+      )}
 
       {!usuarioLogado && (
         <div className="border-b border-green-200 bg-green-50 px-3 py-2 text-center">
@@ -290,7 +262,6 @@ export default function Home() {
           tipoPlanejamento={tipoPlanejamento}
           setTipoPlanejamento={setTipoPlanejamento}
           onSelecionarSerie={clicarEmSerie}
-          
           onVoltar={() => {
             if (usuarioLogado) {
               clicarEmSerie();
