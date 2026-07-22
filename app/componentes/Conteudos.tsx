@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import BarraProgresso from "./BarraProgresso";
 import { usarPlanejamentoGratis } from "../lib/profile";
 
 type DataAula = {
@@ -267,11 +266,19 @@ export default function Conteudos({
         </div>
       )}
 
-      <div className="mx-auto max-w-5xl rounded-[32px] border border-slate-100 bg-white p-5 shadow-xl md:p-6">
-        <BarraProgresso etapaAtual="conteudos" />
+      <div className="mx-auto max-w-5xl rounded-[32px] border border-emerald-100 bg-white p-5 shadow-[0_20px_50px_rgba(16,185,129,0.12)] md:p-6">
+        <div className="mb-5">
+          <h1 className="text-2xl font-extrabold text-slate-900 md:text-3xl">
+            Conteúdos das aulas
+          </h1>
 
-        <label className="mb-2 block font-bold text-slate-800">
-          Tema geral:
+          <p className="mt-1 text-sm text-slate-500 md:text-base">
+            Informe um tema geral ou deixe a IA organizar os conteúdos das aulas.
+          </p>
+        </div>
+
+        <label className="mb-2 block text-lg font-bold text-slate-800">
+          Tema geral
         </label>
 
         <input
@@ -283,7 +290,7 @@ export default function Conteudos({
           }
           value={tema}
           onChange={(e) => setTema(e.target.value)}
-          className="mb-5 w-full rounded-2xl border border-slate-200 px-5 py-4 text-lg shadow-sm outline-none transition focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+          className="mb-5 w-full rounded-2xl border border-slate-200 px-5 py-4 text-lg shadow-sm outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
         />
 
         {tipoPlanejamento === "aula" && (
@@ -309,7 +316,7 @@ export default function Conteudos({
                   setModo("manual");
                   setResultadoIA(textoAulas);
                 }}
-                className="cursor-pointer rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-700 shadow-sm transition-all hover:bg-slate-50 hover:shadow-md"
+                className="cursor-pointer rounded-xl border border-emerald-100 bg-white p-3 font-semibold text-slate-700 shadow-sm transition-all hover:border-emerald-300 hover:bg-emerald-50 hover:shadow-md"
               >
                 ✍️ Informar os temas das aulas
               </button>
@@ -331,7 +338,7 @@ export default function Conteudos({
                     );
                   }}
                   placeholder="AULA 01 - 06/07/2026 - Tema da aula"
-                  className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
                 />
               </div>
             )}
@@ -379,7 +386,7 @@ export default function Conteudos({
                 );
               }}
               placeholder="Os conteúdos sugeridos pela IA aparecerão aqui. Você poderá editar o texto antes de continuar."
-              className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              className="min-h-[260px] w-full resize-none rounded-2xl border border-slate-200 p-4 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
             />
           </div>
         )}
@@ -388,7 +395,7 @@ export default function Conteudos({
           <button
             type="button"
             onClick={onVoltar}
-            className="w-full cursor-pointer rounded-xl border border-slate-200 bg-white p-3 font-semibold text-slate-700 shadow-sm hover:bg-slate-50"
+            className="w-full cursor-pointer rounded-xl border border-emerald-100 bg-white p-3 font-semibold text-slate-700 shadow-sm hover:border-emerald-300 hover:bg-emerald-50"
           >
             Voltar para o Calendário
           </button>

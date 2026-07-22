@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import BarraProgresso from "./BarraProgresso";
 
 type PlanoCompletoProps = {
   onExportar?: () => void;
@@ -233,7 +232,6 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
       <div className="max-w-5xl mx-auto rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-        <BarraProgresso etapaAtual="planoCompleto" />
 
         <div className="flex flex-wrap gap-2 mb-6">
           {ehCreche ? (
