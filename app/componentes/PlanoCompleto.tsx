@@ -350,7 +350,7 @@ if (
 
   function limparReferenciasProfessor() {
     setReferenciasSalvasProfessor("");
-    localStorage.removeItem("referenciasSalvasProfessor");
+   localStorage.removeItem(obterChaveReferencias());
   }
 
   function gerarAbaAtual() {
@@ -456,6 +456,10 @@ if (
               {botaoAba(
                 "objetivos",
                 "Objetivos e Habilidades"
+              )}
+              {botaoAba(
+                "recursos",
+                "Recursos e Materiais"
               )}
               {botaoAba("metodologia", "Metodologia")}
               {botaoAba("avaliacao", "Avaliação")}
@@ -644,24 +648,39 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
           )}
 
           {aba === "recursos" && (
-            <textarea
-              value={recursos}
-              onChange={(e) => {
-                setRecursos(e.target.value);
+            <div className="space-y-4">
+              <div className="rounded-2xl border border-green-200 bg-green-50 p-4">
+                <h3 className="font-bold text-green-800">
+                  Recursos e Materiais — seção opcional
+                </h3>
 
-                localStorage.setItem(
-                  "recursosPlano",
-                  ajustarEspacamento(e.target.value)
-                );
-              }}
-              onBlur={() =>
-                setRecursos(
-                  ajustarEspacamento(recursos)
-                )
-              }
-              className="min-h-[350px] w-full rounded-xl border p-3"
-              placeholder="Clique em Gerar com IA para criar recursos e materiais..."
-            />
+                <p className="mt-1 text-sm leading-6 text-slate-700">
+                  Você pode gerar esta parte com IA, preencher manualmente ou
+                  simplesmente pular esta página. Deixar esta seção em branco
+                  não interfere na geração, na qualidade ou na exportação das
+                  demais partes do plano.
+                </p>
+              </div>
+
+              <textarea
+                value={recursos}
+                onChange={(e) => {
+                  setRecursos(e.target.value);
+
+                  localStorage.setItem(
+                    "recursosPlano",
+                    ajustarEspacamento(e.target.value)
+                  );
+                }}
+                onBlur={() =>
+                  setRecursos(
+                    ajustarEspacamento(recursos)
+                  )
+                }
+                className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-green-600 focus:ring-4 focus:ring-green-100"
+                placeholder="Opcional: clique em Gerar com IA ou escreva aqui os recursos e materiais. Você também pode deixar esta seção em branco."
+              />
+            </div>
           )}
 
           {aba === "metodologia" && (
