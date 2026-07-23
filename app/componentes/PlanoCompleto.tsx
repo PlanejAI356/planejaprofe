@@ -45,6 +45,18 @@ export default function PlanoCompleto({
       .replace(/\n{3,}/g, "\n\n")
       .trim();
   }
+  function obterChaveReferencias() {
+  const serie =
+    localStorage.getItem("turmaInfantilDetalhe") ||
+    localStorage.getItem("serieSelecionada") ||
+    "sem-serie";
+
+  const disciplina =
+    localStorage.getItem("disciplinaSelecionada") ||
+    "sem-disciplina";
+
+  return `referenciasSalvasProfessor|${serie}|${disciplina}`;
+}
 
   useEffect(() => {
     setTemasSalvos(
@@ -67,10 +79,11 @@ export default function PlanoCompleto({
       ajustarEspacamento(localStorage.getItem("avaliacaoPlano") || "")
     );
 
-    setReferencias(
-      ajustarEspacamento(localStorage.getItem("referenciasPlano") || "")
-    );
-
+    setReferenciasSalvasProfessor(
+  ajustarEspacamento(
+    localStorage.getItem(obterChaveReferencias()) || ""
+  )
+);
     const atividadeSalva =
   localStorage.getItem("atividadePlano") ||
   localStorage.getItem("atividadeCasa") ||
@@ -327,10 +340,10 @@ if (
 
     setReferenciasSalvasProfessor(textoLimpo);
 
-    localStorage.setItem(
-      "referenciasSalvasProfessor",
-      textoLimpo
-    );
+   localStorage.setItem(
+  obterChaveReferencias(),
+  textoLimpo
+);
 
     alert("Referências salvas para os próximos planejamentos.");
   }
