@@ -96,6 +96,24 @@ export default function Home() {
     setTipoPlanejamento("");
   }
 
+  function limparConteudoPlanoAnterior() {
+    const chavesConteudo = [
+      "temasPlano",
+      "objetivosPlano",
+      "recursosPlano",
+      "metodologiaPlano",
+      "avaliacaoPlano",
+      "referenciasPlano",
+      "atividadePlano",
+      "temasGerados",
+      "conteudosMensais",
+    ];
+
+    chavesConteudo.forEach((chave) => {
+      localStorage.removeItem(chave);
+    });
+  }
+
   async function contabilizarPlano() {
     const {
       data: { user },
@@ -156,10 +174,11 @@ export default function Home() {
     setContabilizandoPlano(true);
 
     try {
+      limparConteudoPlanoAnterior();
+
       if (usuarioLogado) {
         await contabilizarPlano();
       }
-
     } catch (error) {
       console.error(error);
 
@@ -172,6 +191,8 @@ export default function Home() {
   }
 
   function iniciarTesteGratis() {
+    limparPlanoAnterior();
+    setEtapa("configuracao");
   }
 
   function abrirPlanoCompleto() {
@@ -259,9 +280,7 @@ export default function Home() {
           setTipoPlanejamento={setTipoPlanejamento}
           onSelecionarSerie={clicarEmSerie}
           onVoltar={() => {
-            if (usuarioLogado) {
-              clicarEmSerie();
-            } else {
+            if (!usuarioLogado) {
               setEtapa("inicio");
             }
           }}
@@ -278,7 +297,7 @@ export default function Home() {
           mesSelecionado={mesSelecionado}
           nomeMes={nomeMes}
           tipoPlanejamento={tipoPlanejamento}
-          onVoltar={clicarEmSerie}
+          onVoltar={() => setEtapa("configuracao")}
           onContinuar={(datas: DataAula[]) => {
             setDatasSelecionadas(datas);
             setEtapa("conteudos");

@@ -47,7 +47,6 @@ export default function ConfiguracaoPlano({
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [turmaInfantilDetalhe, setTurmaInfantilDetalhe] = useState("");
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
-  const [mostrarMaisDisciplinas, setMostrarMaisDisciplinas] = useState(false);
 
   const etapasEnsino = [
     "Educação Infantil",
@@ -72,32 +71,31 @@ export default function ConfiguracaoPlano({
   ];
 
   const disciplinasFundamental1 = [
-    "Língua Portuguesa",
-    "Matemática",
-    "Ciências",
-    "História",
-    "Geografia",
-    "Arte",
-    "Educação Física",
-    "Ensino Religioso",
-  ];
-
-  const maisDisciplinasFundamental1 = ["Inglês", "BNCC da Computação"];
+  "Língua Portuguesa",
+  "Matemática",
+  "Ciências",
+  "História",
+  "Geografia",
+  "Arte",
+  "Educação Física",
+  "Ensino Religioso",
+  "Inglês",
+  "BNCC da Computação",
+];
 
   const disciplinasFundamental2 = [
-    "Língua Portuguesa",
-    "Matemática",
-    "Ciências",
-    "História",
-    "Geografia",
-    "Arte",
-    "Educação Física",
-    "Ensino Religioso",
-    "Inglês",
-    "Filosofia",
-  ];
-
-  const maisDisciplinasFundamental2 = ["BNCC da Computação"];
+  "Língua Portuguesa",
+  "Matemática",
+  "Ciências",
+  "História",
+  "Geografia",
+  "Arte",
+  "Educação Física",
+  "Ensino Religioso",
+  "Inglês",
+  "Filosofia",
+  "BNCC da Computação",
+];
 
   const disciplinasEnsinoMedio = [
     "Língua Portuguesa",
@@ -155,13 +153,6 @@ export default function ConfiguracaoPlano({
       ? disciplinasFundamental2
       : etapaEnsino === "Ensino Médio"
       ? disciplinasEnsinoMedio
-      : [];
-
-  const maisDisciplinas =
-    etapaEnsino === "Ensino Fundamental I"
-      ? maisDisciplinasFundamental1
-      : etapaEnsino === "Ensino Fundamental II"
-      ? maisDisciplinasFundamental2
       : [];
 
   const selecionado =
@@ -228,7 +219,6 @@ export default function ConfiguracaoPlano({
                   setTurmaSelecionada("");
                   setTurmaInfantilDetalhe("");
                   setDisciplinaSelecionada("");
-                  setMostrarMaisDisciplinas(false);
                 }}
                 className={`${card} h-28 text-center ${estiloEtapa(etapa)}`}
               >
@@ -288,7 +278,6 @@ export default function ConfiguracaoPlano({
                     setTurmaInfantilDetalhe("");
                     localStorage.removeItem("turmaInfantilDetalhe");
                     setDisciplinaSelecionada("");
-                    setMostrarMaisDisciplinas(false);
                   }}
                   className={`${card} min-w-[115px] py-2 ${
                     turmaSelecionada === turma ? selecionado : normal + " bg-white"
@@ -380,44 +369,6 @@ export default function ConfiguracaoPlano({
                   )}
                 </button>
               ))}
-
-              {(etapaEnsino === "Ensino Fundamental I" ||
-                etapaEnsino === "Ensino Fundamental II") && (
-                <button
-                  type="button"
-                  onClick={() =>
-                    setMostrarMaisDisciplinas(!mostrarMaisDisciplinas)
-                  }
-                  className={`${card} min-h-[52px] border-dashed bg-white ${normal}`}
-                >
-                  + Mais disciplinas
-                </button>
-              )}
-
-              {mostrarMaisDisciplinas &&
-                maisDisciplinas.map((disciplina) => (
-                  <button
-                    key={disciplina}
-                    type="button"
-                    onClick={() => {
-                      setDisciplinaSelecionada(disciplina);
-                      localStorage.setItem("disciplinaSelecionada", disciplina);
-                    }}
-                    className={`${card} min-h-[52px] py-2 ${
-                      disciplinaSelecionada === disciplina
-                        ? selecionado
-                        : normal + " bg-white"
-                    }`}
-                  >
-                    {disciplina}
-                    {disciplinaSelecionada === disciplina && (
-                      <CheckCircle2
-                        size={19}
-                        className="absolute right-3 top-2.5 text-emerald-600"
-                      />
-                    )}
-                  </button>
-                ))}
             </div>
           </section>
         )}

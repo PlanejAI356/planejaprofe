@@ -17,6 +17,29 @@ export async function POST(req: Request) {
     const disciplina = body.disciplina || "";
     const estiloAula = body.estiloAula || body.sugestoesMetodologia || "";
 
+    const ehBnccComputacao =
+      disciplina.trim().toLowerCase() === "bncc da computação";
+
+    const regrasBnccComputacao = ehBnccComputacao
+      ? `
+REGRAS ESPECÍFICAS PARA BNCC DA COMPUTAÇÃO:
+- Analisar primeiro o conteúdo ou tema informado pelo professor.
+- Não escolher as habilidades apenas com base na série ou no nome da disciplina.
+- Selecionar as habilidades da BNCC que tenham relação direta com o conteúdo, a série e o nível de complexidade.
+- Priorizar as habilidades específicas da Computação quando elas forem adequadas ao conteúdo.
+- Não limitar a seleção somente a códigos que contenham CO.
+- Quando o conteúdo for interdisciplinar, também poderão ser utilizadas habilidades de outras áreas ou componentes da BNCC, como Matemática, Ciências, Língua Portuguesa, História, Geografia, Arte ou outras, desde que tenham relação real com o conteúdo trabalhado.
+- Relacionar o conteúdo, quando pertinente, aos eixos Pensamento Computacional, Mundo Digital e Cultura Digital.
+- Um mesmo conteúdo pode envolver habilidades de Computação e habilidades complementares de outras áreas.
+- Utilizar uma habilidade quando ela for suficiente.
+- Utilizar duas ou, excepcionalmente, três habilidades somente quando o conteúdo realmente envolver aprendizagens diferentes.
+- Não acrescentar habilidades apenas para preencher o plano.
+- Nunca inventar códigos de habilidades.
+- Não utilizar habilidades sem relação direta com o conteúdo informado pelo professor.
+- Quando houver mais de uma habilidade, separar os códigos por vírgula.
+`
+      : "";
+
     const ehCreche =
       serie === "Berçário" ||
       serie === "Maternal I" ||
@@ -218,6 +241,8 @@ Crie habilidades BNCC e objetivos para cada conteúdo mensal informado pelo prof
 Disciplina: ${disciplina}
 Série: ${serie}
 
+${regrasBnccComputacao}
+
 Meu estilo de aula:
 ${estiloAula}
 
@@ -227,7 +252,7 @@ ${aulas}
 REGRAS:
 - Não usar AULA 01, AULA 02 ou datas.
 - Usar apenas uma marcação com hífen no início de cada conteúdo.
-- Listar a habilidade BNCC usando apenas o código.
+- Listar a habilidade BNCC usando apenas o código ou os códigos, quando o conteúdo realmente exigir mais de uma habilidade.
 - Gerar de 3 a 5 objetivos para cada conteúdo.
 - Os objetivos devem ficar na mesma linha, separados por ponto e vírgula.
 - Respeitar a série informada.
@@ -249,6 +274,8 @@ Crie a habilidade BNCC e os objetivos para cada aula abaixo.
 Disciplina: ${disciplina}
 Série: ${serie}
 
+${regrasBnccComputacao}
+
 Meu estilo de aula:
 ${estiloAula}
 
@@ -257,7 +284,7 @@ ${aulas}
 
 REGRAS:
 - Respeite a série informada.
-- Use apenas o código da BNCC, sem descrição.
+- Use apenas o código ou os códigos da BNCC, sem descrição.
 - Nunca coloque apenas um objetivo.
 - Coloque de 3 a 5 objetivos por aula.
 - Os objetivos devem ficar na mesma linha, separados por ponto e vírgula.
