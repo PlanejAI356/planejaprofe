@@ -71,9 +71,24 @@ export default function PlanoCompleto({
       ajustarEspacamento(localStorage.getItem("referenciasPlano") || "")
     );
 
-    setAtividade(
-      ajustarEspacamento(localStorage.getItem("atividadePlano") || "")
-    );
+    const atividadeSalva =
+  localStorage.getItem("atividadePlano") ||
+  localStorage.getItem("atividadeCasa") ||
+  "";
+
+setAtividade(ajustarEspacamento(atividadeSalva));
+
+if (
+  !localStorage.getItem("atividadePlano") &&
+  localStorage.getItem("atividadeCasa")
+) {
+  localStorage.setItem(
+    "atividadePlano",
+    ajustarEspacamento(atividadeSalva)
+  );
+
+  localStorage.removeItem("atividadeCasa");
+}
 
     setReferenciasSalvasProfessor(
       ajustarEspacamento(
@@ -281,13 +296,13 @@ export default function PlanoCompleto({
       }
 
       if (tipo === "atividade") {
-        setAtividade(textoLimpo);
-        localStorage.setItem("atividadePlano", textoLimpo);
+  setAtividade(textoLimpo);
+  localStorage.setItem("atividadePlano", textoLimpo);
 
-        await salvarPlanoCompleto(textoLimpo);
-
-        alert("Plano completo salvo em Meus Planos.");
-      }
+  salvarPlanoCompleto(textoLimpo).catch((erro) => {
+    console.error("Erro ao salvar o plano completo:", erro);
+  });
+}
     } catch (erro) {
       const mensagem =
         erro instanceof Error
