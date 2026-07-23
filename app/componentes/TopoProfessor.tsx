@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Heart, LogOut } from "lucide-react";
+import { Heart, LogOut, FolderOpen } from "lucide-react";
+import Link from "next/link";
 import { supabase } from "../lib/supabase";
 
 export default function TopoProfessor() {
@@ -67,6 +68,7 @@ export default function TopoProfessor() {
 
             <div className="mt-0.5 flex items-center gap-1.5 text-sm font-medium text-slate-700">
               <span>Bem-vinda ao PlanejAI</span>
+
               <Heart
                 size={15}
                 className="fill-emerald-600 text-emerald-600"
@@ -75,15 +77,27 @@ export default function TopoProfessor() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={sair}
-          disabled={saindo}
-          className="flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          <LogOut size={19} />
-          <span>{saindo ? "Saindo..." : "Sair"}</span>
-        </button>
+        <div className="flex items-center gap-3">
+
+          <Link
+            href="/meus-planos"
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+          >
+            <FolderOpen size={19} />
+            <span>Meus Planos</span>
+          </Link>
+
+          <button
+            type="button"
+            onClick={sair}
+            disabled={saindo}
+            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            <LogOut size={19} />
+            <span>{saindo ? "Saindo..." : "Sair"}</span>
+          </button>
+
+        </div>
       </div>
     </header>
   );

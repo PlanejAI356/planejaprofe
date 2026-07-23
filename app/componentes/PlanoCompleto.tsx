@@ -1,13 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "../lib/supabase";
 
 type PlanoCompletoProps = {
   onExportar?: () => void;
   onVoltar?: () => void;
 };
 
-export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoProps) {
+export default function PlanoCompleto({
+  onExportar,
+  onVoltar,
+}: PlanoCompletoProps) {
   const [aba, setAba] = useState("temas");
 
   const [temasSalvos, setTemasSalvos] = useState("");
@@ -17,23 +21,64 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   const [avaliacao, setAvaliacao] = useState("");
   const [referencias, setReferencias] = useState("");
   const [atividade, setAtividade] = useState("");
+
   const [mostrarSugestoes, setMostrarSugestoes] = useState(false);
   const [mostrarReferencias, setMostrarReferencias] = useState(false);
+
   const [sugestoesMetodologia, setSugestoesMetodologia] = useState("");
   const [ehCreche, setEhCreche] = useState(false);
-  const [referenciasSalvasProfessor, setReferenciasSalvasProfessor] = useState("");
+
+  const [referenciasSalvasProfessor, setReferenciasSalvasProfessor] =
+    useState("");
+
   const [gerando, setGerando] = useState(false);
 
+  function ajustarEspacamento(texto: string) {
+    return texto
+      .replace(/\r\n/g, "\n")
+      .replace(/[ \t]+\n/g, "\n")
+      .replace(/\n[ \t]+/g, "\n")
+      .replace(/\s*(2ª SEMANA\s*-)/g, "\n$1")
+      .replace(/\s*(3ª SEMANA\s*-)/g, "\n$1")
+      .replace(/\s*(4ª SEMANA\s*-)/g, "\n$1")
+      .replace(/\n{2,}(?=AULA\s\d+)/g, "\n")
+      .replace(/\n{3,}/g, "\n\n")
+      .trim();
+  }
+
   useEffect(() => {
-    setTemasSalvos(ajustarEspacamento(localStorage.getItem("temasPlano") || ""));
-    setObjetivos(ajustarEspacamento(localStorage.getItem("objetivosPlano") || ""));
-    setRecursos(ajustarEspacamento(localStorage.getItem("recursosPlano") || ""));
-    setMetodologia(ajustarEspacamento(localStorage.getItem("metodologiaPlano") || ""));
-    setAvaliacao(ajustarEspacamento(localStorage.getItem("avaliacaoPlano") || ""));
-    setReferencias(ajustarEspacamento(localStorage.getItem("referenciasPlano") || ""));
-    setAtividade(ajustarEspacamento(localStorage.getItem("atividadePlano") || ""));
+    setTemasSalvos(
+      ajustarEspacamento(localStorage.getItem("temasPlano") || "")
+    );
+
+    setObjetivos(
+      ajustarEspacamento(localStorage.getItem("objetivosPlano") || "")
+    );
+
+    setRecursos(
+      ajustarEspacamento(localStorage.getItem("recursosPlano") || "")
+    );
+
+    setMetodologia(
+      ajustarEspacamento(localStorage.getItem("metodologiaPlano") || "")
+    );
+
+    setAvaliacao(
+      ajustarEspacamento(localStorage.getItem("avaliacaoPlano") || "")
+    );
+
+    setReferencias(
+      ajustarEspacamento(localStorage.getItem("referenciasPlano") || "")
+    );
+
+    setAtividade(
+      ajustarEspacamento(localStorage.getItem("atividadePlano") || "")
+    );
+
     setReferenciasSalvasProfessor(
-      ajustarEspacamento(localStorage.getItem("referenciasSalvasProfessor") || "")
+      ajustarEspacamento(
+        localStorage.getItem("referenciasSalvasProfessor") || ""
+      )
     );
 
     const turma = localStorage.getItem("turmaInfantilDetalhe") || "";
@@ -45,18 +90,127 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     );
   }, []);
 
- function ajustarEspacamento(texto: string) {
-  return texto
-    .replace(/\r\n/g, "\n")
-    .replace(/[ \t]+\n/g, "\n")
-    .replace(/\n[ \t]+/g, "\n")
-    .replace(/\s*(2ª SEMANA\s*-)/g, "\n$1")
-    .replace(/\s*(3ª SEMANA\s*-)/g, "\n$1")
-    .replace(/\s*(4ª SEMANA\s*-)/g, "\n$1")
-    .replace(/\n{2,}(?=AULA\s\d+)/g, "\n")
-    .replace(/\n{3,}/g, "\n\n")
-    .trim();
-}
+  async function salvarPlanoCompleto(atividadeGerada: string) {
+    const {
+      data: { user },
+      error: erroUsuario,
+    } = await supabase.auth.getUser();
+
+    if (erroUsuario) {
+      console.error("Erro ao identificar o professor:", erroUsuario);
+      return;
+    }
+
+    if (!user) {
+      console.log(
+        "O plano não foi salvo no Supabase porque não há usuário conectado."
+      );
+      return;
+    }
+
+    const etapa =
+      localStorage.getItem("etapaEnsino") ||
+      localStorage.getItem("etapaSelecionada") ||
+      "";
+
+    const serie =
+      localStorage.getItem("turmaInfantilDetalhe") ||
+      localStorage.getItem("serieSelecionada") ||
+      "";
+
+    const disciplina =
+      localStorage.getItem("disciplinaSelecionada") || "";
+
+    const tipoPlanejamento =
+      localStorage.getItem("tipoPlanejamento") || "aula";
+
+    const dataInicio =
+      localStorage.getItem("dataInicio") ||
+      localStorage.getItem("dataInicial") ||
+      "";
+
+    const dataFim =
+      localStorage.getItem("dataFim") ||
+      localStorage.getItem("dataFinal") ||
+      "";
+
+    const periodoSalvo =
+      localStorage.getItem("periodoPlanejamento") ||
+      localStorage.getItem("periodoSelecionado") ||
+      "";
+
+    const periodo =
+      periodoSalvo ||
+      (dataInicio && dataFim
+        ? `${dataInicio} a ${dataFim}`
+        : dataInicio || dataFim || "");
+
+    const planoCompleto = {
+      temas: ajustarEspacamento(temasSalvos),
+      objetivos: ajustarEspacamento(objetivos),
+      recursos: ajustarEspacamento(recursos),
+      metodologia: ajustarEspacamento(metodologia),
+      avaliacao: ajustarEspacamento(avaliacao),
+      referencias: ajustarEspacamento(referencias),
+      atividade: ajustarEspacamento(atividadeGerada),
+    };
+
+    const chaveAtual = [
+      user.id,
+      etapa,
+      serie,
+      disciplina,
+      tipoPlanejamento,
+      ajustarEspacamento(temasSalvos),
+    ].join("|");
+
+    const planoSalvoId = localStorage.getItem("planoSalvoId");
+    const planoSalvoChave = localStorage.getItem("planoSalvoChave");
+
+    const dadosPlano = {
+      user_id: user.id,
+      etapa_ensino: etapa,
+      serie,
+      disciplina,
+      tipo_planejamento: tipoPlanejamento,
+      periodo,
+      plano_completo: JSON.stringify(planoCompleto),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (planoSalvoId && planoSalvoChave === chaveAtual) {
+      const { error: erroAtualizacao } = await supabase
+        .from("planos")
+        .update(dadosPlano)
+        .eq("id", planoSalvoId)
+        .eq("user_id", user.id);
+
+      if (erroAtualizacao) {
+        throw new Error(
+          `A atividade foi gerada, mas não foi possível atualizar o plano: ${erroAtualizacao.message}`
+        );
+      }
+
+      return;
+    }
+
+    const { data: planoCriado, error: erroCriacao } = await supabase
+      .from("planos")
+      .insert(dadosPlano)
+      .select("id")
+      .single();
+
+    if (erroCriacao) {
+      throw new Error(
+        `A atividade foi gerada, mas não foi possível salvar o plano: ${erroCriacao.message}`
+      );
+    }
+
+    if (planoCriado?.id) {
+      localStorage.setItem("planoSalvoId", planoCriado.id);
+      localStorage.setItem("planoSalvoChave", chaveAtual);
+    }
+  }
 
   async function gerarParte(tipo: string) {
     if (gerando) return;
@@ -81,7 +235,8 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
             localStorage.getItem("turmaInfantilDetalhe") ||
             localStorage.getItem("serieSelecionada") ||
             "",
-          disciplina: localStorage.getItem("disciplinaSelecionada") || "",
+          disciplina:
+            localStorage.getItem("disciplinaSelecionada") || "",
           etapa: localStorage.getItem("etapaEnsino") || "",
           tipoPlanejamento:
             localStorage.getItem("tipoPlanejamento") || "aula",
@@ -128,6 +283,10 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
       if (tipo === "atividade") {
         setAtividade(textoLimpo);
         localStorage.setItem("atividadePlano", textoLimpo);
+
+        await salvarPlanoCompleto(textoLimpo);
+
+        alert("Plano completo salvo em Meus Planos.");
       }
     } catch (erro) {
       const mensagem =
@@ -142,7 +301,9 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   }
 
   function salvarReferenciasProfessor() {
-    const textoLimpo = ajustarEspacamento(referenciasSalvasProfessor);
+    const textoLimpo = ajustarEspacamento(
+      referenciasSalvasProfessor
+    );
 
     if (!textoLimpo) {
       alert("Escreva pelo menos uma referência antes de salvar.");
@@ -150,7 +311,12 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
     }
 
     setReferenciasSalvasProfessor(textoLimpo);
-    localStorage.setItem("referenciasSalvasProfessor", textoLimpo);
+
+    localStorage.setItem(
+      "referenciasSalvasProfessor",
+      textoLimpo
+    );
+
     alert("Referências salvas para os próximos planejamentos.");
   }
 
@@ -181,7 +347,9 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
   }
 
   function copiarTexto() {
-    navigator.clipboard.writeText(ajustarEspacamento(textoAtual()));
+    navigator.clipboard.writeText(
+      ajustarEspacamento(textoAtual())
+    );
   }
 
   function refazerTexto() {
@@ -218,11 +386,12 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
   const botaoAba = (id: string, nome: string) => (
     <button
+      type="button"
       onClick={() => setAba(id)}
-      className={`shrink-0 whitespace-nowrap px-5 py-3 rounded-2xl font-semibold transition-all cursor-pointer ${
+      className={`shrink-0 cursor-pointer whitespace-nowrap rounded-2xl px-5 py-3 font-semibold transition-all ${
         aba === id
           ? "bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg ring-2 ring-blue-100"
-          : "bg-white border border-slate-200 text-slate-700 shadow-md hover:shadow-lg transition-all hover:-translate-y-0.5 hover:shadow-md hover:-translate-y-0.5 hover:border-blue-400 hover:bg-slate-50"
+          : "border border-slate-200 bg-white text-slate-700 shadow-md hover:-translate-y-0.5 hover:border-blue-400 hover:bg-slate-50 hover:shadow-lg"
       }`}
     >
       {nome}
@@ -231,144 +400,168 @@ export default function PlanoCompleto({ onExportar, onVoltar }: PlanoCompletoPro
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-green-50 p-4 md:p-6">
-      <div className="max-w-5xl mx-auto rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
-
-        <div className="flex flex-wrap gap-2 mb-6">
+      <div className="mx-auto max-w-5xl rounded-[32px] border border-slate-200 bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.12)]">
+        <div className="mb-6 flex flex-wrap gap-2">
           {ehCreche ? (
             <>
               {botaoAba("temas", "Tema")}
-              {botaoAba("objetivos", "Objetivos de Aprendizagem")}
-              {botaoAba("recursos", "Recursos e Materiais")}
-              {botaoAba("metodologia", "Metodologia (Desenvolvimento)")}
-              {botaoAba("avaliacao", "Avaliação Formativa")}
+              {botaoAba(
+                "objetivos",
+                "Objetivos de Aprendizagem"
+              )}
+              {botaoAba(
+                "recursos",
+                "Recursos e Materiais"
+              )}
+              {botaoAba(
+                "metodologia",
+                "Metodologia (Desenvolvimento)"
+              )}
+              {botaoAba(
+                "avaliacao",
+                "Avaliação Formativa"
+              )}
             </>
           ) : (
             <>
               {botaoAba("temas", "Temas")}
-              {botaoAba("objetivos", "Objetivos e Habilidades")}
+              {botaoAba(
+                "objetivos",
+                "Objetivos e Habilidades"
+              )}
               {botaoAba("metodologia", "Metodologia")}
               {botaoAba("avaliacao", "Avaliação")}
               {botaoAba("referencias", "Referências")}
-              {botaoAba("atividade", "Atividade para Casa")}
+              {botaoAba(
+                "atividade",
+                "Atividade para Casa"
+              )}
             </>
           )}
         </div>
 
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-lg">
-          <div className="flex flex-wrap gap-2 mb-3">
+          <div className="mb-3 flex flex-wrap gap-2">
             {aba !== "temas" && (
-  <button
-    onClick={gerarAbaAtual}
-    disabled={gerando}
-    className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${
-  gerando
-    ? "cursor-not-allowed bg-slate-400 text-white shadow-sm"
-    : "cursor-pointer bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-xl"
-}`}
-  >
-    {gerando ? "⏳ Gerando..." : "✨ Gerar com IA"}
-  </button>
-)}
+              <button
+                type="button"
+                onClick={gerarAbaAtual}
+                disabled={gerando}
+                className={`rounded-xl px-4 py-2 font-semibold transition-all duration-200 ${
+                  gerando
+                    ? "cursor-not-allowed bg-slate-400 text-white shadow-sm"
+                    : "cursor-pointer bg-gradient-to-r from-blue-600 to-green-600 text-white shadow-lg hover:-translate-y-0.5 hover:shadow-xl"
+                }`}
+              >
+                {gerando
+                  ? "⏳ Gerando..."
+                  : "✨ Gerar com IA"}
+              </button>
+            )}
 
             {aba !== "temas" && (
-  <button
-    type="button"
-    onClick={() => setMostrarSugestoes(!mostrarSugestoes)}
-    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
-      mostrarSugestoes
-        ? "border-blue-500 bg-blue-50 text-blue-700"
-        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
-    }`}
-  >
-    🎯 Meu estilo
-  </button>
-)}
-{aba === "referencias" && (
-  <button
-    type="button"
-    onClick={() => setMostrarReferencias(!mostrarReferencias)}
-    className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
-      mostrarReferencias
-        ? "border-blue-500 bg-blue-50 text-blue-700"
-        : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
-    }`}
-  >
-    📚 Minhas referências
-  </button>
-)}
-           <button
-  type="button"
-  onClick={copiarTexto}
-  className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-lg"
->
-  📋 Copiar
-</button>
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarSugestoes(!mostrarSugestoes)
+                }
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+                  mostrarSugestoes
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+                }`}
+              >
+                🎯 Meu estilo
+              </button>
+            )}
 
-{aba !== "temas" && (
-  <button
-    type="button"
-    onClick={refazerTexto}
-    className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow-lg"
-  >
-    🔄 Refazer
-  </button>
-)}
+            {aba === "referencias" && (
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarReferencias(!mostrarReferencias)
+                }
+                className={`flex items-center gap-2 rounded-xl border px-4 py-2 font-semibold shadow-sm transition ${
+                  mostrarReferencias
+                    ? "border-blue-500 bg-blue-50 text-blue-700"
+                    : "border-slate-200 bg-white text-slate-700 hover:border-blue-400 hover:bg-blue-50"
+                }`}
+              >
+                📚 Minhas referências
+              </button>
+            )}
+
+            <button
+              type="button"
+              onClick={copiarTexto}
+              className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700 hover:shadow-lg"
+            >
+              📋 Copiar
+            </button>
+
+            {aba !== "temas" && (
+              <button
+                type="button"
+                onClick={refazerTexto}
+                className="cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 font-semibold text-slate-700 shadow-md transition-all duration-200 hover:-translate-y-0.5 hover:border-red-300 hover:bg-red-50 hover:text-red-700 hover:shadow-lg"
+              >
+                🔄 Refazer
+              </button>
+            )}
           </div>
 
           {aba !== "temas" && mostrarSugestoes && (
             <div className="mb-4 rounded-2xl border border-amber-200 bg-amber-50 p-4">
               <h3 className="mb-1 font-bold text-blue-700">
-  🎯 Meu estilo
-</h3>
+                🎯 Meu estilo
+              </h3>
 
-<p className="mb-1 font-semibold text-slate-700">
-  Como você quer que esta parte do plano seja gerada?
-</p>
+              <p className="mb-1 font-semibold text-slate-700">
+                Como você quer que esta parte do plano seja
+                gerada?
+              </p>
 
-<p className="mb-3 text-sm text-slate-600">
-  Conte à IA como você prefere que esta parte do plano seja elaborada.
-</p>
+              <p className="mb-3 text-sm text-slate-600">
+                Conte à IA como você prefere que esta parte do
+                plano seja elaborada.
+              </p>
 
               <textarea
-  value={sugestoesMetodologia}
-  onChange={(e) => setSugestoesMetodologia(e.target.value)}
-  placeholder={
-    aba === "objetivos"
-      ? `Exemplo:
+                value={sugestoesMetodologia}
+                onChange={(e) =>
+                  setSugestoesMetodologia(e.target.value)
+                }
+                placeholder={
+                  aba === "objetivos"
+                    ? `Exemplo:
 Quero objetivos claros e específicos.
 Utilize apenas o código da BNCC.
 Evite repetir os mesmos verbos.
 Relacione os objetivos com o tema da aula.`
-
-      : aba === "recursos"
-      ? `Exemplo:
+                    : aba === "recursos"
+                      ? `Exemplo:
 Utilize quadro, livro didático, caderno e materiais de baixo custo.
 Evite recursos tecnológicos quando não forem necessários.`
-
-      : aba === "metodologia"
-      ? `Exemplo:
+                      : aba === "metodologia"
+                        ? `Exemplo:
 Sempre começo com perguntas norteadoras.
 Faço uma conversa inicial.
 Utilizo o livro didático.
 Finalizo com atividade no caderno.`
-
-      : aba === "avaliacao"
-      ? `Exemplo:
+                        : aba === "avaliacao"
+                          ? `Exemplo:
 Quero uma avaliação realizada durante a aula.
 Avaliar participação, interesse e realização das atividades.
 Não repetir o conteúdo da aula.`
-
-      : aba === "referencias"
-      ? `Exemplo:
+                          : aba === "referencias"
+                            ? `Exemplo:
 Utilize a BNCC, o livro didático adotado pela escola e documentos oficiais.`
-
-      : `Exemplo:
+                            : `Exemplo:
 Organize as atividades para casa em 4 semanas.
 Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
-  }
-  className="mt-2 w-full min-h-[180px] resize-y rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-/>
-              
+                }
+                className="mt-2 min-h-[180px] w-full resize-y rounded-2xl border border-blue-200 bg-white px-4 py-3 text-sm leading-6 text-slate-700 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              />
             </div>
           )}
 
@@ -376,12 +569,23 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
             <textarea
               value={temasSalvos}
               onChange={(e) => {
-                const textoLimpo = ajustarEspacamento(e.target.value);
+                const textoLimpo = ajustarEspacamento(
+                  e.target.value
+                );
+
                 setTemasSalvos(e.target.value);
-                localStorage.setItem("temasPlano", textoLimpo);
+
+                localStorage.setItem(
+                  "temasPlano",
+                  textoLimpo
+                );
               }}
-              onBlur={() => setTemasSalvos(ajustarEspacamento(temasSalvos))}
-              className="w-full min-h-[350px] rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              onBlur={() =>
+                setTemasSalvos(
+                  ajustarEspacamento(temasSalvos)
+                )
+              }
+              className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder="Temas das aulas..."
             />
           )}
@@ -391,10 +595,18 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
               value={objetivos}
               onChange={(e) => {
                 setObjetivos(e.target.value);
-                localStorage.setItem("objetivosPlano", ajustarEspacamento(e.target.value));
+
+                localStorage.setItem(
+                  "objetivosPlano",
+                  ajustarEspacamento(e.target.value)
+                );
               }}
-              onBlur={() => setObjetivos(ajustarEspacamento(objetivos))}
-              className="w-full min-h-[350px] rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+              onBlur={() =>
+                setObjetivos(
+                  ajustarEspacamento(objetivos)
+                )
+              }
+              className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder={
                 ehCreche
                   ? "Clique em Gerar com IA para criar objetivos de aprendizagem..."
@@ -408,31 +620,45 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
               value={recursos}
               onChange={(e) => {
                 setRecursos(e.target.value);
-                localStorage.setItem("recursosPlano", ajustarEspacamento(e.target.value));
+
+                localStorage.setItem(
+                  "recursosPlano",
+                  ajustarEspacamento(e.target.value)
+                );
               }}
-              onBlur={() => setRecursos(ajustarEspacamento(recursos))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
+              onBlur={() =>
+                setRecursos(
+                  ajustarEspacamento(recursos)
+                )
+              }
+              className="min-h-[350px] w-full rounded-xl border p-3"
               placeholder="Clique em Gerar com IA para criar recursos e materiais..."
             />
           )}
 
           {aba === "metodologia" && (
-            <>
-              <textarea
-                value={metodologia}
-                onChange={(e) => {
-                  setMetodologia(e.target.value);
-                  localStorage.setItem("metodologiaPlano", ajustarEspacamento(e.target.value));
-                }}
-                onBlur={() => setMetodologia(ajustarEspacamento(metodologia))}
-                className="w-full min-h-[350px] border p-3 rounded-xl"
-                placeholder={
-                  ehCreche
-                    ? "Clique em Gerar com IA para criar a metodologia de desenvolvimento..."
-                    : "Clique em Gerar com IA para criar a metodologia..."
-                }
-              />
-            </>
+            <textarea
+              value={metodologia}
+              onChange={(e) => {
+                setMetodologia(e.target.value);
+
+                localStorage.setItem(
+                  "metodologiaPlano",
+                  ajustarEspacamento(e.target.value)
+                );
+              }}
+              onBlur={() =>
+                setMetodologia(
+                  ajustarEspacamento(metodologia)
+                )
+              }
+              className="min-h-[350px] w-full rounded-xl border p-3"
+              placeholder={
+                ehCreche
+                  ? "Clique em Gerar com IA para criar a metodologia de desenvolvimento..."
+                  : "Clique em Gerar com IA para criar a metodologia..."
+              }
+            />
           )}
 
           {aba === "avaliacao" && (
@@ -440,10 +666,18 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
               value={avaliacao}
               onChange={(e) => {
                 setAvaliacao(e.target.value);
-                localStorage.setItem("avaliacaoPlano", ajustarEspacamento(e.target.value));
+
+                localStorage.setItem(
+                  "avaliacaoPlano",
+                  ajustarEspacamento(e.target.value)
+                );
               }}
-              onBlur={() => setAvaliacao(ajustarEspacamento(avaliacao))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
+              onBlur={() =>
+                setAvaliacao(
+                  ajustarEspacamento(avaliacao)
+                )
+              }
+              className="min-h-[350px] w-full rounded-xl border p-3"
               placeholder={
                 ehCreche
                   ? "Clique em Gerar com IA para criar a avaliação formativa..."
@@ -461,14 +695,16 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                   </h3>
 
                   <p className="mt-1 text-sm text-slate-600">
-                    Salve aqui os livros, documentos e materiais que você costuma
-                    utilizar. Eles ficarão disponíveis nos próximos planejamentos.
+                    Salve aqui os livros, documentos e
+                    materiais que você costuma utilizar.
                   </p>
 
                   <textarea
                     value={referenciasSalvasProfessor}
                     onChange={(e) =>
-                      setReferenciasSalvasProfessor(e.target.value)
+                      setReferenciasSalvasProfessor(
+                        e.target.value
+                      )
                     }
                     className="mt-3 min-h-[130px] w-full resize-y rounded-xl border border-blue-200 bg-white p-3 text-sm text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                     placeholder={`Exemplo:
@@ -480,7 +716,9 @@ Materiais complementares utilizados pelo professor.`}
                   <div className="mt-3 flex flex-wrap gap-2">
                     <button
                       type="button"
-                      onClick={salvarReferenciasProfessor}
+                      onClick={
+                        salvarReferenciasProfessor
+                      }
                       className="rounded-xl bg-blue-600 px-4 py-2 font-semibold text-white hover:bg-blue-700"
                     >
                       💾 Salvar referências
@@ -489,7 +727,9 @@ Materiais complementares utilizados pelo professor.`}
                     {referenciasSalvasProfessor && (
                       <button
                         type="button"
-                        onClick={limparReferenciasProfessor}
+                        onClick={
+                          limparReferenciasProfessor
+                        }
                         className="rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700 hover:bg-slate-50"
                       >
                         🗑️ Limpar salvas
@@ -503,13 +743,18 @@ Materiais complementares utilizados pelo professor.`}
                 value={referencias}
                 onChange={(e) => {
                   setReferencias(e.target.value);
+
                   localStorage.setItem(
                     "referenciasPlano",
                     ajustarEspacamento(e.target.value)
                   );
                 }}
-                onBlur={() => setReferencias(ajustarEspacamento(referencias))}
-                className="w-full min-h-[350px] border p-3 rounded-xl"
+                onBlur={() =>
+                  setReferencias(
+                    ajustarEspacamento(referencias)
+                  )
+                }
+                className="min-h-[350px] w-full rounded-xl border p-3"
                 placeholder="Clique em Gerar com IA para criar as referências..."
               />
             </div>
@@ -520,25 +765,35 @@ Materiais complementares utilizados pelo professor.`}
               value={atividade}
               onChange={(e) => {
                 setAtividade(e.target.value);
-                localStorage.setItem("atividadePlano", ajustarEspacamento(e.target.value));
+
+                localStorage.setItem(
+                  "atividadePlano",
+                  ajustarEspacamento(e.target.value)
+                );
               }}
-              onBlur={() => setAtividade(ajustarEspacamento(atividade))}
-              className="w-full min-h-[350px] border p-3 rounded-xl"
+              onBlur={() =>
+                setAtividade(
+                  ajustarEspacamento(atividade)
+                )
+              }
+              className="min-h-[350px] w-full rounded-xl border p-3"
               placeholder="Clique em Gerar com IA para criar a atividade para casa..."
             />
           )}
         </div>
 
         <button
+          type="button"
           onClick={onVoltar}
-          className="bg-slate-300 text-black px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
+          className="mt-6 w-full cursor-pointer rounded-xl bg-slate-300 px-6 py-3 font-semibold text-black"
         >
           Voltar para Conteúdos
         </button>
 
         <button
+          type="button"
           onClick={onExportar}
-          className="bg-green-600 text-white px-6 py-3 rounded-xl mt-6 w-full cursor-pointer font-semibold"
+          className="mt-6 w-full cursor-pointer rounded-xl bg-green-600 px-6 py-3 font-semibold text-white"
         >
           Ir para Exportação
         </button>
