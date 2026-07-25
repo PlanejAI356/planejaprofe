@@ -1,11 +1,9 @@
-import { MetadataRoute } from "next";
+import type { MetadataRoute } from "next";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const baseUrl = "https://planejaioficial.com.br";
-
   return [
     {
-      url: baseUrl,
+      url: "https://planejaioficial.com.br",
       lastModified: new Date(),
       changeFrequency: "daily",
       priority: 1,
