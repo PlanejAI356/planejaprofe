@@ -39,7 +39,10 @@ export default function Home() {
       if (data.session) {
         setUsuarioLogado(true);
         localStorage.removeItem("testeGratisConcluido");
-        setEtapa("configuracao");
+
+        // O professor entra primeiro no novo painel.
+        setEtapa("painel");
+
         setCarregandoAuth(false);
         return;
       }
@@ -195,6 +198,11 @@ export default function Home() {
     setEtapa("configuracao");
   }
 
+  function iniciarNovoPlanejamento() {
+    limparPlanoAnterior();
+    setEtapa("configuracao");
+  }
+
   function abrirPlanoCompleto() {
     if (!usuarioLogado) {
       localStorage.setItem("testeGratisConcluido", "true");
@@ -231,7 +239,7 @@ export default function Home() {
   }
 
   return (
-    <main>
+    <main className="min-h-screen bg-slate-50">
       {usuarioLogado ? (
         <TopoProfessor />
       ) : (
@@ -268,6 +276,92 @@ export default function Home() {
         </div>
       )}
 
+      {etapa === "painel" && usuarioLogado && (
+        <section className="mx-auto flex min-h-[calc(100vh-70px)] max-w-6xl flex-col justify-center px-4 py-8">
+          <div className="mb-8 text-center">
+            <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
+              O que você deseja criar hoje?
+            </h1>
+
+            <p className="mt-2 text-sm text-slate-600 sm:text-base">
+              Escolha uma das ferramentas do PlanejAI.
+            </p>
+          </div>
+
+          <div className="grid gap-5 md:grid-cols-3">
+            <button
+              type="button"
+              onClick={iniciarNovoPlanejamento}
+              className="group rounded-2xl border border-green-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-green-400 hover:shadow-lg"
+            >
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-3xl">
+                📚
+              </div>
+
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Planejamento de Aula
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Crie planos de aula completos, mensais ou organizados por aula.
+              </p>
+
+              <div className="mt-5 font-bold text-green-700">
+                Criar planejamento →
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/avaliacoes";
+              }}
+              className="group rounded-2xl border border-blue-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg"
+            >
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-3xl">
+                📝
+              </div>
+
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Avaliações
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Crie provas, simulados, avaliações diagnósticas e recuperações.
+              </p>
+
+              <div className="mt-5 font-bold text-blue-700">
+                Criar avaliação →
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/atividades";
+              }}
+              className="group rounded-2xl border border-amber-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg"
+            >
+              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
+                📄
+              </div>
+
+              <h2 className="text-xl font-extrabold text-slate-900">
+                Atividades
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-slate-600">
+                Crie exercícios, revisões e atividades personalizadas.
+              </p>
+
+              <div className="mt-5 font-bold text-amber-700">
+                Criar atividade →
+              </div>
+            </button>
+          </div>
+        </section>
+      )}
+
       {etapa === "configuracao" && (
         <ConfiguracaoPlano
           ano={ano}
@@ -280,7 +374,9 @@ export default function Home() {
           setTipoPlanejamento={setTipoPlanejamento}
           onSelecionarSerie={clicarEmSerie}
           onVoltar={() => {
-            if (!usuarioLogado) {
+            if (usuarioLogado) {
+              setEtapa("painel");
+            } else {
               setEtapa("inicio");
             }
           }}
