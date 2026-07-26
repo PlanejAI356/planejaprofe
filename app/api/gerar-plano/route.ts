@@ -919,6 +919,106 @@ FORMATO OBRIGATÓRIO:
 4ª SEMANA - Atividade curta no caderno.
 `;
     }
+    if (tipo === "prova") {
+
+  const quantidadeMultiplaEscolha =
+    Number(body.quantidadeMultiplaEscolha || 0);
+
+  const quantidadeDiscursivas =
+    Number(body.quantidadeDiscursivas || 0);
+
+  const quantidadeVerdadeiroFalso =
+    Number(body.quantidadeVerdadeiroFalso || 0);
+
+  const quantidadeComplete =
+    Number(body.quantidadeComplete || 0);
+
+  const quantidadeRelacione =
+    Number(body.quantidadeRelacione || 0);
+
+  const dificuldade = body.dificuldade || "Misto";
+  const tipoAvaliacao = body.tipoAvaliacao || "Avaliação";
+  const incluirGabarito = body.incluirGabarito;
+  const incluirBncc = body.incluirBncc;
+  const incluirTextoApoio = body.incluirTextoApoio;
+
+  comando = `
+Você é um professor especialista em elaboração de avaliações escolares.
+
+Crie uma avaliação completa.
+
+ETAPA:
+${etapaEnsino}
+
+SÉRIE:
+${serie}
+
+DISCIPLINA:
+${disciplina}
+
+TIPO DA AVALIAÇÃO:
+${tipoAvaliacao}
+
+CONTEÚDOS:
+${tema}
+
+NÍVEL:
+${dificuldade}
+
+GERAR EXATAMENTE:
+
+- ${quantidadeMultiplaEscolha} questões de múltipla escolha;
+
+- ${quantidadeDiscursivas} questões discursivas;
+
+- ${quantidadeVerdadeiroFalso} questões de verdadeiro ou falso;
+
+- ${quantidadeComplete} questões de completar;
+
+- ${quantidadeRelacione} questões de relacionar colunas.
+
+${incluirTextoApoio ? "- Sempre utilizar texto de apoio quando necessário." : ""}
+
+${incluirBncc ? "- Informar a habilidade BNCC relacionada à questão quando possível." : ""}
+
+REGRAS OBRIGATÓRIAS:
+
+- Não repetir questões.
+
+- Não repetir alternativas.
+
+- Utilizar linguagem adequada para a série.
+
+- Distribuir os conteúdos entre as questões.
+
+- Variar o nível cognitivo.
+
+- Elaborar questões claras.
+
+- As alternativas da múltipla escolha devem possuir apenas uma resposta correta.
+
+- Não inventar conteúdos.
+
+- Não escrever explicações.
+
+- Numerar todas as questões.
+
+- Separar cada questão por uma linha em branco.
+
+${
+  incluirGabarito
+    ? `
+AO FINAL ESCREVER:
+
+====================
+
+GABARITO
+
+`
+    : ""
+}
+`;
+}
 
     const resposta = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
