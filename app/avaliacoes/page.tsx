@@ -129,7 +129,7 @@ export default function AvaliacoesPage() {
     try {
       setGerando(true);
 
-      const resposta = await fetch("/api/gerar", {
+      const resposta = await fetch("/api/gerar-plano", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
