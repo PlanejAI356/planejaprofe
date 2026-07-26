@@ -11,7 +11,20 @@ export async function POST(req: Request) {
     const tipo = body.tipo || "temas";
     const tema = body.tema || "Plano de aula";
     const aulas = body.aulas || "";
-    const tipoPlanejamento = body.tipoPlanejamento || "aula";
+    const tipoPlanejamentoRecebido = String(
+  body.tipoPlanejamento || "aula"
+)
+  .trim()
+  .toLowerCase();
+
+const tipoPlanejamento =
+  tipoPlanejamentoRecebido === "mensal" ||
+  tipoPlanejamentoRecebido === "mês" ||
+  tipoPlanejamentoRecebido === "mes" ||
+  tipoPlanejamentoRecebido === "por mês" ||
+  tipoPlanejamentoRecebido === "por mes"
+    ? "mensal"
+    : "aula";
     const etapaEnsino = body.etapa || body.etapaEnsino || "";
     const serie = body.serie || "";
     const disciplina = body.disciplina || "";
@@ -336,7 +349,7 @@ AULA 01 - DATA - HABILIDADE BNCC: EF00XX00 - OBJETIVOS: objetivo 1; objetivo 2; 
       }
     }
 
-    if (tipo === "recursos") {
+        if (tipo === "recursos") {
       if (ehCreche && tipoPlanejamento === "mensal") {
         comando = `
 Você é um assistente pedagógico especializado em Educação Infantil - Creche.
@@ -353,12 +366,18 @@ Conteúdos do mês:
 ${aulas}
 
 REGRAS:
-- Não usar AULA 01, AULA 02 ou datas.
+- Não usar AULA 01.
+- Não usar AULA 02.
+- Não usar datas.
 - Não numerar os conteúdos.
-- Usar somente um hífen no início.
+- Usar somente uma marcação com hífen no início de cada conteúdo.
 - Usar materiais simples, seguros e adequados para crianças pequenas.
 - Relacionar os recursos ao conteúdo.
-- Não gerar metodologia, avaliação ou objetivos.
+- Não gerar metodologia.
+- Não gerar avaliação.
+- Não gerar objetivos.
+- Não deixar linhas em branco entre os conteúdos.
+- Cada conteúdo deve ficar em uma única linha.
 
 FORMATO OBRIGATÓRIO:
 - Nome do conteúdo: Recursos e materiais: material 1; material 2; material 3.
@@ -383,10 +402,53 @@ REGRAS:
 - Relacionar os recursos ao tema.
 - Manter exatamente a aula e a data recebidas.
 - Cada aula deve ficar em uma linha.
-- Não gerar metodologia, avaliação ou objetivos.
+- Não gerar metodologia.
+- Não gerar avaliação.
+- Não gerar objetivos.
+- Não deixar linhas em branco entre as aulas.
 
 FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Recursos e materiais: material 1; material 2; material 3.
+`;
+      } else if (tipoPlanejamento === "mensal") {
+        comando = `
+Você é um assistente pedagógico.
+
+Crie recursos e materiais para cada conteúdo mensal informado.
+
+Disciplina: ${disciplina}
+Série: ${serie}
+
+${regrasEJA}
+${regrasEtapaEJA}
+
+Meu estilo de aula:
+${estiloAula}
+
+Conteúdos do mês:
+${aulas}
+
+REGRAS OBRIGATÓRIAS:
+- Não usar AULA 01.
+- Não usar AULA 02.
+- Não usar datas.
+- Não numerar os conteúdos.
+- Usar exatamente os conteúdos recebidos.
+- Usar somente uma marcação com hífen no início de cada conteúdo.
+- Relacionar os recursos diretamente ao conteúdo.
+- Utilizar materiais simples, acessíveis e viáveis.
+- Priorizar livro didático, quadro, caderno, textos, imagens, materiais concretos e experimentos simples.
+- Respeitar os recursos informados em "Meu estilo de aula".
+- Para EJA, usar recursos adequados ao público jovem e adulto.
+- Para EJA, evitar materiais infantilizados.
+- Não gerar metodologia.
+- Não gerar avaliação.
+- Não gerar objetivos.
+- Não deixar linhas em branco entre os conteúdos.
+- Cada conteúdo deve ficar em uma única linha.
+
+FORMATO OBRIGATÓRIO:
+- Nome do conteúdo: Recursos e materiais: recurso 1; recurso 2; recurso 3.
 `;
       } else {
         comando = `
@@ -413,8 +475,11 @@ REGRAS:
 - Priorizar livro didático, quadro, caderno, textos, imagens, materiais concretos e experimentos simples.
 - Para EJA, usar materiais adequados ao público jovem e adulto.
 - Para EJA, evitar materiais com aparência infantilizada.
-- Não gerar metodologia, avaliação ou objetivos.
+- Não gerar metodologia.
+- Não gerar avaliação.
+- Não gerar objetivos.
 - Cada aula deve ficar em uma linha.
+- Não deixar linhas em branco entre as aulas.
 
 FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - TEMA DA AULA. Recursos e materiais: recurso 1; recurso 2; recurso 3.
