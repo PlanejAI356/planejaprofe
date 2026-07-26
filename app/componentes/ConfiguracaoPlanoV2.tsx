@@ -189,10 +189,10 @@ export default function ConfiguracaoPlano({
       : [];
 
   const selecionado =
-    "border-emerald-500 bg-emerald-50 text-emerald-900 shadow-lg shadow-emerald-100 ring-2 ring-emerald-100";
+  "border-emerald-700 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-300/50 ring-2 ring-emerald-200";
 
   const normal =
-    "border-slate-200 text-slate-800 shadow-sm hover:border-emerald-300 hover:shadow-md hover:-translate-y-0.5";
+"border-slate-300 bg-white text-slate-900 shadow-md hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl transition-all";
 
   const card =
     "relative rounded-2xl border px-4 py-3 font-bold transition-all duration-300";
@@ -224,8 +224,8 @@ export default function ConfiguracaoPlano({
   }
 
   return (
-    <main className="min-h-[calc(100vh-70px)] overflow-x-hidden bg-gradient-to-br from-emerald-50 via-white to-green-100 px-3 py-3 md:px-5">
-      <div className="mx-auto max-w-7xl rounded-[28px] border border-emerald-100 bg-white p-4 shadow-[0_20px_60px_rgba(16,185,129,0.13)] md:p-5">
+    <main className="min-h-[calc(100vh-70px)] overflow-x-hidden bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.12),_transparent_35%),linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-3 py-3 md:px-5">
+      <div className="mx-auto max-w-7xl rounded-[28px] border border-slate-200 bg-white/95 backdrop-blur-sm p-5 shadow-2xl md:p-5">
         <div className="mb-4 flex items-center gap-3">
           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
             <ClipboardList size={34} />
@@ -287,7 +287,7 @@ export default function ConfiguracaoPlano({
                     <Users size={32} className="text-teal-500" />
                   )}
 
-                  <span className="text-sm leading-tight md:text-base">{etapa}</span>
+                  <span className="text-sm leadisng-tight md:text-base">{etapa}</span>
                   <span className="text-xs font-medium text-slate-500">
                     {etapa === "Educação Infantil"
                       ? "Creche e Pré-escola"
@@ -428,7 +428,7 @@ export default function ConfiguracaoPlano({
     <button
       type="button"
       onClick={() => setMostrarAnoLetivo(!mostrarAnoLetivo)}
-      className={`${card} flex min-h-[52px] w-full items-center justify-between border-emerald-100 bg-emerald-50/60 text-left text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50`}
+      className={`${card} flex min-h-[52px] w-full items-center justify-between border-slate-300 bg-white text-left text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50`}
     >
       <span className="flex items-center gap-2">
         <Calendar size={19} className="text-emerald-600" />
