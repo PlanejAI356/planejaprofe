@@ -48,6 +48,8 @@ export default function ConfiguracaoPlano({
   const [turmaInfantilDetalhe, setTurmaInfantilDetalhe] = useState("");
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
   const [bimestreSelecionado, setBimestreSelecionado] = useState("");
+  const [mostrarAnoLetivo, setMostrarAnoLetivo] = useState(false);
+  const [mostrarPeriodo, setMostrarPeriodo] = useState(false);
 
   const etapasEnsino = [
     "Educação Infantil",
@@ -421,63 +423,102 @@ export default function ConfiguracaoPlano({
           </section>
         )}
 
-        <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[240px_1fr]">
-          <section>
-            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
-              <Calendar size={19} className="text-emerald-600" />
-              Ano Letivo
-            </h2>
+        <div className="mb-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+  <section>
+    <button
+      type="button"
+      onClick={() => setMostrarAnoLetivo(!mostrarAnoLetivo)}
+      className={`${card} flex min-h-[52px] w-full items-center justify-between border-emerald-100 bg-emerald-50/60 text-left text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50`}
+    >
+      <span className="flex items-center gap-2">
+        <Calendar size={19} className="text-emerald-600" />
+        Ano Letivo
+        <span className="text-xs font-medium text-slate-400">
+          (opcional)
+        </span>
+      </span>
 
-            <input
-              value={ano}
-              onChange={(e) => setAno(e.target.value)}
-              className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-lg font-semibold shadow-sm outline-none transition-all duration-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-              placeholder="Ex: 2026"
-            />
-          </section>
+      <span className="text-sm font-semibold text-emerald-700">
+        {mostrarAnoLetivo ? "Fechar" : ano || "Selecionar"}
+      </span>
+    </button>
 
-          <section>
-            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
-              <CalendarDays size={19} className="text-emerald-600" />
-              Período
-              <span className="text-xs font-medium text-slate-400">(opcional)</span>
-            </h2>
+    {mostrarAnoLetivo && (
+      <div className="mt-2 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
+        <input
+          value={ano}
+          onChange={(e) => setAno(e.target.value)}
+          className="w-full rounded-2xl border border-emerald-200 bg-white px-4 py-3 text-lg font-semibold shadow-sm outline-none transition-all duration-300 focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+          placeholder="Ex: 2026"
+        />
+      </div>
+    )}
+  </section>
 
-            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {bimestres.map((bimestre) => (
-                <button
-                  key={bimestre}
-                  type="button"
-                  onClick={() => {
-                    const novoValor =
-                      bimestreSelecionado === bimestre ? "" : bimestre;
+  <section>
+    <button
+      type="button"
+      onClick={() => setMostrarPeriodo(!mostrarPeriodo)}
+      className={`${card} flex min-h-[52px] w-full items-center justify-between border-amber-100 bg-amber-50/60 text-left text-slate-800 shadow-sm hover:border-amber-300 hover:bg-amber-50`}
+    >
+      <span className="flex items-center gap-2">
+        <CalendarDays size={19} className="text-emerald-600" />
+        Período
+        <span className="text-xs font-medium text-slate-400">
+          (opcional)
+        </span>
+      </span>
 
-                    setBimestreSelecionado(novoValor);
+      <span className="text-sm font-semibold text-amber-700">
+        {mostrarPeriodo
+          ? "Fechar"
+          : bimestreSelecionado || "Selecionar"}
+      </span>
+    </button>
 
-                    if (novoValor) {
-                      localStorage.setItem("bimestreSelecionado", novoValor);
-                    } else {
-                      localStorage.removeItem("bimestreSelecionado");
-                    }
-                  }}
-                  className={`${card} min-h-[48px] py-2 ${
-                    bimestreSelecionado === bimestre
-                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md shadow-amber-100 ring-2 ring-amber-100"
-                      : "border-amber-100 bg-amber-50/60 text-slate-800 shadow-sm hover:border-amber-300 hover:bg-amber-50"
-                  }`}
-                >
-                  {bimestre}
-                  {bimestreSelecionado === bimestre && (
-                    <CheckCircle2
-                      size={18}
-                      className="absolute right-2 top-2 text-amber-600"
-                    />
-                  )}
-                </button>
-              ))}
-            </div>
-          </section>
+    {mostrarPeriodo && (
+      <div className="mt-2 rounded-2xl border border-amber-100 bg-amber-50/30 p-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+          {bimestres.map((bimestre) => (
+            <button
+              key={bimestre}
+              type="button"
+              onClick={() => {
+                const novoValor =
+                  bimestreSelecionado === bimestre ? "" : bimestre;
+
+                setBimestreSelecionado(novoValor);
+
+                if (novoValor) {
+                  localStorage.setItem(
+                    "bimestreSelecionado",
+                    novoValor
+                  );
+                } else {
+                  localStorage.removeItem("bimestreSelecionado");
+                }
+              }}
+              className={`${card} min-h-[48px] py-2 ${
+                bimestreSelecionado === bimestre
+                  ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md shadow-amber-100 ring-2 ring-amber-100"
+                  : "border-amber-100 bg-white text-slate-800 shadow-sm hover:border-amber-300 hover:bg-amber-50"
+              }`}
+            >
+              {bimestre}
+
+              {bimestreSelecionado === bimestre && (
+                <CheckCircle2
+                  size={18}
+                  className="absolute right-2 top-2 text-amber-600"
+                />
+              )}
+            </button>
+          ))}
         </div>
+      </div>
+    )}
+  </section>
+</div>
 
         <section className="mb-4">
           <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
