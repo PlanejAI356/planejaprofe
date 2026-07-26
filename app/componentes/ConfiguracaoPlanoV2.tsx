@@ -189,7 +189,7 @@ export default function ConfiguracaoPlano({
       : [];
 
   const selecionado =
-  "border-emerald-700 bg-gradient-to-r from-emerald-600 to-teal-600 text-white shadow-xl shadow-emerald-300/50 ring-2 ring-emerald-200";
+  "border-emerald-700 bg-gradient-to-r from-emerald-500 to-emerald-600 text-white shadow-xl shadow-emerald-300/50 ring-2 ring-emerald-200";
 
   const normal =
 "border-slate-300 bg-white text-slate-900 shadow-md hover:-translate-y-1 hover:border-emerald-500 hover:shadow-xl transition-all";
