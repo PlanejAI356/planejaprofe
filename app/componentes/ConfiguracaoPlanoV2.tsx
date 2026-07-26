@@ -47,12 +47,14 @@ export default function ConfiguracaoPlano({
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [turmaInfantilDetalhe, setTurmaInfantilDetalhe] = useState("");
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
+  const [bimestreSelecionado, setBimestreSelecionado] = useState("");
 
   const etapasEnsino = [
     "Educação Infantil",
     "Ensino Fundamental I",
     "Ensino Fundamental II",
     "Ensino Médio",
+    "EJA",
   ];
 
   const anosFundamental1 = ["1º Ano", "2º Ano", "3º Ano", "4º Ano", "5º Ano"];
@@ -61,6 +63,12 @@ export default function ConfiguracaoPlano({
   const turmasCreche = ["Berçário", "Maternal I", "Maternal II"];
   const turmasPreEscola = ["Pré I", "Pré II"];
   const seriesEnsinoMedio = ["1ª Série", "2ª Série", "3ª Série"];
+
+  const etapasEja = [
+    "EJA - Anos Iniciais",
+    "EJA - Anos Finais",
+    "EJA - Ensino Médio",
+  ];
 
   const camposExperiencia = [
     "O eu, o outro e o nós",
@@ -116,6 +124,19 @@ export default function ConfiguracaoPlano({
     "Projeto de Vida",
   ];
 
+  const disciplinasEjaAnosIniciais = disciplinasFundamental1;
+
+  const disciplinasEjaAnosFinais = disciplinasFundamental2;
+
+  const disciplinasEjaEnsinoMedio = disciplinasEnsinoMedio;
+
+  const bimestres = [
+    "1º Bimestre",
+    "2º Bimestre",
+    "3º Bimestre",
+    "4º Bimestre",
+  ];
+
   const meses = [
     "Janeiro",
     "Fevereiro",
@@ -140,6 +161,8 @@ export default function ConfiguracaoPlano({
       ? anosFundamental2
       : etapaEnsino === "Ensino Médio"
       ? seriesEnsinoMedio
+      : etapaEnsino === "EJA"
+      ? etapasEja
       : [];
 
   const opcoesDisciplina =
@@ -153,6 +176,14 @@ export default function ConfiguracaoPlano({
       ? disciplinasFundamental2
       : etapaEnsino === "Ensino Médio"
       ? disciplinasEnsinoMedio
+      : etapaEnsino === "EJA"
+      ? turmaSelecionada === "EJA - Anos Iniciais"
+        ? disciplinasEjaAnosIniciais
+        : turmaSelecionada === "EJA - Anos Finais"
+        ? disciplinasEjaAnosFinais
+        : turmaSelecionada === "EJA - Ensino Médio"
+        ? disciplinasEjaEnsinoMedio
+        : []
       : [];
 
   const selecionado =
@@ -183,7 +214,11 @@ export default function ConfiguracaoPlano({
       return "border-sky-200 bg-sky-50/80 text-slate-800 shadow-sm hover:border-sky-300 hover:shadow-md hover:-translate-y-0.5";
     }
 
-    return "border-violet-200 bg-violet-50/80 text-slate-800 shadow-sm hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5";
+    if (etapa === "Ensino Médio") {
+      return "border-violet-200 bg-violet-50/80 text-slate-800 shadow-sm hover:border-violet-300 hover:shadow-md hover:-translate-y-0.5";
+    }
+
+    return "border-teal-200 bg-teal-50/80 text-slate-800 shadow-sm hover:border-teal-300 hover:shadow-md hover:-translate-y-0.5";
   }
 
   return (
@@ -209,18 +244,22 @@ export default function ConfiguracaoPlano({
             🎓 Etapa de Ensino
           </h2>
 
-          <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-5">
             {etapasEnsino.map((etapa) => (
               <button
                 key={etapa}
                 type="button"
                 onClick={() => {
                   setEtapaEnsino(etapa);
+                  localStorage.setItem("etapaEnsino", etapa);
                   setTurmaSelecionada("");
                   setTurmaInfantilDetalhe("");
                   setDisciplinaSelecionada("");
+                  localStorage.removeItem("serieSelecionada");
+                  localStorage.removeItem("turmaInfantilDetalhe");
+                  localStorage.removeItem("disciplinaSelecionada");
                 }}
-                className={`${card} h-28 text-center ${estiloEtapa(etapa)}`}
+                className={`${card} min-h-[96px] px-3 py-2 text-center ${estiloEtapa(etapa)}`}
               >
                 {etapaEnsino === etapa && (
                   <CheckCircle2
@@ -231,19 +270,22 @@ export default function ConfiguracaoPlano({
 
                 <div className="flex flex-col items-center gap-1.5">
                   {etapa === "Educação Infantil" && (
-                    <Baby size={38} className="text-orange-500" />
+                    <Baby size={32} className="text-orange-500" />
                   )}
                   {etapa === "Ensino Fundamental I" && (
-                    <BookOpen size={38} className="text-emerald-500" />
+                    <BookOpen size={32} className="text-emerald-500" />
                   )}
                   {etapa === "Ensino Fundamental II" && (
-                    <Backpack size={38} className="text-sky-500" />
+                    <Backpack size={32} className="text-sky-500" />
                   )}
                   {etapa === "Ensino Médio" && (
-                    <GraduationCap size={38} className="text-violet-500" />
+                    <GraduationCap size={32} className="text-violet-500" />
+                  )}
+                  {etapa === "EJA" && (
+                    <Users size={32} className="text-teal-500" />
                   )}
 
-                  <span>{etapa}</span>
+                  <span className="text-sm leading-tight md:text-base">{etapa}</span>
                   <span className="text-xs font-medium text-slate-500">
                     {etapa === "Educação Infantil"
                       ? "Creche e Pré-escola"
@@ -251,7 +293,9 @@ export default function ConfiguracaoPlano({
                       ? "1º ao 5º Ano"
                       : etapa === "Ensino Fundamental II"
                       ? "6º ao 9º Ano"
-                      : "1ª à 3ª Série"}
+                      : etapa === "Ensino Médio"
+                      ? "1ª à 3ª Série"
+                      : "Jovens e Adultos"}
                   </span>
                 </div>
               </button>
@@ -263,7 +307,11 @@ export default function ConfiguracaoPlano({
           <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
             <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
               <Users size={19} className="text-emerald-600" />
-              {etapaEnsino === "Educação Infantil" ? "Segmento" : "Ano ou Série"}
+              {etapaEnsino === "Educação Infantil"
+                ? "Segmento"
+                : etapaEnsino === "EJA"
+                ? "Etapa da EJA"
+                : "Ano ou Série"}
             </h2>
 
             <div className="flex flex-wrap gap-2">
@@ -373,7 +421,7 @@ export default function ConfiguracaoPlano({
           </section>
         )}
 
-        <div className="mb-4 grid grid-cols-1 gap-4 lg:grid-cols-[270px_1fr]">
+        <div className="mb-4 grid grid-cols-1 gap-4 xl:grid-cols-[240px_1fr]">
           <section>
             <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
               <Calendar size={19} className="text-emerald-600" />
@@ -391,30 +439,72 @@ export default function ConfiguracaoPlano({
           <section>
             <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
               <CalendarDays size={19} className="text-emerald-600" />
-              Mês
+              Período
+              <span className="text-xs font-medium text-slate-400">(opcional)</span>
             </h2>
 
-            <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
-              {meses.map((mes, index) => (
+            <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+              {bimestres.map((bimestre) => (
                 <button
-                  key={mes}
+                  key={bimestre}
                   type="button"
                   onClick={() => {
-                    setMesSelecionado(index);
-                    setNomeMes(mes);
+                    const novoValor =
+                      bimestreSelecionado === bimestre ? "" : bimestre;
+
+                    setBimestreSelecionado(novoValor);
+
+                    if (novoValor) {
+                      localStorage.setItem("bimestreSelecionado", novoValor);
+                    } else {
+                      localStorage.removeItem("bimestreSelecionado");
+                    }
                   }}
-                  className={`${card} py-2.5 ${
-                    mesSelecionado === index
-                      ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-200"
-                      : "border-emerald-100 bg-emerald-50/60 text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50"
+                  className={`${card} min-h-[48px] py-2 ${
+                    bimestreSelecionado === bimestre
+                      ? "border-amber-500 bg-amber-50 text-amber-900 shadow-md shadow-amber-100 ring-2 ring-amber-100"
+                      : "border-amber-100 bg-amber-50/60 text-slate-800 shadow-sm hover:border-amber-300 hover:bg-amber-50"
                   }`}
                 >
-                  {mes}
+                  {bimestre}
+                  {bimestreSelecionado === bimestre && (
+                    <CheckCircle2
+                      size={18}
+                      className="absolute right-2 top-2 text-amber-600"
+                    />
+                  )}
                 </button>
               ))}
             </div>
           </section>
         </div>
+
+        <section className="mb-4">
+          <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
+            <CalendarDays size={19} className="text-emerald-600" />
+            Mês
+          </h2>
+
+          <div className="grid grid-cols-3 gap-2 lg:grid-cols-6">
+            {meses.map((mes, index) => (
+              <button
+                key={mes}
+                type="button"
+                onClick={() => {
+                  setMesSelecionado(index);
+                  setNomeMes(mes);
+                }}
+                className={`${card} py-2.5 ${
+                  mesSelecionado === index
+                    ? "border-emerald-600 bg-emerald-600 text-white shadow-lg shadow-emerald-200"
+                    : "border-emerald-100 bg-emerald-50/60 text-slate-800 shadow-sm hover:border-emerald-300 hover:bg-emerald-50"
+                }`}
+              >
+                {mes}
+              </button>
+            ))}
+          </div>
+        </section>
 
         <section className="mb-4">
           <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
