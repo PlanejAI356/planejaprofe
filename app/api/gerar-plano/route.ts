@@ -45,6 +45,56 @@ REGRAS ESPECÍFICAS PARA BNCC DA COMPUTAÇÃO:
       serie === "Maternal I" ||
       serie === "Maternal II";
 
+      const ehEJA = etapaEnsino === "EJA";
+
+const regrasEJA = ehEJA
+  ? `
+REGRAS ESPECÍFICAS PARA A EDUCAÇÃO DE JOVENS E ADULTOS (EJA):
+
+- Respeitar rigorosamente o perfil dos estudantes da Educação de Jovens e Adultos.
+- Nunca utilizar linguagem infantilizada.
+- Nunca tratar os estudantes como crianças.
+- Nunca propor brincadeiras, músicas infantis, desenhos para colorir ou atividades típicas da Educação Infantil, exceto quando o professor solicitar explicitamente.
+- Valorizar os conhecimentos prévios e as experiências de vida dos estudantes.
+- Relacionar os conteúdos, sempre que possível, ao cotidiano, trabalho, cidadania, saúde, família, tecnologia, meio ambiente e participação social.
+- Desenvolver autonomia, pensamento crítico, interpretação, argumentação e resolução de problemas.
+- Organizar os conteúdos do mais simples para o mais complexo.
+- Manter linguagem respeitosa, clara e adequada ao público jovem e adulto.
+- Nunca simplificar excessivamente os conteúdos apenas por ser EJA.
+`
+  : "";
+
+const regrasEtapaEJA = ehEJA
+  ? serie === "EJA - Anos Iniciais"
+    ? `
+REGRAS ESPECÍFICAS PARA EJA - ANOS INICIAIS:
+
+- Priorizar alfabetização e letramento quando necessários.
+- Relacionar leitura, escrita e matemática ao cotidiano.
+- Utilizar exemplos como compras, documentos, horários, trabalho, saúde e transporte.
+- Respeitar diferentes ritmos de aprendizagem sem infantilizar os estudantes.
+`
+    : serie === "EJA - Anos Finais"
+    ? `
+REGRAS ESPECÍFICAS PARA EJA - ANOS FINAIS:
+
+- Trabalhar conteúdos equivalentes ao Ensino Fundamental Anos Finais.
+- Relacionar teoria e prática.
+- Contextualizar ciência, matemática, língua portuguesa, história e geografia com situações reais.
+- Desenvolver interpretação, argumentação e pensamento crítico.
+`
+    : serie === "EJA - Ensino Médio"
+    ? `
+REGRAS ESPECÍFICAS PARA EJA - ENSINO MÉDIO:
+
+- Trabalhar conteúdos compatíveis com o Ensino Médio.
+- Desenvolver análise crítica.
+- Relacionar os conteúdos ao mundo do trabalho.
+- Contextualizar tecnologia, cidadania, atualidades e continuidade dos estudos.
+`
+    : ""
+  : "";
+
     let comando = "";
 
     if (tipo === "temas") {
@@ -57,6 +107,9 @@ Tema geral: ${tema}
 Etapa: ${etapaEnsino}
 Turma/Série: ${serie}
 Disciplina/Campo de experiência: ${disciplina}
+
+${regrasEJA}
+${regrasEtapaEJA}
 
 Datas das aulas:
 ${aulas}
@@ -96,6 +149,9 @@ ${serie}
 
 Disciplina:
 ${disciplina}
+
+${regrasEJA}
+${regrasEtapaEJA}
 
 REGRAS OBRIGATÓRIAS:
 
@@ -198,7 +254,10 @@ FORMATO OBRIGATÓRIO:
 AULA 01 - DATA - OBJETIVOS DE APRENDIZAGEM: EI00XX00 - objetivo 1; objetivo 2; objetivo 3.
 AULA 02 - DATA - OBJETIVOS DE APRENDIZAGEM: EI00XX00 - objetivo 1; objetivo 2; objetivo 3.
 `;
-      } else if (etapaEnsino === "Ensino Médio") {
+      } else if (
+  etapaEnsino === "Ensino Médio" ||
+  (etapaEnsino === "EJA" && serie === "EJA - Ensino Médio")
+) {
         comando = `
 Você é um assistente pedagógico especialista em Ensino Médio.
 
@@ -206,6 +265,9 @@ Crie habilidades e objetivos para as aulas abaixo, respeitando a área/disciplin
 
 Disciplina: ${disciplina}
 Série: ${serie}
+
+${regrasEJA}
+${regrasEtapaEJA}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -238,10 +300,12 @@ Você é um assistente pedagógico.
 
 Crie habilidades BNCC e objetivos para cada conteúdo mensal informado pelo professor.
 
-Disciplina: ${disciplina}
+DDisciplina: ${disciplina}
 Série: ${serie}
 
 ${regrasBnccComputacao}
+${regrasEJA}
+${regrasEtapaEJA}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -275,6 +339,8 @@ Disciplina: ${disciplina}
 Série: ${serie}
 
 ${regrasBnccComputacao}
+${regrasEJA}
+${regrasEtapaEJA}
 
 Meu estilo de aula:
 ${estiloAula}
