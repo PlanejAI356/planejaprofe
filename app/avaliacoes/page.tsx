@@ -3,7 +3,6 @@
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowLeft,
   BookOpen,
   ClipboardList,
   GraduationCap,
@@ -13,6 +12,7 @@ import {
   Sparkles,
   Users,
 } from "lucide-react";
+import TopoAvaliacoes from "./componentes/TopoAvaliacoes";
 
 const etapasEnsino = [
   "Ensino Fundamental - Anos Iniciais",
@@ -69,9 +69,11 @@ const disciplinasPorEtapa: Record<string, string[]> = {
     "Ciências",
     "História",
     "Geografia",
+    "Língua Inglesa",
     "Arte",
     "Educação Física",
     "Ensino Religioso",
+    "Filosofia",
     "Computação",
   ],
 
@@ -103,6 +105,9 @@ const disciplinasPorEtapa: Record<string, string[]> = {
     "Biologia",
     "Física",
     "Química",
+    "Língua Inglesa",
+    "Filosofia",
+    "Sociologia",
     "Computação",
   ],
 };
@@ -129,8 +134,11 @@ function transformarEmNumero(valor: string) {
 
 function dividirQuestoesMistas(quantidade: number) {
   const verdadeiroFalso = Math.ceil(quantidade / 3);
-  const complete = Math.ceil((quantidade - verdadeiroFalso) / 2);
-  const relacione = quantidade - verdadeiroFalso - complete;
+  const complete = Math.ceil(
+    (quantidade - verdadeiroFalso) / 2
+  );
+  const relacione =
+    quantidade - verdadeiroFalso - complete;
 
   return {
     verdadeiroFalso,
@@ -148,30 +156,44 @@ export default function AvaliacoesPage() {
   const [tipoAvaliacao, setTipoAvaliacao] = useState("");
   const [conteudos, setConteudos] = useState("");
 
-  const [quantidadeMultiplaEscolha, setQuantidadeMultiplaEscolha] =
-    useState("5");
+  const [
+    quantidadeMultiplaEscolha,
+    setQuantidadeMultiplaEscolha,
+  ] = useState("5");
 
-  const [quantidadeDiscursivas, setQuantidadeDiscursivas] =
-    useState("3");
+  const [
+    quantidadeDiscursivas,
+    setQuantidadeDiscursivas,
+  ] = useState("3");
 
-  const [quantidadeMistas, setQuantidadeMistas] = useState("2");
+  const [
+    quantidadeMistas,
+    setQuantidadeMistas,
+  ] = useState("2");
 
   const [incluirBncc, setIncluirBncc] = useState(false);
-  const [incluirTextoApoio, setIncluirTextoApoio] = useState(false);
+
+  const [
+    incluirTextoApoio,
+    setIncluirTextoApoio,
+  ] = useState(false);
 
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState("");
 
-  const seriesDisponiveis = seriesPorEtapa[etapaEnsino] || [];
+  const seriesDisponiveis =
+    seriesPorEtapa[etapaEnsino] || [];
 
   const disciplinasDisponiveis =
-  etapaEnsino && serie
-    ? disciplinasPorEtapa[etapaEnsino] || []
-    : [];
+    etapaEnsino && serie
+      ? disciplinasPorEtapa[etapaEnsino] || []
+      : [];
 
   const totalQuestoes = useMemo(() => {
     return (
-      transformarEmNumero(quantidadeMultiplaEscolha) +
+      transformarEmNumero(
+        quantidadeMultiplaEscolha
+      ) +
       transformarEmNumero(quantidadeDiscursivas) +
       transformarEmNumero(quantidadeMistas)
     );
@@ -182,15 +204,15 @@ export default function AvaliacoesPage() {
   ]);
 
   function alterarEtapa(novaEtapa: string) {
-  setEtapaEnsino(novaEtapa);
-  setSerie("");
-  setDisciplina("");
-}
+    setEtapaEnsino(novaEtapa);
+    setSerie("");
+    setDisciplina("");
+  }
 
-function alterarSerie(novaSerie: string) {
-  setSerie(novaSerie);
-  setDisciplina("");
-}
+  function alterarSerie(novaSerie: string) {
+    setSerie(novaSerie);
+    setDisciplina("");
+  }
 
   async function gerarProva() {
     setErro("");
@@ -201,7 +223,9 @@ function alterarSerie(novaSerie: string) {
       !disciplina ||
       !conteudos.trim()
     ) {
-      setErro("Preencha todos os campos obrigatórios.");
+      setErro(
+        "Preencha todos os campos obrigatórios."
+      );
       return;
     }
 
@@ -211,7 +235,9 @@ function alterarSerie(novaSerie: string) {
     }
 
     if (totalQuestoes > 30) {
-      setErro("A avaliação pode ter no máximo 30 questões.");
+      setErro(
+        "A avaliação pode ter no máximo 30 questões."
+      );
       return;
     }
 
@@ -219,53 +245,66 @@ function alterarSerie(novaSerie: string) {
       transformarEmNumero(quantidadeMistas);
 
     const distribuicaoMista =
-      dividirQuestoesMistas(quantidadeMistasNumero);
+      dividirQuestoesMistas(
+        quantidadeMistasNumero
+      );
 
     try {
       setGerando(true);
 
-      const resposta = await fetch("/api/gerar-plano", {
-        method: "POST",
+      const resposta = await fetch(
+        "/api/gerar-plano",
+        {
+          method: "POST",
 
-        headers: {
-          "Content-Type": "application/json",
-        },
+          headers: {
+            "Content-Type": "application/json",
+          },
 
-        body: JSON.stringify({
-          tipo: "prova",
-          etapaEnsino,
-          serie,
-          disciplina,
-          tipoAvaliacao,
-          conteudos,
-          dificuldade: "Misto",
-          valorAvaliacao: "10",
-          incluirBncc,
-          incluirTextoApoio,
+          body: JSON.stringify({
+            tipo: "prova",
+            etapaEnsino,
+            serie,
+            disciplina,
+            tipoAvaliacao,
+            conteudos,
+            dificuldade: "Misto",
+            valorAvaliacao: "10",
+            incluirBncc,
+            incluirTextoApoio,
 
-          quantidadeMultiplaEscolha:
-            transformarEmNumero(quantidadeMultiplaEscolha),
+            quantidadeMultiplaEscolha:
+              transformarEmNumero(
+                quantidadeMultiplaEscolha
+              ),
 
-          quantidadeDiscursivas:
-            transformarEmNumero(quantidadeDiscursivas),
+            quantidadeDiscursivas:
+              transformarEmNumero(
+                quantidadeDiscursivas
+              ),
 
-          quantidadeVerdadeiroFalso:
-            distribuicaoMista.verdadeiroFalso,
+            quantidadeVerdadeiroFalso:
+              distribuicaoMista.verdadeiroFalso,
 
-          quantidadeComplete:
-            distribuicaoMista.complete,
+            quantidadeComplete:
+              distribuicaoMista.complete,
 
-          quantidadeRelacione:
-            distribuicaoMista.relacione,
+            quantidadeRelacione:
+              distribuicaoMista.relacione,
 
-          totalQuestoes,
-        }),
-      });
+            totalQuestoes,
+          }),
+        }
+      );
 
       const tipoResposta =
         resposta.headers.get("content-type") || "";
 
-      if (!tipoResposta.includes("application/json")) {
+      if (
+        !tipoResposta.includes(
+          "application/json"
+        )
+      ) {
         if (resposta.status === 504) {
           throw new Error(
             "A geração demorou mais que o esperado. Tente novamente com menos questões."
@@ -281,7 +320,8 @@ function alterarSerie(novaSerie: string) {
 
       if (!resposta.ok) {
         throw new Error(
-          dados.erro || "Não foi possível gerar a avaliação."
+          dados.erro ||
+            "Não foi possível gerar a avaliação."
         );
       }
 
@@ -293,7 +333,10 @@ function alterarSerie(novaSerie: string) {
         );
       }
 
-      localStorage.setItem("provaGerada", textoRecebido);
+      localStorage.setItem(
+        "provaGerada",
+        textoRecebido
+      );
 
       localStorage.setItem(
         "configuracaoAvaliacao",
@@ -314,7 +357,10 @@ function alterarSerie(novaSerie: string) {
 
       router.push("/avaliacoes/resultado");
     } catch (error) {
-      console.error("Erro ao gerar avaliação:", error);
+      console.error(
+        "Erro ao gerar avaliação:",
+        error
+      );
 
       setErro(
         error instanceof Error
@@ -328,24 +374,10 @@ function alterarSerie(novaSerie: string) {
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            onClick={() => router.push("/")}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-green-50 hover:text-green-800"
-          >
-            <ArrowLeft size={18} />
-            Voltar
-          </button>
-
-          <span className="text-xl font-extrabold text-slate-900">
-            Planej<span className="text-green-600">AI</span>
-          </span>
-
-          <div className="w-[82px]" />
-        </div>
-      </header>
+      <TopoAvaliacoes
+        destinoVoltar="/"
+        textoVoltar="Voltar"
+      />
 
       <section className="mx-auto max-w-7xl px-4 py-4">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
@@ -360,7 +392,8 @@ function alterarSerie(novaSerie: string) {
               </h1>
 
               <p className="text-sm text-slate-500">
-                Os campos com asterisco são obrigatórios.
+                Os campos com asterisco são
+                obrigatórios.
               </p>
             </div>
           </div>
@@ -375,14 +408,18 @@ function alterarSerie(novaSerie: string) {
 
                 Etapa de ensino
 
-                <span className="text-red-500">*</span>
+                <span className="text-red-500">
+                  *
+                </span>
               </label>
 
               <select
                 value={etapaEnsino}
                 onChange={(event) =>
-  alterarSerie(event.target.value)
-}
+                  alterarEtapa(
+                    event.target.value
+                  )
+                }
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
                 <option value="">
@@ -390,7 +427,10 @@ function alterarSerie(novaSerie: string) {
                 </option>
 
                 {etapasEnsino.map((item) => (
-                  <option key={item} value={item}>
+                  <option
+                    key={item}
+                    value={item}
+                  >
                     {item}
                   </option>
                 ))}
@@ -406,33 +446,38 @@ function alterarSerie(novaSerie: string) {
 
                 Série ou turma
 
-                <span className="text-red-500">*</span>
+                <span className="text-red-500">
+                  *
+                </span>
               </label>
 
               <select
-  value={disciplina}
-  onChange={(event) =>
-    setDisciplina(event.target.value)
-  }
-  disabled={!serie}
-  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
->
-  <option value="">
-    {!etapaEnsino
-      ? "Selecione primeiro a etapa"
-      : !serie
-        ? "Selecione primeiro a série"
-        : "Selecione a disciplina"}
-  </option>
+                value={serie}
+                onChange={(event) =>
+                  alterarSerie(
+                    event.target.value
+                  )
+                }
+                disabled={!etapaEnsino}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">
+                  {etapaEnsino
+                    ? "Selecione a série ou turma"
+                    : "Selecione primeiro a etapa"}
+                </option>
 
-  {disciplinasDisponiveis.map((item) => (
-    <option key={item} value={item}>
-      {item === "Computação"
-        ? "Computação — BNCC da Computação"
-        : item}
-    </option>
-  ))}
-</select>
+                {seriesDisponiveis.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )}
+              </select>
             </div>
 
             <div>
@@ -444,25 +489,41 @@ function alterarSerie(novaSerie: string) {
 
                 Disciplina
 
-                <span className="text-red-500">*</span>
+                <span className="text-red-500">
+                  *
+                </span>
               </label>
 
               <select
                 value={disciplina}
                 onChange={(event) =>
-                  setDisciplina(event.target.value)
+                  setDisciplina(
+                    event.target.value
+                  )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                disabled={!serie}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
               >
                 <option value="">
-                  Selecione a disciplina
+                  {!etapaEnsino
+                    ? "Selecione primeiro a etapa"
+                    : !serie
+                      ? "Selecione primeiro a série"
+                      : "Selecione a disciplina"}
                 </option>
 
-                {disciplinas.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
+                {disciplinasDisponiveis.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item === "Computação"
+                        ? "Computação — BNCC da Computação"
+                        : item}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -479,7 +540,9 @@ function alterarSerie(novaSerie: string) {
               <select
                 value={tipoAvaliacao}
                 onChange={(event) =>
-                  setTipoAvaliacao(event.target.value)
+                  setTipoAvaliacao(
+                    event.target.value
+                  )
                 }
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
@@ -488,7 +551,10 @@ function alterarSerie(novaSerie: string) {
                 </option>
 
                 {tiposAvaliacao.map((item) => (
-                  <option key={item} value={item}>
+                  <option
+                    key={item}
+                    value={item}
+                  >
                     {item}
                   </option>
                 ))}
@@ -521,14 +587,20 @@ function alterarSerie(novaSerie: string) {
 
               <CampoQuantidade
                 titulo="Só múltipla escolha"
-                valor={quantidadeMultiplaEscolha}
-                alterar={setQuantidadeMultiplaEscolha}
+                valor={
+                  quantidadeMultiplaEscolha
+                }
+                alterar={
+                  setQuantidadeMultiplaEscolha
+                }
               />
 
               <CampoQuantidade
                 titulo="Só discursivas"
                 valor={quantidadeDiscursivas}
-                alterar={setQuantidadeDiscursivas}
+                alterar={
+                  setQuantidadeDiscursivas
+                }
               />
 
               <CampoQuantidade
@@ -562,7 +634,9 @@ function alterarSerie(novaSerie: string) {
                     type="checkbox"
                     checked={incluirBncc}
                     onChange={(event) =>
-                      setIncluirBncc(event.target.checked)
+                      setIncluirBncc(
+                        event.target.checked
+                      )
                     }
                     className="h-5 w-5 accent-green-600"
                   />
@@ -575,7 +649,9 @@ function alterarSerie(novaSerie: string) {
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
                   <input
                     type="checkbox"
-                    checked={incluirTextoApoio}
+                    checked={
+                      incluirTextoApoio
+                    }
                     onChange={(event) =>
                       setIncluirTextoApoio(
                         event.target.checked
@@ -600,13 +676,17 @@ function alterarSerie(novaSerie: string) {
 
                 Conteúdos que serão avaliados
 
-                <span className="text-red-500">*</span>
+                <span className="text-red-500">
+                  *
+                </span>
               </label>
 
               <textarea
                 value={conteudos}
                 onChange={(event) =>
-                  setConteudos(event.target.value)
+                  setConteudos(
+                    event.target.value
+                  )
                 }
                 placeholder="Digite ou cole os conteúdos aqui..."
                 rows={4}
