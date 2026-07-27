@@ -261,25 +261,71 @@ export default function AvaliacoesPage() {
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
-                Etapa de ensino *
-              </label>
+            <div className="md:col-span-2">
+  <div className="mb-3 flex items-center gap-2">
+    <GraduationCap className="text-green-600" size={18} />
 
-              <select
-                value={etapaEnsino}
-                onChange={(event) => setEtapaEnsino(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              >
-                <option value="">Selecione a etapa</option>
+    <span className="text-sm font-bold text-slate-800">
+      Etapa de Ensino *
+    </span>
+  </div>
 
-                {etapasEnsino.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
-            </div>
+  <div className="grid gap-4 md:grid-cols-4">
+    {[
+      {
+        titulo: "Ensino Fundamental I",
+        subtitulo: "1º ao 5º Ano",
+        valor: "Ensino Fundamental - Anos Iniciais",
+        cor:
+          etapaEnsino === "Ensino Fundamental - Anos Iniciais"
+            ? "border-green-500 bg-green-50"
+            : "border-green-200 bg-white",
+      },
+      {
+        titulo: "Ensino Fundamental II",
+        subtitulo: "6º ao 9º Ano",
+        valor: "Ensino Fundamental - Anos Finais",
+        cor:
+          etapaEnsino === "Ensino Fundamental - Anos Finais"
+            ? "border-blue-500 bg-blue-50"
+            : "border-blue-200 bg-white",
+      },
+      {
+        titulo: "Ensino Médio",
+        subtitulo: "1ª à 3ª Série",
+        valor: "Ensino Médio",
+        cor:
+          etapaEnsino === "Ensino Médio"
+            ? "border-purple-500 bg-purple-50"
+            : "border-purple-200 bg-white",
+      },
+      {
+        titulo: "EJA",
+        subtitulo: "Jovens e Adultos",
+        valor: "EJA",
+        cor:
+          etapaEnsino === "EJA"
+            ? "border-cyan-500 bg-cyan-50"
+            : "border-cyan-200 bg-white",
+      },
+    ].map((item) => (
+      <button
+        key={item.valor}
+        type="button"
+        onClick={() => setEtapaEnsino(item.valor)}
+        className={`rounded-2xl border p-5 transition-all hover:shadow-md ${item.cor}`}
+      >
+        <h3 className="text-base font-bold text-slate-800">
+          {item.titulo}
+        </h3>
+
+        <p className="mt-2 text-sm text-slate-500">
+          {item.subtitulo}
+        </p>
+      </button>
+    ))}
+  </div>
+</div>
 
             <div>
               <label className="mb-2 block text-sm font-bold text-slate-700">
