@@ -9,36 +9,17 @@ import {
   GraduationCap,
   Users,
 } from "lucide-react";
+import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
 
 export default function ResultadoAvaliacaoPage() {
   const router = useRouter();
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
-          <button
-            type="button"
-            onClick={() => router.push("/avaliacoes")}
-            className="flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-semibold text-slate-600 transition hover:bg-green-50 hover:text-green-800"
-          >
-            <ArrowLeft size={18} />
-            Voltar às avaliações
-          </button>
-
-          <div className="text-center">
-            <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
-              Planej<span className="text-green-600">AI</span>
-            </h1>
-
-            <p className="text-xs font-medium text-slate-500">
-              Avaliação gerada com sucesso!
-            </p>
-          </div>
-
-          <div className="w-[150px]" />
-        </div>
-      </header>
+      <TopoAvaliacoes
+  destinoVoltar="/avaliacoes"
+  textoVoltar="Voltar às avaliações"
+/>
 
       <section className="mx-auto max-w-7xl px-4 py-6">
         <div className="rounded-2xl border border-green-100 bg-green-50 p-5 shadow-sm">

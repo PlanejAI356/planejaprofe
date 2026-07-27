@@ -50,19 +50,62 @@ const seriesPorEtapa: Record<string, string[]> = {
   ],
 };
 
-const disciplinas = [
-  "Português",
-  "Matemática",
-  "Ciências",
-  "História",
-  "Geografia",
-  "Arte",
-  "Educação Física",
-  "Ensino Religioso",
-  "Biologia",
-  "Física",
-  "Química",
-];
+const disciplinasPorEtapa: Record<string, string[]> = {
+  "Ensino Fundamental - Anos Iniciais": [
+    "Português",
+    "Matemática",
+    "Ciências",
+    "História",
+    "Geografia",
+    "Arte",
+    "Educação Física",
+    "Ensino Religioso",
+    "Computação",
+  ],
+
+  "Ensino Fundamental - Anos Finais": [
+    "Português",
+    "Matemática",
+    "Ciências",
+    "História",
+    "Geografia",
+    "Arte",
+    "Educação Física",
+    "Ensino Religioso",
+    "Computação",
+  ],
+
+  "Ensino Médio": [
+    "Português",
+    "Matemática",
+    "Biologia",
+    "Física",
+    "Química",
+    "História",
+    "Geografia",
+    "Filosofia",
+    "Sociologia",
+    "Língua Inglesa",
+    "Arte",
+    "Educação Física",
+    "Computação",
+  ],
+
+  EJA: [
+    "Português",
+    "Matemática",
+    "Ciências",
+    "História",
+    "Geografia",
+    "Arte",
+    "Educação Física",
+    "Ensino Religioso",
+    "Biologia",
+    "Física",
+    "Química",
+    "Computação",
+  ],
+};
 
 const tiposAvaliacao = [
   "Avaliação bimestral",
@@ -121,6 +164,11 @@ export default function AvaliacoesPage() {
 
   const seriesDisponiveis = seriesPorEtapa[etapaEnsino] || [];
 
+  const disciplinasDisponiveis =
+  etapaEnsino && serie
+    ? disciplinasPorEtapa[etapaEnsino] || []
+    : [];
+
   const totalQuestoes = useMemo(() => {
     return (
       transformarEmNumero(quantidadeMultiplaEscolha) +
@@ -134,9 +182,15 @@ export default function AvaliacoesPage() {
   ]);
 
   function alterarEtapa(novaEtapa: string) {
-    setEtapaEnsino(novaEtapa);
-    setSerie("");
-  }
+  setEtapaEnsino(novaEtapa);
+  setSerie("");
+  setDisciplina("");
+}
+
+function alterarSerie(novaSerie: string) {
+  setSerie(novaSerie);
+  setDisciplina("");
+}
 
   async function gerarProva() {
     setErro("");
@@ -327,8 +381,8 @@ export default function AvaliacoesPage() {
               <select
                 value={etapaEnsino}
                 onChange={(event) =>
-                  alterarEtapa(event.target.value)
-                }
+  alterarSerie(event.target.value)
+}
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
                 <option value="">
@@ -356,25 +410,29 @@ export default function AvaliacoesPage() {
               </label>
 
               <select
-                value={serie}
-                onChange={(event) =>
-                  setSerie(event.target.value)
-                }
-                disabled={!etapaEnsino}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
-              >
-                <option value="">
-                  {etapaEnsino
-                    ? "Selecione a série ou turma"
-                    : "Selecione primeiro a etapa"}
-                </option>
+  value={disciplina}
+  onChange={(event) =>
+    setDisciplina(event.target.value)
+  }
+  disabled={!serie}
+  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+>
+  <option value="">
+    {!etapaEnsino
+      ? "Selecione primeiro a etapa"
+      : !serie
+        ? "Selecione primeiro a série"
+        : "Selecione a disciplina"}
+  </option>
 
-                {seriesDisponiveis.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+  {disciplinasDisponiveis.map((item) => (
+    <option key={item} value={item}>
+      {item === "Computação"
+        ? "Computação — BNCC da Computação"
+        : item}
+    </option>
+  ))}
+</select>
             </div>
 
             <div>
