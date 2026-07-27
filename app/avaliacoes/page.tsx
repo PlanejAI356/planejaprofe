@@ -21,6 +21,35 @@ const etapasEnsino = [
   "EJA",
 ];
 
+const seriesPorEtapa: Record<string, string[]> = {
+  "Ensino Fundamental - Anos Iniciais": [
+    "1º ano",
+    "2º ano",
+    "3º ano",
+    "4º ano",
+    "5º ano",
+  ],
+
+  "Ensino Fundamental - Anos Finais": [
+    "6º ano",
+    "7º ano",
+    "8º ano",
+    "9º ano",
+  ],
+
+  "Ensino Médio": [
+    "1ª série do Ensino Médio",
+    "2ª série do Ensino Médio",
+    "3ª série do Ensino Médio",
+  ],
+
+  EJA: [
+    "EJA - Anos Iniciais",
+    "EJA - Anos Finais",
+    "EJA - Ensino Médio",
+  ],
+};
+
 const disciplinas = [
   "Português",
   "Matemática",
@@ -78,15 +107,19 @@ export default function AvaliacoesPage() {
 
   const [quantidadeMultiplaEscolha, setQuantidadeMultiplaEscolha] =
     useState("5");
-  const [quantidadeDiscursivas, setQuantidadeDiscursivas] = useState("3");
+
+  const [quantidadeDiscursivas, setQuantidadeDiscursivas] =
+    useState("3");
+
   const [quantidadeMistas, setQuantidadeMistas] = useState("2");
 
   const [incluirBncc, setIncluirBncc] = useState(false);
   const [incluirTextoApoio, setIncluirTextoApoio] = useState(false);
 
   const [gerando, setGerando] = useState(false);
-  const [provaGerada, setProvaGerada] = useState("");
   const [erro, setErro] = useState("");
+
+  const seriesDisponiveis = seriesPorEtapa[etapaEnsino] || [];
 
   const totalQuestoes = useMemo(() => {
     return (
@@ -100,12 +133,17 @@ export default function AvaliacoesPage() {
     quantidadeMistas,
   ]);
 
+  function alterarEtapa(novaEtapa: string) {
+    setEtapaEnsino(novaEtapa);
+    setSerie("");
+  }
+
   async function gerarProva() {
     setErro("");
 
     if (
       !etapaEnsino ||
-      !serie.trim() ||
+      !serie ||
       !disciplina ||
       !conteudos.trim()
     ) {
@@ -134,9 +172,11 @@ export default function AvaliacoesPage() {
 
       const resposta = await fetch("/api/gerar-plano", {
         method: "POST",
+
         headers: {
           "Content-Type": "application/json",
         },
+
         body: JSON.stringify({
           tipo: "prova",
           etapaEnsino,
@@ -148,17 +188,40 @@ export default function AvaliacoesPage() {
           valorAvaliacao: "10",
           incluirBncc,
           incluirTextoApoio,
+
           quantidadeMultiplaEscolha:
             transformarEmNumero(quantidadeMultiplaEscolha),
+
           quantidadeDiscursivas:
             transformarEmNumero(quantidadeDiscursivas),
+
           quantidadeVerdadeiroFalso:
             distribuicaoMista.verdadeiroFalso,
-          quantidadeComplete: distribuicaoMista.complete,
-          quantidadeRelacione: distribuicaoMista.relacione,
+
+          quantidadeComplete:
+            distribuicaoMista.complete,
+
+          quantidadeRelacione:
+            distribuicaoMista.relacione,
+
           totalQuestoes,
         }),
       });
+
+      const tipoResposta =
+        resposta.headers.get("content-type") || "";
+
+      if (!tipoResposta.includes("application/json")) {
+        if (resposta.status === 504) {
+          throw new Error(
+            "A geração demorou mais que o esperado. Tente novamente com menos questões."
+          );
+        }
+
+        throw new Error(
+          "O servidor não conseguiu concluir a geração da avaliação."
+        );
+      }
 
       const dados = await resposta.json();
 
@@ -178,8 +241,8 @@ export default function AvaliacoesPage() {
 
       localStorage.setItem("provaGerada", textoRecebido);
 
-localStorage.setItem(
-  "configuracaoAvaliacao",
+      localStorage.setItem(
+        "configuracaoAvaliacao",
         JSON.stringify({
           etapaEnsino,
           serie,
@@ -230,37 +293,47 @@ localStorage.setItem(
         </div>
       </header>
 
-      <section className="mx-auto max-w-7xl px-4 py-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
-          <div className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-5">
-            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-700">
-              <GraduationCap size={27} />
+      <section className="mx-auto max-w-7xl px-4 py-4">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="mb-5 flex items-center gap-3 border-b border-slate-200 pb-4">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-700">
+              <GraduationCap size={25} />
             </div>
 
             <div>
-              <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
+              <h1 className="text-xl font-extrabold text-slate-900">
                 Configuração da avaliação
               </h1>
 
-              <p className="mt-1 text-sm text-slate-500">
+              <p className="text-sm text-slate-500">
                 Os campos com asterisco são obrigatórios.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-5 lg:grid-cols-4">
+          <div className="grid gap-4 lg:grid-cols-4">
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
-                <GraduationCap size={18} className="text-green-600" />
-                Etapa de ensino <span className="text-red-500">*</span>
+                <GraduationCap
+                  size={18}
+                  className="text-green-600"
+                />
+
+                Etapa de ensino
+
+                <span className="text-red-500">*</span>
               </label>
 
               <select
                 value={etapaEnsino}
-                onChange={(event) => setEtapaEnsino(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                onChange={(event) =>
+                  alterarEtapa(event.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
-                <option value="">Selecione a etapa</option>
+                <option value="">
+                  Selecione a etapa
+                </option>
 
                 {etapasEnsino.map((item) => (
                   <option key={item} value={item}>
@@ -272,31 +345,60 @@ localStorage.setItem(
 
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
-                <Users size={18} className="text-green-600" />
-                Série ou turma <span className="text-red-500">*</span>
+                <Users
+                  size={18}
+                  className="text-green-600"
+                />
+
+                Série ou turma
+
+                <span className="text-red-500">*</span>
               </label>
 
-              <input
-                type="text"
+              <select
                 value={serie}
-                onChange={(event) => setSerie(event.target.value)}
-                placeholder="Ex.: 6º ano"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
+                onChange={(event) =>
+                  setSerie(event.target.value)
+                }
+                disabled={!etapaEnsino}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-slate-400"
+              >
+                <option value="">
+                  {etapaEnsino
+                    ? "Selecione a série ou turma"
+                    : "Selecione primeiro a etapa"}
+                </option>
+
+                {seriesDisponiveis.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
-                <BookOpen size={18} className="text-green-600" />
-                Disciplina <span className="text-red-500">*</span>
+                <BookOpen
+                  size={18}
+                  className="text-green-600"
+                />
+
+                Disciplina
+
+                <span className="text-red-500">*</span>
               </label>
 
               <select
                 value={disciplina}
-                onChange={(event) => setDisciplina(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                onChange={(event) =>
+                  setDisciplina(event.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
-                <option value="">Selecione a disciplina</option>
+                <option value="">
+                  Selecione a disciplina
+                </option>
 
                 {disciplinas.map((item) => (
                   <option key={item} value={item}>
@@ -308,16 +410,24 @@ localStorage.setItem(
 
             <div>
               <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
-                <ClipboardList size={18} className="text-green-600" />
+                <ClipboardList
+                  size={18}
+                  className="text-green-600"
+                />
+
                 Tipo de avaliação
               </label>
 
               <select
                 value={tipoAvaliacao}
-                onChange={(event) => setTipoAvaliacao(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                onChange={(event) =>
+                  setTipoAvaliacao(event.target.value)
+                }
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
-                <option value="">Selecione o tipo</option>
+                <option value="">
+                  Selecione o tipo
+                </option>
 
                 {tiposAvaliacao.map((item) => (
                   <option key={item} value={item}>
@@ -328,25 +438,12 @@ localStorage.setItem(
             </div>
           </div>
 
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <label className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-900">
-              <ClipboardList size={22} className="text-green-600" />
-              Conteúdos que serão avaliados
-              <span className="text-red-500">*</span>
-            </label>
-
-            <textarea
-              value={conteudos}
-              onChange={(event) => setConteudos(event.target.value)}
-              placeholder="Digite ou cole os conteúdos aqui..."
-              rows={5}
-              className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-            />
-          </div>
-
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <div className="mb-5 flex items-center gap-2">
-              <ListChecks size={23} className="text-green-600" />
+          <div className="mt-5 border-t border-slate-200 pt-4">
+            <div className="mb-3 flex items-center gap-2">
+              <ListChecks
+                size={22}
+                className="text-green-600"
+              />
 
               <h2 className="text-lg font-extrabold text-slate-900">
                 Quantidade por tipo de questão
@@ -359,7 +456,7 @@ localStorage.setItem(
                   Total de questões
                 </label>
 
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-extrabold text-green-700">
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-extrabold text-green-700">
                   {totalQuestoes}
                 </div>
               </div>
@@ -384,62 +481,94 @@ localStorage.setItem(
             </div>
           </div>
 
-          <div className="mt-6 border-t border-slate-200 pt-6">
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              <Settings size={23} className="text-green-600" />
+          <div className="mt-5 grid gap-5 border-t border-slate-200 pt-4 lg:grid-cols-[0.8fr_1.2fr]">
+            <div>
+              <div className="mb-3 flex flex-wrap items-center gap-2">
+                <Settings
+                  size={22}
+                  className="text-green-600"
+                />
 
-              <h2 className="text-lg font-extrabold text-slate-900">
-                Opções da avaliação
-              </h2>
+                <h2 className="text-lg font-extrabold text-slate-900">
+                  Opções da avaliação
+                </h2>
 
-              <span className="text-sm font-medium italic text-green-600">
-                não obrigatório
-              </span>
+                <span className="text-xs font-medium italic text-green-600">
+                  não obrigatório
+                </span>
+              </div>
+
+              <div className="grid gap-3">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                  <input
+                    type="checkbox"
+                    checked={incluirBncc}
+                    onChange={(event) =>
+                      setIncluirBncc(event.target.checked)
+                    }
+                    className="h-5 w-5 accent-green-600"
+                  />
+
+                  <span className="text-sm font-semibold text-slate-700">
+                    Incluir habilidade da BNCC
+                  </span>
+                </label>
+
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                  <input
+                    type="checkbox"
+                    checked={incluirTextoApoio}
+                    onChange={(event) =>
+                      setIncluirTextoApoio(
+                        event.target.checked
+                      )
+                    }
+                    className="h-5 w-5 accent-green-600"
+                  />
+
+                  <span className="text-sm font-semibold text-slate-700">
+                    Incluir texto de apoio
+                  </span>
+                </label>
+              </div>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
-                <input
-                  type="checkbox"
-                  checked={incluirBncc}
-                  onChange={(event) => setIncluirBncc(event.target.checked)}
-                  className="h-5 w-5 accent-green-600"
+            <div>
+              <label className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-900">
+                <ClipboardList
+                  size={22}
+                  className="text-green-600"
                 />
 
-                <span className="text-sm font-semibold text-slate-700">
-                  Incluir habilidade da BNCC
-                </span>
+                Conteúdos que serão avaliados
+
+                <span className="text-red-500">*</span>
               </label>
 
-              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
-                <input
-                  type="checkbox"
-                  checked={incluirTextoApoio}
-                  onChange={(event) =>
-                    setIncluirTextoApoio(event.target.checked)
-                  }
-                  className="h-5 w-5 accent-green-600"
-                />
-
-                <span className="text-sm font-semibold text-slate-700">
-                  Incluir texto de apoio
-                </span>
-              </label>
+              <textarea
+                value={conteudos}
+                onChange={(event) =>
+                  setConteudos(event.target.value)
+                }
+                placeholder="Digite ou cole os conteúdos aqui..."
+                rows={4}
+                className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              />
             </div>
           </div>
 
           {erro && (
-            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <div className="mt-4 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               {erro}
             </div>
           )}
 
-          <div className="mt-7 flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
+          <div className="mt-5 flex flex-col-reverse gap-3 border-t border-slate-200 pt-4 sm:flex-row sm:justify-between">
             <button
               type="button"
               onClick={() => router.push("/")}
               disabled={gerando}
-              className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Voltar ao painel
             </button>
@@ -448,11 +577,15 @@ localStorage.setItem(
               type="button"
               onClick={gerarProva}
               disabled={gerando}
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-7 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
             >
               {gerando ? (
                 <>
-                  <Loader2 size={19} className="animate-spin" />
+                  <Loader2
+                    size={19}
+                    className="animate-spin"
+                  />
+
                   Gerando avaliação...
                 </>
               ) : (
@@ -464,51 +597,6 @@ localStorage.setItem(
             </button>
           </div>
         </div>
-
-        {provaGerada && (
-          <div className="mt-8 rounded-2xl border border-green-200 bg-white p-5 shadow-sm sm:p-7">
-            <div className="mb-4 border-b border-green-100 pb-4">
-              <h2 className="text-xl font-extrabold text-slate-900">
-                Avaliação gerada
-              </h2>
-
-              <p className="mt-1 text-sm text-slate-500">
-                Clique no texto para corrigir ou alterar qualquer parte.
-              </p>
-            </div>
-
-            <textarea
-              value={provaGerada}
-              onChange={(event) => {
-                setProvaGerada(event.target.value);
-                localStorage.setItem("provaGerada", event.target.value);
-              }}
-              rows={30}
-              className="min-h-[700px] w-full resize-y rounded-xl border border-slate-300 bg-white p-5 text-sm leading-7 text-slate-900 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-            />
-
-            <div className="mt-5 flex justify-end">
-              <button
-                type="button"
-                onClick={gerarProva}
-                disabled={gerando}
-                className="flex items-center justify-center gap-2 rounded-xl border border-green-700 px-5 py-3 text-sm font-extrabold text-green-800 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {gerando ? (
-                  <>
-                    <Loader2 size={18} className="animate-spin" />
-                    Gerando...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={18} />
-                    Gerar novamente
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        )}
       </section>
     </main>
   );
@@ -536,8 +624,10 @@ function CampoQuantidade({
         min="0"
         max="30"
         value={valor}
-        onChange={(event) => alterar(event.target.value)}
-        className="w-fulgit pushl rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+        onChange={(event) =>
+          alterar(event.target.value)
+        }
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
       />
     </div>
   );
