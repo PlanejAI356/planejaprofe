@@ -7,8 +7,11 @@ import {
   BookOpen,
   ClipboardList,
   GraduationCap,
+  ListChecks,
   Loader2,
+  Settings,
   Sparkles,
+  Users,
 } from "lucide-react";
 
 const etapasEnsino = [
@@ -42,8 +45,6 @@ const tiposAvaliacao = [
   "Revisão avaliativa",
 ];
 
-const niveisDificuldade = ["Fácil", "Médio", "Difícil", "Misto"];
-
 function transformarEmNumero(valor: string) {
   const numero = Number(valor);
 
@@ -54,6 +55,18 @@ function transformarEmNumero(valor: string) {
   return Math.floor(numero);
 }
 
+function dividirQuestoesMistas(quantidade: number) {
+  const verdadeiroFalso = Math.ceil(quantidade / 3);
+  const complete = Math.ceil((quantidade - verdadeiroFalso) / 2);
+  const relacione = quantidade - verdadeiroFalso - complete;
+
+  return {
+    verdadeiroFalso,
+    complete,
+    relacione,
+  };
+}
+
 export default function AvaliacoesPage() {
   const router = useRouter();
 
@@ -62,20 +75,14 @@ export default function AvaliacoesPage() {
   const [disciplina, setDisciplina] = useState("");
   const [tipoAvaliacao, setTipoAvaliacao] = useState("");
   const [conteudos, setConteudos] = useState("");
-  const [dificuldade, setDificuldade] = useState("Misto");
-  const [valorAvaliacao, setValorAvaliacao] = useState("10");
 
   const [quantidadeMultiplaEscolha, setQuantidadeMultiplaEscolha] =
     useState("5");
-
   const [quantidadeDiscursivas, setQuantidadeDiscursivas] = useState("3");
+  const [quantidadeMistas, setQuantidadeMistas] = useState("2");
 
-  const [quantidadeVerdadeiroFalso, setQuantidadeVerdadeiroFalso] =
-    useState("2");
-
-  const [quantidadeComplete, setQuantidadeComplete] = useState("0");
-
-  const [quantidadeRelacione, setQuantidadeRelacione] = useState("0");
+  const [incluirBncc, setIncluirBncc] = useState(false);
+  const [incluirTextoApoio, setIncluirTextoApoio] = useState(false);
 
   const [gerando, setGerando] = useState(false);
   const [provaGerada, setProvaGerada] = useState("");
@@ -85,16 +92,12 @@ export default function AvaliacoesPage() {
     return (
       transformarEmNumero(quantidadeMultiplaEscolha) +
       transformarEmNumero(quantidadeDiscursivas) +
-      transformarEmNumero(quantidadeVerdadeiroFalso) +
-      transformarEmNumero(quantidadeComplete) +
-      transformarEmNumero(quantidadeRelacione)
+      transformarEmNumero(quantidadeMistas)
     );
   }, [
     quantidadeMultiplaEscolha,
     quantidadeDiscursivas,
-    quantidadeVerdadeiroFalso,
-    quantidadeComplete,
-    quantidadeRelacione,
+    quantidadeMistas,
   ]);
 
   async function gerarProva() {
@@ -111,7 +114,7 @@ export default function AvaliacoesPage() {
     }
 
     if (totalQuestoes === 0) {
-      setErro("Informe pelo menos um tipo de questão.");
+      setErro("Informe pelo menos uma questão.");
       return;
     }
 
@@ -119,6 +122,12 @@ export default function AvaliacoesPage() {
       setErro("A avaliação pode ter no máximo 30 questões.");
       return;
     }
+
+    const quantidadeMistasNumero =
+      transformarEmNumero(quantidadeMistas);
+
+    const distribuicaoMista =
+      dividirQuestoesMistas(quantidadeMistasNumero);
 
     try {
       setGerando(true);
@@ -135,16 +144,18 @@ export default function AvaliacoesPage() {
           disciplina,
           tipoAvaliacao,
           conteudos,
-          dificuldade,
-          valorAvaliacao,
+          dificuldade: "Misto",
+          valorAvaliacao: "10",
+          incluirBncc,
+          incluirTextoApoio,
           quantidadeMultiplaEscolha:
             transformarEmNumero(quantidadeMultiplaEscolha),
           quantidadeDiscursivas:
             transformarEmNumero(quantidadeDiscursivas),
           quantidadeVerdadeiroFalso:
-            transformarEmNumero(quantidadeVerdadeiroFalso),
-          quantidadeComplete: transformarEmNumero(quantidadeComplete),
-          quantidadeRelacione: transformarEmNumero(quantidadeRelacione),
+            distribuicaoMista.verdadeiroFalso,
+          quantidadeComplete: distribuicaoMista.complete,
+          quantidadeRelacione: distribuicaoMista.relacione,
           totalQuestoes,
         }),
       });
@@ -152,7 +163,9 @@ export default function AvaliacoesPage() {
       const dados = await resposta.json();
 
       if (!resposta.ok) {
-        throw new Error(dados.erro || "Não foi possível gerar a avaliação.");
+        throw new Error(
+          dados.erro || "Não foi possível gerar a avaliação."
+        );
       }
 
       const textoRecebido = dados.texto || "";
@@ -173,13 +186,11 @@ export default function AvaliacoesPage() {
           disciplina,
           tipoAvaliacao,
           conteudos,
-          dificuldade,
-          valorAvaliacao,
           quantidadeMultiplaEscolha,
           quantidadeDiscursivas,
-          quantidadeVerdadeiroFalso,
-          quantidadeComplete,
-          quantidadeRelacione,
+          quantidadeMistas,
+          incluirBncc,
+          incluirTextoApoio,
           totalQuestoes,
         })
       );
@@ -201,7 +212,7 @@ export default function AvaliacoesPage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <header className="border-b border-slate-200 bg-white">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
+        <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-3">
           <button
             type="button"
             onClick={() => router.push("/")}
@@ -211,125 +222,58 @@ export default function AvaliacoesPage() {
             Voltar
           </button>
 
-          <div className="flex items-center gap-2">
-            <img
-              src="/logo-planejai.png"
-              alt="PlanejAI"
-              className="h-9 w-9 object-contain"
-            />
-
-            <span className="text-lg font-extrabold text-slate-900">
-              Planej<span className="text-green-600">AI</span>
-            </span>
-          </div>
+          <span className="text-xl font-extrabold text-slate-900">
+            Planej<span className="text-green-600">AI</span>
+          </span>
 
           <div className="w-[82px]" />
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-4 py-8">
-        <div className="mb-7 text-center">
-          <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-green-700">
-            <ClipboardList size={34} />
-          </div>
-
-          <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
-            Criar avaliação
-          </h1>
-
-          <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Escolha os tipos de questões e informe os conteúdos que serão
-            avaliados.
-          </p>
-        </div>
-
+      <section className="mx-auto max-w-7xl px-4 py-6">
         <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-7">
           <div className="mb-6 flex items-center gap-3 border-b border-slate-200 pb-5">
-            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-green-100 text-green-700">
-              <GraduationCap size={24} />
+            <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-green-700">
+              <GraduationCap size={27} />
             </div>
 
             <div>
-              <h2 className="font-extrabold text-slate-900">
+              <h1 className="text-xl font-extrabold text-slate-900 sm:text-2xl">
                 Configuração da avaliação
-              </h2>
+              </h1>
 
-              <p className="text-sm text-slate-500">
+              <p className="mt-1 text-sm text-slate-500">
                 Os campos com asterisco são obrigatórios.
               </p>
             </div>
           </div>
 
-          <div className="grid gap-5 md:grid-cols-2">
-            <div className="md:col-span-2">
-  <div className="mb-3 flex items-center gap-2">
-    <GraduationCap className="text-green-600" size={18} />
+          <div className="grid gap-5 lg:grid-cols-4">
+            <div>
+              <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                <GraduationCap size={18} className="text-green-600" />
+                Etapa de ensino <span className="text-red-500">*</span>
+              </label>
 
-    <span className="text-sm font-bold text-slate-800">
-      Etapa de Ensino *
-    </span>
-  </div>
+              <select
+                value={etapaEnsino}
+                onChange={(event) => setEtapaEnsino(event.target.value)}
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              >
+                <option value="">Selecione a etapa</option>
 
-  <div className="grid gap-4 md:grid-cols-4">
-    {[
-      {
-        titulo: "Ensino Fundamental I",
-        subtitulo: "1º ao 5º Ano",
-        valor: "Ensino Fundamental - Anos Iniciais",
-        cor:
-          etapaEnsino === "Ensino Fundamental - Anos Iniciais"
-            ? "border-green-500 bg-green-50"
-            : "border-green-200 bg-white",
-      },
-      {
-        titulo: "Ensino Fundamental II",
-        subtitulo: "6º ao 9º Ano",
-        valor: "Ensino Fundamental - Anos Finais",
-        cor:
-          etapaEnsino === "Ensino Fundamental - Anos Finais"
-            ? "border-blue-500 bg-blue-50"
-            : "border-blue-200 bg-white",
-      },
-      {
-        titulo: "Ensino Médio",
-        subtitulo: "1ª à 3ª Série",
-        valor: "Ensino Médio",
-        cor:
-          etapaEnsino === "Ensino Médio"
-            ? "border-purple-500 bg-purple-50"
-            : "border-purple-200 bg-white",
-      },
-      {
-        titulo: "EJA",
-        subtitulo: "Jovens e Adultos",
-        valor: "EJA",
-        cor:
-          etapaEnsino === "EJA"
-            ? "border-cyan-500 bg-cyan-50"
-            : "border-cyan-200 bg-white",
-      },
-    ].map((item) => (
-      <button
-        key={item.valor}
-        type="button"
-        onClick={() => setEtapaEnsino(item.valor)}
-        className={`rounded-2xl border p-5 transition-all hover:shadow-md ${item.cor}`}
-      >
-        <h3 className="text-base font-bold text-slate-800">
-          {item.titulo}
-        </h3>
-
-        <p className="mt-2 text-sm text-slate-500">
-          {item.subtitulo}
-        </p>
-      </button>
-    ))}
-  </div>
-</div>
+                {etapasEnsino.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
-                Série ou turma *
+              <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                <Users size={18} className="text-green-600" />
+                Série ou turma <span className="text-red-500">*</span>
               </label>
 
               <input
@@ -342,8 +286,9 @@ export default function AvaliacoesPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
-                Disciplina *
+              <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                <BookOpen size={18} className="text-green-600" />
+                Disciplina <span className="text-red-500">*</span>
               </label>
 
               <select
@@ -362,7 +307,8 @@ export default function AvaliacoesPage() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
+              <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-800">
+                <ClipboardList size={18} className="text-green-600" />
                 Tipo de avaliação
               </label>
 
@@ -371,7 +317,7 @@ export default function AvaliacoesPage() {
                 onChange={(event) => setTipoAvaliacao(event.target.value)}
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
               >
-                <option value="">Não informar</option>
+                <option value="">Selecione o tipo</option>
 
                 {tiposAvaliacao.map((item) => (
                   <option key={item} value={item}>
@@ -379,120 +325,111 @@ export default function AvaliacoesPage() {
                   </option>
                 ))}
               </select>
-
-              <p className="mt-2 text-xs text-slate-500">
-                Este campo é opcional.
-              </p>
             </div>
           </div>
 
-          <div className="mt-5">
-            <label className="mb-2 flex items-center gap-2 text-sm font-bold text-slate-700">
-              <BookOpen size={17} />
-              Conteúdos que serão avaliados *
+          <div className="mt-6 border-t border-slate-200 pt-6">
+            <label className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-900">
+              <ClipboardList size={22} className="text-green-600" />
+              Conteúdos que serão avaliados
+              <span className="text-red-500">*</span>
             </label>
 
             <textarea
               value={conteudos}
               onChange={(event) => setConteudos(event.target.value)}
-              placeholder="Ex.: Sistema Solar; movimentos da Terra; fases da Lua."
+              placeholder="Digite ou cole os conteúdos aqui..."
               rows={5}
-              className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+              className="w-full resize-y rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
             />
-
-            <p className="mt-2 text-xs text-slate-500">
-              Separe os conteúdos por ponto e vírgula ou escreva um conteúdo em
-              cada linha.
-            </p>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-green-200 bg-green-50 p-4 sm:p-5">
-            <div className="mb-4">
-              <h3 className="font-extrabold text-green-950">
-                Quantidade por tipo de questão
-              </h3>
+          <div className="mt-6 border-t border-slate-200 pt-6">
+            <div className="mb-5 flex items-center gap-2">
+              <ListChecks size={23} className="text-green-600" />
 
-              <p className="mt-1 text-sm text-green-800">
-                Informe zero nos tipos que não deseja utilizar.
-              </p>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Quantidade por tipo de questão
+              </h2>
             </div>
 
-            <div className="grid gap-4 md:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div>
+                <label className="mb-2 block text-sm font-bold text-slate-700">
+                  Total de questões
+                </label>
+
+                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-extrabold text-green-700">
+                  {totalQuestoes}
+                </div>
+              </div>
+
               <CampoQuantidade
-                titulo="Múltipla escolha"
+                titulo="Só múltipla escolha"
                 valor={quantidadeMultiplaEscolha}
                 alterar={setQuantidadeMultiplaEscolha}
               />
 
               <CampoQuantidade
-                titulo="Questões discursivas"
+                titulo="Só discursivas"
                 valor={quantidadeDiscursivas}
                 alterar={setQuantidadeDiscursivas}
               />
 
               <CampoQuantidade
-                titulo="Verdadeiro ou falso"
-                valor={quantidadeVerdadeiroFalso}
-                alterar={setQuantidadeVerdadeiroFalso}
+                titulo="Misto"
+                valor={quantidadeMistas}
+                alterar={setQuantidadeMistas}
               />
-
-              <CampoQuantidade
-                titulo="Complete"
-                valor={quantidadeComplete}
-                alterar={setQuantidadeComplete}
-              />
-
-              <CampoQuantidade
-                titulo="Relacione as colunas"
-                valor={quantidadeRelacione}
-                alterar={setQuantidadeRelacione}
-              />
-            </div>
-
-            <div className="mt-5 rounded-xl border border-green-300 bg-white px-4 py-3 text-center shadow-sm">
-              <span className="text-sm font-extrabold text-green-800">
-                Total de questões: {totalQuestoes}
-              </span>
             </div>
           </div>
 
-          <div className="mt-6 grid gap-5 md:grid-cols-2">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
-                Nível de dificuldade
-              </label>
+          <div className="mt-6 border-t border-slate-200 pt-6">
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              <Settings size={23} className="text-green-600" />
 
-              <select
-                value={dificuldade}
-                onChange={(event) => setDificuldade(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              >
-                {niveisDificuldade.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
-              </select>
+              <h2 className="text-lg font-extrabold text-slate-900">
+                Opções da avaliação
+              </h2>
+
+              <span className="text-sm font-medium italic text-green-600">
+                não obrigatório
+              </span>
             </div>
 
-            <div>
-              <label className="mb-2 block text-sm font-bold text-slate-700">
-                Valor total da avaliação
+            <div className="grid gap-4 md:grid-cols-2">
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                <input
+                  type="checkbox"
+                  checked={incluirBncc}
+                  onChange={(event) => setIncluirBncc(event.target.checked)}
+                  className="h-5 w-5 accent-green-600"
+                />
+
+                <span className="text-sm font-semibold text-slate-700">
+                  Incluir habilidade da BNCC
+                </span>
               </label>
 
-              <input
-                type="number"
-                min="0"
-                step="0.5"
-                value={valorAvaliacao}
-                onChange={(event) => setValorAvaliacao(event.target.value)}
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
-              />
+              <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                <input
+                  type="checkbox"
+                  checked={incluirTextoApoio}
+                  onChange={(event) =>
+                    setIncluirTextoApoio(event.target.checked)
+                  }
+                  className="h-5 w-5 accent-green-600"
+                />
+
+                <span className="text-sm font-semibold text-slate-700">
+                  Incluir texto de apoio
+                </span>
+              </label>
             </div>
           </div>
 
           {erro && (
-            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
+            <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
               {erro}
             </div>
           )}
@@ -511,7 +448,7 @@ export default function AvaliacoesPage() {
               type="button"
               onClick={gerarProva}
               disabled={gerando}
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
             >
               {gerando ? (
                 <>
@@ -544,7 +481,6 @@ export default function AvaliacoesPage() {
               value={provaGerada}
               onChange={(event) => {
                 setProvaGerada(event.target.value);
-
                 localStorage.setItem("provaGerada", event.target.value);
               }}
               rows={30}
@@ -601,7 +537,7 @@ function CampoQuantidade({
         max="30"
         value={valor}
         onChange={(event) => alterar(event.target.value)}
-        className="w-full rounded-xl border border-green-200 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
       />
     </div>
   );
