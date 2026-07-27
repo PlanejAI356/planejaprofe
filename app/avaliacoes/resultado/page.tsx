@@ -45,9 +45,9 @@ export default function ResultadoAvaliacaoPage() {
               Esta é a versão da avaliação que será entregue ao aluno.
             </div>
 
-            <div className="min-h-[560px] max-h-[620px] overflow-y-auto whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-6">
+            <div className="max-h-[700px] overflow-y-auto rounded-xl border border-slate-200 bg-slate-100 p-4 sm:p-6">
               {carregando ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500">
+                <div className="flex min-h-[560px] items-center justify-center gap-2 text-sm text-slate-500">
                   <Loader2
                     size={18}
                     className="animate-spin"
@@ -56,11 +56,17 @@ export default function ResultadoAvaliacaoPage() {
                   Carregando avaliação...
                 </div>
               ) : conteudoAluno ? (
-                <p className="text-sm leading-7 text-slate-800">
-                  {conteudoAluno}
-                </p>
+                <div className="mx-auto min-h-[900px] max-w-[794px] bg-white px-8 py-10 shadow-sm sm:px-12">
+                  {/* Espaço reservado para o cabeçalho da escola */}
+                  <div className="mb-8 h-[150px] border border-dashed border-slate-300 bg-white" />
+
+                  {/* Conteúdo da avaliação */}
+                  <div className="whitespace-pre-wrap text-sm leading-7 text-slate-900">
+                    {conteudoAluno}
+                  </div>
+                </div>
               ) : (
-                <div className="flex min-h-[500px] flex-col items-center justify-center text-center">
+                <div className="flex min-h-[560px] flex-col items-center justify-center text-center">
                   <FileText
                     size={40}
                     className="mb-3 text-slate-300"
