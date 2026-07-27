@@ -176,10 +176,10 @@ export default function AvaliacoesPage() {
         );
       }
 
-      setProvaGerada(textoRecebido);
+      localStorage.setItem("provaGerada", textoRecebido);
 
-      localStorage.setItem(
-        "configuracaoAvaliacao",
+localStorage.setItem(
+  "configuracaoAvaliacao",
         JSON.stringify({
           etapaEnsino,
           serie,
@@ -195,7 +195,7 @@ export default function AvaliacoesPage() {
         })
       );
 
-      localStorage.setItem("provaGerada", textoRecebido);
+      router.push("/avaliacoes/resultado");
     } catch (error) {
       console.error("Erro ao gerar avaliação:", error);
 
@@ -537,7 +537,7 @@ function CampoQuantidade({
         max="30"
         value={valor}
         onChange={(event) => alterar(event.target.value)}
-        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+        className="w-fulgit pushl rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
       />
     </div>
   );
