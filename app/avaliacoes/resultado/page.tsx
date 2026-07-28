@@ -15,6 +15,7 @@ import {
   Columns2,
   FileText,
   GraduationCap,
+  ImagePlus,
   Italic,
   LayoutPanelTop,
   Loader2,
@@ -35,25 +36,59 @@ function textoParaHtml(texto: string) {
     .replace(/\n/g, "<br>");
 }
 
+type ImagemSugerida = {
+  marcacao: string;
+  descricao: string;
+};
+
+function encontrarImagensSugeridas(
+  texto: string
+): ImagemSugerida[] {
+  const regex =
+    /\[IMAGEM SUGERIDA:\s*([^\]]+)\]/gi;
+
+  return Array.from(texto.matchAll(regex)).map(
+    (resultado) => ({
+      marcacao: resultado[0],
+      descricao: resultado[1].trim(),
+    })
+  );
+}
+
 export default function ResultadoAvaliacaoPage() {
-  const [conteudoAluno, setConteudoAluno] = useState("");
-  const [cabecalho, setCabecalho] = useState("");
-  const [carregando, setCarregando] = useState(true);
-  const [duasColunas, setDuasColunas] = useState(false);
-  const [cabecalhoSalvo, setCabecalhoSalvo] = useState(false);
+  const [conteudoAluno, setConteudoAluno] =
+    useState("");
+  const [cabecalho, setCabecalho] =
+    useState("");
+  const [carregando, setCarregando] =
+    useState(true);
+  const [duasColunas, setDuasColunas] =
+    useState(false);
+  const [cabecalhoSalvo, setCabecalhoSalvo] =
+    useState(false);
+  const [gerandoImagens, setGerandoImagens] =
+    useState(false);
+  const [progressoImagens, setProgressoImagens] =
+    useState("");
+  const [mensagemImagens, setMensagemImagens] =
+    useState("");
 
   const editorRef = useRef<HTMLDivElement>(null);
-  const cabecalhoRef = useRef<HTMLDivElement>(null);
+  const cabecalhoRef =
+    useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const provaEditada =
-      localStorage.getItem("provaGeradaEditada") || "";
+      localStorage.getItem("provaGeradaEditada") ||
+      "";
 
     const provaGerada =
       localStorage.getItem("provaGerada") || "";
 
     const cabecalhoSalvoLocal =
-      localStorage.getItem("cabecalhoAvaliacao") || "";
+      localStorage.getItem(
+        "cabecalhoAvaliacao"
+      ) || "";
 
     const conteudoInicial = provaEditada
       ? provaEditada
@@ -61,7 +96,9 @@ export default function ResultadoAvaliacaoPage() {
 
     setConteudoAluno(conteudoInicial);
     setCabecalho(cabecalhoSalvoLocal);
-    setCabecalhoSalvo(Boolean(cabecalhoSalvoLocal.trim()));
+    setCabecalhoSalvo(
+      Boolean(cabecalhoSalvoLocal.trim())
+    );
     setCarregando(false);
   }, []);
 
@@ -69,7 +106,11 @@ export default function ResultadoAvaliacaoPage() {
     comando: string,
     valor?: string
   ) {
-    document.execCommand(comando, false, valor);
+    document.execCommand(
+      comando,
+      false,
+      valor
+    );
     editorRef.current?.focus();
   }
 
@@ -78,10 +119,13 @@ export default function ResultadoAvaliacaoPage() {
       cabecalhoRef.current?.innerHTML || "";
 
     const cabecalhoSomenteTexto =
-      cabecalhoRef.current?.innerText.trim() || "";
+      cabecalhoRef.current?.innerText.trim() ||
+      "";
 
     if (!cabecalhoSomenteTexto) {
-      localStorage.removeItem("cabecalhoAvaliacao");
+      localStorage.removeItem(
+        "cabecalhoAvaliacao"
+      );
       setCabecalho("");
       setCabecalhoSalvo(false);
       return;
@@ -96,20 +140,223 @@ export default function ResultadoAvaliacaoPage() {
     setCabecalhoSalvo(true);
   }
 
-  function salvarAlteracoesProva() {
+  function salvarConteudoAtual() {
     const provaEditada =
       editorRef.current?.innerHTML || "";
 
-    localStorage.setItem(
-      "provaGeradaEditada",
-      provaEditada
-    );
+    try {
+      localStorage.setItem(
+        "provaGeradaEditada",
+        provaEditada
+      );
+      return true;
+    } catch {
+      setMensagemImagens(
+        "As imagens foram inseridas, mas o navegador não conseguiu salvá-las localmente por falta de espaço."
+      );
+      return false;
+    }
+  }
 
-    setConteudoAluno(provaEditada);
+  function salvarAlteracoesProva() {
+    salvarConteudoAtual();
   }
 
   function alternarColunas() {
-    setDuasColunas((valorAtual) => !valorAtual);
+    setDuasColunas(
+      (valorAtual) => !valorAtual
+    );
+  }
+
+  function substituirMarcacaoPorImagem(
+    marcacao: string,
+    descricao: string,
+    imagem: string
+  ) {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return false;
+    }
+
+    const leitor = document.createTreeWalker(
+      editor,
+      NodeFilter.SHOW_TEXT
+    );
+
+    let noAtual = leitor.nextNode();
+
+    while (noAtual) {
+      const textoAtual =
+        noAtual.nodeValue || "";
+      const posicao =
+        textoAtual.indexOf(marcacao);
+
+      if (posicao !== -1) {
+        const antes = textoAtual.slice(
+          0,
+          posicao
+        );
+        const depois = textoAtual.slice(
+          posicao + marcacao.length
+        );
+
+        const fragmento =
+          document.createDocumentFragment();
+
+        if (antes) {
+          fragmento.appendChild(
+            document.createTextNode(antes)
+          );
+        }
+
+        const blocoImagem =
+          document.createElement("div");
+
+        blocoImagem.setAttribute(
+          "data-imagem-avaliacao",
+          "true"
+        );
+        blocoImagem.style.textAlign = "center";
+        blocoImagem.style.margin = "16px 0";
+        blocoImagem.style.breakInside = "avoid";
+
+        const elementoImagem =
+          document.createElement("img");
+
+        elementoImagem.src = imagem;
+        elementoImagem.alt = descricao;
+        elementoImagem.style.display = "block";
+        elementoImagem.style.width = "420px";
+        elementoImagem.style.maxWidth = "100%";
+        elementoImagem.style.height = "auto";
+        elementoImagem.style.margin =
+          "0 auto";
+        elementoImagem.style.border =
+          "1px solid #cbd5e1";
+        elementoImagem.style.borderRadius =
+          "8px";
+
+        blocoImagem.appendChild(
+          elementoImagem
+        );
+        fragmento.appendChild(blocoImagem);
+
+        if (depois) {
+          fragmento.appendChild(
+            document.createTextNode(depois)
+          );
+        }
+
+        noAtual.parentNode?.replaceChild(
+          fragmento,
+          noAtual
+        );
+
+        return true;
+      }
+
+      noAtual = leitor.nextNode();
+    }
+
+    return false;
+  }
+
+  async function gerarTodasAsImagens() {
+    const editor = editorRef.current;
+
+    if (!editor || gerandoImagens) {
+      return;
+    }
+
+    setMensagemImagens("");
+
+    const imagensSugeridas =
+      encontrarImagensSugeridas(
+        editor.innerText
+      );
+
+    if (imagensSugeridas.length === 0) {
+      setMensagemImagens(
+        "Esta avaliação não possui sugestões de imagens para gerar."
+      );
+      return;
+    }
+
+    try {
+      setGerandoImagens(true);
+
+      let imagensInseridas = 0;
+
+      for (
+        let indice = 0;
+        indice < imagensSugeridas.length;
+        indice += 1
+      ) {
+        const item = imagensSugeridas[indice];
+
+        setProgressoImagens(
+          `Gerando imagem ${indice + 1} de ${imagensSugeridas.length}...`
+        );
+
+        const resposta = await fetch(
+          "/api/gerar-imagem-avaliacao",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              descricao: item.descricao,
+            }),
+          }
+        );
+
+        const dados = await resposta.json();
+
+        if (!resposta.ok) {
+          throw new Error(
+            dados.erro ||
+              `Não foi possível gerar a imagem ${indice + 1}.`
+          );
+        }
+
+        const foiSubstituida =
+          substituirMarcacaoPorImagem(
+            item.marcacao,
+            item.descricao,
+            dados.imagem
+          );
+
+        if (foiSubstituida) {
+          imagensInseridas += 1;
+          salvarConteudoAtual();
+        }
+      }
+
+      setMensagemImagens(
+        `${imagensInseridas} ${
+          imagensInseridas === 1
+            ? "imagem foi gerada e inserida"
+            : "imagens foram geradas e inseridas"
+        } na avaliação.`
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao gerar imagens:",
+        error
+      );
+
+      setMensagemImagens(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível gerar as imagens."
+      );
+    } finally {
+      setGerandoImagens(false);
+      setProgressoImagens("");
+    }
   }
 
   return (
@@ -131,7 +378,9 @@ export default function ResultadoAvaliacaoPage() {
 
           <div className="p-5">
             <div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700">
-              Edite a avaliação, cole o cabeçalho da escola e organize o documento antes de baixar.
+              Edite a avaliação, cole o
+              cabeçalho da escola e organize o
+              documento antes de baixar.
             </div>
 
             {!carregando && conteudoAluno && (
@@ -139,7 +388,9 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Desfazer"
-                  onClick={() => executarComando("undo")}
+                  onClick={() =>
+                    executarComando("undo")
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Undo2 size={18} />
@@ -148,7 +399,9 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Refazer"
-                  onClick={() => executarComando("redo")}
+                  onClick={() =>
+                    executarComando("redo")
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Redo2 size={18} />
@@ -159,7 +412,9 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Negrito"
-                  onClick={() => executarComando("bold")}
+                  onClick={() =>
+                    executarComando("bold")
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Bold size={18} />
@@ -168,7 +423,9 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Itálico"
-                  onClick={() => executarComando("italic")}
+                  onClick={() =>
+                    executarComando("italic")
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Italic size={18} />
@@ -177,7 +434,11 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Sublinhado"
-                  onClick={() => executarComando("underline")}
+                  onClick={() =>
+                    executarComando(
+                      "underline"
+                    )
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Underline size={18} />
@@ -188,7 +449,11 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Alinhar à esquerda"
-                  onClick={() => executarComando("justifyLeft")}
+                  onClick={() =>
+                    executarComando(
+                      "justifyLeft"
+                    )
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignLeft size={18} />
@@ -197,7 +462,11 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Centralizar"
-                  onClick={() => executarComando("justifyCenter")}
+                  onClick={() =>
+                    executarComando(
+                      "justifyCenter"
+                    )
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignCenter size={18} />
@@ -206,7 +475,11 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Alinhar à direita"
-                  onClick={() => executarComando("justifyRight")}
+                  onClick={() =>
+                    executarComando(
+                      "justifyRight"
+                    )
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignRight size={18} />
@@ -215,7 +488,11 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Justificar"
-                  onClick={() => executarComando("justifyFull")}
+                  onClick={() =>
+                    executarComando(
+                      "justifyFull"
+                    )
+                  }
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignJustify size={18} />
@@ -234,10 +511,18 @@ export default function ResultadoAvaliacaoPage() {
                   }
                   className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
                 >
-                  <option value="2">Pequena</option>
-                  <option value="3">Normal</option>
-                  <option value="4">Média</option>
-                  <option value="5">Grande</option>
+                  <option value="2">
+                    Pequena
+                  </option>
+                  <option value="3">
+                    Normal
+                  </option>
+                  <option value="4">
+                    Média
+                  </option>
+                  <option value="5">
+                    Grande
+                  </option>
                 </select>
 
                 <button
@@ -255,7 +540,9 @@ export default function ResultadoAvaliacaoPage() {
                   }`}
                 >
                   {duasColunas ? (
-                    <LayoutPanelTop size={18} />
+                    <LayoutPanelTop
+                      size={18}
+                    />
                   ) : (
                     <Columns2 size={18} />
                   )}
@@ -267,12 +554,40 @@ export default function ResultadoAvaliacaoPage() {
 
                 <button
                   type="button"
-                  onClick={salvarAlteracoesProva}
+                  onClick={gerarTodasAsImagens}
+                  disabled={gerandoImagens}
+                  className="flex items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-sm font-extrabold text-green-800 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {gerandoImagens ? (
+                    <Loader2
+                      size={18}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <ImagePlus size={18} />
+                  )}
+
+                  {gerandoImagens
+                    ? progressoImagens
+                    : "Gerar todas as imagens"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={
+                    salvarAlteracoesProva
+                  }
                   className="ml-auto flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-green-800"
                 >
                   <Save size={18} />
                   Salvar alterações
                 </button>
+              </div>
+            )}
+
+            {mensagemImagens && (
+              <div className="mb-4 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm font-semibold text-green-800">
+                {mensagemImagens}
               </div>
             )}
 
@@ -330,13 +645,7 @@ export default function ResultadoAvaliacaoPage() {
                     contentEditable
                     suppressContentEditableWarning
                     onInput={() => {
-                      const valorAtual =
-                        editorRef.current?.innerHTML || "";
-
-                      localStorage.setItem(
-                        "provaGeradaEditada",
-                        valorAtual
-                      );
+                      salvarConteudoAtual();
                     }}
                     className={`min-h-[760px] break-words text-sm leading-7 text-slate-900 outline-none ${
                       duasColunas
@@ -356,11 +665,13 @@ export default function ResultadoAvaliacaoPage() {
                   />
 
                   <p className="text-sm font-semibold text-slate-600">
-                    Nenhuma avaliação foi encontrada.
+                    Nenhuma avaliação foi
+                    encontrada.
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Volte à configuração e gere uma nova avaliação.
+                    Volte à configuração e gere
+                    uma nova avaliação.
                   </p>
                 </div>
               )}

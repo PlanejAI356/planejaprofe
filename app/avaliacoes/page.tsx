@@ -333,10 +333,9 @@ export default function AvaliacoesPage() {
         );
       }
 
-      localStorage.setItem(
-        "provaGerada",
-        textoRecebido
-      );
+      localStorage.removeItem(
+  "provaGeradaEditada"
+);
 
       localStorage.setItem(
         "configuracaoAvaliacao",
