@@ -201,6 +201,26 @@ LINGUAGEM NATURAL DAS QUESTÕES:
 - Não utilizar o mesmo modelo de enunciado em todas as questões.
 - Manter os comandos claros e objetivos.
 
+ORDEM E VARIEDADE DAS QUESTÕES:
+
+- Não agrupar todas as questões do mesmo tipo.
+- Misturar os diferentes tipos de questões ao longo da avaliação.
+- Intercalar múltipla escolha, discursiva, verdadeiro ou falso, completar e relacionar sempre que houver mais de um tipo solicitado.
+- Não colocar primeiro todas as questões de marcar e depois todas as questões de escrever.
+- Manter a numeração em sequência, independentemente do tipo da questão.
+- Variar a ordem dos tipos de questões em cada nova avaliação.
+- Não utilizar sempre a mesma sequência.
+- Uma nova avaliação sobre o mesmo conteúdo deve apresentar uma ordem diferente da avaliação anterior.
+- Variar também os comandos, os contextos e a estrutura dos enunciados.
+- Evitar que duas avaliações sobre o mesmo conteúdo fiquem praticamente iguais.
+- Mesmo misturando os tipos, manter uma progressão de dificuldade.
+- Iniciar com uma questão mais acessível.
+- Distribuir questões de dificuldade intermediária ao longo da avaliação.
+- Colocar questões que exigem maior interpretação ou elaboração mais para o meio ou para o final.
+- Não deixar todas as questões discursivas consecutivas.
+- Não deixar todas as questões com imagem consecutivas.
+- Quando houver somente um tipo de questão solicitado, utilizar apenas esse tipo.
+
 REGRAS PARA MÚLTIPLA ESCOLHA:
 
 - Criar exatamente ${quantidadeMultiplaEscolha} questões de múltipla escolha.
@@ -215,31 +235,42 @@ REGRAS PARA MÚLTIPLA ESCOLHA:
 - Não utilizar “todas as alternativas anteriores”.
 - Não utilizar “nenhuma das alternativas anteriores”.
 - Não destacar ou indicar a alternativa correta.
+- Nunca utilizar as expressões “mais correta” ou “melhor resposta”.
+- A questão deve possuir apenas uma resposta correta, sem grau de comparação.
+- Manter as alternativas curtas, claras e com tamanhos semelhantes.
+- Evitar uma alternativa visivelmente maior ou mais detalhada que as demais.
 
 REGRAS PARA QUESTÕES DISCURSIVAS:
 
 - Criar exatamente ${quantidadeDiscursivas} questões discursivas.
-- Elaborar perguntas compatíveis com a capacidade de escrita e compreensão da série.
+- Elaborar perguntas compatíveis com a capacidade de leitura, compreensão e escrita da série.
 - Variar entre explicar, comparar, justificar, identificar, descrever e aplicar conhecimentos.
 - Não criar perguntas excessivamente amplas.
 - Não exigir conteúdos que não tenham sido informados.
-- Após cada questão discursiva, deixar linhas para resposta.
-- Para o 1º e 2º ano, deixar no máximo duas linhas curtas.
-- Para o 3º ao 5º ano, deixar de duas a três linhas.
-- Para as demais séries, ajustar o espaço à complexidade da resposta.
+- Não utilizar duas perguntas diferentes dentro do mesmo enunciado, exceto quando forem diretamente relacionadas.
+- Para respostas curtas, deixar duas linhas.
+- Para questões que pedem explicação ou descrição, deixar três linhas.
+- Para questões que pedem comparação ou justificativa, deixar quatro linhas.
 - Representar as linhas de resposta com sublinhados.
+- Não deixar sempre a mesma quantidade de linhas em todas as discursivas.
 
 REGRAS PARA VERDADEIRO OU FALSO:
 
 - Criar exatamente ${quantidadeVerdadeiroFalso} questões de verdadeiro ou falso.
 - Cada quantidade solicitada corresponde a uma questão numerada.
 - Cada questão pode conter de três a cinco afirmativas.
-- Identificar as afirmativas com a), b), c), d) e e), quando houver.
-- Orientar o aluno a escrever V para verdadeiro e F para falso.
+- Antes das afirmativas, escrever uma orientação curta para o aluno indicar V ou F.
+- Não utilizar letras a), b), c), d) ou e) antes das afirmativas.
+- Cada afirmativa deve começar exatamente com:
+  (     )
+- Escrever somente uma afirmativa por linha.
+- Não colocar espaço para resposta no final da frase.
+- Não utilizar sublinhados depois da afirmativa.
 - Misturar afirmativas verdadeiras e falsas.
 - Não criar todas as afirmativas com a mesma resposta.
+- Não seguir padrões previsíveis, como V, F, V, F.
 - Evitar afirmações ambíguas.
-- Manter todas as afirmativas relacionadas ao conteúdo informado.
+- Manter todas as afirmativas relacionadas aos conteúdos informados.
 
 REGRAS PARA COMPLETE:
 
@@ -249,8 +280,12 @@ REGRAS PARA COMPLETE:
 - Não retirar palavras que deixem a frase confusa.
 - Não apresentar a resposta ao lado da lacuna.
 - Quando houver banco de palavras, misturar a ordem das palavras.
-- Para o 1º e 2º ano, preferir banco de palavras curto ou apoio visual.
-- Não incluir palavras desnecessárias apenas para dificultar.
+- Não colocar palavras no banco que não serão utilizadas.
+- Não repetir a mesma palavra em duas lacunas, salvo quando isso for pedagogicamente necessário.
+- Quando houver mais de três lacunas, dividir a atividade em frases ou itens menores.
+- Evitar textos longos com muitas lacunas seguidas.
+- Preferir frases independentes e visualmente organizadas.
+- Para o 1º e 2º ano, utilizar banco de palavras curto ou apoio visual.
 
 REGRAS PARA RELACIONAR COLUNAS:
 
@@ -260,18 +295,22 @@ REGRAS PARA RELACIONAR COLUNAS:
 - Criar correspondências claras e sem ambiguidade.
 - Não colocar as respostas na mesma ordem.
 - Utilizar entre quatro e seis itens em cada questão.
-- Para o 1º e 2º ano, utilizar no máximo quatro itens e comandos simples.
+- Para o 1º e 2º ano, utilizar no máximo quatro itens.
+- Manter textos curtos em cada item.
+- Evitar itens muito longos que dificultem a organização em colunas.
+- Não utilizar tabelas em formato Markdown.
 
 DISTRIBUIÇÃO DO VALOR:
 
-- O valor total é ${valorAvaliacao} pontos.
-- Distribuir o valor entre as questões de maneira equilibrada.
-- Informar o valor de cada questão ao lado do número.
-- A soma dos valores deve ser exatamente ${valorAvaliacao} pontos.
-- Utilizar valores simples.
-- Não atribuir valores negativos.
-- Não deixar nenhuma questão sem pontuação.
-- Evitar cálculos de pontuação excessivamente complexos.
+- O valor total da avaliação é ${valorAvaliacao} pontos.
+- Não informar o valor ao lado de cada questão.
+- Não utilizar formatos como:
+  1) (1,0)
+  2) (0,5)
+- Apresentar apenas a numeração:
+  1)
+  2)
+- A distribuição da pontuação será feita posteriormente na versão do professor.
 
 FORMATO OBRIGATÓRIO DA RESPOSTA:
 
@@ -316,9 +355,16 @@ Antes de concluir, conferir silenciosamente se:
 - Todas as questões possuem uma resposta correta possível.
 - Não existem questões ambíguas.
 - As alternativas possuem apenas uma resposta correta.
-- A pontuação total corresponde exatamente a ${valorAvaliacao} pontos.
 - Nenhuma resposta ou gabarito aparece na avaliação.
 - Nenhum cabeçalho escolar foi criado.
+- Nenhuma questão apresenta valor ao lado da numeração.
+- Os diferentes tipos de questão estão distribuídos ao longo da avaliação.
+- As questões não foram agrupadas por tipo.
+- A sequência utilizada não segue sempre o mesmo padrão.
+- As afirmativas de verdadeiro ou falso começam com (     ).
+- Nenhuma afirmativa de verdadeiro ou falso utiliza letras ou sublinhado no final.
+- As questões discursivas possuem quantidade de linhas proporcional à resposta esperada.
+- As questões de completar não possuem textos excessivamente longos.
 ${
   ehPrimeiroOuSegundoAno
     ? "- Todo o conteúdo da avaliação está escrito em LETRA DE FORMA, utilizando CAIXA ALTA."
