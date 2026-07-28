@@ -262,7 +262,7 @@ export default function AvaliacoesPage() {
           },
 
           body: JSON.stringify({
-            tipo: "prova",
+            tipo: "prova_json",
             etapaEnsino,
             serie,
             disciplina,
@@ -325,16 +325,20 @@ export default function AvaliacoesPage() {
         );
       }
 
-      const textoRecebido = dados.texto || "";
+      const avaliacao = dados.avaliacao;
 
-      if (!textoRecebido.trim()) {
-        throw new Error(
-          "A inteligência artificial não retornou a avaliação."
-        );
-      }
+if (
+  !avaliacao ||
+  !Array.isArray(avaliacao.questoes)
+) {
+  throw new Error(
+    "A inteligência artificial não retornou as questões da avaliação."
+  );
+}
 
-      localStorage.removeItem(
-  "provaGeradaEditada"
+      localStorage.setItem(
+  "avaliacaoJson",
+  JSON.stringify(avaliacao)
 );
 
       localStorage.setItem(
