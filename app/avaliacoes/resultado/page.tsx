@@ -26,6 +26,15 @@ import {
 
 import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
 
+function textoParaHtml(texto: string) {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/\r\n/g, "\n")
+    .replace(/\n/g, "<br>");
+}
+
 export default function ResultadoAvaliacaoPage() {
   const [conteudoAluno, setConteudoAluno] = useState("");
   const [cabecalho, setCabecalho] = useState("");
@@ -37,42 +46,30 @@ export default function ResultadoAvaliacaoPage() {
   const cabecalhoRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const provaSalva = localStorage.getItem("provaGerada") || "";
+    const provaEditada =
+      localStorage.getItem("provaGeradaEditada") || "";
+
+    const provaGerada =
+      localStorage.getItem("provaGerada") || "";
+
     const cabecalhoSalvoLocal =
       localStorage.getItem("cabecalhoAvaliacao") || "";
 
-    setConteudoAluno(provaSalva);
+    const conteudoInicial = provaEditada
+      ? provaEditada
+      : textoParaHtml(provaGerada);
+
+    setConteudoAluno(conteudoInicial);
     setCabecalho(cabecalhoSalvoLocal);
     setCabecalhoSalvo(Boolean(cabecalhoSalvoLocal.trim()));
     setCarregando(false);
   }, []);
-
-  useEffect(() => {
-    if (
-      editorRef.current &&
-      conteudoAluno &&
-      editorRef.current.innerText.trim() === ""
-    ) {
-      editorRef.current.innerText = conteudoAluno;
-    }
-  }, [conteudoAluno]);
-
-  useEffect(() => {
-    if (
-      cabecalhoRef.current &&
-      cabecalho &&
-      cabecalhoRef.current.innerText.trim() === ""
-    ) {
-      cabecalhoRef.current.innerText = cabecalho;
-    }
-  }, [cabecalho]);
 
   function executarComando(
     comando: string,
     valor?: string
   ) {
     document.execCommand(comando, false, valor);
-
     editorRef.current?.focus();
   }
 
@@ -107,6 +104,8 @@ export default function ResultadoAvaliacaoPage() {
       "provaGeradaEditada",
       provaEditada
     );
+
+    setConteudoAluno(provaEditada);
   }
 
   function alternarColunas() {
@@ -132,8 +131,7 @@ export default function ResultadoAvaliacaoPage() {
 
           <div className="p-5">
             <div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700">
-              Edite a avaliação, cole o cabeçalho da escola e
-              organize o documento antes de baixar.
+              Edite a avaliação, cole o cabeçalho da escola e organize o documento antes de baixar.
             </div>
 
             {!carregando && conteudoAluno && (
@@ -141,9 +139,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Desfazer"
-                  onClick={() =>
-                    executarComando("undo")
-                  }
+                  onClick={() => executarComando("undo")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Undo2 size={18} />
@@ -152,9 +148,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Refazer"
-                  onClick={() =>
-                    executarComando("redo")
-                  }
+                  onClick={() => executarComando("redo")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Redo2 size={18} />
@@ -165,9 +159,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Negrito"
-                  onClick={() =>
-                    executarComando("bold")
-                  }
+                  onClick={() => executarComando("bold")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Bold size={18} />
@@ -176,9 +168,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Itálico"
-                  onClick={() =>
-                    executarComando("italic")
-                  }
+                  onClick={() => executarComando("italic")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Italic size={18} />
@@ -187,9 +177,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Sublinhado"
-                  onClick={() =>
-                    executarComando("underline")
-                  }
+                  onClick={() => executarComando("underline")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Underline size={18} />
@@ -200,9 +188,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Alinhar à esquerda"
-                  onClick={() =>
-                    executarComando("justifyLeft")
-                  }
+                  onClick={() => executarComando("justifyLeft")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignLeft size={18} />
@@ -211,9 +197,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Centralizar"
-                  onClick={() =>
-                    executarComando("justifyCenter")
-                  }
+                  onClick={() => executarComando("justifyCenter")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignCenter size={18} />
@@ -222,9 +206,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Alinhar à direita"
-                  onClick={() =>
-                    executarComando("justifyRight")
-                  }
+                  onClick={() => executarComando("justifyRight")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignRight size={18} />
@@ -233,9 +215,7 @@ export default function ResultadoAvaliacaoPage() {
                 <button
                   type="button"
                   title="Justificar"
-                  onClick={() =>
-                    executarComando("justifyFull")
-                  }
+                  onClick={() => executarComando("justifyFull")}
                   className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignJustify size={18} />
@@ -303,11 +283,10 @@ export default function ResultadoAvaliacaoPage() {
                     size={18}
                     className="animate-spin"
                   />
-
                   Carregando avaliação...
                 </div>
               ) : conteudoAluno ? (
-                <div className="mx-auto min-h-[1123px] w-full max-w-[794px] bg-white px-8 py-10 shadow-md sm:px-12">
+                <div className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-slate-300 bg-white px-8 py-10 shadow-md sm:px-12">
                   <div className="mb-4">
                     <div
                       ref={cabecalhoRef}
@@ -359,14 +338,15 @@ export default function ResultadoAvaliacaoPage() {
                         valorAtual
                       );
                     }}
-                    className={`min-h-[760px] text-sm leading-7 text-slate-900 outline-none ${
+                    className={`min-h-[760px] break-words text-sm leading-7 text-slate-900 outline-none ${
                       duasColunas
-                        ? "columns-2 gap-10 [column-rule:1px_solid_#e2e8f0]"
+                        ? "columns-2 gap-10 [column-rule:1px_solid_#cbd5e1]"
                         : "columns-1"
                     }`}
-                  >
-                    {conteudoAluno}
-                  </div>
+                    dangerouslySetInnerHTML={{
+                      __html: conteudoAluno,
+                    }}
+                  />
                 </div>
               ) : (
                 <div className="flex min-h-[560px] flex-col items-center justify-center text-center">
@@ -380,8 +360,7 @@ export default function ResultadoAvaliacaoPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Volte à configuração e gere uma nova
-                    avaliação.
+                    Volte à configuração e gere uma nova avaliação.
                   </p>
                 </div>
               )}
