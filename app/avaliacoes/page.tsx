@@ -317,6 +317,7 @@ export default function AvaliacoesPage() {
       }
 
       const dados = await resposta.json();
+      console.log("RESPOSTA DA API:", dados);
 
       if (!resposta.ok) {
         throw new Error(
@@ -358,7 +359,7 @@ if (
         })
       );
 
-      router.push("/avaliacoes/resultado");
+      router.push("/avaliacoes/revisao");
     } catch (error) {
       console.error(
         "Erro ao gerar avaliação:",
