@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { gerarPromptProva } from "../prompts/prova";
+import { gerarPromptProvaJson } from "../prompts/prova-json";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -920,10 +921,25 @@ FORMATO OBRIGATÓRIO:
 4ª SEMANA - Atividade curta no caderno.
 `;
     }
-        if (tipo === "prova") {
+    if (tipo === "prova") {
       comando = gerarPromptProva(body);
     }
-    
+
+    if (tipo === "prova_json") {
+      comando = gerarPromptProvaJson(body);
+    }
+
+
+    if (!comando.trim()) {
+      return Response.json(
+        {
+          erro: `Tipo de geração não reconhecido: ${tipo}`,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
 
     const resposta = await openai.chat.completions.create({
       model: "gpt-4.1-mini",
@@ -933,6 +949,13 @@ FORMATO OBRIGATÓRIO:
           content: comando,
         },
       ],
+      ...(tipo === "prova_json"
+        ? {
+            response_format: {
+              type: "json_object" as const,
+            },
+          }
+        : {}),
     });
 
     let texto = resposta.choices[0].message.content || "";
@@ -955,6 +978,65 @@ FORMATO OBRIGATÓRIO:
           return inicio + corrigidos;
         }
       );
+    }
+
+    if (tipo === "prova_json") {
+      try {
+        const textoLimpo = texto
+          .replace(/^```json\s*/i, "")
+          .replace(/^```\s*/i, "")
+          .replace(/```\s*$/i, "")
+          .trim();
+
+        if (!textoLimpo) {
+          throw new Error(
+            "A inteligência artificial retornou uma resposta vazia."
+          );
+        }
+
+        const avaliacaoRecebida = JSON.parse(textoLimpo);
+
+        if (
+          !avaliacaoRecebida ||
+          typeof avaliacaoRecebida !== "object" ||
+          !Array.isArray(avaliacaoRecebida.questoes) ||
+          avaliacaoRecebida.questoes.length === 0
+        ) {
+          throw new Error(
+            "A resposta da avaliação não possui uma lista de questões válida."
+          );
+        }
+
+        const questoes = avaliacaoRecebida.questoes.map(
+          (questao: any, indice: number) => ({
+            ...questao,
+            id: `questao-${Date.now()}-${indice + 1}`,
+            numero: indice + 1,
+          })
+        );
+
+        return Response.json({
+          avaliacao: {
+            ...avaliacaoRecebida,
+            questoes,
+          },
+        });
+      } catch (erroJson) {
+        console.error(
+          "ERRO AO INTERPRETAR JSON DA PROVA:",
+          erroJson
+        );
+
+        return Response.json(
+          {
+            erro:
+              "A avaliação foi gerada, mas o formato das questões ficou inválido. Tente gerar novamente.",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
     }
 
     return Response.json({
