@@ -85,6 +85,14 @@ export function gerarPromptProvaJson(body: any) {
   const dificuldade =
     body.dificuldade || "Misto";
 
+  const sugestaoProfessor =
+    String(body.sugestaoProfessor || "").trim();
+
+  const questaoAtual =
+    body.questaoAtual
+      ? JSON.stringify(body.questaoAtual, null, 2)
+      : "";
+
   const valorAvaliacao =
     body.valorAvaliacao || "10";
 
@@ -214,6 +222,27 @@ Conteúdos avaliados: ${conteudos}
 Dificuldade: ${dificuldade}
 Valor total: ${valorAvaliacao} pontos
 Quantidade total de questões: ${totalQuestoes}
+
+${
+  sugestaoProfessor
+    ? `
+PEDIDO ESPECÍFICO DO PROFESSOR:
+
+${sugestaoProfessor}
+
+QUESTÃO ATUAL QUE DEVE SER ALTERADA:
+
+${questaoAtual}
+
+REGRAS PARA O PEDIDO DO PROFESSOR:
+- Gere somente uma nova versão da questão apresentada.
+- Preserve o mesmo tipo de questão, salvo quando o professor pedir explicitamente outro tipo.
+- Atenda exatamente à alteração solicitada.
+- Não copie a questão atual sem mudanças.
+- Mantenha o conteúdo, a série e a dificuldade informados.
+`
+    : ""
+}
 
 QUANTIDADES OBRIGATÓRIAS:
 

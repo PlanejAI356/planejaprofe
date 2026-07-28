@@ -3,14 +3,11 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  ArrowDown,
-  ArrowUp,
   FileText,
   ImagePlus,
   Loader2,
-  Pencil,
+  MessageSquareText,
   RefreshCw,
-  Save,
   Sparkles,
   Trash2,
 } from "lucide-react";
@@ -201,7 +198,13 @@ export default function RevisaoAvaliacaoPage() {
   const [carregando, setCarregando] =
     useState(true);
 
-  const [questaoEditando, setQuestaoEditando] =
+  const [sugestaoAberta, setSugestaoAberta] =
+    useState<string | null>(null);
+
+  const [sugestoes, setSugestoes] =
+    useState<Record<string, string>>({});
+
+  const [aplicandoSugestao, setAplicandoSugestao] =
     useState<string | null>(null);
 
   const [questaoRefazendo, setQuestaoRefazendo] =
@@ -337,34 +340,6 @@ export default function RevisaoAvaliacaoPage() {
     });
   }
 
-  function moverQuestao(
-    indice: number,
-    direcao: -1 | 1
-  ) {
-    if (!avaliacao) return;
-
-    const novoIndice = indice + direcao;
-
-    if (
-      novoIndice < 0 ||
-      novoIndice >= avaliacao.questoes.length
-    ) {
-      return;
-    }
-
-    const questoes = [...avaliacao.questoes];
-
-    [questoes[indice], questoes[novoIndice]] = [
-      questoes[novoIndice],
-      questoes[indice],
-    ];
-
-    salvarAvaliacao({
-      ...avaliacao,
-      questoes,
-    });
-  }
-
   async function refazerQuestao(
     questao: Questao
   ) {
@@ -442,7 +417,6 @@ export default function RevisaoAvaliacaoPage() {
         imagemUrl: undefined,
       });
 
-      setQuestaoEditando(null);
     } catch (error) {
       setErro(
         error instanceof Error
@@ -451,6 +425,112 @@ export default function RevisaoAvaliacaoPage() {
       );
     } finally {
       setQuestaoRefazendo(null);
+    }
+  }
+
+  async function aplicarSugestao(
+    questao: Questao
+  ) {
+    if (!avaliacao) return;
+
+    const sugestao =
+      sugestoes[questao.id]?.trim() || "";
+
+    if (!sugestao) {
+      setErro(
+        "Escreva o que deseja mudar nesta questão."
+      );
+      return;
+    }
+
+    setErro("");
+    setAplicandoSugestao(questao.id);
+
+    const configuracaoSalva =
+      localStorage.getItem(
+        "configuracaoAvaliacao"
+      );
+
+    const configuracao = configuracaoSalva
+      ? JSON.parse(configuracaoSalva)
+      : {};
+
+    const quantidades = {
+      quantidadeMultiplaEscolha:
+        questao.tipo === "multipla_escolha"
+          ? 1
+          : 0,
+      quantidadeDiscursivas:
+        questao.tipo === "discursiva" ? 1 : 0,
+      quantidadeVerdadeiroFalso:
+        questao.tipo === "verdadeiro_falso"
+          ? 1
+          : 0,
+      quantidadeComplete:
+        questao.tipo === "complete" ? 1 : 0,
+      quantidadeRelacione:
+        questao.tipo === "relacione" ? 1 : 0,
+    };
+
+    try {
+      const resposta = await fetch(
+        "/api/gerar-plano",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "prova_json",
+            ...configuracao,
+            ...quantidades,
+            totalQuestoes: 1,
+            sugestaoProfessor: sugestao,
+            questaoAtual: questao,
+          }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível aplicar a sugestão."
+        );
+      }
+
+      const novaQuestao =
+        dados.avaliacao?.questoes?.[0];
+
+      if (!novaQuestao) {
+        throw new Error(
+          "A questão alterada não foi retornada."
+        );
+      }
+
+      atualizarQuestao(questao.id, {
+        ...novaQuestao,
+        id: questao.id,
+        numero: questao.numero,
+        imagemUrl: questao.imagemUrl,
+      });
+
+      setSugestoes((estadoAtual) => ({
+        ...estadoAtual,
+        [questao.id]: "",
+      }));
+
+      setSugestaoAberta(null);
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível aplicar a sugestão."
+      );
+    } finally {
+      setAplicandoSugestao(null);
     }
   }
 
@@ -586,7 +666,7 @@ export default function RevisaoAvaliacaoPage() {
             onClick={() =>
               router.push("/avaliacoes")
             }
-            className="mt-4 rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white"
+            className="mt-4 cursor-pointer rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white"
           >
             Gerar avaliação
           </button>
@@ -603,7 +683,7 @@ export default function RevisaoAvaliacaoPage() {
       />
 
       <section className="mx-auto max-w-6xl px-4 py-5">
-        <div className="mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <div className="mb-5 rounded-2xl border-2 border-green-200 bg-white p-5 shadow-sm">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <p className="text-xs font-extrabold uppercase tracking-wide text-green-700">
@@ -624,7 +704,7 @@ export default function RevisaoAvaliacaoPage() {
             <button
               type="button"
               onClick={montarAvaliacao}
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800"
             >
               <Sparkles size={18} />
               Montar avaliação
@@ -640,443 +720,421 @@ export default function RevisaoAvaliacaoPage() {
 
         <div className="space-y-4">
           {avaliacao.questoes.map(
-            (questao, indice) => {
-              const editando =
-                questaoEditando === questao.id;
+            (questao, indice) => (
+              <article
+                key={questao.id}
+                className="overflow-hidden rounded-2xl border-2 border-green-200 bg-white shadow-sm transition hover:border-green-400"
+              >
+                <div className="flex flex-wrap items-center gap-2 border-b-2 border-green-200 bg-green-50 px-4 py-3">
+                  <div className="mr-auto">
+                    <p className="font-extrabold text-slate-900">
+                      Questão {indice + 1}
+                    </p>
 
-              return (
-                <article
-                  key={questao.id}
-                  className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm"
-                >
-                  <div className="flex flex-wrap items-center gap-2 border-b border-slate-200 bg-slate-50 px-4 py-3">
-                    <div className="mr-auto">
-                      <p className="font-extrabold text-slate-900">
-                        Questão {indice + 1}
-                      </p>
+                    <p className="text-xs font-semibold text-green-700">
+                      {nomeTipo(questao.tipo)}
+                    </p>
+                  </div>
 
-                      <p className="text-xs font-semibold text-green-700">
-                        {nomeTipo(questao.tipo)}
-                      </p>
-                    </div>
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setSugestaoAberta(
+                        sugestaoAberta === questao.id
+                          ? null
+                          : questao.id
+                      )
+                    }
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-green-300 bg-white px-3 py-2 text-xs font-extrabold text-green-800 transition hover:border-green-600 hover:bg-green-100"
+                  >
+                    <MessageSquareText size={16} />
+                    Minhas sugestões
+                  </button>
 
-                    <button
-                      type="button"
-                      title="Mover para cima"
-                      disabled={indice === 0}
-                      onClick={() =>
-                        moverQuestao(indice, -1)
+                  <button
+                    type="button"
+                    onClick={() =>
+                      refazerQuestao(questao)
+                    }
+                    disabled={
+                      questaoRefazendo === questao.id
+                    }
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-blue-300 px-3 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {questaoRefazendo ===
+                    questao.id ? (
+                      <Loader2
+                        size={16}
+                        className="animate-spin"
+                      />
+                    ) : (
+                      <RefreshCw size={16} />
+                    )}
+                    Refazer
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() =>
+                      excluirQuestao(questao.id)
+                    }
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-red-200 px-3 py-2 text-xs font-extrabold text-red-700 hover:border-red-400 hover:bg-red-50"
+                  >
+                    <Trash2 size={16} />
+                    Excluir
+                  </button>
+                </div>
+
+                {sugestaoAberta === questao.id && (
+                  <div className="border-b-2 border-green-200 bg-green-50 p-4">
+                    <label className="mb-2 block text-sm font-extrabold text-slate-900">
+                      O que você deseja mudar nesta questão?
+                    </label>
+
+                    <textarea
+                      value={
+                        sugestoes[questao.id] || ""
                       }
-                      className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-white disabled:opacity-30"
-                    >
-                      <ArrowUp size={17} />
-                    </button>
-
-                    <button
-                      type="button"
-                      title="Mover para baixo"
-                      disabled={
-                        indice ===
-                        avaliacao.questoes.length - 1
-                      }
-                      onClick={() =>
-                        moverQuestao(indice, 1)
-                      }
-                      className="rounded-lg border border-slate-200 p-2 text-slate-600 hover:bg-white disabled:opacity-30"
-                    >
-                      <ArrowDown size={17} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setQuestaoEditando(
-                          editando
-                            ? null
-                            : questao.id
+                      onChange={(event) =>
+                        setSugestoes(
+                          (estadoAtual) => ({
+                            ...estadoAtual,
+                            [questao.id]:
+                              event.target.value,
+                          })
                         )
                       }
-                      className="flex items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-xs font-extrabold text-slate-700 hover:bg-white"
-                    >
-                      {editando ? (
-                        <Save size={16} />
-                      ) : (
-                        <Pencil size={16} />
-                      )}
-                      {editando
-                        ? "Concluir"
-                        : "Editar"}
-                    </button>
+                      placeholder="Exemplo: deixe a questão mais difícil; troque o exemplo; crie alternativas menos óbvias; simplifique o enunciado; transforme em uma questão com imagem."
+                      rows={3}
+                      className="w-full cursor-text resize-none rounded-xl border-2 border-green-300 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+                    />
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        refazerQuestao(questao)
-                      }
-                      disabled={
-                        questaoRefazendo ===
-                        questao.id
-                      }
-                      className="flex items-center gap-2 rounded-lg border border-blue-300 px-3 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 disabled:opacity-60"
-                    >
-                      {questaoRefazendo ===
-                      questao.id ? (
-                        <Loader2
-                          size={16}
-                          className="animate-spin"
-                        />
-                      ) : (
-                        <RefreshCw size={16} />
-                      )}
-                      Refazer
-                    </button>
-
-                    {(questao.imagemNecessaria ||
-                      questao.descricaoImagem) && (
+                    <div className="mt-3 flex flex-wrap gap-2">
                       <button
                         type="button"
                         onClick={() =>
-                          gerarImagemQuestao(
-                            questao
-                          )
+                          aplicarSugestao(questao)
+                        }
+                        disabled={
+                          aplicandoSugestao ===
+                          questao.id
+                        }
+                        className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {aplicandoSugestao ===
+                        questao.id ? (
+                          <Loader2
+                            size={17}
+                            className="animate-spin"
+                          />
+                        ) : (
+                          <Sparkles size={17} />
+                        )}
+                        Aplicar sugestão com IA
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          gerarImagemQuestao({
+                            ...questao,
+                            descricaoImagem:
+                              sugestoes[
+                                questao.id
+                              ]?.trim() ||
+                              questao.descricaoImagem,
+                          })
                         }
                         disabled={
                           imagemGerando ===
                           questao.id
                         }
-                        className="flex items-center gap-2 rounded-lg border border-green-300 px-3 py-2 text-xs font-extrabold text-green-700 hover:bg-green-50 disabled:opacity-60"
+                        className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-green-400 bg-white px-4 py-2.5 text-sm font-extrabold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
                       >
                         {imagemGerando ===
                         questao.id ? (
                           <Loader2
-                            size={16}
+                            size={17}
                             className="animate-spin"
                           />
                         ) : (
-                          <ImagePlus size={16} />
+                          <ImagePlus size={17} />
                         )}
                         {questao.imagemUrl
                           ? "Refazer imagem"
                           : "Gerar imagem"}
                       </button>
-                    )}
+                    </div>
+                  </div>
+                )}
 
-                    <button
-                      type="button"
-                      onClick={() =>
-                        excluirQuestao(questao.id)
+                <div className="space-y-4 p-5">
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-slate-700">
+                      Enunciado
+                    </label>
+
+                    <textarea
+                      value={questao.enunciado}
+                      onChange={(event) =>
+                        atualizarQuestao(
+                          questao.id,
+                          {
+                            enunciado:
+                              event.target.value,
+                          }
+                        )
                       }
-                      className="flex items-center gap-2 rounded-lg border border-red-200 px-3 py-2 text-xs font-extrabold text-red-700 hover:bg-red-50"
-                    >
-                      <Trash2 size={16} />
-                      Excluir
-                    </button>
+                      rows={3}
+                      className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-6 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                    />
                   </div>
 
-                  <div className="p-5">
-                    {editando ? (
-                      <div className="space-y-4">
-                        <div>
-                          <label className="mb-2 block text-sm font-bold text-slate-700">
-                            Enunciado
-                          </label>
+                  {questao.imagemUrl && (
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
+                      <img
+                        src={questao.imagemUrl}
+                        alt={
+                          questao.descricaoImagem ||
+                          "Imagem da questão"
+                        }
+                        className="mx-auto max-h-[360px] max-w-full rounded-lg object-contain"
+                      />
+                    </div>
+                  )}
 
-                          <textarea
-                            value={questao.enunciado}
+                  {questao.tipo ===
+                    "multipla_escolha" &&
+                    questao.alternativas.map(
+                      (
+                        alternativa,
+                        itemIndice
+                      ) => (
+                        <div
+                          key={itemIndice}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="w-6 font-extrabold text-slate-700">
+                            {String.fromCharCode(
+                              65 + itemIndice
+                            )})
+                          </span>
+
+                          <input
+                            value={alternativa}
                             onChange={(event) =>
-                              atualizarQuestao(
+                              atualizarItemArray(
                                 questao.id,
-                                {
-                                  enunciado:
-                                    event.target
-                                      .value,
-                                }
+                                "alternativas",
+                                itemIndice,
+                                event.target.value
                               )
                             }
-                            rows={3}
-                            className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 outline-none focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
                           />
                         </div>
+                      )
+                    )}
 
-                        {questao.tipo ===
-                          "multipla_escolha" &&
-                          questao.alternativas.map(
-                            (
-                              alternativa,
-                              itemIndice
-                            ) => (
-                              <input
-                                key={itemIndice}
-                                value={alternativa}
-                                onChange={(event) =>
-                                  atualizarItemArray(
-                                    questao.id,
-                                    "alternativas",
-                                    itemIndice,
-                                    event.target
-                                      .value
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                              />
-                            )
+                  {questao.tipo ===
+                    "verdadeiro_falso" &&
+                    questao.afirmativas.map(
+                      (
+                        afirmativa,
+                        itemIndice
+                      ) => (
+                        <div
+                          key={itemIndice}
+                          className="flex items-center gap-2"
+                        >
+                          <span className="font-bold text-slate-700">
+                            ( &nbsp;&nbsp;&nbsp; )
+                          </span>
+
+                          <input
+                            value={afirmativa}
+                            onChange={(event) =>
+                              atualizarItemArray(
+                                questao.id,
+                                "afirmativas",
+                                itemIndice,
+                                event.target.value
+                              )
+                            }
+                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                          />
+                        </div>
+                      )
+                    )}
+
+                  {questao.tipo ===
+                    "complete" && (
+                    <>
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Banco de palavras
+                        </label>
+
+                        <input
+                          value={questao.bancoPalavras.join(
+                            " – "
                           )}
-
-                        {questao.tipo ===
-                          "verdadeiro_falso" &&
-                          questao.afirmativas.map(
-                            (
-                              afirmativa,
-                              itemIndice
-                            ) => (
-                              <input
-                                key={itemIndice}
-                                value={afirmativa}
-                                onChange={(event) =>
-                                  atualizarItemArray(
-                                    questao.id,
-                                    "afirmativas",
-                                    itemIndice,
-                                    event.target
-                                      .value
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                              />
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                bancoPalavras:
+                                  event.target.value
+                                    .split(/[–;,]/)
+                                    .map((item) =>
+                                      item.trim()
+                                    )
+                                    .filter(Boolean),
+                              }
                             )
-                          )}
-
-                        {questao.tipo ===
-                          "complete" &&
-                          questao.frasesComplete.map(
-                            (
-                              frase,
-                              itemIndice
-                            ) => (
-                              <input
-                                key={itemIndice}
-                                value={frase}
-                                onChange={(event) =>
-                                  atualizarItemArray(
-                                    questao.id,
-                                    "frasesComplete",
-                                    itemIndice,
-                                    event.target
-                                      .value
-                                  )
-                                }
-                                className="w-full rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                              />
-                            )
-                          )}
-
-                        {questao.tipo ===
-                          "discursiva" && (
-                          <div>
-                            <label className="mb-2 block text-sm font-bold text-slate-700">
-                              Linhas para resposta
-                            </label>
-
-                            <input
-                              type="number"
-                              min="1"
-                              max="6"
-                              value={
-                                questao.linhasResposta
-                              }
-                              onChange={(event) =>
-                                atualizarQuestao(
-                                  questao.id,
-                                  {
-                                    linhasResposta:
-                                      Number(
-                                        event.target
-                                          .value
-                                      ),
-                                  }
-                                )
-                              }
-                              className="w-28 rounded-xl border border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                            />
-                          </div>
-                        )}
-
-                        {(questao.imagemNecessaria ||
-                          questao
-                            .descricaoImagem) && (
-                          <div>
-                            <label className="mb-2 block text-sm font-bold text-slate-700">
-                              Descrição da imagem
-                            </label>
-
-                            <textarea
-                              value={
-                                questao.descricaoImagem
-                              }
-                              onChange={(event) =>
-                                atualizarQuestao(
-                                  questao.id,
-                                  {
-                                    descricaoImagem:
-                                      event.target
-                                        .value,
-                                  }
-                                )
-                              }
-                              rows={2}
-                              className="w-full rounded-xl border border-slate-300 px-4 py-3 text-sm outline-none focus:border-green-500"
-                            />
-                          </div>
-                        )}
+                          }
+                          className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                        />
                       </div>
-                    ) : (
-                      <div className="text-sm leading-7 text-slate-800">
-                        <p className="font-semibold">
-                          {questao.enunciado}
+
+                      {questao.frasesComplete.map(
+                        (
+                          frase,
+                          itemIndice
+                        ) => (
+                          <input
+                            key={itemIndice}
+                            value={frase}
+                            onChange={(event) =>
+                              atualizarItemArray(
+                                questao.id,
+                                "frasesComplete",
+                                itemIndice,
+                                event.target.value
+                              )
+                            }
+                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                          />
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {questao.tipo ===
+                    "discursiva" && (
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Linhas para resposta
+                      </label>
+
+                      <input
+                        type="number"
+                        min="1"
+                        max="6"
+                        value={
+                          questao.linhasResposta
+                        }
+                        onChange={(event) =>
+                          atualizarQuestao(
+                            questao.id,
+                            {
+                              linhasResposta:
+                                Number(
+                                  event.target.value
+                                ),
+                            }
+                          )
+                        }
+                        className="w-28 cursor-pointer rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                      />
+                    </div>
+                  )}
+
+                  {questao.tipo ===
+                    "relacione" && (
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <div className="space-y-2">
+                        <p className="text-sm font-extrabold text-slate-800">
+                          Coluna A
                         </p>
 
-                        {questao.imagemUrl && (
-                          <img
-                            src={questao.imagemUrl}
-                            alt={
-                              questao.descricaoImagem
-                            }
-                            className="mx-auto my-4 max-h-[360px] max-w-full rounded-xl border border-slate-200 object-contain"
-                          />
-                        )}
-
-                        {questao.tipo ===
-                          "multipla_escolha" &&
-                          questao.alternativas.map(
-                            (
-                              alternativa,
-                              itemIndice
-                            ) => (
-                              <p key={itemIndice}>
-                                {String.fromCharCode(
-                                  65 + itemIndice
-                                )}
-                                ) {alternativa}
-                              </p>
-                            )
-                          )}
-
-                        {questao.tipo ===
-                          "verdadeiro_falso" &&
-                          questao.afirmativas.map(
-                            (
-                              afirmativa,
-                              itemIndice
-                            ) => (
-                              <p key={itemIndice}>
-                                ( &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; ){" "}
-                                {afirmativa}
-                              </p>
-                            )
-                          )}
-
-                        {questao.tipo ===
-                          "discursiva" && (
-                          <div className="mt-3">
-                            {Array.from({
-                              length: Math.max(
-                                1,
-                                questao.linhasResposta ||
-                                  3
-                              ),
-                            }).map(
-                              (_, linhaIndice) => (
-                                <div
-                                  key={linhaIndice}
-                                  className="h-7 w-full border-b border-slate-500"
-                                />
-                              )
-                            )}
-                          </div>
-                        )}
-
-                        {questao.tipo ===
-                          "complete" && (
-                          <div className="mt-3">
-                            {questao.bancoPalavras
-                              .length > 0 && (
-                              <p className="mb-2 rounded-lg border border-slate-300 p-2">
-                                <strong>
-                                  Banco de palavras:
-                                </strong>{" "}
-                                {questao.bancoPalavras.join(
-                                  " – "
-                                )}
-                              </p>
-                            )}
-
-                            {questao.frasesComplete.map(
-                              (
-                                frase,
-                                itemIndice
-                              ) => (
-                                <p key={itemIndice}>
-                                  {frase.replace(
-                                    /\{\{LACUNA\}\}/g,
-                                    "____________________"
-                                  )}
-                                </p>
-                              )
-                            )}
-                          </div>
-                        )}
-
-                        {questao.tipo ===
-                          "relacione" && (
-                          <div className="mt-3 grid gap-6 sm:grid-cols-2">
-                            <div>
-                              <p className="font-extrabold">
-                                COLUNA A
-                              </p>
-                              {questao.colunaA.map(
-                                (
-                                  item,
-                                  itemIndice
-                                ) => (
-                                  <p
-                                    key={itemIndice}
-                                  >
-                                    {itemIndice + 1}.{" "}
-                                    {item}
-                                  </p>
+                        {questao.colunaA.map(
+                          (item, itemIndice) => (
+                            <input
+                              key={itemIndice}
+                              value={item}
+                              onChange={(event) =>
+                                atualizarItemArray(
+                                  questao.id,
+                                  "colunaA",
+                                  itemIndice,
+                                  event.target
+                                    .value
                                 )
-                              )}
-                            </div>
-
-                            <div>
-                              <p className="font-extrabold">
-                                COLUNA B
-                              </p>
-                              {questao.colunaB.map(
-                                (
-                                  item,
-                                  itemIndice
-                                ) => (
-                                  <p
-                                    key={itemIndice}
-                                  >
-                                    {String.fromCharCode(
-                                      65 +
-                                        itemIndice
-                                    )}
-                                    . {item}
-                                  </p>
-                                )
-                              )}
-                            </div>
-                          </div>
+                              }
+                              className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
+                            />
+                          )
                         )}
                       </div>
-                    )}
-                  </div>
-                </article>
-              );
-            }
+
+                      <div className="space-y-2">
+                        <p className="text-sm font-extrabold text-slate-800">
+                          Coluna B
+                        </p>
+
+                        {questao.colunaB.map(
+                          (item, itemIndice) => (
+                            <input
+                              key={itemIndice}
+                              value={item}
+                              onChange={(event) =>
+                                atualizarItemArray(
+                                  questao.id,
+                                  "colunaB",
+                                  itemIndice,
+                                  event.target
+                                    .value
+                                )
+                              }
+                              className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
+                            />
+                          )
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {(questao.imagemNecessaria ||
+                    questao.descricaoImagem ||
+                    questao.imagemUrl) && (
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Descrição da imagem
+                      </label>
+
+                      <textarea
+                        value={
+                          questao.descricaoImagem
+                        }
+                        onChange={(event) =>
+                          atualizarQuestao(
+                            questao.id,
+                            {
+                              descricaoImagem:
+                                event.target.value,
+                            }
+                          )
+                        }
+                        rows={2}
+                        placeholder="Descreva a imagem que deve acompanhar esta questão."
+                        className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm outline-none transition hover:border-green-500 focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                      />
+                    </div>
+                  )}
+                </div>
+              </article>
+            )
           )}
         </div>
 
@@ -1084,7 +1142,7 @@ export default function RevisaoAvaliacaoPage() {
           <button
             type="button"
             onClick={montarAvaliacao}
-            className="flex items-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm hover:bg-green-800"
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm hover:bg-green-800"
           >
             <Sparkles size={18} />
             Montar avaliação
