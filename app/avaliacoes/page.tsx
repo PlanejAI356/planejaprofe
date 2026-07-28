@@ -155,6 +155,7 @@ export default function AvaliacoesPage() {
   const [disciplina, setDisciplina] = useState("");
   const [tipoAvaliacao, setTipoAvaliacao] = useState("");
   const [conteudos, setConteudos] = useState("");
+  const [dificuldade, setDificuldade] = useState("Misto");
 
   const [
     quantidadeMultiplaEscolha,
@@ -268,7 +269,7 @@ export default function AvaliacoesPage() {
             disciplina,
             tipoAvaliacao,
             conteudos,
-            dificuldade: "Misto",
+            dificuldade,
             valorAvaliacao: "10",
             incluirBncc,
             incluirTextoApoio,
@@ -317,7 +318,6 @@ export default function AvaliacoesPage() {
       }
 
       const dados = await resposta.json();
-      console.log("RESPOSTA DA API:", dados);
 
       if (!resposta.ok) {
         throw new Error(
@@ -350,6 +350,7 @@ if (
           disciplina,
           tipoAvaliacao,
           conteudos,
+          dificuldade,
           quantidadeMultiplaEscolha,
           quantidadeDiscursivas,
           quantidadeMistas,
@@ -424,7 +425,7 @@ if (
                     event.target.value
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="w-full cursor-pointer rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
               >
                 <option value="">
                   Selecione a etapa
@@ -548,7 +549,7 @@ if (
                     event.target.value
                   )
                 }
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                className="w-full cursor-pointer rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
               >
                 <option value="">
                   Selecione o tipo
@@ -584,7 +585,7 @@ if (
                   Total de questões
                 </label>
 
-                <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-2.5 text-sm font-extrabold text-green-700">
+                <div className="rounded-xl border-2 border-green-500 bg-green-100 px-4 py-2.5 text-sm font-extrabold text-green-800">
                   {totalQuestoes}
                 </div>
               </div>
@@ -615,25 +616,25 @@ if (
             </div>
           </div>
 
-          <div className="mt-5 grid gap-5 border-t border-slate-200 pt-4 lg:grid-cols-[0.8fr_1.2fr]">
-            <div>
+          <div className="mt-5 grid gap-5 border-t border-slate-200 pt-5 lg:grid-cols-[0.72fr_1.28fr]">
+            <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-4">
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Settings
                   size={22}
-                  className="text-green-600"
+                  className="text-emerald-700"
                 />
 
                 <h2 className="text-lg font-extrabold text-slate-900">
                   Opções da avaliação
                 </h2>
 
-                <span className="text-xs font-medium italic text-green-600">
+                <span className="rounded-full bg-white px-2.5 py-1 text-xs font-bold text-emerald-700">
                   não obrigatório
                 </span>
               </div>
 
               <div className="grid gap-3">
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-emerald-200 bg-white px-4 py-3 transition hover:border-emerald-500 hover:bg-emerald-100">
                   <input
                     type="checkbox"
                     checked={incluirBncc}
@@ -642,15 +643,15 @@ if (
                         event.target.checked
                       )
                     }
-                    className="h-5 w-5 accent-green-600"
+                    className="h-5 w-5 cursor-pointer accent-emerald-700"
                   />
 
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-sm font-bold text-slate-800">
                     Incluir habilidade da BNCC
                   </span>
                 </label>
 
-                <label className="flex cursor-pointer items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 transition hover:border-green-300 hover:bg-green-50">
+                <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-emerald-200 bg-white px-4 py-3 transition hover:border-emerald-500 hover:bg-emerald-100">
                   <input
                     type="checkbox"
                     checked={
@@ -661,21 +662,60 @@ if (
                         event.target.checked
                       )
                     }
-                    className="h-5 w-5 accent-green-600"
+                    className="h-5 w-5 cursor-pointer accent-emerald-700"
                   />
 
-                  <span className="text-sm font-semibold text-slate-700">
+                  <span className="text-sm font-bold text-slate-800">
                     Incluir texto de apoio
                   </span>
                 </label>
               </div>
+
+              <div className="mt-4">
+                <label className="mb-2 block text-sm font-extrabold text-slate-900">
+                  Nível das questões
+                </label>
+
+                <select
+                  value={dificuldade}
+                  onChange={(event) =>
+                    setDificuldade(
+                      event.target.value
+                    )
+                  }
+                  className="w-full cursor-pointer rounded-xl border-2 border-emerald-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition hover:border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                >
+                  <option value="Mais fáceis">
+                    Mais fáceis
+                  </option>
+                  <option value="Fáceis">
+                    Fáceis
+                  </option>
+                  <option value="Médias">
+                    Médias
+                  </option>
+                  <option value="Difíceis">
+                    Difíceis
+                  </option>
+                  <option value="Mais difíceis">
+                    Mais difíceis
+                  </option>
+                  <option value="Misto">
+                    Misto
+                  </option>
+                </select>
+
+                <p className="mt-2 text-xs font-semibold leading-5 text-emerald-800">
+                  A IA respeitará a série, o conteúdo ensinado e o nível escolhido.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <label className="mb-3 flex items-center gap-2 text-lg font-extrabold text-slate-900">
+            <div className="rounded-2xl border-2 border-green-300 bg-green-50 p-4">
+              <label className="mb-2 flex items-center gap-2 text-lg font-extrabold text-slate-900">
                 <ClipboardList
                   size={22}
-                  className="text-green-600"
+                  className="text-green-700"
                 />
 
                 Conteúdos que serão avaliados
@@ -685,6 +725,11 @@ if (
                 </span>
               </label>
 
+              <p className="mb-3 text-sm font-semibold leading-5 text-slate-600">
+                Explique com clareza o que foi ensinado em sala. Cite tópicos,
+                conceitos, exemplos, atividades ou habilidades trabalhadas.
+              </p>
+
               <textarea
                 value={conteudos}
                 onChange={(event) =>
@@ -692,9 +737,9 @@ if (
                     event.target.value
                   )
                 }
-                placeholder="Digite ou cole os conteúdos aqui..."
-                rows={4}
-                className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                placeholder="Exemplo: características dos planetas; movimentos de rotação e translação; planetas rochosos e gasosos; fases da Lua; eclipses."
+                rows={6}
+                className="w-full resize-none rounded-xl border-2 border-green-300 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
               />
             </div>
           </div>
@@ -710,7 +755,7 @@ if (
               type="button"
               onClick={() => router.push("/")}
               disabled={gerando}
-              className="rounded-xl border border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
+              className="cursor-pointer rounded-xl border-2 border-slate-300 px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:border-slate-500 hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Voltar ao painel
             </button>
@@ -719,7 +764,7 @@ if (
               type="button"
               onClick={gerarProva}
               disabled={gerando}
-              className="flex items-center justify-center gap-2 rounded-xl bg-green-700 px-7 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-green-700 px-7 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
             >
               {gerando ? (
                 <>
@@ -769,7 +814,7 @@ function CampoQuantidade({
         onChange={(event) =>
           alterar(event.target.value)
         }
-        className="w-full rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm text-slate-800 outline-none transition focus:border-green-500 focus:ring-2 focus:ring-green-100"
+        className="w-full cursor-pointer rounded-xl border-2 border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-800 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
       />
     </div>
   );
