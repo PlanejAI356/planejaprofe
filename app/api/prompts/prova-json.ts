@@ -84,6 +84,88 @@ export function gerarPromptProvaJson(body: any) {
 
   const dificuldade =
     body.dificuldade || "Misto";
+    const incluirBncc = Boolean(body.incluirBncc);
+
+const incluirTextoApoio = Boolean(
+  body.incluirTextoApoio
+);
+
+const regrasBncc = incluirBncc
+  ? `
+HABILIDADES DA BNCC:
+
+- Antes de elaborar a avaliação, identifique a habilidade da BNCC mais adequada ao conteúdo.
+- Inclua somente o código da habilidade correspondente.
+- Não invente códigos.
+- Quando houver mais de um conteúdo, utilize as habilidades compatíveis.
+`
+  : "";
+
+const regrasTextoApoio = incluirTextoApoio
+  ? `
+TEXTO DE APOIO:
+
+- Antes das questões, crie um texto de apoio relacionado aos conteúdos.
+- O texto deve ser adequado à série.
+- O texto servirá de base para uma ou mais questões sempre que possível.
+`
+  : "";
+
+  const regrasDificuldade =
+  dificuldade === "Mais fáceis"
+    ? `
+REGRAS DE DIFICULDADE:
+
+- Criar questões muito acessíveis para a série.
+- Usar comandos diretos e objetivos.
+- Priorizar reconhecimento, identificação e compreensão básica.
+- Evitar pegadinhas, textos longos e raciocínios complexos.
+`
+    : dificuldade === "Fáceis"
+      ? `
+REGRAS DE DIFICULDADE:
+
+- Criar questões fáceis, adequadas à série.
+- Priorizar compreensão direta e aplicação simples.
+- Usar contextualizações curtas.
+- Evitar exigência de análise profunda.
+`
+      : dificuldade === "Médias"
+        ? `
+REGRAS DE DIFICULDADE:
+
+- Criar questões de nível intermediário.
+- Combinar compreensão, interpretação e aplicação.
+- Exigir atenção e raciocínio compatíveis com a série.
+- Evitar questões excessivamente simples ou muito complexas.
+`
+        : dificuldade === "Difíceis"
+          ? `
+REGRAS DE DIFICULDADE:
+
+- Criar questões desafiadoras, mas adequadas à série.
+- Exigir interpretação, comparação, análise e aplicação.
+- Utilizar situações-problema e contextualizações relevantes.
+- Não cobrar conteúdos além dos informados.
+`
+          : dificuldade === "Mais difíceis"
+            ? `
+REGRAS DE DIFICULDADE:
+
+- Criar questões de alta complexidade para a série.
+- Exigir análise, interpretação, argumentação, comparação e aplicação em novos contextos.
+- Utilizar situações-problema mais elaboradas.
+- Manter comandos claros e sem ambiguidades.
+- Não transformar dificuldade em texto excessivamente longo.
+`
+            : `
+REGRAS DE DIFICULDADE:
+
+- Criar uma avaliação com dificuldade mista.
+- Distribuir questões fáceis, médias e difíceis.
+- Começar com questões mais acessíveis e aumentar gradualmente a complexidade.
+- Manter todas as questões adequadas à série e aos conteúdos informados.
+`;
 
   const sugestaoProfessor =
     String(body.sugestaoProfessor || "").trim();
@@ -349,6 +431,13 @@ Dificuldade: ${dificuldade}
 Valor total: ${valorAvaliacao} pontos
 Quantidade total de questões: ${totalQuestoes}
 
+
+${regrasBncc}
+
+${regrasTextoApoio}
+
+${regrasDificuldade}
+
 ${
   sugestaoProfessor
     ? `
@@ -395,7 +484,9 @@ FORMATO JSON OBRIGATÓRIO:
   "disciplina": "${disciplina}",
   "tipoAvaliacao": "${tipoAvaliacao}",
   "valorTotal": "${valorAvaliacao}",
-  "questoes": [
+"habilidadesBncc": [],
+"textoApoio": "",
+"questoes": [
     {
       "tipo": "multipla_escolha",
       "enunciado": "Texto completo da questão",
@@ -429,6 +520,11 @@ REGRAS DO JSON:
 - O array "questoes" deve conter exatamente ${totalQuestoes} objetos.
 - Não incluir id nem número da questão; o sistema criará esses dados.
 - Todas as propriedades do modelo devem existir em todas as questões.
+- A propriedade "habilidadesBncc" deve ser um array de códigos da BNCC quando essa opção estiver ativada.
+- Quando a opção de BNCC não estiver ativada, usar "habilidadesBncc": [].
+- A propriedade "textoApoio" deve conter o texto produzido quando essa opção estiver ativada.
+- Quando a opção de texto de apoio não estiver ativada, usar "textoApoio": "".
+- Não inventar códigos da BNCC.
 - Quando uma propriedade não se aplicar, usar array vazio, string vazia, false ou 0.
 - Não gerar gabarito, resposta correta, explicação ou critério de correção.
 - Não incluir cabeçalho escolar.

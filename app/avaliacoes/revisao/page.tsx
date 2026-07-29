@@ -45,6 +45,11 @@ type AvaliacaoJson = {
   disciplina: string;
   tipoAvaliacao: string;
   valorTotal: string;
+
+  habilidadesBncc: string[];
+
+  textoApoio: string;
+
   questoes: Questao[];
 };
 
@@ -809,11 +814,52 @@ export default function RevisaoAvaliacaoPage() {
       return;
     }
 
-    const html = `
-      <div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:24px;">
-        ${escaparHtml(avaliacao.titulo)}
+    const habilidadesHtml =
+  avaliacao.habilidadesBncc?.length > 0
+    ? `
+      <div style="margin-bottom:18px;">
+        <p style="margin:0 0 6px;font-weight:700;">
+          HABILIDADES DA BNCC
+        </p>
+
+        <p style="margin:0;line-height:1.6;">
+          ${avaliacao.habilidadesBncc
+            .map((habilidade) =>
+              escaparHtml(habilidade)
+            )
+            .join("; ")}
+        </p>
       </div>
-      ${avaliacao.questoes
+    `
+    : "";
+
+const textoApoioHtml =
+  avaliacao.textoApoio?.trim()
+    ? `
+      <div style="margin-bottom:20px;">
+        <p style="margin:0 0 6px;font-weight:700;">
+          TEXTO DE APOIO
+        </p>
+
+        <p style="margin:0;line-height:1.7;text-align:justify;white-space:pre-line;">
+          ${escaparHtml(
+            avaliacao.textoApoio
+          )}
+        </p>
+      </div>
+    `
+    : "";
+
+const html = `
+  <div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:24px;">
+    ${escaparHtml(avaliacao.titulo)}
+  </div>
+
+  ${habilidadesHtml}
+
+  ${textoApoioHtml}
+
+  ${avaliacao.questoes
         .map((questao, indice) =>
           montarHtmlQuestao(
             questao,
@@ -929,6 +975,37 @@ export default function RevisaoAvaliacaoPage() {
             {erro}
           </div>
         )}
+
+        {avaliacao.textoApoio?.trim() && (
+  <div className="mb-4 rounded-2xl border-2 border-blue-200 bg-blue-50 p-5 shadow-sm">
+    <h2 className="mb-3 text-lg font-extrabold text-blue-900">
+      Texto de apoio
+    </h2>
+
+    <p className="whitespace-pre-line text-[15px] leading-7 text-slate-800">
+      {avaliacao.textoApoio}
+    </p>
+  </div>
+)}
+
+{avaliacao.habilidadesBncc?.length > 0 && (
+  <div className="mb-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 shadow-sm">
+    <h2 className="mb-3 text-lg font-extrabold text-emerald-900">
+      Habilidades da BNCC
+    </h2>
+
+    <div className="flex flex-wrap gap-2">
+      {avaliacao.habilidadesBncc.map((habilidade) => (
+        <span
+          key={habilidade}
+          className="rounded-full bg-emerald-700 px-3 py-1 text-sm font-bold text-white"
+        >
+          {habilidade}
+        </span>
+      ))}
+    </div>
+  </div>
+)}
 
         <div className="space-y-4">
           {avaliacao.questoes.map(
