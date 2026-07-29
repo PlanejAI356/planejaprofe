@@ -903,7 +903,7 @@ export default function RevisaoAvaliacaoPage() {
                     </div>
                   )}
 
-                  {questao.tipo ===
+                                    {questao.tipo ===
                     "multipla_escolha" &&
                     questao.alternativas.map(
                       (
@@ -917,7 +917,8 @@ export default function RevisaoAvaliacaoPage() {
                           <span className="w-6 font-extrabold text-slate-700">
                             {String.fromCharCode(
                               65 + itemIndice
-                            )})
+                            )}
+                            )
                           </span>
 
                           <input
@@ -937,43 +938,57 @@ export default function RevisaoAvaliacaoPage() {
                     )}
 
                   {questao.tipo ===
-                    "verdadeiro_falso" &&
-                    questao.afirmativas.map(
-                      (
-                        afirmativa,
-                        itemIndice
-                      ) => (
-                        <div
-                          key={itemIndice}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="font-bold text-slate-700">
-                            ( &nbsp;&nbsp;&nbsp; )
-                          </span>
+                    "verdadeiro_falso" && (
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Afirmativas
+                      </label>
 
-                          <input
-                            value={afirmativa}
-                            onChange={(event) =>
-                              atualizarItemArray(
-                                questao.id,
-                                "afirmativas",
-                                itemIndice,
-                                event.target.value
-                              )
+                      <p className="mb-2 text-xs text-slate-500">
+                        Digite uma afirmativa em cada
+                        linha.
+                      </p>
+
+                      <textarea
+                        value={questao.afirmativas.join(
+                          "\n"
+                        )}
+                        onChange={(event) =>
+                          atualizarQuestao(
+                            questao.id,
+                            {
+                              afirmativas:
+                                event.target.value.split(
+                                  "\n"
+                                ),
                             }
-                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                          />
-                        </div>
-                      )
-                    )}
+                          )
+                        }
+                        rows={Math.max(
+                          4,
+                          questao.afirmativas.length
+                        )}
+                        placeholder={
+                          "A água é essencial para os seres vivos.\nO Sol gira ao redor da Terra.\nAs plantas realizam fotossíntese."
+                        }
+                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                      />
+                    </div>
+                  )}
 
                   {questao.tipo ===
                     "complete" && (
-                    <>
+                    <div className="space-y-4">
                       <div>
                         <label className="mb-2 block text-sm font-bold text-slate-700">
                           Banco de palavras
                         </label>
+
+                        <p className="mb-2 text-xs text-slate-500">
+                          Separe as palavras usando
+                          vírgula, ponto e vírgula ou
+                          travessão.
+                        </p>
 
                         <input
                           value={questao.bancoPalavras.join(
@@ -993,31 +1008,48 @@ export default function RevisaoAvaliacaoPage() {
                               }
                             )
                           }
+                          placeholder="célula – tecido – órgão – sistema"
                           className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
                         />
                       </div>
 
-                      {questao.frasesComplete.map(
-                        (
-                          frase,
-                          itemIndice
-                        ) => (
-                          <input
-                            key={itemIndice}
-                            value={frase}
-                            onChange={(event) =>
-                              atualizarItemArray(
-                                questao.id,
-                                "frasesComplete",
-                                itemIndice,
-                                event.target.value
-                              )
-                            }
-                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                          />
-                        )
-                      )}
-                    </>
+                      <div>
+                        <label className="mb-2 block text-sm font-bold text-slate-700">
+                          Frases para completar
+                        </label>
+
+                        <p className="mb-2 text-xs text-slate-500">
+                          Digite uma frase em cada linha
+                          e use {"{{LACUNA}}"} no local
+                          que o aluno deverá completar.
+                        </p>
+
+                        <textarea
+                          value={questao.frasesComplete.join(
+                            "\n"
+                          )}
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                frasesComplete:
+                                  event.target.value.split(
+                                    "\n"
+                                  ),
+                              }
+                            )
+                          }
+                          rows={Math.max(
+                            4,
+                            questao.frasesComplete.length
+                          )}
+                          placeholder={
+                            "A {{LACUNA}} é a unidade básica dos seres vivos.\nUm conjunto de células forma um {{LACUNA}}."
+                          }
+                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                        />
+                      </div>
+                    </div>
                   )}
 
                   {questao.tipo ===
@@ -1053,58 +1085,79 @@ export default function RevisaoAvaliacaoPage() {
                   {questao.tipo ===
                     "relacione" && (
                     <div className="grid gap-4 sm:grid-cols-2">
-                      <div className="space-y-2">
-                        <p className="text-sm font-extrabold text-slate-800">
+                      <div>
+                        <label className="mb-2 block text-sm font-extrabold text-slate-800">
                           Coluna A
+                        </label>
+
+                        <p className="mb-2 text-xs text-slate-500">
+                          Digite um item em cada linha.
                         </p>
 
-                        {questao.colunaA.map(
-                          (item, itemIndice) => (
-                            <input
-                              key={itemIndice}
-                              value={item}
-                              onChange={(event) =>
-                                atualizarItemArray(
-                                  questao.id,
-                                  "colunaA",
-                                  itemIndice,
-                                  event.target
-                                    .value
-                                )
+                        <textarea
+                          value={questao.colunaA.join(
+                            "\n"
+                          )}
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                colunaA:
+                                  event.target.value.split(
+                                    "\n"
+                                  ),
                               }
-                              className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                            />
-                          )
-                        )}
+                            )
+                          }
+                          rows={Math.max(
+                            5,
+                            questao.colunaA.length
+                          )}
+                          placeholder={
+                            "Mamíferos\nAves\nRépteis\nAnfíbios"
+                          }
+                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                        />
                       </div>
 
-                      <div className="space-y-2">
-                        <p className="text-sm font-extrabold text-slate-800">
+                      <div>
+                        <label className="mb-2 block text-sm font-extrabold text-slate-800">
                           Coluna B
+                        </label>
+
+                        <p className="mb-2 text-xs text-slate-500">
+                          Digite a correspondência de
+                          cada item em uma linha.
                         </p>
 
-                        {questao.colunaB.map(
-                          (item, itemIndice) => (
-                            <input
-                              key={itemIndice}
-                              value={item}
-                              onChange={(event) =>
-                                atualizarItemArray(
-                                  questao.id,
-                                  "colunaB",
-                                  itemIndice,
-                                  event.target
-                                    .value
-                                )
+                        <textarea
+                          value={questao.colunaB.join(
+                            "\n"
+                          )}
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                colunaB:
+                                  event.target.value.split(
+                                    "\n"
+                                  ),
                               }
-                              className="w-full rounded-xl border-2 border-slate-300 px-4 py-2.5 text-sm outline-none focus:border-green-500"
-                            />
-                          )
-                        )}
+                            )
+                          }
+                          rows={Math.max(
+                            5,
+                            questao.colunaB.length
+                          )}
+                          placeholder={
+                            "Possuem pelos e amamentam\nPossuem penas\nPossuem pele seca com escamas\nPossuem pele úmida"
+                          }
+                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                        />
                       </div>
                     </div>
                   )}
-
+                  
                   {(questao.imagemNecessaria ||
                     questao.descricaoImagem ||
                     questao.imagemUrl) && (
