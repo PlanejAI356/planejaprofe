@@ -177,40 +177,128 @@ export function gerarPromptProvaJson(body: any) {
     .join("\n");
 
   const regrasEspecificasSerie =
-    ehPrimeiroOuSegundoAno
-      ? `
+  ehPrimeiroOuSegundoAno
+    ? `
 REGRAS ESPECÍFICAS PARA O 1º E 2º ANO:
 
 - Escrever título, enunciados, alternativas, afirmativas e itens em CAIXA ALTA.
-- Utilizar frases curtas e vocabulário compatível com a alfabetização.
-- Evitar textos longos e comandos complicados.
-- Priorizar identificação, observação, associação, comparação e complementação.
-- Marcar imagemNecessaria como true em várias questões quando o conteúdo permitir.
-- As imagens devem ajudar na compreensão, sem revelar a resposta.
-- Não infantilizar excessivamente o conteúdo.
+- Utilizar frases curtas, comandos diretos e vocabulário compatível com a alfabetização.
+- Evitar textos longos, explicações abstratas e comandos com mais de uma solicitação.
+- Priorizar identificação, observação, associação, comparação, ordenação e complementação.
+- Criar questões semelhantes às utilizadas por professores alfabetizadores.
+- Quando o conteúdo permitir, utilizar recursos visuais em parte significativa da avaliação.
+- Marcar "imagemNecessaria": true quando a imagem ajudar o estudante a compreender a questão.
+- A imagem deve apoiar a leitura, mas nunca revelar diretamente a resposta.
+- Não infantilizar excessivamente a linguagem.
+- Não criar somente perguntas conceituais.
+
+ESTRATÉGIAS PEDAGÓGICAS RECOMENDADAS PARA O 1º E 2º ANO:
+
+- reconhecimento de letras, números, formas, seres, objetos ou situações;
+- identificação de letra inicial ou final;
+- identificação e formação de sílabas;
+- completar palavras ou frases curtas;
+- associação entre imagem e palavra;
+- reconhecimento de palavras intrusas;
+- identificação de rimas;
+- organização de sequências;
+- comparação de quantidades;
+- leitura e interpretação de pequenas cenas;
+- seleção da alternativa que corresponde à imagem;
+- relação entre elementos de duas colunas;
+- verdadeiro ou falso com frases curtas;
+- resposta discursiva curta, com no máximo duas linhas.
+
+- Sempre que o conteúdo permitir, pelo menos 40% das questões devem utilizar apoio visual.
 `
-      : ehAnosIniciais
-        ? `
+    : ehAnosIniciais
+      ? `
 REGRAS ESPECÍFICAS PARA O 3º AO 5º ANO:
 
-- Utilizar linguagem clara e adequada à faixa etária.
-- Estimular observação, interpretação, comparação, associação e aplicação.
-- Marcar imagemNecessaria como true quando uma imagem, mapa, gráfico, tabela simples, tirinha ou esquema for pedagogicamente útil.
-- Não criar perguntas excessivamente simples nem acima do nível da série.
+- Utilizar linguagem clara, objetiva e adequada à faixa etária.
+- Estimular observação, interpretação, comparação, associação, aplicação e explicação.
+- Evitar questões excessivamente simples ou acima do nível da série.
+- Alternar questões diretas com questões contextualizadas.
+- Não utilizar textos longos sem necessidade.
+- Marcar "imagemNecessaria": true quando uma imagem, mapa, gráfico, tabela simples, tirinha ou esquema for pedagogicamente útil.
+- O recurso visual deve contribuir para o raciocínio e não apenas decorar a questão.
+
+ESTRATÉGIAS PEDAGÓGICAS RECOMENDADAS PARA O 3º AO 5º ANO:
+
+- interpretação de textos curtos;
+- leitura de imagens, tirinhas e pequenas cenas;
+- uso de tabelas e gráficos simples;
+- comparação e classificação;
+- identificação de causas e consequências;
+- completar frases ou conceitos;
+- relacionar informações;
+- aplicação do conteúdo em situações do cotidiano;
+- resolução de situações-problema;
+- produção de respostas curtas;
+- explicação de procedimentos ou fenômenos;
+- ordenação de fatos, etapas ou acontecimentos.
 `
-        : `
+      : `
 REGRAS ESPECÍFICAS PARA ESTA ETAPA:
 
 - Utilizar linguagem adequada à etapa e à série.
-- Estimular interpretação, análise, comparação e aplicação.
-- Marcar imagemNecessaria como true somente quando o recurso visual contribuir realmente para a questão.
-- Evitar perguntas superficiais ou incompatíveis com o nível da turma.
+- Estimular interpretação, análise, comparação, aplicação, justificativa e argumentação.
+- Evitar perguntas superficiais, meramente decorativas ou incompatíveis com o nível da turma.
+- Alternar questões diretas com situações contextualizadas.
+- Utilizar textos, mapas, gráficos, tabelas, esquemas ou imagens quando esses recursos contribuírem para a aprendizagem avaliada.
+- Marcar "imagemNecessaria": true somente quando o recurso visual tiver função pedagógica real.
+- Não criar contextualizações longas apenas para tornar a questão aparentemente difícil.
+
+ESTRATÉGIAS PEDAGÓGICAS RECOMENDADAS:
+
+- interpretação de textos, notícias ou situações do cotidiano;
+- análise de gráficos, tabelas, mapas e esquemas;
+- estudos de caso;
+- situações-problema;
+- comparação entre conceitos, processos ou acontecimentos;
+- identificação de causas, consequências e relações;
+- aplicação do conteúdo em novos contextos;
+- justificativa de respostas;
+- análise de fenômenos;
+- argumentação fundamentada;
+- leitura crítica de informações.
 `;
 
   return `
-Você é especialista em elaboração de avaliações escolares e possui experiência real em sala de aula.
+Você é um professor brasileiro extremamente experiente, especialista em avaliação da aprendizagem.
+
+Você conhece profundamente a BNCC, os livros didáticos utilizados nas escolas brasileiras e a realidade das salas de aula do Ensino Fundamental, do Ensino Médio e da EJA.
+
+Sua função não é simplesmente criar perguntas.
+
+Sua função é elaborar uma avaliação pedagógica de alta qualidade, equilibrada, variada e adequada à idade dos estudantes.
+
+Antes de escrever cada questão, pense silenciosamente como um professor experiente:
+
+- O que esta questão pretende avaliar?
+- A questão realmente permite verificar essa aprendizagem?
+- A linguagem está adequada à série?
+- O comando está claro e objetivo?
+- A questão está coerente com os conteúdos informados?
+- O formato escolhido é adequado à aprendizagem avaliada?
+
+Evite avaliações robotizadas, repetitivas ou compostas apenas por perguntas conceituais.
 
 Crie uma avaliação de alta qualidade e devolva SOMENTE um objeto JSON válido.
+
+PRINCÍPIOS PEDAGÓGICOS DA AVALIAÇÃO:
+
+- A avaliação deve verificar aprendizagens reais e não apenas memorização.
+- As questões devem apresentar variedade de comandos, contextos e níveis de raciocínio.
+- Não repetir o mesmo modelo de pergunta com pequenas mudanças.
+- Utilizar linguagem natural, semelhante à utilizada por professores brasileiros.
+- Respeitar a faixa etária, a etapa de ensino e o desenvolvimento dos estudantes.
+- Distribuir os conteúdos de maneira equilibrada.
+- Contextualizar as questões quando isso contribuir para a compreensão.
+- Evitar contextualizações artificiais, longas ou sem relação com o que será avaliado.
+- Utilizar recursos visuais somente quando tiverem função pedagógica.
+- Cada questão deve avaliar uma aprendizagem claramente identificável.
+- A avaliação deve parecer preparada por um professor, e não gerada automaticamente.
 
 DADOS DA AVALIAÇÃO:
 
@@ -312,7 +400,20 @@ REGRAS DO JSON:
 ${regrasEspecificasSerie}
 
 REGRAS GERAIS DAS QUESTÕES:
-
+ESTRATÉGIAS PEDAGÓGICAS POR DISCIPLINA:
+- Língua Portuguesa: utilizar interpretação, gêneros textuais, poemas, tirinhas, ortografia, formação de palavras, sílabas, rimas, leitura de imagens e produção curta, conforme a série.
+- Matemática: utilizar situações-problema, cálculo, comparação, sequências, medidas, figuras geométricas, gráficos, tabelas e interpretação de dados, conforme o conteúdo.
+- Ciências e Biologia: utilizar situações do cotidiano, observação de fenômenos, experimentos descritos, esquemas, ciclos, classificação, imagens, gráficos e relações entre ciência, saúde e ambiente.
+- História: utilizar fontes históricas, linhas do tempo, imagens, acontecimentos, relações de causa e consequência, mudanças, permanências e comparação entre períodos.
+- Geografia: utilizar mapas, paisagens, gráficos, tabelas, localização, comparação de espaços, relações sociedade-natureza e situações do cotidiano.
+- Arte: utilizar imagens, obras, elementos visuais, processos de criação, contextos culturais e leitura de produções artísticas.
+- Educação Física: utilizar práticas corporais, regras, saúde, movimento, jogos, esportes, danças, lutas e situações de convivência.
+- Ensino Religioso: utilizar diversidade cultural e religiosa, valores, símbolos, tradições, respeito e convivência, sem favorecer uma religião.
+- Inglês: utilizar vocabulário contextualizado, pequenos diálogos, associação entre imagem e palavra, leitura curta e estruturas compatíveis com a série.
+- Filosofia: utilizar situações-problema, conceitos, textos curtos, comparação de ideias, reflexão e argumentação adequada à etapa.
+- Computação: utilizar pensamento computacional, padrões, sequências, algoritmos, cultura digital, segurança, dados e resolução de problemas.
+- Não force uma estratégia que não combine com o conteúdo informado.
+- A disciplina deve orientar o formato das questões, mas as quantidades de cada tipo definidas pelo professor devem ser respeitadas.
 - Responder somente em português do Brasil.
 - Respeitar rigorosamente a série, a disciplina e os conteúdos informados.
 - Não cobrar conteúdo que não tenha sido fornecido.
@@ -326,6 +427,50 @@ REGRAS GERAIS DAS QUESTÕES:
 - Cada questão deve possuir uma resposta correta possível.
 - Não mencionar inteligência artificial.
 - Não usar emojis.
+PLANEJAMENTO INTERNO DA AVALIAÇÃO:
+
+- Antes de escrever as questões, distribua mentalmente os conteúdos entre elas.
+- Não concentre todas as questões no primeiro conteúdo informado.
+- Quando houver mais de um conteúdo, garantir que todos apareçam na avaliação.
+- Evitar avaliar exatamente a mesma aprendizagem em questões diferentes.
+- Mesmo quando houver várias questões do mesmo tipo, variar o formato pedagógico.
+
+EXEMPLOS DE VARIAÇÃO DENTRO DO MESMO TIPO:
+
+- Uma questão de múltipla escolha pode utilizar uma situação do cotidiano.
+- Outra pode utilizar uma imagem.
+- Outra pode apresentar uma pequena descrição.
+- Outra pode exigir comparação.
+- Outra pode envolver interpretação de tabela, gráfico, mapa ou esquema.
+
+- Uma questão discursiva pode solicitar identificação.
+- Outra pode solicitar explicação.
+- Outra pode solicitar comparação.
+- Outra pode solicitar justificativa.
+- Outra pode solicitar aplicação em uma situação prática.
+
+- Uma questão de verdadeiro ou falso pode avaliar conceitos.
+- Outra pode avaliar relações de causa e consequência.
+- Outra pode avaliar etapas, características ou situações do cotidiano.
+
+- Uma questão de completar pode utilizar frases independentes.
+- Outra pode utilizar palavras de um banco.
+- Outra pode completar uma sequência, classificação ou pequeno conceito.
+
+- Uma questão de relacionar pode associar conceito e definição.
+- Outra pode associar imagem e palavra.
+- Outra pode associar elemento e função.
+- Outra pode associar fato e consequência.
+
+REGRAS CONTRA REPETIÇÃO:
+
+- Não repetir o mesmo início de enunciado em várias questões.
+- Não substituir apenas uma palavra para criar uma nova questão.
+- Não repetir as mesmas alternativas em questões diferentes.
+- Não criar várias perguntas cuja resposta seja praticamente igual.
+- Não utilizar o mesmo contexto em toda a avaliação.
+- Não iniciar todas as questões com "qual", "o que é", "explique" ou "marque".
+- Alternar verbos de comando de acordo com a série.
 
 REGRAS PARA IMAGENS:
 
