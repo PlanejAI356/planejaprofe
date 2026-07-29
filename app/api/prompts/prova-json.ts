@@ -156,8 +156,10 @@ export function gerarPromptProvaJson(body: any) {
     serieNormalizada.includes("5 ano") ||
     serieNormalizada.includes("quinto ano");
 
-  const ehPrimeiroOuSegundoAno =
-    ehPrimeiroAno || ehSegundoAno;
+ const ehPrimeiroAoTerceiroAno =
+  ehPrimeiroAno ||
+  ehSegundoAno ||
+  ehTerceiroAno;
 
   const ehAnosIniciais =
     ehPrimeiroAno ||
@@ -177,39 +179,75 @@ export function gerarPromptProvaJson(body: any) {
     .join("\n");
 
   const regrasEspecificasSerie =
-  ehPrimeiroOuSegundoAno
+  ehPrimeiroAoTerceiroAno
     ? `
-REGRAS ESPECÍFICAS PARA O 1º E 2º ANO:
+REGRAS ESPECÍFICAS PARA O 1º, 2º E 3º ANO:
 
+- Toda avaliação deve contribuir para o processo de alfabetização e letramento.
+- Adaptar a linguagem, os comandos e o tamanho dos textos à série escolhida.
 - Escrever título, enunciados, alternativas, afirmativas e itens em CAIXA ALTA.
-- Utilizar frases curtas, comandos diretos e vocabulário compatível com a alfabetização.
-- Evitar textos longos, explicações abstratas e comandos com mais de uma solicitação.
-- Priorizar identificação, observação, associação, comparação, ordenação e complementação.
+- Utilizar frases curtas, comandos diretos e vocabulário conhecido pelos estudantes.
+- Evitar textos longos, explicações abstratas e comandos com várias solicitações.
 - Criar questões semelhantes às utilizadas por professores alfabetizadores.
-- Quando o conteúdo permitir, utilizar recursos visuais em parte significativa da avaliação.
-- Marcar "imagemNecessaria": true quando a imagem ajudar o estudante a compreender a questão.
-- A imagem deve apoiar a leitura, mas nunca revelar diretamente a resposta.
-- Não infantilizar excessivamente a linguagem.
-- Não criar somente perguntas conceituais.
+- Mesmo em Matemática, Ciências, História, Geografia e outras disciplinas, utilizar leitura de palavras, frases curtas, imagens, associação e interpretação simples.
+- O foco na alfabetização não deve substituir o conteúdo da disciplina.
+- O estudante deve aprender e demonstrar o conteúdo enquanto desenvolve leitura, escrita, interpretação e compreensão.
+- Não criar avaliações formadas apenas por definições ou perguntas conceituais.
+- Priorizar observação, reconhecimento, leitura, associação, comparação, ordenação, complementação e produção curta.
 
-ESTRATÉGIAS PEDAGÓGICAS RECOMENDADAS PARA O 1º E 2º ANO:
+PROGRESSÃO POR SÉRIE:
 
-- reconhecimento de letras, números, formas, seres, objetos ou situações;
-- identificação de letra inicial ou final;
-- identificação e formação de sílabas;
-- completar palavras ou frases curtas;
-- associação entre imagem e palavra;
-- reconhecimento de palavras intrusas;
-- identificação de rimas;
-- organização de sequências;
-- comparação de quantidades;
-- leitura e interpretação de pequenas cenas;
-- seleção da alternativa que corresponde à imagem;
-- relação entre elementos de duas colunas;
+- Para o 1º ano, utilizar palavras, sílabas, imagens, frases muito curtas e comandos simples.
+- Para o 2º ano, utilizar frases curtas, pequenos enunciados, leitura de palavras e interpretação simples.
+- Para o 3º ano, utilizar pequenos textos, situações curtas, interpretação, organização de ideias e respostas breves.
+- Não aplicar ao 1º ano o mesmo nível de leitura exigido no 3º ano.
+
+ESTRATÉGIAS DE ALFABETIZAÇÃO E LETRAMENTO:
+
+- reconhecer letras, números, formas, seres, objetos e situações;
+- identificar letras iniciais e finais;
+- reconhecer ou formar sílabas;
+- completar palavras e frases curtas;
+- associar imagens a palavras ou pequenas frases;
+- reconhecer palavras que não pertencem a determinado grupo;
+- identificar rimas quando o conteúdo for de Língua Portuguesa;
+- organizar palavras, imagens, acontecimentos ou etapas em sequência;
+- interpretar pequenas cenas;
+- identificar informações explícitas;
+- relacionar palavra e significado;
+- relacionar elemento e função;
+- selecionar a frase que corresponde a uma imagem;
+- produzir respostas curtas;
+- utilizar banco de palavras quando ele facilitar a leitura e a escrita.
+
+REGRAS OBRIGATÓRIAS PARA APOIO VISUAL:
+
+- Quando o conteúdo permitir representação visual, pelo menos metade das questões deve utilizar imagem.
+- Nessas questões, usar obrigatoriamente:
+  "imagemNecessaria": true
+- Preencher "descricaoImagem" de maneira detalhada e adequada ao enunciado.
+- A descrição deve permitir que o sistema gere uma imagem pedagógica clara.
+- A imagem deve ajudar o estudante a compreender o comando.
+- A imagem não pode conter a resposta escrita.
+- A imagem não pode revelar diretamente a alternativa correta.
+- Não usar imagens apenas como decoração.
+- Variar entre objetos, animais, cenas, sequências, paisagens, formas, situações cotidianas e outros recursos adequados ao conteúdo.
+
+FORMATOS RECOMENDADOS:
+
+- observar a imagem e marcar;
+- ligar imagem e palavra;
+- completar com apoio de imagem;
+- ordenar uma sequência ilustrada;
+- marcar a palavra correspondente;
+- identificar o elemento diferente;
+- relacionar elementos;
 - verdadeiro ou falso com frases curtas;
-- resposta discursiva curta, com no máximo duas linhas.
+- responder com uma palavra ou frase breve;
+- interpretar uma pequena cena.
 
-- Sempre que o conteúdo permitir, pelo menos 40% das questões devem utilizar apoio visual.
+- Para questões discursivas do 1º e 2º ano, usar no máximo 2 linhas.
+- Para questões discursivas do 3º ano, usar no máximo 3 linhas.
 `
     : ehAnosIniciais
       ? `
