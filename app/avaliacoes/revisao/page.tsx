@@ -60,6 +60,69 @@ function nomeTipo(tipo: TipoQuestao) {
   return nomes[tipo];
 }
 
+const LINHA_LACUNA = "____________________";
+
+function montarTextoEditorQuestao(
+  questao: Questao
+) {
+  if (questao.tipo === "multipla_escolha") {
+    const alternativas =
+      questao.alternativas.map(
+        (alternativa, indice) =>
+          `${String.fromCharCode(
+            65 + indice
+          )}) ${alternativa}`
+      );
+
+    return [
+      questao.enunciado,
+      "",
+      ...alternativas,
+    ].join("\n");
+  }
+
+  if (questao.tipo === "verdadeiro_falso") {
+    const afirmativas =
+      questao.afirmativas.map(
+        (afirmativa) =>
+          `(     ) ${afirmativa}`
+      );
+
+    return [
+      questao.enunciado,
+      "",
+      ...afirmativas,
+    ].join("\n");
+  }
+
+  if (questao.tipo === "complete") {
+    const banco =
+      questao.bancoPalavras.length > 0
+        ? `Banco de palavras: ${questao.bancoPalavras.join(
+            " – "
+          )}`
+        : "Banco de palavras:";
+
+    const frases =
+      questao.frasesComplete.map((frase) =>
+        frase.replace(
+          /\{\{LACUNA\}\}/g,
+          LINHA_LACUNA
+        )
+      );
+
+    return [
+      questao.enunciado,
+      "",
+      banco,
+      "",
+      ...frases,
+    ].join("\n");
+  }
+
+  return questao.enunciado;
+}
+
 function escaparHtml(texto: string) {
   return texto
     .replace(/&/g, "&amp;")
@@ -300,6 +363,155 @@ export default function RevisaoAvaliacaoPage() {
             ? { ...questao, ...alteracoes }
             : questao
       ),
+    });
+  }
+      function atualizarTextoEditor(
+    questao: Questao,
+    texto: string
+  ) {
+    const linhas = texto.split("\n");
+
+    if (
+      questao.tipo ===
+      "multipla_escolha"
+    ) {
+      const inicioAlternativas =
+        linhas.findIndex((linha) =>
+          /^[A-Da-d]\s*[\)\.\-:]\s*/.test(
+            linha.trim()
+          )
+        );
+
+      if (inicioAlternativas === -1) {
+        atualizarQuestao(questao.id, {
+          enunciado: texto,
+        });
+        return;
+      }
+
+      const enunciado = linhas
+        .slice(0, inicioAlternativas)
+        .join("\n")
+        .trim();
+
+      const alternativas = linhas
+        .slice(inicioAlternativas)
+        .filter(
+          (linha) => linha.trim() !== ""
+        )
+        .map((linha) =>
+          linha
+            .replace(
+              /^[A-Da-d]\s*[\)\.\-:]\s*/,
+              ""
+            )
+            .trim()
+        );
+
+      atualizarQuestao(questao.id, {
+        enunciado,
+        alternativas,
+      });
+
+      return;
+    }
+
+    if (
+      questao.tipo ===
+      "verdadeiro_falso"
+    ) {
+      const inicioAfirmativas =
+        linhas.findIndex((linha) =>
+          /^\(\s*\)/.test(linha.trim())
+        );
+
+      if (inicioAfirmativas === -1) {
+        atualizarQuestao(questao.id, {
+          enunciado: texto,
+        });
+        return;
+      }
+
+      const enunciado = linhas
+        .slice(0, inicioAfirmativas)
+        .join("\n")
+        .trim();
+
+      const afirmativas = linhas
+        .slice(inicioAfirmativas)
+        .filter(
+          (linha) => linha.trim() !== ""
+        )
+        .map((linha) =>
+          linha
+            .replace(/^\(\s*\)\s*/, "")
+            .trim()
+        );
+
+      atualizarQuestao(questao.id, {
+        enunciado,
+        afirmativas,
+      });
+
+      return;
+    }
+
+    if (questao.tipo === "complete") {
+      const indiceBanco =
+        linhas.findIndex((linha) =>
+          /^banco de palavras\s*:/i.test(
+            linha.trim()
+          )
+        );
+
+      if (indiceBanco === -1) {
+        atualizarQuestao(questao.id, {
+          enunciado: texto,
+        });
+        return;
+      }
+
+      const enunciado = linhas
+        .slice(0, indiceBanco)
+        .join("\n")
+        .trim();
+
+      const textoBanco =
+        linhas[indiceBanco]
+          .replace(
+            /^banco de palavras\s*:/i,
+            ""
+          )
+          .trim();
+
+      const bancoPalavras = textoBanco
+        .split(/[–—;,|]/)
+        .map((item) => item.trim())
+        .filter(Boolean);
+
+      const frasesComplete = linhas
+        .slice(indiceBanco + 1)
+        .filter(
+          (linha) => linha.trim() !== ""
+        )
+        .map((linha) =>
+          linha.replace(
+            /_{3,}/g,
+            "{{LACUNA}}"
+          )
+        );
+
+      atualizarQuestao(questao.id, {
+        enunciado,
+        bancoPalavras,
+        frasesComplete,
+      });
+
+      return;
+    }
+
+    atualizarQuestao(questao.id, {
+      enunciado: texto,
     });
   }
 
@@ -869,26 +1081,29 @@ export default function RevisaoAvaliacaoPage() {
                 )}
 
                 <div className="space-y-4 p-5">
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-slate-700">
-                      Enunciado
-                    </label>
+                                    {(questao.tipo === "discursiva" ||
+                    questao.tipo === "relacione") && (
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Enunciado
+                      </label>
 
-                    <textarea
-                      value={questao.enunciado}
-                      onChange={(event) =>
-                        atualizarQuestao(
-                          questao.id,
-                          {
-                            enunciado:
-                              event.target.value,
-                          }
-                        )
-                      }
-                      rows={3}
-                      className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-6 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                    />
-                  </div>
+                      <textarea
+                        value={questao.enunciado}
+                        onChange={(event) =>
+                          atualizarQuestao(
+                            questao.id,
+                            {
+                              enunciado:
+                                event.target.value,
+                            }
+                          )
+                        }
+                        rows={3}
+                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+                      />
+                    </div>
+                  )}
 
                   {questao.imagemUrl && (
                     <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -903,152 +1118,87 @@ export default function RevisaoAvaliacaoPage() {
                     </div>
                   )}
 
-                                    {questao.tipo ===
-                    "multipla_escolha" &&
-                    questao.alternativas.map(
-                      (
-                        alternativa,
-                        itemIndice
-                      ) => (
-                        <div
-                          key={itemIndice}
-                          className="flex items-center gap-2"
-                        >
-                          <span className="w-6 font-extrabold text-slate-700">
-                            {String.fromCharCode(
-                              65 + itemIndice
-                            )}
-                            )
-                          </span>
+                   {questao.tipo === "multipla_escolha" && (
+  <div>
+    <label className="mb-2 block text-sm font-bold text-slate-700">
+      Questão completa
+    </label>
 
-                          <input
-                            value={alternativa}
-                            onChange={(event) =>
-                              atualizarItemArray(
-                                questao.id,
-                                "alternativas",
-                                itemIndice,
-                                event.target.value
-                              )
-                            }
-                            className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                          />
-                        </div>
-                      )
-                    )}
+    <p className="mb-2 text-xs text-slate-500">
+      Edite o enunciado e as alternativas na mesma caixa.
+    </p>
 
-                  {questao.tipo ===
-                    "verdadeiro_falso" && (
+    <textarea
+      value={montarTextoEditorQuestao(questao)}
+      onChange={(event) =>
+        atualizarTextoEditor(
+          questao,
+          event.target.value
+        )
+      }
+      rows={Math.max(
+        8,
+        questao.alternativas.length + 5
+      )}
+      className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+    />
+  </div>
+)}
+
+                  {questao.tipo === "verdadeiro_falso" && (
+  <div>
+    <label className="mb-2 block text-sm font-bold text-slate-700">
+      Questão completa
+    </label>
+
+    <p className="mb-2 text-xs text-slate-500">
+      Edite o enunciado e as afirmativas na mesma caixa.
+    </p>
+
+    <textarea
+      value={montarTextoEditorQuestao(questao)}
+      onChange={(event) =>
+        atualizarTextoEditor(
+          questao,
+          event.target.value
+        )
+      }
+      rows={Math.max(
+        8,
+        questao.afirmativas.length + 5
+      )}
+      className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+    />
+  </div>
+)}
+
+                                    {questao.tipo === "complete" && (
                     <div>
                       <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Afirmativas
+                        Questão completa
                       </label>
 
                       <p className="mb-2 text-xs text-slate-500">
-                        Digite uma afirmativa em cada
-                        linha.
+                        Edite o enunciado, o banco de palavras e as frases
+                        na mesma caixa.
                       </p>
 
                       <textarea
-                        value={questao.afirmativas.join(
-                          "\n"
+                        value={montarTextoEditorQuestao(
+                          questao
                         )}
                         onChange={(event) =>
-                          atualizarQuestao(
-                            questao.id,
-                            {
-                              afirmativas:
-                                event.target.value.split(
-                                  "\n"
-                                ),
-                            }
+                          atualizarTextoEditor(
+                            questao,
+                            event.target.value
                           )
                         }
                         rows={Math.max(
-                          4,
-                          questao.afirmativas.length
+                          10,
+                          questao.frasesComplete.length + 7
                         )}
-                        placeholder={
-                          "A água é essencial para os seres vivos.\nO Sol gira ao redor da Terra.\nAs plantas realizam fotossíntese."
-                        }
-                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
+                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
                       />
-                    </div>
-                  )}
-
-                  {questao.tipo ===
-                    "complete" && (
-                    <div className="space-y-4">
-                      <div>
-                        <label className="mb-2 block text-sm font-bold text-slate-700">
-                          Banco de palavras
-                        </label>
-
-                        <p className="mb-2 text-xs text-slate-500">
-                          Separe as palavras usando
-                          vírgula, ponto e vírgula ou
-                          travessão.
-                        </p>
-
-                        <input
-                          value={questao.bancoPalavras.join(
-                            " – "
-                          )}
-                          onChange={(event) =>
-                            atualizarQuestao(
-                              questao.id,
-                              {
-                                bancoPalavras:
-                                  event.target.value
-                                    .split(/[–;,]/)
-                                    .map((item) =>
-                                      item.trim()
-                                    )
-                                    .filter(Boolean),
-                              }
-                            )
-                          }
-                          placeholder="célula – tecido – órgão – sistema"
-                          className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="mb-2 block text-sm font-bold text-slate-700">
-                          Frases para completar
-                        </label>
-
-                        <p className="mb-2 text-xs text-slate-500">
-                          Digite uma frase em cada linha
-                          e use {"{{LACUNA}}"} no local
-                          que o aluno deverá completar.
-                        </p>
-
-                        <textarea
-                          value={questao.frasesComplete.join(
-                            "\n"
-                          )}
-                          onChange={(event) =>
-                            atualizarQuestao(
-                              questao.id,
-                              {
-                                frasesComplete:
-                                  event.target.value.split(
-                                    "\n"
-                                  ),
-                              }
-                            )
-                          }
-                          rows={Math.max(
-                            4,
-                            questao.frasesComplete.length
-                          )}
-                          placeholder={
-                            "A {{LACUNA}} é a unidade básica dos seres vivos.\nUm conjunto de células forma um {{LACUNA}}."
-                          }
-                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                        />
-                      </div>
                     </div>
                   )}
 
@@ -1082,82 +1232,109 @@ export default function RevisaoAvaliacaoPage() {
                     </div>
                   )}
 
-                  {questao.tipo ===
-                    "relacione" && (
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <div>
-                        <label className="mb-2 block text-sm font-extrabold text-slate-800">
-                          Coluna A
-                        </label>
+                                    {questao.tipo === "relacione" && (
+                    <div>
+                      <label className="mb-2 block text-sm font-bold text-slate-700">
+                        Colunas da questão
+                      </label>
 
-                        <p className="mb-2 text-xs text-slate-500">
-                          Digite um item em cada linha.
-                        </p>
+                      <p className="mb-3 text-xs text-slate-500">
+                        Edite os itens diretamente nas duas caixas.
+                        Digite um item em cada linha.
+                      </p>
 
-                        <textarea
-                          value={questao.colunaA.join(
-                            "\n"
-                          )}
-                          onChange={(event) =>
-                            atualizarQuestao(
-                              questao.id,
-                              {
-                                colunaA:
-                                  event.target.value.split(
-                                    "\n"
-                                  ),
-                              }
-                            )
-                          }
-                          rows={Math.max(
-                            5,
-                            questao.colunaA.length
-                          )}
-                          placeholder={
-                            "Mamíferos\nAves\nRépteis\nAnfíbios"
-                          }
-                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                        />
-                      </div>
+                      <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="overflow-hidden rounded-xl border-2 border-green-300 bg-white transition focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200">
+                          <div className="border-b border-green-200 bg-green-50 px-4 py-2">
+                            <p className="text-center text-sm font-extrabold text-slate-800">
+                              COLUNA A
+                            </p>
+                          </div>
 
-                      <div>
-                        <label className="mb-2 block text-sm font-extrabold text-slate-800">
-                          Coluna B
-                        </label>
+                          <textarea
+                            value={questao.colunaA
+                              .map(
+                                (item, itemIndice) =>
+                                  `${itemIndice + 1}. ${item}`
+                              )
+                              .join("\n")}
+                            onChange={(event) => {
+                              const colunaA =
+                                event.target.value
+                                  .split("\n")
+                                  .map((linha) =>
+                                    linha.replace(
+                                      /^\s*\d+\s*[\.\)\-:]\s*/,
+                                      ""
+                                    )
+                                  );
 
-                        <p className="mb-2 text-xs text-slate-500">
-                          Digite a correspondência de
-                          cada item em uma linha.
-                        </p>
+                              atualizarQuestao(
+                                questao.id,
+                                {
+                                  colunaA,
+                                }
+                              );
+                            }}
+                            rows={Math.max(
+                              7,
+                              questao.colunaA.length + 2
+                            )}
+                            placeholder={
+                              "1. Mamíferos\n2. Aves\n3. Répteis\n4. Anfíbios"
+                            }
+                            className="w-full cursor-text resize-y bg-white px-4 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none"
+                          />
+                        </div>
 
-                        <textarea
-                          value={questao.colunaB.join(
-                            "\n"
-                          )}
-                          onChange={(event) =>
-                            atualizarQuestao(
-                              questao.id,
-                              {
-                                colunaB:
-                                  event.target.value.split(
-                                    "\n"
-                                  ),
-                              }
-                            )
-                          }
-                          rows={Math.max(
-                            5,
-                            questao.colunaB.length
-                          )}
-                          placeholder={
-                            "Possuem pelos e amamentam\nPossuem penas\nPossuem pele seca com escamas\nPossuem pele úmida"
-                          }
-                          className="w-full cursor-text resize-y rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm leading-7 outline-none transition hover:border-green-500 hover:bg-white focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                        />
+                        <div className="overflow-hidden rounded-xl border-2 border-green-300 bg-white transition focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200">
+                          <div className="border-b border-green-200 bg-green-50 px-4 py-2">
+                            <p className="text-center text-sm font-extrabold text-slate-800">
+                              COLUNA B
+                            </p>
+                          </div>
+
+                          <textarea
+                            value={questao.colunaB
+                              .map(
+                                (item, itemIndice) =>
+                                  `${String.fromCharCode(
+                                    65 + itemIndice
+                                  )}. ${item}`
+                              )
+                              .join("\n")}
+                            onChange={(event) => {
+                              const colunaB =
+                                event.target.value
+                                  .split("\n")
+                                  .map((linha) =>
+                                    linha.replace(
+                                      /^\s*[A-Za-z]\s*[\.\)\-:]\s*/,
+                                      ""
+                                    )
+                                  );
+
+                              atualizarQuestao(
+                                questao.id,
+                                {
+                                  colunaB,
+                                }
+                              );
+                            }}
+                            rows={Math.max(
+                              7,
+                              questao.colunaB.length + 2
+                            )}
+                            placeholder={
+                              "A. Possuem pelos e amamentam\nB. Possuem penas\nC. Possuem pele seca com escamas\nD. Possuem pele úmida"
+                            }
+                            className="w-full cursor-text resize-y bg-white px-4 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none"
+                          />
+                        </div>
                       </div>
                     </div>
                   )}
-                  
+
                   {(questao.imagemNecessaria ||
                     questao.descricaoImagem ||
                     questao.imagemUrl) && (
