@@ -359,11 +359,109 @@ export default function ResultadoAvaliacaoPage() {
     }
   }
 
+  function baixarPDF() {
+    const conteudo =
+      editorRef.current?.innerHTML || "";
+
+    const cabecalhoAtual =
+      cabecalhoRef.current?.innerHTML || "";
+
+    if (!conteudo) {
+      alert("Nenhuma avaliação foi encontrada.");
+      return;
+    }
+
+    const janelaImpressao = window.open(
+      "",
+      "_blank"
+    );
+
+    if (!janelaImpressao) {
+      alert(
+        "Não foi possível abrir o PDF. Permita pop-ups no navegador."
+      );
+      return;
+    }
+
+    janelaImpressao.document.write(`
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>Avaliação</title>
+        </head>
+
+        <body>
+          <div class="cabecalho">
+            ${cabecalhoAtual}
+          </div>
+
+          ${conteudo}
+
+          <script>
+            window.onload = function () {
+              window.print();
+            };
+          </script>
+        </body>
+      </html>
+    `);
+
+    janelaImpressao.document.close();
+  }
+  function baixarWord() {
+  const conteudo =
+    editorRef.current?.innerHTML || "";
+
+  const cabecalhoAtual =
+    cabecalhoRef.current?.innerHTML || "";
+
+  if (!conteudo) {
+    alert("Nenhuma avaliação foi encontrada.");
+    return;
+  }
+
+  const documento = `
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+</head>
+<body>
+${cabecalhoAtual}
+${conteudo}
+</body>
+</html>
+`;
+
+  const blob = new Blob(
+    ["\ufeff", documento],
+    {
+      type: "application/msword",
+    }
+  );
+
+  const url =
+    URL.createObjectURL(blob);
+
+  const link =
+    document.createElement("a");
+
+  link.href = url;
+  link.download = "avaliacao.doc";
+
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+}
+
   return (
     <main className="min-h-screen bg-slate-50">
       <TopoAvaliacoes
         destinoVoltar="/avaliacoes"
-        textoVoltar="Voltar às avaliações"
+        textoVoltar="Configurar avaliação"
       />
 
       <section className="mx-auto max-w-6xl px-4 py-5">
@@ -554,26 +652,6 @@ export default function ResultadoAvaliacaoPage() {
 
                 <button
                   type="button"
-                  onClick={gerarTodasAsImagens}
-                  disabled={gerandoImagens}
-                  className="flex items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-sm font-extrabold text-green-800 transition hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
-                >
-                  {gerandoImagens ? (
-                    <Loader2
-                      size={18}
-                      className="animate-spin"
-                    />
-                  ) : (
-                    <ImagePlus size={18} />
-                  )}
-
-                  {gerandoImagens
-                    ? progressoImagens
-                    : "Gerar todas as imagens"}
-                </button>
-
-                <button
-                  type="button"
                   onClick={
                     salvarAlteracoesProva
                   }
@@ -695,6 +773,7 @@ export default function ResultadoAvaliacaoPage() {
 
                 <button
                   type="button"
+                  onClick={baixarPDF}
                   className="rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-green-800"
                 >
                   Baixar PDF

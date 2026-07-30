@@ -958,15 +958,6 @@ const html = `
                 {avaliacao.questoes.length} questões
               </p>
             </div>
-
-            <button
-              type="button"
-              onClick={montarAvaliacao}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-green-700 px-6 py-3 text-sm font-extrabold text-white shadow-sm transition hover:bg-green-800"
-            >
-              <Sparkles size={18} />
-              Montar avaliação
-            </button>
           </div>
         </div>
 
