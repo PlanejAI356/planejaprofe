@@ -233,7 +233,7 @@ export default function ResultadoAvaliacaoPage() {
         elementoImagem.src = imagem;
         elementoImagem.alt = descricao;
         elementoImagem.style.display = "block";
-        elementoImagem.style.width = "260px";
+        elementoImagem.style.width = "100px";
         elementoImagem.style.maxWidth = "100%";
         elementoImagem.style.height = "auto";
         elementoImagem.style.objectFit = "contain";
@@ -456,10 +456,10 @@ elementoImagem.addEventListener("blur", () => {
 
           .conteudo img {
             display: block !important;
-            width: auto !important;
+            width: 100px !important;
             height: auto !important;
-            max-width: 100% !important;
-            max-height: 320px !important;
+            max-width: 140px !important;
+            max-height: 160px !important;
             object-fit: contain !important;
             margin: 10px auto !important;
             break-inside: avoid;
@@ -468,7 +468,7 @@ elementoImagem.addEventListener("blur", () => {
           .conteudo [data-imagem-avaliacao="true"] {
             display: block !important;
             width: 100% !important;
-            max-width: 100% !important;
+            max-width: 140px !important;
             height: auto !important;
             margin: 12px 0 !important;
             overflow: hidden !important;
