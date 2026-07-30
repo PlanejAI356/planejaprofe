@@ -384,55 +384,136 @@ elementoImagem.style.pointerEvents = "none";
   }
 
   function baixarPDF() {
-    const conteudo =
-      editorRef.current?.innerHTML || "";
+  const conteudo =
+    editorRef.current?.innerHTML || "";
 
-    const cabecalhoAtual =
-      cabecalhoRef.current?.innerHTML || "";
+  const cabecalhoAtual =
+    cabecalhoRef.current?.innerHTML || "";
 
-    if (!conteudo) {
-      alert("Nenhuma avaliação foi encontrada.");
-      return;
-    }
-
-    const janelaImpressao = window.open(
-      "",
-      "_blank"
-    );
-
-    if (!janelaImpressao) {
-      alert(
-        "Não foi possível abrir o PDF. Permita pop-ups no navegador."
-      );
-      return;
-    }
-
-    janelaImpressao.document.write(`
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8" />
-          <title>Avaliação</title>
-        </head>
-
-        <body>
-          <div class="cabecalho">
-            ${cabecalhoAtual}
-          </div>
-
-          ${conteudo}
-
-          <script>
-            window.onload = function () {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-
-    janelaImpressao.document.close();
+  if (!conteudo) {
+    alert("Nenhuma avaliação foi encontrada.");
+    return;
   }
+
+  const janelaImpressao = window.open(
+    "",
+    "_blank"
+  );
+
+  if (!janelaImpressao) {
+    alert(
+      "Não foi possível abrir o PDF. Permita pop-ups no navegador."
+    );
+    return;
+  }
+
+  const classeColunas = duasColunas
+    ? "conteudo duas-colunas"
+    : "conteudo uma-coluna";
+
+  janelaImpressao.document.write(`
+    <!DOCTYPE html>
+    <html lang="pt-BR">
+      <head>
+        <meta charset="UTF-8" />
+
+        <title>Avaliação</title>
+
+        <style>
+          @page {
+            size: A4;
+            margin: 1.5cm;
+          }
+
+          * {
+            box-sizing: border-box;
+          }
+
+          body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #000;
+          }
+
+          .cabecalho {
+            width: 100%;
+            margin-bottom: 20px;
+          }
+
+          .conteudo {
+            width: 100%;
+            overflow-wrap: break-word;
+          }
+
+          .uma-coluna {
+            column-count: 1;
+          }
+
+          .duas-colunas {
+            column-count: 2;
+            column-gap: 32px;
+            column-rule: 1px solid #cbd5e1;
+          }
+
+          .conteudo img {
+            display: block !important;
+            width: auto !important;
+            height: auto !important;
+            max-width: 100% !important;
+            max-height: 320px !important;
+            object-fit: contain !important;
+            margin: 10px auto !important;
+            break-inside: avoid;
+          }
+
+          .conteudo [data-imagem-avaliacao="true"] {
+            display: block !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            height: auto !important;
+            margin: 12px 0 !important;
+            overflow: hidden !important;
+            break-inside: avoid;
+          }
+
+          p,
+          div,
+          table,
+          img {
+            break-inside: avoid;
+          }
+
+          @media print {
+            body {
+              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact;
+            }
+          }
+        </style>
+      </head>
+
+      <body>
+        <div class="cabecalho">
+          ${cabecalhoAtual}
+        </div>
+
+        <div class="${classeColunas}">
+          ${conteudo}
+        </div>
+
+        <script>
+          window.onload = function () {
+            window.print();
+          };
+        </script>
+      </body>
+    </html>
+  `);
+
+  janelaImpressao.document.close();
+}
   function baixarWord() {
   const conteudo =
     editorRef.current?.innerHTML || "";
