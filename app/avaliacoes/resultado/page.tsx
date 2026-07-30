@@ -230,6 +230,22 @@ export default function ResultadoAvaliacaoPage() {
         elementoImagem.style.width = "420px";
         elementoImagem.style.maxWidth = "100%";
         elementoImagem.style.height = "auto";
+        elementoImagem.contentEditable = "false";
+        elementoImagem.style.resize = "both";
+        elementoImagem.style.overflow = "auto";
+        elementoImagem.style.cursor = "pointer";
+        elementoImagem.tabIndex = 0;
+elementoImagem.addEventListener("click", () => {
+  elementoImagem.focus();
+});
+elementoImagem.addEventListener("focus", () => {
+  elementoImagem.style.outline =
+    "3px solid #15803d";
+  elementoImagem.style.outlineOffset = "3px";
+});
+elementoImagem.addEventListener("blur", () => {
+  elementoImagem.style.outline = "none";
+});
         elementoImagem.style.margin =
           "0 auto";
         elementoImagem.style.border =
@@ -756,12 +772,6 @@ ${conteudo}
             </div>
 
             <div className="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                className="rounded-xl border border-green-700 px-5 py-3 text-sm font-extrabold text-green-800 transition hover:bg-green-50"
-              >
-                Visualizar
-              </button>
 
               <div className="flex flex-wrap gap-3">
                 <button
