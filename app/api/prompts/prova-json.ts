@@ -304,16 +304,43 @@ ESTRATÉGIAS DE ALFABETIZAÇÃO E LETRAMENTO:
 
 REGRAS OBRIGATÓRIAS PARA APOIO VISUAL:
 
-- Quando o conteúdo permitir representação visual, pelo menos metade das questões deve utilizar imagem.
-- Nessas questões, usar obrigatoriamente:
+1º ANO
+- Todas as questões devem utilizar imagem.
+- Todas devem possuir:
   "imagemNecessaria": true
-- Preencher "descricaoImagem" de maneira detalhada e adequada ao enunciado.
-- A descrição deve permitir que o sistema gere uma imagem pedagógica clara.
-- A imagem deve ajudar o estudante a compreender o comando.
-- A imagem não pode conter a resposta escrita.
-- A imagem não pode revelar diretamente a alternativa correta.
-- Não usar imagens apenas como decoração.
-- Variar entre objetos, animais, cenas, sequências, paisagens, formas, situações cotidianas e outros recursos adequados ao conteúdo.
+- Todas devem possuir "descricaoImagem".
+
+2º ANO
+- Utilizar imagem em até 8 questões.
+- Nunca ultrapassar o número total de questões.
+
+3º ANO
+- Utilizar imagem em até 5 questões.
+- Nunca ultrapassar o número total de questões.
+
+4º ANO
+- Utilizar imagem somente quando ela realmente ajudar na compreensão da questão.
+
+5º ANO
+- Utilizar imagem somente quando ela realmente ajudar na compreensão da questão.
+
+PADRÃO DAS IMAGENS
+
+- Criar ilustrações educativas simples.
+- Utilizar desenho em preto e branco.
+- Fundo totalmente branco.
+- Traços grossos e bem definidos.
+- Estilo atividade escolar para impressão.
+- Estilo semelhante às atividades encontradas em livros didáticos dos anos iniciais.
+- Sem sombras.
+- Sem cenário desnecessário.
+- Sem excesso de detalhes.
+- Sem personagens realistas.
+- Sem elementos decorativos.
+- Sem texto, letras, números ou respostas dentro da imagem.
+- A imagem deve facilitar a compreensão da questão.
+- Nunca revelar a resposta.
+- A descrição deve ser suficiente para que o sistema gere automaticamente uma ilustração simples e adequada à série.
 
 FORMATOS RECOMENDADOS:
 
@@ -534,6 +561,18 @@ REGRAS DO JSON:
 ${regrasEspecificasSerie}
 
 REGRAS GERAIS DAS QUESTÕES:
+QUALIDADE DOS ENUNCIADOS
+
+- Escrever enunciados claros, objetivos e naturais.
+- Evitar comandos ambíguos ou com dupla interpretação.
+- Não utilizar linguagem robotizada.
+- Variar a forma de iniciar os enunciados.
+- Evitar começar muitas questões com "Marque", "Assinale", "Explique" ou "Qual".
+- Utilizar verbos variados, como identificar, observar, relacionar, comparar, completar, interpretar, justificar, descrever, analisar e reconhecer.
+- Sempre adequar o tamanho do enunciado à série.
+- Quando utilizar situações do cotidiano, elas devem ser naturais e relacionadas ao conteúdo.
+- O enunciado deve avaliar o conteúdo e não a dificuldade de leitura.
+
 ESTRATÉGIAS PEDAGÓGICAS POR DISCIPLINA:
 - Língua Portuguesa: utilizar interpretação, gêneros textuais, poemas, tirinhas, ortografia, formação de palavras, sílabas, rimas, leitura de imagens e produção curta, conforme a série.
 - Matemática: utilizar situações-problema, cálculo, comparação, sequências, medidas, figuras geométricas, gráficos, tabelas e interpretação de dados, conforme o conteúdo.
@@ -562,10 +601,26 @@ ESTRATÉGIAS PEDAGÓGICAS POR DISCIPLINA:
 - Não mencionar inteligência artificial.
 - Não usar emojis.
 PLANEJAMENTO INTERNO DA AVALIAÇÃO:
+ANTES DE ESCREVER A PRIMEIRA QUESTÃO:
 
+- Analise todos os conteúdos informados pelo professor.
+- Defina mentalmente quais conteúdos aparecerão em cada questão.
+- Escolha o melhor tipo de questão para avaliar cada aprendizagem.
+- Defina quais questões utilizarão imagens de acordo com as regras da série.
+- Garanta variedade de comandos durante toda a avaliação.
+- Evite concentrar muitas questões sobre o mesmo conteúdo.
+- Faça a avaliação parecer elaborada por um professor experiente e não por um modelo de inteligência artificial.
 - Antes de escrever as questões, distribua mentalmente os conteúdos entre elas.
 - Não concentre todas as questões no primeiro conteúdo informado.
 - Quando houver mais de um conteúdo, garantir que todos apareçam na avaliação.
+DISTRIBUIÇÃO DOS CONTEÚDOS
+
+- Distribuir os conteúdos de forma proporcional entre as questões.
+- Evitar que um conteúdo apareça muitas vezes enquanto outro apareça apenas uma vez.
+- Quando houver poucos conteúdos, aprofundar cada um com estratégias diferentes.
+- Quando houver muitos conteúdos, garantir que todos sejam contemplados pelo menos uma vez, sempre que a quantidade de questões permitir.
+- Variar o tipo de questão utilizado para cada conteúdo.
+- Sempre que possível, integrar dois conteúdos relacionados em uma mesma questão de forma natural.
 - Evitar avaliar exatamente a mesma aprendizagem em questões diferentes.
 - Mesmo quando houver várias questões do mesmo tipo, variar o formato pedagógico.
 
@@ -605,13 +660,59 @@ REGRAS CONTRA REPETIÇÃO:
 - Não utilizar o mesmo contexto em toda a avaliação.
 - Não iniciar todas as questões com "qual", "o que é", "explique" ou "marque".
 - Alternar verbos de comando de acordo com a série.
+PROCESSO DE DECISÃO PARA USO DE IMAGENS
+
+Antes de criar cada questão, siga esta sequência:
+
+1. Pense qual é a melhor forma de avaliar aquela aprendizagem.
+2. Decida se uma imagem realmente melhora a compreensão da questão.
+3. Somente depois defina "imagemNecessaria".
+4. Nunca utilize imagens apenas para deixar a avaliação mais bonita.
+5. Cada imagem deve possuir uma função pedagógica clara.
+6. Quando utilizar imagem, ela deve complementar o enunciado e nunca substituir totalmente a leitura.
+7. A imagem deve ser compatível com a idade e a série dos estudantes.
+8. Evite repetir o mesmo tipo de imagem em várias questões da mesma avaliação.
+9. Priorize imagens de objetos, animais, plantas, mapas, cenas, esquemas, gráficos simples, sequências e situações do cotidiano.
+10. A descrição da imagem deve ser suficiente para gerar automaticamente uma ilustração de qualidade.
+VARIEDADE NAS QUESTÕES COM IMAGEM
+
+Quando utilizar imagens, variar o formato das questões durante a avaliação.
+
+Evitar repetir várias questões iguais.
+
+Utilizar diferentes estratégias, como:
+
+- observar e marcar a alternativa correta;
+- identificar um elemento da imagem;
+- ligar imagem e palavra;
+- relacionar imagem e função;
+- ordenar uma sequência ilustrada;
+- comparar duas imagens;
+- identificar diferenças ou semelhanças;
+- completar uma frase utilizando a imagem;
+- interpretar uma pequena cena;
+- classificar elementos apresentados na imagem;
+- identificar partes de um objeto, animal, planta ou corpo humano;
+- interpretar mapas, gráficos, tabelas ou esquemas quando adequado ao conteúdo;
+- utilizar imagens em situações-problema.
+
+Não repetir o mesmo modelo de questão com imagem várias vezes na mesma avaliação.
 
 REGRAS PARA IMAGENS:
 
 - Quando a questão realmente precisar de apoio visual, usar:
   "imagemNecessaria": true
-- Nesse caso, preencher "descricaoImagem" com uma descrição objetiva e detalhada.
-- A descrição deve informar somente o que precisa aparecer na imagem.
+- Nesse caso, preencher obrigatoriamente "descricaoImagem".
+- A descrição deve ser extremamente detalhada.
+- Descrever todos os elementos que devem aparecer na ilustração.
+- Informar a posição dos principais elementos quando necessário.
+- Informar quantidade, características, formato, tamanho relativo e aparência dos objetos.
+- Informar o contexto da cena quando existir.
+- A descrição deve ser suficiente para gerar a imagem sem necessidade de informações adicionais.
+- Descrever apenas o que deve aparecer na ilustração.
+- Nunca descrever a resposta correta.
+- Nunca pedir textos, letras, números ou alternativas dentro da imagem.
+- Sempre imaginar que a imagem será utilizada em uma atividade escolar impressa para crianças.
 - A imagem não pode revelar diretamente a resposta.
 - Quando a questão não precisar de imagem, usar:
   "imagemNecessaria": false
@@ -626,6 +727,15 @@ REGRAS PARA MÚLTIPLA ESCOLHA:
 - No array "alternativas", não escrever A), B), C) ou D).
 - Apenas uma alternativa deve estar correta.
 - As alternativas incorretas devem ser plausíveis.
+QUALIDADE DAS ALTERNATIVAS
+
+- As alternativas incorretas devem representar erros comuns cometidos pelos estudantes.
+- Evitar alternativas absurdas ou obviamente erradas.
+- Todas as alternativas devem possuir tamanho semelhante.
+- Evitar que a resposta correta seja sempre a mais longa.
+- Evitar repetir palavras que revelem facilmente a resposta correta.
+- As alternativas devem exigir leitura e raciocínio antes da escolha.
+- Quando possível, utilizar alternativas que representem diferentes formas de pensar sobre o conteúdo.
 - Manter tamanhos semelhantes entre as alternativas.
 - Não utilizar "todas as alternativas anteriores".
 - Não utilizar "nenhuma das alternativas anteriores".
@@ -709,6 +819,17 @@ REGRAS PARA RELACIONAR COLUNAS:
   "bancoPalavras": []
   "frasesComplete": []
   "linhasResposta": 0
+REVISÃO SILENCIOSA DE CADA QUESTÃO
+
+Antes de finalizar cada questão, verifique:
+
+- O comando está claro?
+- Existe apenas uma interpretação possível?
+- A linguagem está adequada à série?
+- A questão realmente avalia o conteúdo?
+- Existe apenas uma resposta correta?
+- A imagem ajuda na aprendizagem?
+- A questão parece elaborada por um professor experiente?
 
 VERIFICAÇÃO SILENCIOSA ANTES DE RESPONDER:
 
