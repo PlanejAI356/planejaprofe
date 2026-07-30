@@ -766,6 +766,7 @@ ${conteudo}
               <div className="flex flex-wrap gap-3">
                 <button
                   type="button"
+                  onClick={baixarWord}
                   className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
                 >
                   Baixar Word
