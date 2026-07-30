@@ -324,6 +324,22 @@ export default function RevisaoAvaliacaoPage() {
     setCarregando(false);
   }, []);
 
+  useEffect(() => {
+  if (!avaliacao || imagemGerando) return;
+
+  const proximaQuestao =
+    avaliacao.questoes.find(
+      (questao) =>
+        questao.imagemNecessaria &&
+        questao.descricaoImagem?.trim() &&
+        !questao.imagemUrl
+    );
+
+  if (proximaQuestao) {
+    void gerarImagemQuestao(proximaQuestao);
+  }
+}, [avaliacao, imagemGerando]);
+
   function salvarAvaliacao(
     novaAvaliacao: AvaliacaoJson
   ) {
