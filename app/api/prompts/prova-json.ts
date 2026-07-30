@@ -563,6 +563,15 @@ ${regrasEspecificasSerie}
 REGRAS GERAIS DAS QUESTÕES:
 QUALIDADE DOS ENUNCIADOS
 
+VOCABULÁRIO ADEQUADO À SÉRIE
+
+- Utilizar palavras compatíveis com a idade e a etapa de alfabetização dos estudantes.
+- Evitar termos técnicos quando houver uma palavra mais simples com o mesmo significado.
+- Quando um termo científico for indispensável, apresentá-lo em um contexto simples e de fácil compreensão.
+- Para o 1º e 2º ano, utilizar palavras de uso frequente no cotidiano das crianças.
+- Evitar frases longas, linguagem formal ou construções complexas.
+- O nível de leitura deve ser adequado à série e nunca superior ao desenvolvimento esperado da turma.
+
 - Escrever enunciados claros, objetivos e naturais.
 - Evitar comandos ambíguos ou com dupla interpretação.
 - Não utilizar linguagem robotizada.
@@ -759,6 +768,21 @@ REGRAS PARA DISCURSIVAS:
   3 para explicação ou descrição;
   4 para comparação, justificativa ou análise.
 - Para o 1º e 2º ano, usar no máximo 2 linhas.
+REGRAS ESPECÍFICAS PARA QUESTÕES DISCURSIVAS DO 1º ANO
+
+- Evitar criar questões discursivas sempre que houver outros tipos disponíveis.
+- Quando houver questão discursiva por exigência da configuração, a resposta deve ser composta por uma palavra, um número, uma letra, uma sílaba ou uma frase muito curta.
+- Nunca solicitar comparação, justificativa, argumentação ou explicações longas.
+- Priorizar identificação, nomeação, escrita de palavras simples e respostas objetivas.
+REGRAS ESPECÍFICAS PARA O 2º ANO
+
+- Utilizar perguntas simples e objetivas.
+- Permitir respostas de uma palavra, pequenas frases ou frases curtas.
+- Evitar perguntas que exijam textos longos.
+- Evitar solicitar comparação, justificativa ou argumentação extensa.
+- Priorizar identificação, descrição simples, interpretação de imagens e aplicação do conteúdo em situações do cotidiano.
+- Sempre que possível, utilizar imagens como apoio para facilitar a compreensão da questão.
+
 - Usar:
   "alternativas": []
   "afirmativas": []
