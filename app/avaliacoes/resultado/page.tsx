@@ -221,13 +221,11 @@ export default function ResultadoAvaliacaoPage() {
         blocoImagem.style.margin = "16px 0";
         blocoImagem.style.breakInside = "avoid";
         blocoImagem.contentEditable = "false";
-        blocoImagem.style.display = "inline-block";
-        blocoImagem.style.resize = "both";
-        blocoImagem.style.overflow = "auto";
-        blocoImagem.style.minWidth = "120px";
-        blocoImagem.style.minHeight = "120px";
+        blocoImagem.style.display = "block";
+        blocoImagem.style.width = "100%";
         blocoImagem.style.maxWidth = "100%";
-        blocoImagem.style.cursor = "move";
+        blocoImagem.style.height = "auto";
+        blocoImagem.style.overflow = "hidden";
 
         const elementoImagem =
           document.createElement("img");
@@ -235,9 +233,11 @@ export default function ResultadoAvaliacaoPage() {
         elementoImagem.src = imagem;
         elementoImagem.alt = descricao;
         elementoImagem.style.display = "block";
-        elementoImagem.style.width = "100%";
-        elementoImagem.style.height = "100%";
+        elementoImagem.style.width = "260px";
+        elementoImagem.style.maxWidth = "100%";
+        elementoImagem.style.height = "auto";
         elementoImagem.style.objectFit = "contain";
+        elementoImagem.style.margin = "0 auto";
         elementoImagem.contentEditable = "false";
         elementoImagem.style.cursor = "pointer";
         elementoImagem.tabIndex = 0;
@@ -252,14 +252,11 @@ elementoImagem.addEventListener("focus", () => {
 elementoImagem.addEventListener("blur", () => {
   elementoImagem.style.outline = "none";
 });
-        elementoImagem.style.margin =
-          "0 auto";
-        elementoImagem.style.border =
-          "1px solid #cbd5e1";
-        elementoImagem.style.borderRadius =
-          "8px";
-          elementoImagem.draggable = false;
-elementoImagem.style.pointerEvents = "none";
+        elementoImagem.style.margin = "0 auto";
+        elementoImagem.style.border = "1px solid #cbd5e1";
+        elementoImagem.style.borderRadius = "8px";
+        elementoImagem.draggable = false;
+        elementoImagem.style.pointerEvents = "none";
 
         blocoImagem.appendChild(
           elementoImagem
@@ -526,15 +523,86 @@ elementoImagem.style.pointerEvents = "none";
     return;
   }
 
+  const classeColunas = duasColunas
+    ? "conteudo duas-colunas"
+    : "conteudo uma-coluna";
+
   const documento = `
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
+  <meta charset="UTF-8">
+
+  <style>
+    @page {
+      size: A4;
+      margin: 1.5cm;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      font-size: 12pt;
+      line-height: 1.5;
+      color: #000000;
+    }
+
+    .cabecalho {
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .conteudo {
+      width: 100%;
+      overflow-wrap: break-word;
+    }
+
+    .uma-coluna {
+      column-count: 1;
+    }
+
+    .duas-colunas {
+      column-count: 2;
+      column-gap: 30px;
+      column-rule: 1px solid #cccccc;
+    }
+
+    .conteudo img {
+      display: block;
+      width: 220px;
+      max-width: 100%;
+      height: auto;
+      margin: 10px auto;
+    }
+
+    .conteudo [data-imagem-avaliacao="true"] {
+      display: block;
+      width: 100%;
+      max-width: 100%;
+      height: auto;
+      overflow: hidden;
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+
+    .conteudo p,
+    .conteudo div,
+    .conteudo table,
+    .conteudo img {
+      break-inside: avoid;
+      page-break-inside: avoid;
+    }
+  </style>
 </head>
+
 <body>
-${cabecalhoAtual}
-${conteudo}
+  <div class="cabecalho">
+    ${cabecalhoAtual}
+  </div>
+
+  <div class="${classeColunas}">
+    ${conteudo}
+  </div>
 </body>
 </html>
 `;
