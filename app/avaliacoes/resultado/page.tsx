@@ -220,6 +220,14 @@ export default function ResultadoAvaliacaoPage() {
         blocoImagem.style.textAlign = "center";
         blocoImagem.style.margin = "16px 0";
         blocoImagem.style.breakInside = "avoid";
+        blocoImagem.contentEditable = "false";
+        blocoImagem.style.display = "inline-block";
+        blocoImagem.style.resize = "both";
+        blocoImagem.style.overflow = "auto";
+        blocoImagem.style.minWidth = "120px";
+        blocoImagem.style.minHeight = "120px";
+        blocoImagem.style.maxWidth = "100%";
+        blocoImagem.style.cursor = "move";
 
         const elementoImagem =
           document.createElement("img");
@@ -227,12 +235,10 @@ export default function ResultadoAvaliacaoPage() {
         elementoImagem.src = imagem;
         elementoImagem.alt = descricao;
         elementoImagem.style.display = "block";
-        elementoImagem.style.width = "420px";
-        elementoImagem.style.maxWidth = "100%";
-        elementoImagem.style.height = "auto";
+        elementoImagem.style.width = "100%";
+        elementoImagem.style.height = "100%";
+        elementoImagem.style.objectFit = "contain";
         elementoImagem.contentEditable = "false";
-        elementoImagem.style.resize = "both";
-        elementoImagem.style.overflow = "auto";
         elementoImagem.style.cursor = "pointer";
         elementoImagem.tabIndex = 0;
 elementoImagem.addEventListener("click", () => {
@@ -252,6 +258,8 @@ elementoImagem.addEventListener("blur", () => {
           "1px solid #cbd5e1";
         elementoImagem.style.borderRadius =
           "8px";
+          elementoImagem.draggable = false;
+elementoImagem.style.pointerEvents = "none";
 
         blocoImagem.appendChild(
           elementoImagem
