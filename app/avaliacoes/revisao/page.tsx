@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
+import { supabase } from "../../lib/supabase";
 
 type TipoQuestao =
   | "multipla_escolha"
@@ -282,6 +283,9 @@ export default function RevisaoAvaliacaoPage() {
     useState<string | null>(null);
 
   const [erro, setErro] = useState("");
+
+  const [salvando, setSalvando] =
+    useState(false);
 
   useEffect(() => {
     const avaliacaoSalva =
@@ -820,8 +824,8 @@ export default function RevisaoAvaliacaoPage() {
     }
   }
 
-  function montarAvaliacao() {
-    if (!avaliacao) return;
+  async function montarAvaliacao() {
+    if (!avaliacao || salvando) return;
 
     if (avaliacao.questoes.length === 0) {
       setErro(
@@ -830,72 +834,175 @@ export default function RevisaoAvaliacaoPage() {
       return;
     }
 
-    const habilidadesHtml =
-  avaliacao.habilidadesBncc?.length > 0
-    ? `
-      <div style="margin-bottom:18px;">
-        <p style="margin:0 0 6px;font-weight:700;">
-          HABILIDADES DA BNCC
-        </p>
+    setErro("");
+    setSalvando(true);
 
-        <p style="margin:0;line-height:1.6;">
-          ${avaliacao.habilidadesBncc
-            .map((habilidade) =>
-              escaparHtml(habilidade)
+    try {
+      const habilidadesHtml =
+        avaliacao.habilidadesBncc?.length > 0
+          ? `
+            <div style="margin-bottom:18px;">
+              <p style="margin:0 0 6px;font-weight:700;">
+                HABILIDADES DA BNCC
+              </p>
+
+              <p style="margin:0;line-height:1.6;">
+                ${avaliacao.habilidadesBncc
+                  .map((habilidade) =>
+                    escaparHtml(habilidade)
+                  )
+                  .join("; ")}
+              </p>
+            </div>
+          `
+          : "";
+
+      const textoApoioHtml =
+        avaliacao.textoApoio?.trim()
+          ? `
+            <div style="margin-bottom:20px;">
+              <p style="margin:0 0 6px;font-weight:700;">
+                TEXTO DE APOIO
+              </p>
+
+              <p style="margin:0;line-height:1.7;text-align:justify;white-space:pre-line;">
+                ${escaparHtml(
+                  avaliacao.textoApoio
+                )}
+              </p>
+            </div>
+          `
+          : "";
+
+      const html = `
+        <div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:24px;">
+          ${escaparHtml(avaliacao.titulo)}
+        </div>
+
+        ${habilidadesHtml}
+
+        ${textoApoioHtml}
+
+        ${avaliacao.questoes
+          .map((questao, indice) =>
+            montarHtmlQuestao(
+              questao,
+              indice + 1
             )
-            .join("; ")}
-        </p>
-      </div>
-    `
-    : "";
-
-const textoApoioHtml =
-  avaliacao.textoApoio?.trim()
-    ? `
-      <div style="margin-bottom:20px;">
-        <p style="margin:0 0 6px;font-weight:700;">
-          TEXTO DE APOIO
-        </p>
-
-        <p style="margin:0;line-height:1.7;text-align:justify;white-space:pre-line;">
-          ${escaparHtml(
-            avaliacao.textoApoio
-          )}
-        </p>
-      </div>
-    `
-    : "";
-
-const html = `
-  <div style="text-align:center;font-size:18px;font-weight:700;margin-bottom:24px;">
-    ${escaparHtml(avaliacao.titulo)}
-  </div>
-
-  ${habilidadesHtml}
-
-  ${textoApoioHtml}
-
-  ${avaliacao.questoes
-        .map((questao, indice) =>
-          montarHtmlQuestao(
-            questao,
-            indice + 1
           )
-        )
-        .join("")}
-    `;
+          .join("")}
+      `;
 
-    localStorage.setItem(
-      "provaGeradaEditada",
-      html
-    );
+      const {
+        data: { user },
+        error: erroUsuario,
+      } = await supabase.auth.getUser();
 
-    localStorage.setItem(
-      "provaGerada",
-      avaliacao.titulo
-    );
+      if (erroUsuario) {
+        throw new Error(
+          "Não foi possível identificar o professor conectado."
+        );
+      }
 
-    router.push("/avaliacoes/resultado");
+      if (!user) {
+        throw new Error(
+          "Entre na sua conta para salvar a avaliação."
+        );
+      }
+
+      const configuracaoSalva =
+        localStorage.getItem(
+          "configuracaoAvaliacao"
+        );
+
+      let configuracao: Record<
+        string,
+        unknown
+      > = {};
+
+      if (configuracaoSalva) {
+        try {
+          configuracao = JSON.parse(
+            configuracaoSalva
+          );
+        } catch {
+          configuracao = {};
+        }
+      }
+
+      const {
+        data: avaliacaoSalva,
+        error: erroSalvar,
+      } = await supabase
+        .from("avaliacoes")
+        .insert({
+          usuario_id: user.id,
+          titulo:
+            avaliacao.titulo ||
+            `Avaliação de ${avaliacao.disciplina}`,
+          etapa_ensino:
+            avaliacao.etapaEnsino,
+          serie: avaliacao.serie,
+          disciplina:
+            avaliacao.disciplina,
+          conteudos:
+            typeof configuracao.conteudos ===
+            "string"
+              ? configuracao.conteudos
+              : "",
+          avaliacao_completa: html,
+          configuracao: {
+            ...configuracao,
+            avaliacaoJson: avaliacao,
+          },
+          status: "finalizada",
+        })
+        .select("id")
+        .single();
+
+      if (erroSalvar) {
+        console.error(
+          "Erro ao salvar avaliação:",
+          erroSalvar
+        );
+
+        throw new Error(
+          "A avaliação foi montada, mas não foi possível salvá-la."
+        );
+      }
+
+      localStorage.setItem(
+        "provaGeradaEditada",
+        html
+      );
+
+      localStorage.setItem(
+        "provaGerada",
+        avaliacao.titulo
+      );
+
+      localStorage.setItem(
+        "avaliacaoId",
+        avaliacaoSalva.id
+      );
+
+      router.push(
+        `/avaliacoes/resultado?id=${avaliacaoSalva.id}`
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao montar avaliação:",
+        error
+      );
+
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível montar e salvar a avaliação."
+      );
+    } finally {
+      setSalvando(false);
+    }
   }
 
   if (carregando) {
@@ -1456,10 +1563,23 @@ const html = `
           <button
             type="button"
             onClick={montarAvaliacao}
-            className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm hover:bg-green-800"
+            disabled={salvando}
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-7 py-3 text-sm font-extrabold text-white shadow-sm hover:bg-green-800 disabled:cursor-not-allowed disabled:bg-green-400"
           >
-            <Sparkles size={18} />
-            Montar avaliação
+            {salvando ? (
+              <>
+                <Loader2
+                  size={18}
+                  className="animate-spin"
+                />
+                Salvando avaliação...
+              </>
+            ) : (
+              <>
+                <Sparkles size={18} />
+                Montar avaliação
+              </>
+            )}
           </button>
         </div>
       </section>
