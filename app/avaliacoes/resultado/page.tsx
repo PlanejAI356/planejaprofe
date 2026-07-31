@@ -37,7 +37,6 @@ import { saveAs } from "file-saver";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import htmlToPdfmake from "html-to-pdfmake";
-import HTMLtoDOCX from "html-to-docx";
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
@@ -482,111 +481,102 @@ elementoImagem.addEventListener("blur", () => {
     .download("avaliacao.pdf");
 }
   async function baixarWord() {
-  const htmlAvaliacao =
-    editorRef.current?.innerHTML || "";
+    const textoAvaliacao =
+      editorRef.current?.innerText || "";
 
-  const htmlCabecalho =
-    cabecalhoRef.current?.innerHTML || "";
+    const textoCabecalho =
+      cabecalhoRef.current?.innerText || "";
 
-  if (!htmlAvaliacao.trim()) {
-    alert("Nenhuma avaliação foi encontrada.");
-    return;
-  }
-
-  const classeColunas = duasColunas
-    ? "duas-colunas"
-    : "uma-coluna";
-
-  const htmlCompleto = `
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
-
-        <style>
-          @page {
-            size: A4;
-            margin: 1.5cm;
-          }
-
-          body {
-            font-family: Arial, sans-serif;
-            font-size: 11pt;
-            line-height: 1.4;
-            color: #000000;
-          }
-
-          .cabecalho {
-            margin-bottom: 18px;
-          }
-
-          .separador {
-            border-top: 1px solid #b7b7b7;
-            margin-bottom: 18px;
-          }
-
-          .uma-coluna {
-            column-count: 1;
-          }
-
-          .duas-colunas {
-            column-count: 2;
-            column-gap: 28px;
-            column-rule: 1px solid #cbd5e1;
-          }
-
-          img {
-            display: block;
-            width: 120px;
-            max-width: 120px;
-            height: auto;
-            max-height: 150px;
-            margin: 8px auto;
-            object-fit: contain;
-          }
-
-          p,
-          table,
-          img {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-        </style>
-      </head>
-
-      <body>
-        <div class="cabecalho">
-          ${htmlCabecalho}
-        </div>
-
-        <div class="separador"></div>
-
-        <div class="${classeColunas}">
-          ${htmlAvaliacao}
-        </div>
-      </body>
-    </html>
-  `;
-
-  const arquivo = await HTMLtoDOCX(
-    htmlCompleto,
-    null,
-    {
-      table: {
-        row: {
-          cantSplit: true,
-        },
-      },
-      footer: false,
-      pageNumber: false,
+    if (!textoAvaliacao.trim()) {
+      alert("Nenhuma avaliação foi encontrada.");
+      return;
     }
-  );
 
-  saveAs(
-    arquivo as Blob,
-    "avaliacao.docx"
-  );
-}
+    try {
+      const paragrafosCabecalho = textoCabecalho
+        .split("\n")
+        .filter((linha) => linha.trim())
+        .map(
+          (linha) =>
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: linha,
+                  size: 22,
+                }),
+              ],
+              spacing: {
+                after: 100,
+              },
+            })
+        );
+
+      const paragrafosAvaliacao = textoAvaliacao
+        .split("\n")
+        .map(
+          (linha) =>
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: linha || " ",
+                  size: 22,
+                }),
+              ],
+              spacing: {
+                after: 100,
+              },
+            })
+        );
+
+      const documento = new Document({
+        sections: [
+          {
+            properties: {},
+            children: [
+              ...paragrafosCabecalho,
+
+              new Paragraph({
+                children: [
+                  new TextRun({
+                    text: "",
+                  }),
+                ],
+                border: {
+                  bottom: {
+                    color: "B7B7B7",
+                    size: 6,
+                    style: "single",
+                  },
+                },
+                spacing: {
+                  after: 240,
+                },
+              }),
+
+              ...paragrafosAvaliacao,
+            ],
+          },
+        ],
+      });
+
+      const arquivo =
+        await Packer.toBlob(documento);
+
+      saveAs(
+        arquivo,
+        "avaliacao.docx"
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao gerar Word:",
+        error
+      );
+
+      alert(
+        "Não foi possível gerar o arquivo Word."
+      );
+    }
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
