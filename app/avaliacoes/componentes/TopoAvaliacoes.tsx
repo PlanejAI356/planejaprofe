@@ -126,7 +126,7 @@ export default function TopoAvaliacoes({
             onClick={() =>
               router.push(destinoVoltar)
             }
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+           className="flex cursor-pointer shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
           >
             <ArrowLeft size={19} />
 
@@ -135,7 +135,7 @@ export default function TopoAvaliacoes({
 
           <Link
             href="/avaliacoes/minhas-atividades"
-            className="flex shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
+            className="flex cursor-pointer shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
           >
             <ClipboardList size={19} />
 

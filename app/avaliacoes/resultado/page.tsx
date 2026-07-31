@@ -500,7 +500,7 @@ elementoImagem.addEventListener("blur", () => {
                   onClick={() =>
                     executarComando("undo")
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Undo2 size={18} />
                 </button>
@@ -511,7 +511,7 @@ elementoImagem.addEventListener("blur", () => {
                   onClick={() =>
                     executarComando("redo")
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Redo2 size={18} />
                 </button>
@@ -524,7 +524,7 @@ elementoImagem.addEventListener("blur", () => {
                   onClick={() =>
                     executarComando("bold")
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Bold size={18} />
                 </button>
@@ -535,7 +535,7 @@ elementoImagem.addEventListener("blur", () => {
                   onClick={() =>
                     executarComando("italic")
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Italic size={18} />
                 </button>
@@ -548,7 +548,7 @@ elementoImagem.addEventListener("blur", () => {
                       "underline"
                     )
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <Underline size={18} />
                 </button>
@@ -563,7 +563,7 @@ elementoImagem.addEventListener("blur", () => {
                       "justifyLeft"
                     )
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignLeft size={18} />
                 </button>
@@ -576,7 +576,7 @@ elementoImagem.addEventListener("blur", () => {
                       "justifyCenter"
                     )
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignCenter size={18} />
                 </button>
@@ -589,7 +589,7 @@ elementoImagem.addEventListener("blur", () => {
                       "justifyRight"
                     )
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignRight size={18} />
                 </button>
@@ -602,7 +602,7 @@ elementoImagem.addEventListener("blur", () => {
                       "justifyFull"
                     )
                   }
-                  className="rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
                 >
                   <AlignJustify size={18} />
                 </button>
@@ -618,7 +618,7 @@ elementoImagem.addEventListener("blur", () => {
                       evento.target.value
                     )
                   }
-                  className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
+                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
                 >
                   <option value="2">
                     Pequena
@@ -642,7 +642,7 @@ elementoImagem.addEventListener("blur", () => {
                       : "Usar duas colunas"
                   }
                   onClick={alternarColunas}
-                  className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition ${
+                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition ${
                     duasColunas
                       ? "border-green-700 bg-green-50 text-green-800"
                       : "border-slate-200 text-slate-700 hover:bg-slate-100"
@@ -666,7 +666,7 @@ elementoImagem.addEventListener("blur", () => {
                   onClick={
                     salvarAlteracoesProva
                   }
-                  className="ml-auto flex items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-green-800"
+                  className="ml-auto flex cursor-pointer items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-green-800"
                 >
                   <Save size={18} />
                   Salvar alterações
@@ -722,7 +722,7 @@ elementoImagem.addEventListener("blur", () => {
                       <button
                         type="button"
                         onClick={salvarCabecalho}
-                        className="flex items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
+                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
                       >
                         <Save size={16} />
                         Salvar cabeçalho
@@ -775,7 +775,7 @@ elementoImagem.addEventListener("blur", () => {
                 <button
                   type="button"
                   onClick={baixarWord}
-                  className="rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                  className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
                 >
                   Baixar Word
                 </button>
@@ -783,14 +783,14 @@ elementoImagem.addEventListener("blur", () => {
                 <button
                   type="button"
                   onClick={baixarPDF}
-                  className="rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-green-800"
+                  className="cursor-pointer rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-green-800"
                 >
                   Baixar PDF
                 </button>
 
                 <button
                   type="button"
-                  className="rounded-xl border border-green-700 px-5 py-3 text-sm font-extrabold text-green-800 transition hover:bg-green-50"
+                  className="cursor-pointer rounded-xl border border-green-700 px-5 py-3 text-sm font-extrabold text-green-800 transition hover:bg-green-50"
                 >
                   Gerar versão do professor
                 </button>
