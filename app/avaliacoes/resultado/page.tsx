@@ -26,6 +26,18 @@ import {
 } from "lucide-react";
 
 import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+} from "docx";
+
+import { saveAs } from "file-saver";
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+
+(pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 function textoParaHtml(texto: string) {
   return texto
@@ -381,253 +393,180 @@ elementoImagem.addEventListener("blur", () => {
   }
 
   function baixarPDF() {
-  const conteudo =
-    editorRef.current?.innerHTML || "";
+  const textoAvaliacao =
+    editorRef.current?.innerText || "";
 
-  const cabecalhoAtual =
-    cabecalhoRef.current?.innerHTML || "";
+  const textoCabecalho =
+    cabecalhoRef.current?.innerText || "";
 
-  if (!conteudo) {
+  if (!textoAvaliacao.trim()) {
     alert("Nenhuma avaliação foi encontrada.");
     return;
   }
 
-  const janelaImpressao = window.open(
-    "",
-    "_blank"
-  );
+  const linhasCabecalho = textoCabecalho
+    .split("\n")
+    .filter((linha) => linha.trim())
+    .map((linha) => ({
+      text: linha,
+      fontSize: 11,
+      margin: [0, 0, 0, 4],
+    }));
 
-  if (!janelaImpressao) {
-    alert(
-      "Não foi possível abrir o PDF. Permita pop-ups no navegador."
+  const linhasAvaliacao = textoAvaliacao
+    .split("\n")
+    .map((linha) => ({
+      text: linha || " ",
+      fontSize: 11,
+      lineHeight: 1.35,
+      margin: [0, 0, 0, 5],
+    }));
+
+  let conteudoPrincipal: any[];
+
+  if (duasColunas) {
+    const metade = Math.ceil(
+      linhasAvaliacao.length / 2
     );
-    return;
+
+    conteudoPrincipal = [
+      {
+        columns: [
+          {
+            width: "*",
+            stack: linhasAvaliacao.slice(
+              0,
+              metade
+            ),
+          },
+          {
+            width: "*",
+            stack: linhasAvaliacao.slice(
+              metade
+            ),
+          },
+        ],
+        columnGap: 25,
+      },
+    ];
+  } else {
+    conteudoPrincipal = linhasAvaliacao;
   }
 
-  const classeColunas = duasColunas
-    ? "conteudo duas-colunas"
-    : "conteudo uma-coluna";
+  const documento: any = {
+    pageSize: "A4",
 
-  janelaImpressao.document.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
+    pageMargins: [42, 42, 42, 42],
 
-        <title>Avaliação</title>
+    defaultStyle: {
+      fontSize: 11,
+    },
 
-        <style>
-          @page {
-            size: A4;
-            margin: 1.5cm;
-          }
+    content: [
+      ...linhasCabecalho,
 
-          * {
-            box-sizing: border-box;
-          }
+      {
+        canvas: [
+          {
+            type: "line",
+            x1: 0,
+            y1: 0,
+            x2: 510,
+            y2: 0,
+            lineWidth: 1,
+            lineColor: "#B7B7B7",
+          },
+        ],
+        margin: [0, 8, 0, 18],
+      },
 
-          body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            font-size: 12px;
-            line-height: 1.5;
-            color: #000;
-          }
+      ...conteudoPrincipal,
+    ],
+  };
 
-          .cabecalho {
-            width: 100%;
-            margin-bottom: 20px;
-          }
-
-          .conteudo {
-            width: 100%;
-            overflow-wrap: break-word;
-          }
-
-          .uma-coluna {
-            column-count: 1;
-          }
-
-          .duas-colunas {
-            column-count: 2;
-            column-gap: 32px;
-            column-rule: 1px solid #cbd5e1;
-          }
-
-          .conteudo img {
-            display: block !important;
-            width: 100px !important;
-            height: auto !important;
-            max-width: 140px !important;
-            max-height: 160px !important;
-            object-fit: contain !important;
-            margin: 10px auto !important;
-            break-inside: avoid;
-          }
-
-          .conteudo [data-imagem-avaliacao="true"] {
-            display: block !important;
-            width: 100% !important;
-            max-width: 140px !important;
-            height: auto !important;
-            margin: 12px 0 !important;
-            overflow: hidden !important;
-            break-inside: avoid;
-          }
-
-          p,
-          div,
-          table,
-          img {
-            break-inside: avoid;
-          }
-
-          @media print {
-            body {
-              print-color-adjust: exact;
-              -webkit-print-color-adjust: exact;
-            }
-          }
-        </style>
-      </head>
-
-      <body>
-        <div class="cabecalho">
-          ${cabecalhoAtual}
-        </div>
-
-        <div class="${classeColunas}">
-          ${conteudo}
-        </div>
-
-        <script>
-          window.onload = function () {
-            window.print();
-          };
-        </script>
-      </body>
-    </html>
-  `);
-
-  janelaImpressao.document.close();
+  pdfMake
+    .createPdf(documento)
+    .download("avaliacao.pdf");
 }
-  function baixarWord() {
-  const conteudo =
-    editorRef.current?.innerHTML || "";
+  async function baixarWord() {
+  const textoAvaliacao =
+    editorRef.current?.innerText || "";
 
-  const cabecalhoAtual =
-    cabecalhoRef.current?.innerHTML || "";
+  const textoCabecalho =
+    cabecalhoRef.current?.innerText || "";
 
-  if (!conteudo) {
+  if (!textoAvaliacao.trim()) {
     alert("Nenhuma avaliação foi encontrada.");
     return;
   }
 
-  const classeColunas = duasColunas
-    ? "conteudo duas-colunas"
-    : "conteudo uma-coluna";
+  const paragrafosCabecalho = textoCabecalho
+    .split("\n")
+    .filter((linha) => linha.trim())
+    .map(
+      (linha) =>
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: linha,
+              size: 22,
+            }),
+          ],
+          spacing: {
+            after: 120,
+          },
+        })
+    );
 
-  const documento = `
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
+  const paragrafosAvaliacao = textoAvaliacao
+    .split("\n")
+    .map(
+      (linha) =>
+        new Paragraph({
+          children: [
+            new TextRun({
+              text: linha,
+              size: 22,
+            }),
+          ],
+          spacing: {
+            after: 100,
+          },
+        })
+    );
 
-  <style>
-    @page {
-      size: A4;
-      margin: 1.5cm;
-    }
+  const documento = new Document({
+    sections: [
+      {
+        properties: {},
+        children: [
+          ...paragrafosCabecalho,
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: "",
+              }),
+            ],
+            border: {
+              bottom: {
+                color: "B7B7B7",
+                size: 6,
+                style: "single",
+              },
+            },
+            spacing: {
+              after: 240,
+            },
+          }),
+          ...paragrafosAvaliacao,
+        ],
+      },
+    ],
+  });
 
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      font-size: 12pt;
-      line-height: 1.5;
-      color: #000000;
-    }
+  const arquivo = await Packer.toBlob(documento);
 
-    .cabecalho {
-      width: 100%;
-      margin-bottom: 20px;
-    }
-
-    .conteudo {
-      width: 100%;
-      overflow-wrap: break-word;
-    }
-
-    .uma-coluna {
-      column-count: 1;
-    }
-
-    .duas-colunas {
-      column-count: 2;
-      column-gap: 30px;
-      column-rule: 1px solid #cccccc;
-    }
-
-    .conteudo img {
-      display: block;
-      width: 220px;
-      max-width: 100%;
-      height: auto;
-      margin: 10px auto;
-    }
-
-    .conteudo [data-imagem-avaliacao="true"] {
-      display: block;
-      width: 100%;
-      max-width: 100%;
-      height: auto;
-      overflow: hidden;
-      break-inside: avoid;
-      page-break-inside: avoid;
-    }
-
-    .conteudo p,
-    .conteudo div,
-    .conteudo table,
-    .conteudo img {
-      break-inside: avoid;
-      page-break-inside: avoid;
-    }
-  </style>
-</head>
-
-<body>
-  <div class="cabecalho">
-    ${cabecalhoAtual}
-  </div>
-
-  <div class="${classeColunas}">
-    ${conteudo}
-  </div>
-</body>
-</html>
-`;
-
-  const blob = new Blob(
-    ["\ufeff", documento],
-    {
-      type: "application/msword",
-    }
-  );
-
-  const url =
-    URL.createObjectURL(blob);
-
-  const link =
-    document.createElement("a");
-
-  link.href = url;
-  link.download = "avaliacao.doc";
-
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
+  saveAs(arquivo, "avaliacao.docx");
 }
 
   return (
