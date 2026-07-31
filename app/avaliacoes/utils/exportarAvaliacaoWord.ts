@@ -318,27 +318,25 @@ function criarParagrafoTexto(
     elementoEhLinhaResposta(elemento);
 
   if (ehLinhaResposta) {
-    return new Paragraph({
-      spacing: {
-        before: 20,
-        after: 20,
-      },
-      border: {
-        bottom: {
+  return new Paragraph({
+    spacing: {
+      before: 10,
+      after: 10,
+      line: 240,
+    },
+    children: [
+      new TextRun({
+        text: "\u00A0".repeat(46),
+        size: 22,
+        font: "Arial",
+        underline: {
+          type: UnderlineType.SINGLE,
           color: "475569",
-          size: 6,
-          style: BorderStyle.SINGLE,
         },
-      },
-      children: [
-        new TextRun({
-          text: " ",
-          size: 22,
-          font: "Arial",
-        }),
-      ],
-    });
-  }
+      }),
+    ],
+  });
+}
 
   return new Paragraph({
     alignment: opcoes.titulo

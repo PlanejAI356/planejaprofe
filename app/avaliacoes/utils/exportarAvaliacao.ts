@@ -23,6 +23,110 @@ function limparNomeArquivo(nome: string) {
   return nomeLimpo || "avaliacao";
 }
 
+function escaparHtml(texto: string) {
+  return texto
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+function prepararDocumentoClonado(
+  documentoClonado: HTMLElement
+) {
+  documentoClonado.removeAttribute("id");
+
+  documentoClonado
+    .querySelectorAll(
+      [
+        "button",
+        "[data-nao-exportar]",
+        ".nao-exportar",
+      ].join(",")
+    )
+    .forEach((item) => item.remove());
+
+  const cabecalho =
+    documentoClonado.querySelector<HTMLElement>(
+      "[data-placeholder]"
+    );
+
+  if (cabecalho) {
+    cabecalho.classList.add(
+      "cabecalho-avaliacao-exportacao"
+    );
+
+    cabecalho.removeAttribute(
+      "data-placeholder"
+    );
+
+    cabecalho.removeAttribute(
+      "contenteditable"
+    );
+
+    if (!cabecalho.innerText.trim()) {
+      cabecalho.innerHTML = "";
+    }
+  }
+
+  const editaveis = Array.from(
+    documentoClonado.querySelectorAll<HTMLElement>(
+      "[contenteditable='true']"
+    )
+  );
+
+  const conteudoAvaliacao =
+    editaveis.find(
+      (item) => item !== cabecalho
+    ) || null;
+
+  if (conteudoAvaliacao) {
+    conteudoAvaliacao.classList.add(
+      "conteudo-avaliacao-exportacao"
+    );
+  }
+
+  documentoClonado
+    .querySelectorAll<HTMLElement>(
+      "[contenteditable='true']"
+    )
+    .forEach((item) => {
+      item.removeAttribute(
+        "contenteditable"
+      );
+    });
+
+  documentoClonado
+    .querySelectorAll<HTMLParagraphElement>(
+      "p"
+    )
+    .forEach((paragrafo) => {
+      const texto = paragrafo.innerText
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+      const ehMensagemCabecalho =
+        texto.includes(
+          "copie o cabeçalho usado pela escola"
+        ) ||
+        texto.includes(
+          "cabeçalho salvo. ele aparecerá"
+        );
+
+      if (ehMensagemCabecalho) {
+        const bloco =
+          paragrafo.parentElement;
+
+        if (bloco) {
+          bloco.remove();
+        } else {
+          paragrafo.remove();
+        }
+      }
+    });
+}
+
 export async function exportarAvaliacao(
   elemento: HTMLElement,
   opcoes: OpcoesExportacao = {}
@@ -31,7 +135,8 @@ export async function exportarAvaliacao(
     opcoes.tituloArquivo || "avaliacao"
   );
 
-  const iframe = document.createElement("iframe");
+  const iframe =
+    document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -71,27 +176,9 @@ export async function exportarAvaliacao(
   const documentoClonado =
     elemento.cloneNode(true) as HTMLElement;
 
-  documentoClonado.removeAttribute("id");
-
-  documentoClonado
-    .querySelectorAll(
-      [
-        "button",
-        "[data-nao-exportar]",
-        ".nao-exportar",
-      ].join(",")
-    )
-    .forEach((item) => item.remove());
-
-  documentoClonado
-    .querySelectorAll<HTMLElement>(
-      "[contenteditable='true']"
-    )
-    .forEach((item) => {
-      item.removeAttribute(
-        "contenteditable"
-      );
-    });
+  prepararDocumentoClonado(
+    documentoClonado
+  );
 
   documentoImpressao.open();
 
@@ -107,14 +194,16 @@ export async function exportarAvaliacao(
           content="width=device-width, initial-scale=1"
         />
 
-        <title>${tituloArquivo}</title>
+        <title>${escaparHtml(
+          tituloArquivo
+        )}</title>
 
         ${estilosPagina}
 
         <style>
           @page {
             size: A4 portrait;
-            margin: 10mm;
+            margin: 7mm;
           }
 
           * {
@@ -135,6 +224,8 @@ export async function exportarAvaliacao(
               Arial,
               Helvetica,
               sans-serif;
+            font-size: 10.5pt;
+            line-height: 1.24;
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
           }
@@ -152,9 +243,96 @@ export async function exportarAvaliacao(
             background: #ffffff !important;
           }
 
-          #documento-exportacao img {
-            max-width: 100% !important;
+          .cabecalho-avaliacao-exportacao {
+            display: block !important;
+            width: 100% !important;
+            min-height: 78px !important;
+            margin: 0 0 7px !important;
+            padding: 6px 8px !important;
+            border: 1px solid #64748b !important;
+            border-radius: 3px !important;
+            background: #ffffff !important;
+            text-align: center !important;
+            overflow: hidden !important;
+            box-shadow: none !important;
+          }
+
+          .conteudo-avaliacao-exportacao {
+            min-height: auto !important;
+            font-size: 10.5pt !important;
+            line-height: 1.24 !important;
+            color: #000000 !important;
+          }
+
+          .conteudo-avaliacao-exportacao > div {
+            margin-top: 0 !important;
+            margin-bottom: 6px !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .conteudo-avaliacao-exportacao > div:first-child {
+            margin: 4px 0 8px !important;
+            text-align: center !important;
+            font-size: 14pt !important;
+            line-height: 1.15 !important;
+            font-weight: 700 !important;
+          }
+
+          .conteudo-avaliacao-exportacao p {
+            margin-top: 0 !important;
+            margin-bottom: 2px !important;
+            line-height: 1.24 !important;
+          }
+
+          .conteudo-avaliacao-exportacao strong {
+            font-weight: 700 !important;
+          }
+
+          .conteudo-avaliacao-exportacao img {
+            display: block !important;
+            width: auto !important;
+            max-width: 290px !important;
+            max-height: 230px !important;
             height: auto !important;
+            margin: 3px auto 4px !important;
+            object-fit: contain !important;
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          .conteudo-avaliacao-exportacao.columns-2 {
+            column-gap: 14px !important;
+            column-rule: 1px solid #cbd5e1 !important;
+          }
+
+          .conteudo-avaliacao-exportacao.columns-2 img {
+            max-width: 210px !important;
+            max-height: 190px !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="height:28px"] {
+            height: 20px !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="margin-bottom:20px"] {
+            margin-bottom: 6px !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="margin:16px 0"] {
+            margin: 3px 0 4px !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="margin:8px 0"] {
+            margin: 3px 0 !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="padding:8px"] {
+            padding: 5px !important;
+          }
+
+          .conteudo-avaliacao-exportacao div[style*="gap:24px"] {
+            gap: 12px !important;
           }
 
           #documento-exportacao button,
@@ -165,12 +343,7 @@ export async function exportarAvaliacao(
 
           .questao-avaliacao,
           [data-questao-avaliacao] {
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          .cabecalho-avaliacao,
-          [data-cabecalho-avaliacao] {
+            margin-bottom: 6px !important;
             break-inside: avoid;
             page-break-inside: avoid;
           }
@@ -184,7 +357,9 @@ export async function exportarAvaliacao(
           }
 
           @media print {
+            html,
             body {
+              width: 100% !important;
               background: #ffffff !important;
             }
 
