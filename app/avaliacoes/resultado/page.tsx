@@ -26,19 +26,8 @@ import {
 } from "lucide-react";
 
 import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
-import {
-  Document,
-  Packer,
-  Paragraph,
-  TextRun,
-} from "docx";
-
-import { saveAs } from "file-saver";
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-import htmlToPdfmake from "html-to-pdfmake";
-
-(pdfMake as any).vfs = (pdfFonts as any).vfs;
+import { exportarAvaliacao } from "../utils/exportarAvaliacao";
+import { exportarAvaliacaoWord } from "../utils/exportarAvaliacaoWord";
 
 function textoParaHtml(texto: string) {
   return texto
@@ -88,6 +77,8 @@ export default function ResultadoAvaliacaoPage() {
 
   const editorRef = useRef<HTMLDivElement>(null);
   const cabecalhoRef =
+    useRef<HTMLDivElement>(null);
+  const documentoRef =
     useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -393,191 +384,90 @@ elementoImagem.addEventListener("blur", () => {
     }
   }
 
-  function baixarPDF() {
-  const htmlAvaliacao =
-    editorRef.current?.innerHTML || "";
+  async function baixarPDF() {
+    const documento = documentoRef.current;
 
-  const htmlCabecalho =
-    cabecalhoRef.current?.innerHTML || "";
-
-  if (!htmlAvaliacao.trim()) {
-    alert("Nenhuma avaliação foi encontrada.");
-    return;
-  }
-
-  const conteudoCabecalho = htmlToPdfmake(
-    htmlCabecalho,
-    {
-      window,
+    if (!documento) {
+      alert(
+        "Não foi possível localizar a avaliação."
+      );
+      return;
     }
-  );
 
-  const conteudoAvaliacao = htmlToPdfmake(
-    htmlAvaliacao,
-    {
-      window,
-    }
-  );
-
-  const documento: any = {
-    pageSize: "A4",
-
-    pageMargins: [42, 42, 42, 42],
-
-    defaultStyle: {
-      fontSize: 11,
-      lineHeight: 1.3,
-    },
-
-    content: [
-      {
-        stack: Array.isArray(conteudoCabecalho)
-          ? conteudoCabecalho
-          : [conteudoCabecalho],
-        margin: [0, 0, 0, 14],
-      },
-
-      {
-        canvas: [
-          {
-            type: "line",
-            x1: 0,
-            y1: 0,
-            x2: 510,
-            y2: 0,
-            lineWidth: 1,
-            lineColor: "#B7B7B7",
-          },
-        ],
-        margin: [0, 0, 0, 18],
-      },
-
-      duasColunas
-        ? {
-            columns: [
-              {
-                width: "*",
-                stack: Array.isArray(
-                  conteudoAvaliacao
-                )
-                  ? conteudoAvaliacao
-                  : [conteudoAvaliacao],
-              },
-            ],
-            columnGap: 25,
-          }
-        : {
-            stack: Array.isArray(
-              conteudoAvaliacao
-            )
-              ? conteudoAvaliacao
-              : [conteudoAvaliacao],
-          },
-    ],
-  };
-
-  pdfMake
-    .createPdf(documento)
-    .download("avaliacao.pdf");
-}
-  async function baixarWord() {
     const textoAvaliacao =
-      editorRef.current?.innerText || "";
+      editorRef.current?.innerText.trim() || "";
 
-    const textoCabecalho =
-      cabecalhoRef.current?.innerText || "";
-
-    if (!textoAvaliacao.trim()) {
-      alert("Nenhuma avaliação foi encontrada.");
+    if (!textoAvaliacao) {
+      alert(
+        "Nenhuma avaliação foi encontrada."
+      );
       return;
     }
 
     try {
-      const paragrafosCabecalho = textoCabecalho
-        .split("\n")
-        .filter((linha) => linha.trim())
-        .map(
-          (linha) =>
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: linha,
-                  size: 22,
-                }),
-              ],
-              spacing: {
-                after: 100,
-              },
-            })
-        );
+      salvarConteudoAtual();
 
-      const paragrafosAvaliacao = textoAvaliacao
-        .split("\n")
-        .map(
-          (linha) =>
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: linha || " ",
-                  size: 22,
-                }),
-              ],
-              spacing: {
-                after: 100,
-              },
-            })
-        );
-
-      const documento = new Document({
-        sections: [
-          {
-            properties: {},
-            children: [
-              ...paragrafosCabecalho,
-
-              new Paragraph({
-                children: [
-                  new TextRun({
-                    text: "",
-                  }),
-                ],
-                border: {
-                  bottom: {
-                    color: "B7B7B7",
-                    size: 6,
-                    style: "single",
-                  },
-                },
-                spacing: {
-                  after: 240,
-                },
-              }),
-
-              ...paragrafosAvaliacao,
-            ],
-          },
-        ],
-      });
-
-      const arquivo =
-        await Packer.toBlob(documento);
-
-      saveAs(
-        arquivo,
-        "avaliacao.docx"
+      await exportarAvaliacao(
+        documento,
+        {
+          tituloArquivo: "avaliacao",
+        }
       );
     } catch (error) {
       console.error(
-        "Erro ao gerar Word:",
+        "Erro ao exportar PDF:",
         error
       );
 
       alert(
-        "Não foi possível gerar o arquivo Word."
+        "Não foi possível preparar o PDF da avaliação."
       );
     }
   }
 
+  async function baixarWord() {
+  const avaliacaoElemento =
+    editorRef.current;
+
+  if (!avaliacaoElemento) {
+    alert(
+      "Não foi possível localizar a avaliação."
+    );
+    return;
+  }
+
+  const textoAvaliacao =
+    avaliacaoElemento.innerText.trim();
+
+  if (!textoAvaliacao) {
+    alert(
+      "Nenhuma avaliação foi encontrada."
+    );
+    return;
+  }
+
+  try {
+    salvarConteudoAtual();
+
+    await exportarAvaliacaoWord(
+      cabecalhoRef.current,
+      avaliacaoElemento,
+      {
+        tituloArquivo: "avaliacao",
+        duasColunas,
+      }
+    );
+  } catch (error) {
+    console.error(
+      "Erro ao gerar Word:",
+      error
+    );
+
+    alert(
+      "Não foi possível gerar o arquivo Word."
+    );
+  }
+}
   return (
     <main className="min-h-screen bg-slate-50">
       <TopoAvaliacoes
@@ -800,7 +690,10 @@ elementoImagem.addEventListener("blur", () => {
                   Carregando avaliação...
                 </div>
               ) : conteudoAluno ? (
-                <div className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-slate-300 bg-white px-8 py-10 shadow-md sm:px-12">
+                <div
+                  ref={documentoRef}
+                  className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-slate-300 bg-white px-8 py-10 shadow-md sm:px-12"
+                >
                   <div className="mb-4">
                     <div
                       ref={cabecalhoRef}
