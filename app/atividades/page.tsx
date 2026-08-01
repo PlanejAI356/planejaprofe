@@ -2,7 +2,6 @@
 
 import {
   ArrowLeft,
-  BookOpen,
   ClipboardList,
   LogOut,
   Sparkles,
@@ -44,7 +43,6 @@ export default function AtividadesPage() {
 
             <button
               type="button"
-              onClick={() => router.push("/atividades/minhas-atividades")}
               className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
               <ClipboardList size={19} />
@@ -66,7 +64,7 @@ export default function AtividadesPage() {
         <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
           <div className="flex items-center gap-4 border-b border-slate-200 pb-5">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <BookOpen size={28} />
+              <ClipboardList size={28} />
             </div>
 
             <div>
@@ -89,10 +87,6 @@ export default function AtividadesPage() {
 
               <select className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500">
                 <option>Selecione</option>
-                <option>Ensino Fundamental - Anos Iniciais</option>
-                <option>Ensino Fundamental - Anos Finais</option>
-                <option>Ensino Médio</option>
-                <option>EJA</option>
               </select>
             </div>
 
@@ -103,11 +97,6 @@ export default function AtividadesPage() {
 
               <select className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500">
                 <option>Selecione</option>
-                <option>1º ano</option>
-                <option>2º ano</option>
-                <option>3º ano</option>
-                <option>4º ano</option>
-                <option>5º ano</option>
               </select>
             </div>
 
@@ -118,23 +107,17 @@ export default function AtividadesPage() {
 
               <select className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500">
                 <option>Selecione</option>
-                <option>Língua Portuguesa</option>
-                <option>Matemática</option>
-                <option>Ciências</option>
-                <option>História</option>
-                <option>Geografia</option>
-                <option>Arte</option>
               </select>
             </div>
 
             <div>
               <label className="mb-2 block font-semibold text-slate-900">
-                Conteúdo da atividade <span className="text-red-500">*</span>
+                Conteúdo <span className="text-red-500">*</span>
               </label>
 
               <input
                 type="text"
-                placeholder="Ex.: Leitura e interpretação de texto"
+                placeholder="Ex.: Sistema Solar"
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
               />
             </div>
@@ -151,7 +134,7 @@ export default function AtividadesPage() {
 
               <textarea
                 maxLength={500}
-                placeholder="Ex.: Leitura de textos curtos, compreensão de informações explícitas e identificação de palavras."
+                placeholder="Ex.: Os alunos já realizaram leitura de textos curtos e identificação de palavras."
                 className="min-h-40 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
               />
             </div>
@@ -166,7 +149,7 @@ export default function AtividadesPage() {
 
               <textarea
                 maxLength={500}
-                placeholder="Ex.: Atividade com temas infantis, linguagem simples, frases curtas e ilustrações coloridas."
+                placeholder="Ex.: Utilize linguagem simples, frases curtas, imagens e atividades variadas."
                 className="min-h-40 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
               />
             </div>
