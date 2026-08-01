@@ -649,6 +649,25 @@ export default function AtividadesPage() {
                   <button
                     type="button"
                     disabled={!tipoSelecionado}
+                    onClick={() => {
+                      const tipo = todosOsTipos.find(
+                        (atividade) => atividade.id === tipoSelecionado
+                      );
+
+                      localStorage.setItem(
+                        "configuracaoAtividade",
+                        JSON.stringify({
+                          etapaEnsino,
+                          serie,
+                          disciplina,
+                          conteudo: conteudo.trim(),
+                          tipoSelecionado,
+                          nomeTipoSelecionado: tipo?.nome || "",
+                        })
+                      );
+
+                      router.push("/atividades/revisao");
+                    }}
                     className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
                   >
                     <Sparkles size={20} />
@@ -667,7 +686,7 @@ export default function AtividadesPage() {
             </>
           )}
 
-          {!dadosPreenchidos && (
+                    {!dadosPreenchidos && (
             <div className="mt-6 rounded-2xl border border-dashed border-emerald-400 bg-emerald-50 p-6 text-center">
               <Sparkles
                 size={28}
