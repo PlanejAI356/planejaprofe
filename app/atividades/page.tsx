@@ -986,7 +986,7 @@ export default function AtividadesPage() {
               </button>
             </div>
           </div>
-        </div>
+        </div>s
       </section>
     </main>
   );

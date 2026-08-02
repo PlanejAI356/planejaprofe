@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { gerarPromptProva } from "../prompts/prova";
 import { gerarPromptProvaJson } from "../prompts/prova-json";
+import { gerarPromptAtividade } from "../prompts/atividade";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
