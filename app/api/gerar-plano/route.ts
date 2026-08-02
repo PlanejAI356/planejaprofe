@@ -954,7 +954,8 @@ FORMATO OBRIGATÓRIO:
           content: comando,
         },
       ],
-      ...(tipo === "prova_json"
+      ...(tipo === "prova_json" ||
+      tipo === "atividade_pedagogica"
         ? {
             response_format: {
               type: "json_object" as const,
