@@ -929,6 +929,10 @@ FORMATO OBRIGATÓRIO:
       comando = gerarPromptProvaJson(body);
     }
 
+    if (tipo === "atividade_pedagogica") {
+      comando = gerarPromptAtividade(body);
+}
+
 
     if (!comando.trim()) {
       return Response.json(

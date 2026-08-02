@@ -1,37 +1,24 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import {
   ArrowLeft,
-  BookOpen,
-  Calculator,
-  Check,
-  CheckCircle2,
+  BookOpenCheck,
   ClipboardList,
-  FileText,
-  Grid3X3,
-  Hash,
-  Image,
-  Link2,
-  ListChecks,
-  ListOrdered,
+  FileStack,
+  Lightbulb,
+  Loader2,
   LogOut,
   PencilLine,
+  RefreshCw,
   Search,
   Sparkles,
-  Table2,
-  Trophy,
-  Type,
+  Target,
 } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-type TipoAtividade = {
-  id: string;
-  nome: string;
-  descricao: string;
-  icone: LucideIcon;
-};
+type ModoCriacao = "folha" | "especifica" | "revisao";
+type FormaConteudo = "tema" | "palavras";
 
 const seriesPorEtapa: Record<string, string[]> = {
   "Educação Infantil": ["Pré I", "Pré II"],
@@ -53,7 +40,12 @@ const seriesPorEtapa: Record<string, string[]> = {
     "2º ano do Ensino Médio",
     "3º ano do Ensino Médio",
   ],
-  EJA: ["EJA - Etapa I", "EJA - Etapa II", "EJA - Etapa III", "EJA - Etapa IV"],
+  EJA: [
+    "EJA - Etapa I",
+    "EJA - Etapa II",
+    "EJA - Etapa III",
+    "EJA - Etapa IV",
+  ],
 };
 
 const disciplinasPorEtapa: Record<string, string[]> = {
@@ -110,256 +102,98 @@ const disciplinasPorEtapa: Record<string, string[]> = {
   ],
 };
 
-const todosOsTipos: TipoAtividade[] = [
-  {
-    id: "ditado-ilustrado",
-    nome: "Ditado ilustrado",
-    descricao: "Observe as figuras e escreva seus nomes.",
-    icone: Image,
-  },
-  {
-    id: "escreva-nome",
-    nome: "Escreva o nome",
-    descricao: "Escreva corretamente o nome das figuras.",
-    icone: PencilLine,
-  },
-  {
-    id: "letra-inicial",
-    nome: "Letra inicial",
-    descricao: "Identifique e escreva a letra inicial.",
-    icone: Type,
-  },
-  {
-    id: "silaba-inicial",
-    nome: "Sílaba inicial",
-    descricao: "Identifique a sílaba inicial das palavras.",
-    icone: BookOpen,
-  },
-  {
-    id: "complete",
-    nome: "Complete",
-    descricao: "Complete palavras, frases ou conceitos.",
-    icone: PencilLine,
-  },
-  {
-    id: "ligue-colunas",
-    nome: "Ligue as colunas",
-    descricao: "Relacione corretamente os itens.",
-    icone: Link2,
-  },
-  {
-    id: "ordem-alfabetica",
-    nome: "Ordem alfabética",
-    descricao: "Organize as palavras em ordem alfabética.",
-    icone: ListOrdered,
-  },
-  {
-    id: "caca-palavras",
-    nome: "Caça-palavras",
-    descricao: "Encontre palavras escondidas no diagrama.",
-    icone: Search,
-  },
-  {
-    id: "cruzadinha",
-    nome: "Cruzadinha",
-    descricao: "Preencha a cruzadinha utilizando as dicas.",
-    icone: Grid3X3,
-  },
-  {
-    id: "interpretacao",
-    nome: "Interpretação de texto",
-    descricao: "Leia o texto e responda às questões.",
-    icone: FileText,
-  },
-  {
-    id: "problemas-ilustrados",
-    nome: "Problemas ilustrados",
-    descricao: "Resolva situações-problema com imagens.",
-    icone: Calculator,
-  },
-  {
-    id: "arme-efetue",
-    nome: "Arme e efetue",
-    descricao: "Organize e resolva as operações.",
-    icone: Hash,
-  },
-  {
-    id: "sequencia-numerica",
-    nome: "Sequência numérica",
-    descricao: "Complete sequências numéricas e lógicas.",
-    icone: ListOrdered,
-  },
-  {
-    id: "antecessor-sucessor",
-    nome: "Antecessor e sucessor",
-    descricao: "Identifique o número anterior e o posterior.",
-    icone: Hash,
-  },
-  {
-    id: "compare-quantidades",
-    nome: "Compare quantidades",
-    descricao: "Compare números utilizando sinais matemáticos.",
-    icone: Calculator,
-  },
-  {
-    id: "tabela-grafico",
-    nome: "Tabela ou gráfico",
-    descricao: "Leia ou complete tabelas e gráficos.",
-    icone: Table2,
-  },
-  {
-    id: "verdadeiro-falso",
-    nome: "Verdadeiro ou falso",
-    descricao: "Analise as afirmativas e marque V ou F.",
-    icone: CheckCircle2,
-  },
-  {
-    id: "multipla-escolha",
-    nome: "Múltipla escolha",
-    descricao: "Escolha a alternativa correta.",
-    icone: ListChecks,
-  },
-  {
-    id: "observe-responda",
-    nome: "Observe e responda",
-    descricao: "Analise a imagem e responda às perguntas.",
-    icone: Image,
-  },
-  {
-    id: "relacione",
-    nome: "Relacione",
-    descricao: "Associe conceitos, imagens ou informações.",
-    icone: Link2,
-  },
+const tiposAtividadeEspecifica = [
+  "Ditado ilustrado",
+  "Caça-palavras",
+  "Cruzadinha",
+  "Escreva o nome das figuras",
+  "Ligue as colunas",
+  "Complete as palavras",
+  "Interpretação de texto",
+  "Produção de texto",
+  "Problemas matemáticos",
+  "Sequência numérica",
+  "Verdadeiro ou falso",
+  "Múltipla escolha",
 ];
 
-function selecionarTipos(ids: string[]) {
-  return ids
-    .map((id) => todosOsTipos.find((tipo) => tipo.id === id))
-    .filter((tipo): tipo is TipoAtividade => Boolean(tipo));
-}
-
-function obterRecomendacoes(
-  etapa: string,
-  serie: string,
-  disciplina: string
-): TipoAtividade[] {
-  const alfabetizacao =
-    etapa === "Educação Infantil" ||
-    serie === "1º ano" ||
-    serie === "2º ano" ||
-    serie === "3º ano";
-
-  if (disciplina === "Linguagem" || disciplina === "Língua Portuguesa") {
-    if (alfabetizacao) {
-      return selecionarTipos([
-        "ditado-ilustrado",
-        "escreva-nome",
-        "letra-inicial",
-        "silaba-inicial",
-        "complete",
-        "ligue-colunas",
-        "ordem-alfabetica",
-        "caca-palavras",
-        "cruzadinha",
-        "interpretacao",
-      ]);
-    }
-
-    return selecionarTipos([
-      "interpretacao",
-      "complete",
-      "ordem-alfabetica",
-      "caca-palavras",
-      "cruzadinha",
-      "verdadeiro-falso",
-      "multipla-escolha",
-      "observe-responda",
-      "relacione",
-      "escreva-nome",
-    ]);
-  }
-
-  if (disciplina === "Matemática") {
-    return selecionarTipos([
-      "problemas-ilustrados",
-      "arme-efetue",
-      "sequencia-numerica",
-      "antecessor-sucessor",
-      "compare-quantidades",
-      "tabela-grafico",
-      "complete",
-      "ligue-colunas",
-      "multipla-escolha",
-      "observe-responda",
-    ]);
-  }
-
-  if (
-    disciplina === "Ciências" ||
-    disciplina === "Biologia" ||
-    disciplina === "Física" ||
-    disciplina === "Química" ||
-    disciplina === "Natureza e sociedade"
-  ) {
-    return selecionarTipos([
-      "observe-responda",
-      "relacione",
-      "complete",
-      "verdadeiro-falso",
-      "multipla-escolha",
-      "caca-palavras",
-      "cruzadinha",
-      "tabela-grafico",
-      "interpretacao",
-      "escreva-nome",
-    ]);
-  }
-
-  if (
-    disciplina === "História" ||
-    disciplina === "Geografia" ||
-    disciplina === "Filosofia" ||
-    disciplina === "Sociologia" ||
-    disciplina === "Ensino Religioso"
-  ) {
-    return selecionarTipos([
-      "interpretacao",
-      "observe-responda",
-      "relacione",
-      "complete",
-      "verdadeiro-falso",
-      "multipla-escolha",
-      "caca-palavras",
-      "cruzadinha",
-      "ordem-alfabetica",
-      "tabela-grafico",
-    ]);
-  }
-
-  return selecionarTipos([
-    "observe-responda",
-    "relacione",
-    "complete",
-    "caca-palavras",
-    "cruzadinha",
-    "verdadeiro-falso",
-    "multipla-escolha",
-    "interpretacao",
-    "escreva-nome",
-    "ligue-colunas",
-  ]);
-}
+const sugestoesPorTema: Record<string, string[]> = {
+  frutas: [
+    "maçã",
+    "banana",
+    "uva",
+    "laranja",
+    "melancia",
+    "morango",
+    "pera",
+    "mamão",
+  ],
+  "animais domésticos": [
+    "cachorro",
+    "gato",
+    "coelho",
+    "peixe",
+    "tartaruga",
+    "papagaio",
+    "hamster",
+    "canário",
+  ],
+  brinquedos: [
+    "bola",
+    "boneca",
+    "carrinho",
+    "pipa",
+    "pião",
+    "bicicleta",
+    "patinete",
+    "quebra-cabeça",
+  ],
+  "material escolar": [
+    "lápis",
+    "borracha",
+    "caderno",
+    "mochila",
+    "tesoura",
+    "régua",
+    "apontador",
+    "cola",
+  ],
+  "sistema solar": [
+    "Sol",
+    "Mercúrio",
+    "Vênus",
+    "Terra",
+    "Marte",
+    "Júpiter",
+    "Saturno",
+    "Urano",
+    "Netuno",
+  ],
+};
 
 export default function AtividadesPage() {
   const router = useRouter();
+
+  const [modoCriacao, setModoCriacao] =
+    useState<ModoCriacao>("folha");
 
   const [etapaEnsino, setEtapaEnsino] = useState("");
   const [serie, setSerie] = useState("");
   const [disciplina, setDisciplina] = useState("");
   const [conteudo, setConteudo] = useState("");
-  const [tipoSelecionado, setTipoSelecionado] = useState("");
-  const [mostrarTodos, setMostrarTodos] = useState(false);
+  const [trabalhadoSala, setTrabalhadoSala] = useState("");
+  const [observacoes, setObservacoes] = useState("");
+  const [quantidade, setQuantidade] = useState("6");
+
+  const [tipoEspecifico, setTipoEspecifico] = useState("");
+  const [formaConteudo, setFormaConteudo] =
+    useState<FormaConteudo>("tema");
+  const [palavrasProprias, setPalavrasProprias] = useState("");
+  const [sugestoes, setSugestoes] = useState<string[]>([]);
+  const [palavrasSelecionadas, setPalavrasSelecionadas] = useState<string[]>([]);
+
+  const [erro, setErro] = useState("");
+  const [gerando, setGerando] = useState(false);
 
   const seriesDisponiveis = etapaEnsino
     ? seriesPorEtapa[etapaEnsino] || []
@@ -369,29 +203,237 @@ export default function AtividadesPage() {
     ? disciplinasPorEtapa[etapaEnsino] || []
     : [];
 
-  const dadosPreenchidos =
-    etapaEnsino !== "" &&
-    serie !== "" &&
-    disciplina !== "" &&
-    conteudo.trim() !== "";
+  const opcoesQuantidade =
+    modoCriacao === "especifica"
+      ? ["6", "8", "10", "12"]
+      : ["4", "6", "8", "10"];
 
-  const recomendacoes = useMemo(() => {
-    if (!etapaEnsino || !serie || !disciplina) {
-      return [];
+  const rotuloQuantidade =
+    modoCriacao === "especifica"
+      ? "Quantidade de itens"
+      : "Quantidade de atividades";
+
+  function escolherModo(novoModo: ModoCriacao) {
+    setModoCriacao(novoModo);
+    setQuantidade(novoModo === "especifica" ? "8" : "6");
+    setTipoEspecifico("");
+    setFormaConteudo("tema");
+    setPalavrasProprias("");
+    setSugestoes([]);
+    setPalavrasSelecionadas([]);
+    setErro("");
+  }
+
+  function gerarSugestoes() {
+    const temaNormalizado = conteudo.trim().toLowerCase();
+
+    if (!temaNormalizado) {
+      setErro("Digite um tema antes de pedir sugestões.");
+      return;
     }
 
-    return obterRecomendacoes(etapaEnsino, serie, disciplina);
-  }, [etapaEnsino, serie, disciplina]);
+    const listaEncontrada =
+      sugestoesPorTema[temaNormalizado] ||
+      [
+        `${conteudo.trim()} 1`,
+        `${conteudo.trim()} 2`,
+        `${conteudo.trim()} 3`,
+        `${conteudo.trim()} 4`,
+        `${conteudo.trim()} 5`,
+        `${conteudo.trim()} 6`,
+        `${conteudo.trim()} 7`,
+        `${conteudo.trim()} 8`,
+      ];
 
-  const atividadesExibidas = mostrarTodos ? todosOsTipos : recomendacoes;
+    setSugestoes(listaEncontrada);
+    setPalavrasSelecionadas(listaEncontrada);
+    setErro("");
+  }
+
+  function alternarPalavra(palavra: string) {
+    setPalavrasSelecionadas((listaAtual) =>
+      listaAtual.includes(palavra)
+        ? listaAtual.filter((item) => item !== palavra)
+        : [...listaAtual, palavra]
+    );
+  }
 
   function limparCampos() {
     setEtapaEnsino("");
     setSerie("");
     setDisciplina("");
     setConteudo("");
-    setTipoSelecionado("");
-    setMostrarTodos(false);
+    setTrabalhadoSala("");
+    setObservacoes("");
+    setQuantidade(modoCriacao === "especifica" ? "8" : "6");
+    setTipoEspecifico("");
+    setFormaConteudo("tema");
+    setPalavrasProprias("");
+    setSugestoes([]);
+    setPalavrasSelecionadas([]);
+    setErro("");
+  }
+
+  async function gerarAtividade() {
+    setErro("");
+
+    if (!etapaEnsino || !serie || !disciplina || !conteudo.trim()) {
+      setErro(
+        "Preencha a etapa de ensino, a série ou turma, a disciplina e o conteúdo."
+      );
+      return;
+    }
+
+    if (modoCriacao === "especifica" && !tipoEspecifico) {
+      setErro("Escolha o tipo da atividade específica.");
+      return;
+    }
+
+    if (
+      modoCriacao === "especifica" &&
+      formaConteudo === "palavras" &&
+      !palavrasProprias.trim()
+    ) {
+      setErro("Digite as palavras que deseja utilizar na atividade.");
+      return;
+    }
+
+    const palavrasDigitadas = palavrasProprias
+      .split(/\n|,/)
+      .map((palavra) => palavra.trim())
+      .filter(Boolean);
+
+    const configuracao = {
+      modoCriacao,
+      etapaEnsino,
+      serie,
+      disciplina,
+      conteudo: conteudo.trim(),
+      trabalhadoSala: trabalhadoSala.trim(),
+      observacoes: observacoes.trim(),
+      quantidade: Number(quantidade),
+      tipoEspecifico,
+      formaConteudo,
+      palavras:
+        modoCriacao === "especifica"
+          ? formaConteudo === "palavras"
+            ? palavrasDigitadas
+            : palavrasSelecionadas
+          : [],
+    };
+
+    try {
+      setGerando(true);
+
+      const resposta = await fetch("/api/gerar-plano", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "atividade_pedagogica",
+          ...configuracao,
+        }),
+      });
+
+      const tipoResposta =
+        resposta.headers.get("content-type") || "";
+
+      if (!tipoResposta.includes("application/json")) {
+        if (resposta.status === 504) {
+          throw new Error(
+            "A geração demorou mais que o esperado. Tente novamente."
+          );
+        }
+
+        throw new Error(
+          "O servidor não conseguiu concluir a geração da atividade."
+        );
+      }
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado.erro || "Não foi possível gerar a atividade."
+        );
+      }
+
+      const textoRecebido =
+        typeof resultado.texto === "string"
+          ? resultado.texto
+          : "";
+
+      const textoLimpo = textoRecebido
+        .replace(/^```json\s*/i, "")
+        .replace(/^```\s*/i, "")
+        .replace(/```\s*$/i, "")
+        .trim();
+
+      if (!textoLimpo) {
+        throw new Error(
+          "A inteligência artificial retornou uma atividade vazia."
+        );
+      }
+
+      let atividadeGerada: {
+        titulo?: string;
+        subtitulo?: string;
+        modoCriacao?: string;
+        exercicios?: Array<Record<string, unknown>>;
+      };
+
+      try {
+        atividadeGerada = JSON.parse(textoLimpo);
+      } catch {
+        throw new Error(
+          "A atividade foi gerada, mas o formato ficou inválido. Tente gerar novamente."
+        );
+      }
+
+      if (
+        !atividadeGerada ||
+        !Array.isArray(atividadeGerada.exercicios) ||
+        atividadeGerada.exercicios.length === 0
+      ) {
+        throw new Error(
+          "A inteligência artificial não retornou os exercícios da atividade."
+        );
+      }
+
+      const exerciciosComId = atividadeGerada.exercicios.map(
+        (exercicio, indice) => ({
+          ...exercicio,
+          id: `exercicio-${Date.now()}-${indice + 1}`,
+          numero: indice + 1,
+        })
+      );
+
+      localStorage.setItem(
+        "atividadeJson",
+        JSON.stringify({
+          ...atividadeGerada,
+          exercicios: exerciciosComId,
+        })
+      );
+
+      localStorage.setItem(
+        "configuracaoAtividade",
+        JSON.stringify(configuracao)
+      );
+
+      router.push("/atividades/revisao");
+    } catch (error) {
+      console.error("Erro ao gerar atividade:", error);
+
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Ocorreu um erro ao gerar a atividade."
+      );
+    } finally {
+      setGerando(false);
+    }
   }
 
   return (
@@ -426,6 +468,7 @@ export default function AtividadesPage() {
 
             <button
               type="button"
+              onClick={() => router.push("/atividades/minhas-atividades")}
               className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
               <ClipboardList size={19} />
@@ -452,12 +495,110 @@ export default function AtividadesPage() {
 
             <div>
               <h2 className="text-2xl font-bold text-slate-950">
-                Gerar atividade pedagógica
+                Criar atividade pedagógica
               </h2>
 
               <p className="text-sm text-slate-600">
-                Informe os dados da turma para receber sugestões de atividades.
+                Escolha o tipo de material e informe os dados da turma.
               </p>
+            </div>
+          </div>
+
+          <div className="mt-6">
+            <h3 className="font-bold text-slate-950">
+              O que você deseja criar?
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-600">
+              Escolha uma opção para configurar a atividade.
+            </p>
+
+            <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => escolherModo("folha")}
+                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
+                  modoCriacao === "folha"
+                    ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200"
+                    : "border-slate-200 bg-white hover:border-emerald-300"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+                    <FileStack size={25} />
+                  </div>
+
+                  <div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="font-bold text-slate-950">
+                        Folha de atividades
+                      </p>
+
+                      <span className="rounded-full bg-emerald-600 px-2 py-1 text-xs font-bold text-white">
+                        Recomendado
+                      </span>
+                    </div>
+
+                    <p className="mt-2 text-sm leading-5 text-slate-600">
+                      O PlanejAI cria uma sequência variada e equilibrada.
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => escolherModo("especifica")}
+                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
+                  modoCriacao === "especifica"
+                    ? "border-blue-600 bg-blue-50 ring-2 ring-blue-200"
+                    : "border-slate-200 bg-white hover:border-blue-300"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                    <Target size={25} />
+                  </div>
+
+                  <div>
+                    <p className="font-bold text-slate-950">
+                      Atividade específica
+                    </p>
+
+                    <p className="mt-2 text-sm leading-5 text-slate-600">
+                      Escolha um formato, como ditado ilustrado, caça-palavras
+                      ou cruzadinha.
+                    </p>
+                  </div>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => escolherModo("revisao")}
+                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
+                  modoCriacao === "revisao"
+                    ? "border-amber-500 bg-amber-50 ring-2 ring-amber-200"
+                    : "border-slate-200 bg-white hover:border-amber-300"
+                }`}
+              >
+                <div className="flex items-start gap-4">
+                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-amber-100 text-amber-700">
+                    <BookOpenCheck size={25} />
+                  </div>
+
+                  <div>
+                    <p className="font-bold text-slate-950">
+                      Folha de revisão
+                    </p>
+
+                    <p className="mt-2 text-sm leading-5 text-slate-600">
+                      Crie uma revisão misturando exercícios sobre os conteúdos
+                      trabalhados.
+                    </p>
+                  </div>
+                </div>
+              </button>
             </div>
           </div>
 
@@ -473,8 +614,7 @@ export default function AtividadesPage() {
                   setEtapaEnsino(event.target.value);
                   setSerie("");
                   setDisciplina("");
-                  setTipoSelecionado("");
-                  setMostrarTodos(false);
+                  setErro("");
                 }}
                 className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
               >
@@ -498,8 +638,7 @@ export default function AtividadesPage() {
                 disabled={!etapaEnsino}
                 onChange={(event) => {
                   setSerie(event.target.value);
-                  setTipoSelecionado("");
-                  setMostrarTodos(false);
+                  setErro("");
                 }}
                 className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
               >
@@ -523,8 +662,7 @@ export default function AtividadesPage() {
                 disabled={!etapaEnsino}
                 onChange={(event) => {
                   setDisciplina(event.target.value);
-                  setTipoSelecionado("");
-                  setMostrarTodos(false);
+                  setErro("");
                 }}
                 className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
               >
@@ -540,169 +678,314 @@ export default function AtividadesPage() {
 
             <div>
               <label className="mb-2 block font-semibold text-slate-900">
-                Conteúdo ou tema <span className="text-red-500">*</span>
+                {modoCriacao === "revisao"
+                  ? "Conteúdos da revisão"
+                  : "Conteúdo ou tema"}{" "}
+                <span className="text-red-500">*</span>
               </label>
 
               <input
                 type="text"
                 value={conteudo}
-                onChange={(event) => setConteudo(event.target.value)}
-                placeholder="Ex.: Adição e subtração até 100"
+                onChange={(event) => {
+                  setConteudo(event.target.value);
+                  setSugestoes([]);
+                  setPalavrasSelecionadas([]);
+                  setErro("");
+                }}
+                placeholder={
+                  modoCriacao === "revisao"
+                    ? "Ex.: Adição, subtração e problemas"
+                    : "Ex.: Animais domésticos"
+                }
                 className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
               />
             </div>
           </div>
 
-          {dadosPreenchidos && (
-            <>
-              <div className="mt-6 rounded-2xl border border-emerald-200 bg-emerald-50 px-5 py-4">
-                <div className="flex items-center justify-center gap-3 text-center">
-                  <CheckCircle2
-                    size={26}
-                    className="shrink-0 text-emerald-600"
-                  />
+          {modoCriacao === "especifica" && (
+            <div className="mt-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <h3 className="font-bold text-slate-950">
+                Configuração da atividade específica
+              </h3>
 
-                  <p className="text-slate-700">
-                    Selecionamos os tipos de atividades mais adequados para o{" "}
-                    <strong className="text-emerald-700">{serie}</strong> de{" "}
-                    <strong className="text-emerald-700">{disciplina}</strong>{" "}
-                    com o tema{" "}
-                    <strong className="text-emerald-700">
-                      “{conteudo.trim()}”
-                    </strong>
-                    .
-                  </p>
+              <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-900">
+                    Qual atividade deseja criar?{" "}
+                    <span className="text-red-500">*</span>
+                  </label>
+
+                  <select
+                    value={tipoEspecifico}
+                    onChange={(event) => {
+                      setTipoEspecifico(event.target.value);
+                      setErro("");
+                    }}
+                    className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                  >
+                    <option value="">Selecione</option>
+
+                    {tiposAtividadeEspecifica.map((tipo) => (
+                      <option key={tipo} value={tipo}>
+                        {tipo}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-900">
+                    Como deseja montar?
+                  </label>
+
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormaConteudo("tema");
+                        setErro("");
+                      }}
+                      className={`cursor-pointer rounded-xl border px-4 py-3 font-semibold transition ${
+                        formaConteudo === "tema"
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-slate-300 bg-white text-slate-700"
+                      }`}
+                    >
+                      Usar um tema
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setFormaConteudo("palavras");
+                        setErro("");
+                      }}
+                      className={`cursor-pointer rounded-xl border px-4 py-3 font-semibold transition ${
+                        formaConteudo === "palavras"
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-slate-300 bg-white text-slate-700"
+                      }`}
+                    >
+                      Minhas palavras
+                    </button>
+                  </div>
                 </div>
               </div>
 
-              <div className="mt-6 border-t border-slate-200 pt-6">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <h3 className="text-xl font-bold text-slate-950">
-                      {mostrarTodos
-                        ? "Todos os tipos de atividade"
-                        : `Atividades recomendadas para ${serie} de ${disciplina}`}
-                    </h3>
+              {formaConteudo === "tema" && (
+                <div className="mt-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+                    <div className="flex-1">
+                      <p className="text-sm text-slate-600">
+                        Use o campo “Conteúdo ou tema” acima. Depois peça
+                        sugestões para escolher as palavras da atividade.
+                      </p>
+                    </div>
 
-                    <p className="mt-1 text-sm text-slate-600">
-                      Escolha um tipo de atividade para continuar.
-                    </p>
+                    <button
+                      type="button"
+                      onClick={gerarSugestoes}
+                      className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700"
+                    >
+                      <Lightbulb size={19} />
+                      Sugerir palavras
+                    </button>
                   </div>
 
-                  <span className="rounded-full bg-emerald-100 px-4 py-2 text-sm font-semibold text-emerald-700">
-                    {atividadesExibidas.length} tipos disponíveis
-                  </span>
-                </div>
+                  {sugestoes.length > 0 && (
+                    <div className="mt-4 rounded-xl border border-blue-200 bg-white p-4">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                        <div>
+                          <p className="font-bold text-slate-950">
+                            Sugestões para “{conteudo.trim()}”
+                          </p>
 
-                <div className="mt-5 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                  {atividadesExibidas.map((atividade) => {
-                    const Icone = atividade.icone;
-                    const selecionada = tipoSelecionado === atividade.id;
-
-                    return (
-                      <button
-                        key={atividade.id}
-                        type="button"
-                        onClick={() => setTipoSelecionado(atividade.id)}
-                        className={`relative min-h-44 cursor-pointer rounded-2xl border p-4 text-center transition ${
-                          selecionada
-                            ? "border-emerald-600 bg-emerald-50 shadow-md ring-2 ring-emerald-200"
-                            : "border-slate-200 bg-white hover:-translate-y-1 hover:border-emerald-300 hover:shadow-md"
-                        }`}
-                      >
-                        {selecionada && (
-                          <span className="absolute right-3 top-3 flex h-7 w-7 items-center justify-center rounded-full bg-emerald-600 text-white">
-                            <Check size={17} />
-                          </span>
-                        )}
-
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-                          <Icone size={28} />
+                          <p className="text-sm text-slate-600">
+                            Marque ou desmarque as palavras que deseja usar.
+                          </p>
                         </div>
 
-                        <h4 className="mt-3 font-bold text-slate-950">
-                          {atividade.nome}
-                        </h4>
+                        <button
+                          type="button"
+                          onClick={gerarSugestoes}
+                          className="flex cursor-pointer items-center gap-2 text-sm font-bold text-blue-700"
+                        >
+                          <RefreshCw size={16} />
+                          Gerar outras sugestões
+                        </button>
+                      </div>
 
-                        <p className="mt-2 text-sm leading-5 text-slate-600">
-                          {atividade.descricao}
-                        </p>
-                      </button>
-                    );
-                  })}
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {sugestoes.map((palavra) => {
+                          const selecionada =
+                            palavrasSelecionadas.includes(palavra);
+
+                          return (
+                            <button
+                              key={palavra}
+                              type="button"
+                              onClick={() => alternarPalavra(palavra)}
+                              className={`cursor-pointer rounded-full border px-4 py-2 text-sm font-semibold transition ${
+                                selecionada
+                                  ? "border-blue-600 bg-blue-600 text-white"
+                                  : "border-slate-300 bg-white text-slate-700"
+                              }`}
+                            >
+                              {palavra}
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
+              )}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    setMostrarTodos(!mostrarTodos);
-                    setTipoSelecionado("");
-                  }}
-                  className="mt-5 w-full cursor-pointer rounded-xl bg-emerald-50 px-4 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                >
-                  {mostrarTodos
-                    ? "Voltar às atividades recomendadas"
-                    : "Ver todos os 20 tipos de atividade"}
-                </button>
+              {formaConteudo === "palavras" && (
+                <div className="mt-4">
+                  <label className="mb-2 block font-semibold text-slate-900">
+                    Digite suas palavras
+                  </label>
 
-                <div className="mt-6 flex flex-col items-center justify-center gap-3 sm:flex-row">
-                  <button
-                    type="button"
-                    disabled={!tipoSelecionado}
-                    onClick={() => {
-                      const tipo = todosOsTipos.find(
-                        (atividade) => atividade.id === tipoSelecionado
-                      );
-
-                      localStorage.setItem(
-                        "configuracaoAtividade",
-                        JSON.stringify({
-                          etapaEnsino,
-                          serie,
-                          disciplina,
-                          conteudo: conteudo.trim(),
-                          tipoSelecionado,
-                          nomeTipoSelecionado: tipo?.nome || "",
-                        })
-                      );
-
-                      router.push("/atividades/revisao");
+                  <textarea
+                    value={palavrasProprias}
+                    onChange={(event) => {
+                      setPalavrasProprias(event.target.value);
+                      setErro("");
                     }}
-                    className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40"
-                  >
-                    <Sparkles size={20} />
-                    Gerar atividade
-                  </button>
+                    placeholder={
+                      "Digite uma palavra por linha ou separe por vírgulas.\n\nEx.: Ana\nJoão\nMaria\nPedro"
+                    }
+                    className="min-h-36 w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500"
+                  />
 
-                  <button
-                    type="button"
-                    onClick={limparCampos}
-                    className="cursor-pointer rounded-xl border border-emerald-600 bg-white px-7 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50"
-                  >
-                    Limpar campos
-                  </button>
+                  <p className="mt-2 text-sm text-slate-600">
+                    Você pode criar, por exemplo, um caça-palavras com os nomes
+                    dos alunos da turma.
+                  </p>
                 </div>
-              </div>
-            </>
-          )}
-
-                    {!dadosPreenchidos && (
-            <div className="mt-6 rounded-2xl border border-dashed border-emerald-400 bg-emerald-50 p-6 text-center">
-              <Sparkles
-                size={28}
-                className="mx-auto text-emerald-700"
-              />
-
-              <p className="mt-2 font-bold text-slate-950">
-                Preencha os campos acima para visualizar as atividades
-                recomendadas.
-              </p>
-
-              <p className="mt-1 text-sm text-slate-600">
-                As opções mudarão de acordo com a série e a disciplina.
-              </p>
+              )}
             </div>
           )}
+
+          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <div>
+              <label className="mb-2 block font-semibold text-slate-900">
+                O que foi trabalhado em sala?{" "}
+                <span className="font-normal text-emerald-600">
+                  (opcional)
+                </span>
+              </label>
+
+              <textarea
+                value={trabalhadoSala}
+                onChange={(event) => setTrabalhadoSala(event.target.value)}
+                maxLength={500}
+                placeholder="Ex.: Os alunos já reconheceram o conteúdo e realizaram exemplos simples."
+                className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+              />
+
+              <p className="mt-1 text-right text-sm text-slate-500">
+                {trabalhadoSala.length}/500
+              </p>
+            </div>
+
+            <div>
+              <label className="mb-2 block font-semibold text-slate-900">
+                Observações para a IA{" "}
+                <span className="font-normal text-emerald-600">
+                  (opcional)
+                </span>
+              </label>
+
+              <textarea
+                value={observacoes}
+                onChange={(event) => setObservacoes(event.target.value)}
+                maxLength={500}
+                placeholder="Ex.: Use imagens fáceis de reconhecer, linguagem simples e letra de forma."
+                className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+              />
+
+              <p className="mt-1 text-right text-sm text-slate-500">
+                {observacoes.length}/500
+              </p>
+            </div>
+          </div>
+
+          <div className="mt-5">
+            <label className="mb-3 block font-semibold text-slate-900">
+              {rotuloQuantidade}
+            </label>
+
+            <div className="flex flex-wrap gap-3">
+              {opcoesQuantidade.map((opcao) => (
+                <button
+                  key={opcao}
+                  type="button"
+                  onClick={() => setQuantidade(opcao)}
+                  className={`min-w-20 cursor-pointer rounded-xl border px-5 py-3 font-bold transition ${
+                    quantidade === opcao
+                      ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
+                      : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
+                  }`}
+                >
+                  {opcao}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {erro && (
+            <div className="mt-5 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-center font-medium text-red-700">
+              {erro}
+            </div>
+          )}
+
+          <div className="mt-6 rounded-2xl border border-dashed border-emerald-500 bg-emerald-50 p-6 text-center">
+            <div className="flex items-center justify-center gap-2">
+              <Sparkles className="text-emerald-700" size={24} />
+
+              <p className="text-lg font-bold text-slate-950">
+                O PlanejAI criará o material de acordo com suas escolhas.
+              </p>
+            </div>
+
+            <p className="mt-2 text-slate-600">
+              Depois você poderá editar, refazer, excluir ou adicionar
+              exercícios.
+            </p>
+
+            <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <button
+                type="button"
+                onClick={gerarAtividade}
+                disabled={gerando}
+                className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
+              >
+                {gerando ? (
+                  <>
+                    <Loader2 size={20} className="animate-spin" />
+                    Gerando atividade...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles size={20} />
+                    Gerar atividade
+                  </>
+                )}
+              </button>
+
+              <button
+                type="button"
+                onClick={limparCampos}
+                disabled={gerando}
+                className="cursor-pointer rounded-xl border border-emerald-600 bg-white px-7 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                Limpar campos
+              </button>
+            </div>
+          </div>
         </div>
       </section>
     </main>

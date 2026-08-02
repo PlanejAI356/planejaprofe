@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   GripVertical,
@@ -12,13 +12,21 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
+type ModoCriacao = "folha" | "especifica" | "revisao";
+type FormaConteudo = "tema" | "palavras";
+
 type ConfiguracaoAtividade = {
+  modoCriacao: ModoCriacao;
   etapaEnsino: string;
   serie: string;
   disciplina: string;
   conteudo: string;
-  tipoSelecionado: string;
-  nomeTipoSelecionado: string;
+  trabalhadoSala: string;
+  observacoes: string;
+  quantidade: number;
+  tipoEspecifico?: string;
+  formaConteudo?: FormaConteudo;
+  palavras?: string[];
 };
 
 type Exercicio = {
@@ -27,32 +35,161 @@ type Exercicio = {
   conteudo: string;
 };
 
-const exerciciosExemplo: Exercicio[] = [
-  {
-    id: 1,
-    titulo: "Forme as sílabas",
-    conteudo:
-      "Complete a família silábica:\n\nB + A = ______\nB + E = ______\nB + I = ______\nB + O = ______\nB + U = ______",
-  },
-  {
-    id: 2,
-    titulo: "Forme as palavras",
-    conteudo:
-      "Junte as sílabas e escreva as palavras:\n\nBO + LA = __________\nBI + CO = __________\nBE + BÊ = __________\nBA + TA = __________",
-  },
-  {
-    id: 3,
-    titulo: "Desembaralhe e forme palavras",
-    conteudo:
-      "Organize as sílabas e escreva corretamente:\n\nLE + BU = __________\nTA + BO = __________\nCO + BI = __________\nLA + BE = __________",
-  },
-  {
-    id: 4,
-    titulo: "Observe e circule",
-    conteudo:
-      "Circule apenas as figuras cujos nomes começam com a letra B.\n\n[FIGURA DE BOLA]\n[FIGURA DE OVO]\n[FIGURA DE BANANA]\n[FIGURA DE MAÇÃ]\n[FIGURA DE BOLO]",
-  },
-];
+function nomeModo(modo: ModoCriacao) {
+  if (modo === "especifica") return "Atividade específica";
+  if (modo === "revisao") return "Folha de revisão";
+  return "Folha de atividades";
+}
+
+function criarExerciciosExemplo(
+  configuracao: ConfiguracaoAtividade
+): Exercicio[] {
+  const quantidade = Math.max(1, configuracao.quantidade || 6);
+  const palavras = configuracao.palavras || [];
+
+  if (configuracao.modoCriacao === "especifica") {
+    const tipo = configuracao.tipoEspecifico || "Atividade específica";
+
+    const listaPalavras =
+      palavras.length > 0
+        ? palavras.join(", ")
+        : `palavras relacionadas ao tema “${configuracao.conteudo}”`;
+
+    return [
+      {
+        id: 1,
+        titulo: tipo,
+        conteudo:
+          `Esta será uma atividade do tipo “${tipo}”.\n\n` +
+          `Tema: ${configuracao.conteudo}\n` +
+          `Itens que serão utilizados: ${listaPalavras}\n` +
+          `Quantidade solicitada: ${quantidade}\n\n` +
+          "Na próxima etapa, a inteligência artificial montará a atividade completa e pronta para revisão.",
+      },
+    ];
+  }
+
+  const modelosFolha = [
+    {
+      titulo: "Observe e responda",
+      conteudo:
+        `Observe as informações ou imagens relacionadas ao tema “${configuracao.conteudo}” e responda às questões propostas.`,
+    },
+    {
+      titulo: "Complete",
+      conteudo:
+        `Complete corretamente as frases, palavras ou conceitos sobre “${configuracao.conteudo}”.`,
+    },
+    {
+      titulo: "Relacione",
+      conteudo:
+        `Relacione os elementos das duas colunas de acordo com o conteúdo “${configuracao.conteudo}”.`,
+    },
+    {
+      titulo: "Verdadeiro ou falso",
+      conteudo:
+        `Analise as afirmativas sobre “${configuracao.conteudo}” e marque V para verdadeiro ou F para falso.`,
+    },
+    {
+      titulo: "Desafio",
+      conteudo:
+        `Resolva o desafio final relacionado ao tema “${configuracao.conteudo}”.`,
+    },
+    {
+      titulo: "Interpretação",
+      conteudo:
+        `Leia o texto curto sobre “${configuracao.conteudo}” e responda às perguntas.`,
+    },
+    {
+      titulo: "Aplicação prática",
+      conteudo:
+        `Utilize o que aprendeu sobre “${configuracao.conteudo}” para resolver uma situação do cotidiano.`,
+    },
+    {
+      titulo: "Organize as informações",
+      conteudo:
+        `Organize as informações do conteúdo “${configuracao.conteudo}” em uma sequência, tabela ou esquema.`,
+    },
+    {
+      titulo: "Questão objetiva",
+      conteudo:
+        `Marque a alternativa correta sobre “${configuracao.conteudo}”.`,
+    },
+    {
+      titulo: "Produção",
+      conteudo:
+        `Produza uma resposta, frase, explicação ou registro relacionado a “${configuracao.conteudo}”.`,
+    },
+  ];
+
+  const modelosRevisao = [
+    {
+      titulo: "Retomando os conceitos",
+      conteudo:
+        `Complete as informações principais dos conteúdos: ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Relacione",
+      conteudo:
+        `Associe cada conceito à sua explicação correta considerando os conteúdos: ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Verdadeiro ou falso",
+      conteudo:
+        `Analise as afirmativas sobre ${configuracao.conteudo} e marque V ou F.`,
+    },
+    {
+      titulo: "Questões objetivas",
+      conteudo:
+        `Marque as alternativas corretas sobre os conteúdos revisados: ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Questão discursiva",
+      conteudo:
+        `Explique com suas palavras um dos principais conceitos estudados em ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Desafio de revisão",
+      conteudo:
+        `Resolva uma situação que reúna diferentes conhecimentos sobre ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Complete o esquema",
+      conteudo:
+        `Complete o esquema com as informações mais importantes sobre ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Observe e responda",
+      conteudo:
+        `Observe a imagem, tabela ou situação e responda com base em ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Caça aos erros",
+      conteudo:
+        `Encontre e corrija os erros nas afirmações relacionadas a ${configuracao.conteudo}.`,
+    },
+    {
+      titulo: "Síntese final",
+      conteudo:
+        `Registre o que você aprendeu sobre ${configuracao.conteudo}.`,
+    },
+  ];
+
+  const base =
+    configuracao.modoCriacao === "revisao"
+      ? modelosRevisao
+      : modelosFolha;
+
+  return Array.from({ length: quantidade }, (_, indice) => {
+    const modelo = base[indice % base.length];
+
+    return {
+      id: indice + 1,
+      titulo: modelo.titulo,
+      conteudo: modelo.conteudo,
+    };
+  });
+}
 
 export default function RevisaoAtividadePage() {
   const router = useRouter();
@@ -60,8 +197,7 @@ export default function RevisaoAtividadePage() {
   const [configuracao, setConfiguracao] =
     useState<ConfiguracaoAtividade | null>(null);
 
-  const [exercicios, setExercicios] =
-    useState<Exercicio[]>(exerciciosExemplo);
+  const [exercicios, setExercicios] = useState<Exercicio[]>([]);
 
   useEffect(() => {
     const dadosSalvos = localStorage.getItem("configuracaoAtividade");
@@ -72,11 +208,19 @@ export default function RevisaoAtividadePage() {
     }
 
     try {
-      setConfiguracao(JSON.parse(dadosSalvos));
+      const dados = JSON.parse(dadosSalvos) as ConfiguracaoAtividade;
+      setConfiguracao(dados);
+      setExercicios(criarExerciciosExemplo(dados));
     } catch {
       router.push("/atividades");
     }
   }, [router]);
+
+  const resumoPalavras = useMemo(() => {
+    if (!configuracao?.palavras?.length) return "";
+
+    return configuracao.palavras.join(", ");
+  }, [configuracao]);
 
   function excluirExercicio(id: number) {
     setExercicios((listaAtual) =>
@@ -94,8 +238,15 @@ export default function RevisaoAtividadePage() {
       listaAtual.map((exercicio) => {
         if (exercicio.id !== id) return exercicio;
 
+        const novoTitulo = window.prompt(
+          "Edite o título do exercício:",
+          exercicio.titulo
+        );
+
+        if (novoTitulo === null) return exercicio;
+
         const novoConteudo = window.prompt(
-          "Edite o exercício:",
+          "Edite o conteúdo do exercício:",
           exercicio.conteudo
         );
 
@@ -103,7 +254,8 @@ export default function RevisaoAtividadePage() {
 
         return {
           ...exercicio,
-          conteudo: novoConteudo,
+          titulo: novoTitulo.trim() || exercicio.titulo,
+          conteudo: novoConteudo.trim() || exercicio.conteudo,
         };
       })
     );
@@ -116,7 +268,7 @@ export default function RevisaoAtividadePage() {
           ? {
               ...exercicio,
               conteudo:
-                "Novo exercício de exemplo gerado para substituir o anterior.",
+                "Novo exercício de exemplo criado para substituir o anterior. A geração definitiva será feita pela inteligência artificial.",
             }
           : exercicio
       )
@@ -130,7 +282,7 @@ export default function RevisaoAtividadePage() {
         id: listaAtual.length + 1,
         titulo: "Novo exercício",
         conteudo:
-          "Este exercício será gerado pela inteligência artificial posteriormente.",
+          "Este exercício será configurado e gerado pela inteligência artificial posteriormente.",
       },
     ]);
   }
@@ -174,14 +326,46 @@ export default function RevisaoAtividadePage() {
 
       <section className="mx-auto max-w-5xl px-5 py-6">
         <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <h2 className="font-bold text-slate-950">
-            Revise os exercícios antes de montar a folha
-          </h2>
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">
+                {nomeModo(configuracao.modoCriacao)}
+              </p>
 
-          <p className="mt-1 text-sm text-slate-600">
-            Você poderá editar, refazer, excluir ou acrescentar novos
-            exercícios.
-          </p>
+              <h2 className="mt-1 text-xl font-bold text-slate-950">
+                Revise o material antes de montar a folha final
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-600">
+                Você poderá editar, refazer, excluir ou acrescentar novos
+                exercícios.
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-700">
+              <p>
+                <strong>Quantidade:</strong> {configuracao.quantidade}
+              </p>
+
+              {configuracao.tipoEspecifico && (
+                <p className="mt-1">
+                  <strong>Tipo:</strong> {configuracao.tipoEspecifico}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {resumoPalavras && (
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-white px-4 py-3">
+              <p className="text-sm font-bold text-slate-950">
+                Palavras escolhidas
+              </p>
+
+              <p className="mt-1 text-sm text-slate-600">
+                {resumoPalavras}
+              </p>
+            </div>
+          )}
         </div>
 
         <div className="mt-5 space-y-4">
@@ -199,7 +383,9 @@ export default function RevisaoAtividadePage() {
                   <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
                     <div>
                       <p className="text-sm font-semibold text-emerald-700">
-                        EXERCÍCIO {exercicio.id}
+                        {configuracao.modoCriacao === "especifica"
+                          ? "ATIVIDADE"
+                          : `EXERCÍCIO ${exercicio.id}`}
                       </p>
 
                       <h3 className="text-lg font-bold text-slate-950">
@@ -245,6 +431,18 @@ export default function RevisaoAtividadePage() {
             </article>
           ))}
         </div>
+
+        {exercicios.length === 0 && (
+          <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+            <p className="font-bold text-slate-950">
+              Nenhum exercício na atividade.
+            </p>
+
+            <p className="mt-1 text-sm text-slate-600">
+              Clique em “Adicionar exercício” para continuar.
+            </p>
+          </div>
+        )}
 
         <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
           <button
