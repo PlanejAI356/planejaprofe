@@ -12,6 +12,7 @@ import {
   Trash2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import LetraTracejada from "../visualizacao/LetraTracejada";
 
 type ModoCriacao = "automatica" | "personalizada";
 
@@ -257,9 +258,27 @@ function ExercicioVisual({
         </div>
       )}
 
-      {exercicio.conteudoLivre && (
-        <div className="mb-4 whitespace-pre-wrap leading-7">
-          {exercicio.conteudoLivre}
+      {exercicio.conteudoLivre &&
+        exercicio.tipo !== "letra_tracejada" &&
+        exercicio.tipo !== "tracejado" && (
+          <div className="mb-4 whitespace-pre-wrap leading-7">
+            {exercicio.conteudoLivre}
+          </div>
+        )}
+
+      {(exercicio.tipo === "letra_tracejada" ||
+        exercicio.tipo === "tracejado") && (
+        <div className="mb-5">
+          <LetraTracejada
+            exercicio={{
+              conteudoLivre:
+                exercicio.conteudoLivre ||
+                exercicio.titulo ||
+                "A",
+              titulo: "",
+              comando: "",
+            }}
+          />
         </div>
       )}
 

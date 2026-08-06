@@ -30,13 +30,17 @@ export function gerarPromptAtividade(body: DadosAtividade) {
   const disciplina = String(body.disciplina || "").trim();
   const conteudo = String(body.conteudo || "").trim();
 
+  const pedidoLivre = String(
+    body.pedidoPersonalizado ||
+      body.conteudo ||
+      ""
+  ).trim();
+
   const trabalhadoSala = String(
     body.trabalhadoSala || ""
   ).trim();
 
-  const pedidoPersonalizado = String(
-    body.pedidoPersonalizado || ""
-  ).trim();
+  const pedidoPersonalizado = pedidoLivre;
 
   const observacoes = String(
     body.observacoes || ""
@@ -90,18 +94,9 @@ export function gerarPromptAtividade(body: DadosAtividade) {
     );
   }
 
-  if (!conteudo) {
+  if (!pedidoLivre) {
     throw new Error(
-      "O conteúdo é obrigatório para gerar a atividade."
-    );
-  }
-
-  if (
-    modoCriacao === "personalizada" &&
-    !pedidoPersonalizado
-  ) {
-    throw new Error(
-      "O pedido da atividade personalizada é obrigatório."
+      "O pedido da atividade é obrigatório."
     );
   }
 
@@ -264,6 +259,9 @@ REGRAS GERAIS:
 - Nunca solicitar uma única imagem com vários objetos diferentes.
 - Caça-palavras, cruzadinhas, tabelas, sequências, colunas e grades devem ser produzidos como dados estruturados, nunca como imagem.
 - Cada exercício deve conter todo o material necessário para ser realizado.
+- A atividade deve parecer uma folha pronta, e não um rascunho ou lista de sugestões.
+- Não devolver instruções para o professor completar manualmente depois.
+- Não usar expressões como "o professor pode", "adicione uma imagem", "escolha palavras" ou "complete conforme desejar".
 - Revisar a coerência pedagógica de cada palavra, frase, alternativa e imagem antes de responder.
 - Não misturar palavras que começam com letras diferentes quando o comando pede uma letra específica.
 - Em atividades de alfabetização, usar vocabulário simples, concreto, conhecido pelas crianças e fácil de ilustrar.
@@ -337,13 +335,17 @@ DITADO ILUSTRADO / ESCREVA O NOME DAS FIGURAS:
 - "imagemDescricao" deve solicitar uma única figura pequena, isolada, nítida, sem texto e com fundo branco ou transparente.
 
 LIGUE COLUNAS / RELACIONE:
-- Cada item deve usar "colunaA" e "colunaB".
+- Para ligar texto a texto, cada item deve usar "colunaA" e "colunaB".
+- Para ligar palavra a figura, usar "colunaA" para a palavra, deixar "colunaB" vazio e preencher os campos de imagem do item.
 - Os pares devem ser objetivos e sem ambiguidade.
-- A ordem da coluna B não deve repetir a ordem da coluna A.
+- A ordem visual poderá ser reorganizada pelo sistema.
+- Nunca escrever "FIGURA DE..." como conteúdo da coluna.
 
 COMPLETE PALAVRAS / COMPLETE FRASES:
-- Cada item deve conter uma lacuna clara.
-- A resposta correta deve aparecer em "resposta".
+- Cada item deve conter uma lacuna clara em "texto".
+- A resposta correta completa deve aparecer em "resposta".
+- Exemplo correto: "texto": "_OLA", "resposta": "BOLA".
+- Quando houver figura, preencher os campos de imagem do item.
 - Não criar mais de uma resposta possível.
 
 CAÇA-PALAVRAS:
@@ -398,7 +400,8 @@ DADOS INFORMADOS PELO PROFESSOR:
 Etapa de ensino: ${etapaEnsino}
 Série ou turma: ${serie}
 Disciplina: ${disciplina}
-Conteúdo ou tema: ${conteudo}
+Pedido completo do professor: ${pedidoLivre}
+Conteúdo informado no campo técnico: ${conteudo || "Não separado"}
 O que foi trabalhado em sala: ${trabalhadoSala || "Não informado"}
 Observações: ${observacoes || "Não informado"}
 Quantidade de questões: ${quantidadeQuestoes}
@@ -459,6 +462,8 @@ FORMATO JSON OBRIGATÓRIO:
 REGRAS DO JSON:
 - Todos os exercícios devem possuir todos os campos mostrados no modelo.
 - "exercicios" deve conter EXATAMENTE ${quantidadeQuestoes} exercícios.
+- Cada exercício deve usar um "tipo" permitido para a série selecionada.
+- Não repetir o valor de "tipo" entre exercícios, salvo quando solicitado pelo professor.
 - "itens" deve sempre ser uma lista.
 - "palavras", "pistas", "grade", "colunas" e "alternativas" devem sempre ser listas.
 - Usar string vazia quando um campo textual não se aplicar.
@@ -471,38 +476,122 @@ REGRAS DO JSON:
 - O campo "gabarito" deve conter a resposta para uso interno do professor, sem aparecer como exercício para o aluno.
 `;
 
-  const regraModo =
-    modoCriacao === "personalizada"
-      ? `
-PEDIDO PERSONALIZADO DO PROFESSOR:
-${pedidoPersonalizado}
+  const regraModo = `
+PEDIDO DO PROFESSOR:
+${pedidoLivre}
 
-REGRAS DO MODO PERSONALIZADO:
-- Cumprir o pedido do professor com prioridade.
-- Respeitar exatamente a quantidade de questões escolhida, salvo quando o próprio pedido determinar uma quantidade diferente de forma explícita.
-- Adaptar o pedido à série e à disciplina.
-- Não ignorar as regras de escrita e adequação etária.
-- Caso o professor solicite seis questões, criar exatamente seis exercícios ou seis itens, conforme o sentido do pedido.
-- Caso solicite um único formato, poderá repetir esse formato porque foi uma escolha explícita.
-- Ainda assim, entregar o material completo e pronto para uso.
-`
-      : `
-REGRAS DO MODO AUTOMÁTICO:
-- Escolher automaticamente os exercícios mais adequados à série, disciplina e conteúdo.
-- Criar exatamente ${quantidadeQuestoes} questões principais.
-- O professor não escolheu tipos de questões; essa decisão é responsabilidade pedagógica da IA.
-- Criar variedade real, sem parecer uma avaliação.
-- Começar com reconhecimento ou retomada.
-- Desenvolver compreensão e aplicação.
-- Finalizar com uma atividade de síntese, criação, resolução ou desafio compatível com a série.
-- Para Educação Infantil, 1º e 2º ano, priorizar propostas visuais, alfabetização, escrita inicial, associação e atividades concretas.
-- Para séries maiores, ampliar interpretação, análise, aplicação e produção.
-- Para Educação Infantil, 1º e 2º ano, montar uma folha visual semelhante a uma atividade pedagógica ilustrada.
-- Quando o conteúdo for uma letra do alfabeto, variar entre letra tracejada, identificação visual, imagens que começam com a letra, completar palavras, ligar figuras a palavras e leitura de frases curtas.
-- Não usar palavras que contrariem o comando. Exemplo: em uma atividade sobre a letra B, não colocar GATO em uma lista de palavras que começam com B.
-- Em exercícios de ligar figuras e palavras, cada figura e cada palavra devem formar pares corretos e sem ambiguidade.
-- Em exercícios de completar palavras com uma letra, a palavra incompleta deve ter apenas a lacuna necessária, por exemplo: "_OLA" para BOLA.
-- Em exercícios visuais, usar de 3 a 6 itens por questão, conforme o espaço disponível.
+REGRAS DE INTERPRETAÇÃO DO PEDIDO:
+- O texto acima é a instrução principal e deve ser interpretado por completo.
+- Identificar automaticamente o conteúdo, o objetivo pedagógico e os formatos de exercício solicitados ou mais adequados.
+- Não exigir que o professor informe separadamente conteúdo, tipo de atividade ou necessidade de imagens.
+- Cumprir o pedido sem copiar frases explicativas do professor para a folha.
+- Adaptar tudo rigorosamente à etapa, à série e à disciplina selecionadas.
+- Criar EXATAMENTE ${quantidadeQuestoes} questões principais.
+- Cada questão principal deve corresponder a um objeto do array "exercicios".
+- Não transformar os itens internos de uma única questão em questões adicionais.
+- Se o professor mencionar outra quantidade no texto, prevalece a quantidade selecionada no sistema: ${quantidadeQuestoes}.
+- Quando o pedido for genérico, escolher automaticamente uma sequência pedagógica variada.
+- Quando o pedido indicar um formato específico, respeitar esse formato e completar a folha com coerência.
+- Entregar todos os textos, palavras, alternativas, pares, lacunas, pistas, grades e respostas necessários.
+- Nunca deixar uma questão apenas com título e comando, sem material para o aluno realizar.
+- Nunca devolver marcadores como "FIGURA 1", "IMAGEM 2", "INSERIR DESENHO" ou textos semelhantes.
+- Para qualquer figura necessária, preencher "imagemNecessaria": true e escrever uma descrição concreta em "imagemDescricao".
+- A descrição da imagem deve nomear um único objeto, como "bola infantil colorida isolada em fundo branco".
+- Não colocar a descrição da imagem em "texto", "colunaA" ou "colunaB".
+- Em atividades de ligar palavras a figuras, guardar a palavra em "colunaA" e a figura no próprio item por meio de "imagemNecessaria" e "imagemDescricao".
+- Em atividades de completar palavras com figuras, usar "texto" para a palavra incompleta, "resposta" para a palavra correta e os campos de imagem para a figura.
+- Para Educação Infantil, 1º e 2º ano, priorizar aparência de folha pedagógica visual, com pouco texto e elementos grandes.
+- Quando o pedido tratar de uma letra do alfabeto, considerar letra tracejada, identificação da letra, figuras iniciadas pela letra, completar palavras, ligar e leitura curta.
+- Revisar cada palavra para garantir que corresponda à letra ou ao critério solicitado.
+
+REGRAS DE VARIEDADE:
+- Não repetir o mesmo tipo de exercício em duas questões, salvo quando o professor pedir explicitamente.
+- Não repetir o mesmo comando com palavras diferentes.
+- Não criar duas questões de circule, duas questões de complete ou duas questões de ligar na mesma folha.
+- Cada questão deve cumprir uma função pedagógica diferente.
+- Organizar a sequência do mais simples para o mais complexo.
+- Para 6 questões, buscar esta variedade quando adequada:
+  1. reconhecimento;
+  2. tracejado ou escrita;
+  3. associação com imagens;
+  4. completar;
+  5. leitura ou identificação;
+  6. síntese ou desafio curto.
+- Quando não for possível usar seis tipos diferentes, variar pelo menos o objetivo e o formato visual.
+
+TIPOS PERMITIDOS POR ETAPA:
+
+EDUCAÇÃO INFANTIL:
+- letra_tracejada
+- tracejado
+- circule_figuras
+- pinte_figuras
+- marque_figuras
+- ligue_colunas
+- escreva_nome_figuras
+- ditado_ilustrado
+- complete_palavras
+- sequencia
+- classificacao_visual
+
+1º E 2º ANO:
+- letra_tracejada
+- tracejado
+- circule_figuras
+- pinte_figuras
+- marque_figuras
+- ligue_colunas
+- escreva_nome_figuras
+- ditado_ilustrado
+- complete_palavras
+- complete_frases
+- multipla_escolha_visual
+- leitura_curta
+- caca_palavras_simples
+- cruzadinha_simples
+- ordem_alfabetica
+- sequencia
+- classificacao_visual
+
+3º AO 5º ANO:
+- multipla_escolha
+- verdadeiro_falso
+- complete_palavras
+- complete_frases
+- ligue_colunas
+- relacione
+- classificacao
+- tabela
+- caca_palavras
+- cruzadinha
+- interpretacao_texto
+- problema_matematico
+- producao_texto_curta
+- organize_etapas
+- ordem_alfabetica
+
+6º ANO EM DIANTE:
+- multipla_escolha
+- verdadeiro_falso
+- complete_frases
+- relacione
+- classificacao
+- tabela
+- interpretacao_texto
+- discursiva
+- problema_matematico
+- producao_texto
+- organize_etapas
+- analise
+- estudo_de_caso
+
+REGRAS DE ADEQUAÇÃO:
+- Educação Infantil, 1º e 2º ano não devem receber questões discursivas longas, estudo de caso ou textos extensos.
+- Educação Infantil não deve receber verdadeiro ou falso como formato principal.
+- 1º e 2º ano devem ter comandos curtos, vocabulário simples e apoio visual sempre que necessário.
+- Do 3º ano em diante, não usar letra tracejada, salvo quando o professor solicitar explicitamente.
+- Ensino Fundamental Anos Finais, Ensino Médio e EJA não devem receber atividades infantis.
+- Usar somente tipos compatíveis com a série selecionada.
 `;
 
   return `
