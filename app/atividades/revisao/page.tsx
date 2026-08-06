@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   FileText,
   ImageIcon,
+  Loader2,
   Pencil,
   Plus,
   Sparkles,
@@ -396,6 +397,69 @@ function ExercicioVisual({
   );
 }
 
+
+type AlvoImagem =
+  | {
+      tipo: "exercicio";
+      exercicioId: string;
+      descricao: string;
+    }
+  | {
+      tipo: "item";
+      exercicioId: string;
+      itemId: string;
+      descricao: string;
+    };
+
+function descricaoLimpa(valor: string) {
+  return valor
+    .replace(/^uma figura de\s+/i, "")
+    .replace(/^imagem de\s+/i, "")
+    .replace(/,\s*pequen[ao].*$/i, "")
+    .trim();
+}
+
+function encontrarImagensPendentes(
+  lista: Exercicio[]
+): AlvoImagem[] {
+  const pendentes: AlvoImagem[] = [];
+
+  for (const exercicio of lista) {
+    if (
+      exercicio.imagemNecessaria &&
+      exercicio.imagemDescricao.trim() &&
+      !exercicio.imagemUrl
+    ) {
+      pendentes.push({
+        tipo: "exercicio",
+        exercicioId: exercicio.id,
+        descricao: descricaoLimpa(
+          exercicio.imagemDescricao
+        ),
+      });
+    }
+
+    for (const item of exercicio.itens) {
+      if (
+        item.imagemNecessaria &&
+        item.imagemDescricao.trim() &&
+        !item.imagemUrl
+      ) {
+        pendentes.push({
+          tipo: "item",
+          exercicioId: exercicio.id,
+          itemId: item.id,
+          descricao: descricaoLimpa(
+            item.imagemDescricao
+          ),
+        });
+      }
+    }
+  }
+
+  return pendentes;
+}
+
 export default function RevisaoAtividadePage() {
   const router = useRouter();
 
@@ -409,6 +473,14 @@ export default function RevisaoAtividadePage() {
     useState<Exercicio[]>([]);
 
   const [erro, setErro] = useState("");
+  const [gerandoImagens, setGerandoImagens] =
+    useState(false);
+  const [progressoImagens, setProgressoImagens] =
+    useState("");
+  const [mensagemImagens, setMensagemImagens] =
+    useState("");
+  const [geracaoAutomaticaIniciada, setGeracaoAutomaticaIniciada] =
+    useState(false);
 
   useEffect(() => {
     try {
@@ -517,6 +589,238 @@ export default function RevisaoAtividadePage() {
       JSON.stringify(atividadeAtualizada)
     );
   }
+
+
+  function salvarListaComImagens(
+    lista: Exercicio[]
+  ) {
+    const listaNumerada = lista.map(
+      (exercicio, indice) => ({
+        ...exercicio,
+        numero: indice + 1,
+      })
+    );
+
+    setExercicios(listaNumerada);
+
+    setAtividade((atividadeAtual) => {
+      if (!atividadeAtual) return atividadeAtual;
+
+      const novaAtividade = {
+        ...atividadeAtual,
+        exercicios: listaNumerada,
+      };
+
+      try {
+        localStorage.setItem(
+          "atividadeJson",
+          JSON.stringify(novaAtividade)
+        );
+      } catch (error) {
+        console.error(
+          "Não foi possível salvar as imagens no navegador:",
+          error
+        );
+
+        setMensagemImagens(
+          "As imagens foram geradas, mas o navegador não conseguiu salvar todas localmente."
+        );
+      }
+
+      return novaAtividade;
+    });
+  }
+
+  async function solicitarImagem(
+    descricao: string
+  ) {
+    const resposta = await fetch(
+      "/api/gerar-imagem-atividade",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          descricao,
+          estilo:
+            "ilustração infantil didática, contorno nítido, cores suaves, fundo branco",
+        }),
+      }
+    );
+
+    const tipoResposta =
+      resposta.headers.get("content-type") || "";
+
+    if (!tipoResposta.includes("application/json")) {
+      throw new Error(
+        "O servidor não retornou uma imagem válida."
+      );
+    }
+
+    const dados = await resposta.json();
+
+    if (!resposta.ok || !dados.imagem) {
+      throw new Error(
+        dados.erro ||
+          "Não foi possível gerar uma das imagens."
+      );
+    }
+
+    return String(dados.imagem);
+  }
+
+  async function gerarImagensPendentes() {
+    if (gerandoImagens) return;
+
+    const fila = encontrarImagensPendentes(
+      exercicios
+    );
+
+    if (fila.length === 0) {
+      setMensagemImagens(
+        "Todas as imagens desta atividade já estão prontas."
+      );
+      return;
+    }
+
+    setErro("");
+    setMensagemImagens("");
+    setGerandoImagens(true);
+
+    const cache = new Map<string, string>();
+    let listaAtual = exercicios.map(
+      (exercicio) => ({
+        ...exercicio,
+        itens: exercicio.itens.map(
+          (item) => ({ ...item })
+        ),
+      })
+    );
+
+    let geradas = 0;
+    let falhas = 0;
+
+    for (
+      let indice = 0;
+      indice < fila.length;
+      indice += 1
+    ) {
+      const alvo = fila[indice];
+
+      setProgressoImagens(
+        `Gerando imagem ${indice + 1} de ${fila.length}: ${alvo.descricao}`
+      );
+
+      try {
+        const chaveCache =
+          alvo.descricao.toLocaleLowerCase(
+            "pt-BR"
+          );
+
+        let imagem = cache.get(chaveCache);
+
+        if (!imagem) {
+          imagem = await solicitarImagem(
+            alvo.descricao
+          );
+
+          cache.set(chaveCache, imagem);
+        }
+
+        listaAtual = listaAtual.map(
+          (exercicio) => {
+            if (
+              exercicio.id !==
+              alvo.exercicioId
+            ) {
+              return exercicio;
+            }
+
+            if (alvo.tipo === "exercicio") {
+              return {
+                ...exercicio,
+                imagemUrl: imagem,
+              };
+            }
+
+            return {
+              ...exercicio,
+              itens: exercicio.itens.map(
+                (item) =>
+                  item.id === alvo.itemId
+                    ? {
+                        ...item,
+                        imagemUrl: imagem,
+                      }
+                    : item
+              ),
+            };
+          }
+        );
+
+        geradas += 1;
+        salvarListaComImagens(listaAtual);
+      } catch (error) {
+        falhas += 1;
+
+        console.error(
+          `Erro ao gerar a imagem "${alvo.descricao}":`,
+          error
+        );
+      }
+    }
+
+    setGerandoImagens(false);
+    setProgressoImagens("");
+
+    if (falhas === 0) {
+      setMensagemImagens(
+        `${geradas} ${
+          geradas === 1
+            ? "imagem foi gerada"
+            : "imagens foram geradas"
+        } e inserida${
+          geradas === 1 ? "" : "s"
+        } na atividade.`
+      );
+    } else {
+      setMensagemImagens(
+        `${geradas} ${
+          geradas === 1
+            ? "imagem foi gerada"
+            : "imagens foram geradas"
+        }. ${falhas} ${
+          falhas === 1
+            ? "imagem não pôde ser criada"
+            : "imagens não puderam ser criadas"
+        }. Use o botão para tentar novamente.`
+      );
+    }
+  }
+
+  useEffect(() => {
+    if (
+      !atividade ||
+      exercicios.length === 0 ||
+      geracaoAutomaticaIniciada
+    ) {
+      return;
+    }
+
+    const pendentes =
+      encontrarImagensPendentes(exercicios);
+
+    setGeracaoAutomaticaIniciada(true);
+
+    if (pendentes.length > 0) {
+      void gerarImagensPendentes();
+    }
+  }, [
+    atividade,
+    exercicios,
+    geracaoAutomaticaIniciada,
+  ]);
 
   function excluirExercicio(id: string) {
     persistir(
@@ -642,6 +946,46 @@ export default function RevisaoAtividadePage() {
             Os controles ficam fora da folha e não aparecem no material final.
           </p>
 
+          {(gerandoImagens ||
+            progressoImagens ||
+            mensagemImagens) && (
+            <div className="mt-4 rounded-xl border border-blue-200 bg-blue-50 p-3">
+              {gerandoImagens && (
+                <div className="flex items-start gap-2 text-sm font-semibold text-blue-800">
+                  <Loader2
+                    size={18}
+                    className="mt-0.5 shrink-0 animate-spin"
+                  />
+
+                  <span>
+                    {progressoImagens ||
+                      "Preparando imagens..."}
+                  </span>
+                </div>
+              )}
+
+              {!gerandoImagens &&
+                mensagemImagens && (
+                  <p className="text-sm leading-5 text-blue-800">
+                    {mensagemImagens}
+                  </p>
+                )}
+
+              {!gerandoImagens && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    void gerarImagensPendentes()
+                  }
+                  className="mt-3 flex w-full items-center justify-center gap-2 rounded-lg border border-blue-300 bg-white px-3 py-2 text-xs font-bold text-blue-700"
+                >
+                  <ImageIcon size={15} />
+                  Gerar imagens pendentes
+                </button>
+              )}
+            </div>
+          )}
+
           <div className="mt-5 space-y-3">
             {exercicios.map((exercicio) => (
               <div
@@ -695,10 +1039,20 @@ export default function RevisaoAtividadePage() {
           <button
             type="button"
             onClick={montarFolhaFinal}
-            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white"
+            disabled={gerandoImagens}
+            className="mt-3 flex w-full items-center justify-center gap-2 rounded-xl bg-emerald-600 px-4 py-3 font-bold text-white disabled:cursor-not-allowed disabled:bg-emerald-300"
           >
-            <Sparkles size={18} />
-            Montar folha final
+            {gerandoImagens ? (
+              <Loader2
+                size={18}
+                className="animate-spin"
+              />
+            ) : (
+              <Sparkles size={18} />
+            )}
+            {gerandoImagens
+              ? "Aguarde as imagens"
+              : "Montar folha final"}
           </button>
         </aside>
 
