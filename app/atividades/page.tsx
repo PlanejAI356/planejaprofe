@@ -4,16 +4,12 @@ import { useState } from "react";
 import {
   ArrowLeft,
   ClipboardList,
-  FileText,
   Loader2,
   LogOut,
-  PencilLine,
+  MessageSquareText,
   Sparkles,
-  WandSparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
-
-type ModoCriacao = "automatica" | "personalizada";
 
 const seriesPorEtapa: Record<string, string[]> = {
   "Educação Infantil": ["Creche", "Pré I", "Pré II"],
@@ -101,20 +97,22 @@ const disciplinasPorEtapa: Record<string, string[]> = {
   ],
 };
 
+const exemplos = [
+  "Crie uma atividade de alfabetização sobre a letra B, com imagens, letras tracejadas e palavras simples.",
+  "Monte uma atividade de Matemática com problemas de adição para o 2º ano.",
+  "Faça uma cruzadinha sobre animais vertebrados.",
+  "Crie uma revisão sobre o sistema solar com questões variadas.",
+];
+
 export default function AtividadesPage() {
   const router = useRouter();
-
-  const [modoCriacao, setModoCriacao] =
-    useState<ModoCriacao>("automatica");
 
   const [etapaEnsino, setEtapaEnsino] = useState("");
   const [serie, setSerie] = useState("");
   const [disciplina, setDisciplina] = useState("");
-  const [conteudo, setConteudo] = useState("");
-  const [trabalhadoSala, setTrabalhadoSala] = useState("");
-  const [pedidoPersonalizado, setPedidoPersonalizado] = useState("");
-  const [observacoes, setObservacoes] = useState("");
-  const [quantidadeQuestoes, setQuantidadeQuestoes] = useState("6");
+  const [pedido, setPedido] = useState("");
+  const [quantidadeQuestoes, setQuantidadeQuestoes] =
+    useState("6");
 
   const [erro, setErro] = useState("");
   const [gerando, setGerando] = useState(false);
@@ -127,62 +125,63 @@ export default function AtividadesPage() {
     ? disciplinasPorEtapa[etapaEnsino] || []
     : [];
 
-  function escolherModo(novoModo: ModoCriacao) {
-    setModoCriacao(novoModo);
-    setPedidoPersonalizado("");
-    setErro("");
-  }
-
   function limparCampos() {
-    setModoCriacao("automatica");
     setEtapaEnsino("");
     setSerie("");
     setDisciplina("");
-    setConteudo("");
-    setTrabalhadoSala("");
-    setPedidoPersonalizado("");
-    setObservacoes("");
+    setPedido("");
     setQuantidadeQuestoes("6");
+    setErro("");
+  }
+
+  function usarExemplo(texto: string) {
+    setPedido(texto);
     setErro("");
   }
 
   async function gerarAtividade() {
     setErro("");
 
-    if (!etapaEnsino || !serie || !disciplina || !conteudo.trim()) {
+    if (!etapaEnsino || !serie || !disciplina) {
       setErro(
-        "Preencha a etapa de ensino, a série ou turma, a disciplina e o conteúdo."
+        "Selecione a etapa de ensino, a série ou turma e a disciplina."
       );
       return;
     }
 
-    if (
-      modoCriacao === "personalizada" &&
-      !pedidoPersonalizado.trim()
-    ) {
-      setErro("Descreva como deseja a atividade personalizada.");
+    if (!pedido.trim()) {
+      setErro(
+        "Escreva o que você deseja criar."
+      );
       return;
     }
+
+    const totalQuestoes = Number(
+      quantidadeQuestoes
+    );
+
+    const quantidadePaginas =
+      totalQuestoes <= 6
+        ? 1
+        : totalQuestoes <= 10
+          ? 2
+          : 3;
 
     const usarMaiusculas =
       etapaEnsino === "Educação Infantil" ||
       serie === "1º ano" ||
       serie === "2º ano";
 
-    const totalQuestoes = Number(quantidadeQuestoes);
-
-    const quantidadePaginas =
-      totalQuestoes <= 6 ? 1 : totalQuestoes <= 10 ? 2 : 3;
-
     const configuracao = {
-      modoCriacao,
+      modoCriacao: "personalizada" as const,
       etapaEnsino,
       serie,
       disciplina,
-      conteudo: conteudo.trim(),
-      trabalhadoSala: trabalhadoSala.trim(),
-      pedidoPersonalizado: pedidoPersonalizado.trim(),
-      observacoes: observacoes.trim(),
+      conteudo: pedido.trim(),
+      trabalhadoSala: "",
+      pedidoPersonalizado: pedido.trim(),
+      observacoes:
+        "Crie uma atividade completa, visual, pedagogicamente correta e pronta para impressão. Use imagens apenas quando forem úteis. Não deixe exercícios incompletos.",
       quantidadeQuestoes: totalQuestoes,
       quantidadePaginas,
       fonteAtividade: "Times New Roman",
@@ -192,21 +191,31 @@ export default function AtividadesPage() {
     try {
       setGerando(true);
 
-      const resposta = await fetch("/api/gerar-plano", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tipo: "atividade_pedagogica",
-          ...configuracao,
-        }),
-      });
+      const resposta = await fetch(
+        "/api/gerar-plano",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "atividade_pedagogica",
+            ...configuracao,
+          }),
+        }
+      );
 
       const tipoResposta =
-        resposta.headers.get("content-type") || "";
+        resposta.headers.get(
+          "content-type"
+        ) || "";
 
-      if (!tipoResposta.includes("application/json")) {
+      if (
+        !tipoResposta.includes(
+          "application/json"
+        )
+      ) {
         if (resposta.status === 504) {
           throw new Error(
             "A geração demorou mais que o esperado. Tente novamente."
@@ -214,56 +223,93 @@ export default function AtividadesPage() {
         }
 
         throw new Error(
-          "O servidor não conseguiu concluir a geração da atividade."
+          "O servidor não conseguiu concluir a atividade."
         );
       }
 
-      const resultado = await resposta.json();
+      const resultado =
+        await resposta.json();
 
       if (!resposta.ok) {
         throw new Error(
-          resultado.erro || "Não foi possível gerar a atividade."
+          resultado.erro ||
+            "Não foi possível gerar a atividade."
         );
       }
 
-      const atividadeGerada = resultado.atividade as
-        | {
-            titulo?: string;
-            subtitulo?: string;
-            exercicios?: Array<Record<string, unknown>>;
-          }
-        | undefined;
+      const atividadeGerada =
+        resultado.atividade as
+          | {
+              titulo?: string;
+              subtitulo?: string;
+              exercicios?: Array<
+                Record<string, unknown>
+              >;
+            }
+          | undefined;
 
       if (
         !atividadeGerada ||
-        typeof atividadeGerada !== "object" ||
-        !Array.isArray(atividadeGerada.exercicios) ||
-        atividadeGerada.exercicios.length === 0
+        typeof atividadeGerada !==
+          "object" ||
+        !Array.isArray(
+          atividadeGerada.exercicios
+        ) ||
+        atividadeGerada.exercicios
+          .length === 0
       ) {
         throw new Error(
-          "A inteligência artificial não retornou exercícios válidos."
+          "A inteligência artificial não retornou uma atividade válida."
         );
       }
 
       const momento = Date.now();
 
-      const exerciciosComId = atividadeGerada.exercicios.map(
-        (exercicio, indice) => ({
-          ...exercicio,
-          id:
-            typeof exercicio.id === "string" && exercicio.id.trim()
-              ? exercicio.id
-              : `exercicio-${momento}-${indice + 1}`,
-          numero: indice + 1,
-        })
-      );
+      const exerciciosComId =
+        atividadeGerada.exercicios.map(
+          (exercicio, indice) => ({
+            ...exercicio,
+            id:
+              typeof exercicio.id ===
+                "string" &&
+              exercicio.id.trim()
+                ? exercicio.id
+                : `exercicio-${momento}-${indice + 1}`,
+            numero: indice + 1,
+            itens: Array.isArray(
+              exercicio.itens
+            )
+              ? exercicio.itens.map(
+                  (
+                    item: Record<
+                      string,
+                      unknown
+                    >,
+                    itemIndice: number
+                  ) => ({
+                    ...item,
+                    id:
+                      typeof item.id ===
+                        "string" &&
+                      item.id.trim()
+                        ? item.id
+                        : `item-${momento}-${indice + 1}-${itemIndice + 1}`,
+                  })
+                )
+              : [],
+          })
+        );
 
       localStorage.setItem(
         "atividadeJson",
         JSON.stringify({
           ...atividadeGerada,
-          fonteAtividade: "Times New Roman",
+          fonteAtividade:
+            "Times New Roman",
           usarMaiusculas,
+          quantidadeQuestoes:
+            totalQuestoes,
+          quantidadePaginas,
           exercicios: exerciciosComId,
         })
       );
@@ -273,9 +319,14 @@ export default function AtividadesPage() {
         JSON.stringify(configuracao)
       );
 
-      router.push("/atividades/revisao");
+      router.push(
+        "/atividades/revisao"
+      );
     } catch (error) {
-      console.error("Erro ao gerar atividade:", error);
+      console.error(
+        "Erro ao gerar atividade:",
+        error
+      );
 
       setErro(
         error instanceof Error
@@ -298,11 +349,11 @@ export default function AtividadesPage() {
 
             <div>
               <h1 className="text-xl font-bold text-emerald-900">
-                Nome do Professor
+                PlanejAI
               </h1>
 
               <p className="text-sm text-slate-700">
-                Crie atividades prontas de forma rápida 💚
+                Escreva o que precisa e receba a atividade pronta.
               </p>
             </div>
           </div>
@@ -310,8 +361,10 @@ export default function AtividadesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() => router.back()}
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+              onClick={() =>
+                router.back()
+              }
+              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <ArrowLeft size={19} />
               Voltar
@@ -320,17 +373,21 @@ export default function AtividadesPage() {
             <button
               type="button"
               onClick={() =>
-                router.push("/atividades/minhas-atividades")
+                router.push(
+                  "/atividades/minhas-atividades"
+                )
               }
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
-              <ClipboardList size={19} />
-              Minhas Atividades
+              <ClipboardList
+                size={19}
+              />
+              Minhas atividades
             </button>
 
             <button
               type="button"
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <LogOut size={19} />
               Sair
@@ -339,112 +396,58 @@ export default function AtividadesPage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:p-6">
-          <div className="flex items-center gap-4 border-b border-slate-200 pb-5">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-              <PencilLine size={28} />
+      <section className="mx-auto max-w-5xl px-4 py-7 sm:px-6">
+        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
+          <div className="flex items-start gap-4 border-b border-slate-200 pb-6">
+            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+              <MessageSquareText
+                size={29}
+              />
             </div>
 
             <div>
               <h2 className="text-2xl font-bold text-slate-950">
-                Criar atividade pedagógica
+                O que você deseja criar?
               </h2>
 
-              <p className="text-sm text-slate-600">
-                Informe o conteúdo. O PlanejAI adapta a atividade à série.
+              <p className="mt-1 text-sm leading-6 text-slate-600">
+                Escreva como falaria com uma assistente. O PlanejAI escolherá os exercícios, o formato e as imagens.
               </p>
             </div>
           </div>
 
-          <div className="mt-6">
-            <h3 className="font-bold text-slate-950">
-              Como você deseja criar?
-            </h3>
-
-            <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-              <button
-                type="button"
-                onClick={() => escolherModo("automatica")}
-                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
-                  modoCriacao === "automatica"
-                    ? "border-emerald-600 bg-emerald-50 ring-2 ring-emerald-200"
-                    : "border-slate-200 bg-white hover:border-emerald-300"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
-                    <WandSparkles size={25} />
-                  </div>
-
-                  <div>
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-bold text-slate-950">
-                        Atividade completa
-                      </p>
-
-                      <span className="rounded-full bg-emerald-600 px-2 py-1 text-xs font-bold text-white">
-                        Mais rápido
-                      </span>
-                    </div>
-
-                    <p className="mt-2 text-sm leading-5 text-slate-600">
-                      A IA escolhe automaticamente os exercícios mais
-                      adequados para a série, disciplina e conteúdo.
-                    </p>
-                  </div>
-                </div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => escolherModo("personalizada")}
-                className={`cursor-pointer rounded-2xl border p-5 text-left transition ${
-                  modoCriacao === "personalizada"
-                    ? "border-blue-600 bg-blue-50 ring-2 ring-blue-200"
-                    : "border-slate-200 bg-white hover:border-blue-300"
-                }`}
-              >
-                <div className="flex items-start gap-4">
-                  <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                    <FileText size={25} />
-                  </div>
-
-                  <div>
-                    <p className="font-bold text-slate-950">
-                      Atividade personalizada
-                    </p>
-
-                    <p className="mt-2 text-sm leading-5 text-slate-600">
-                      Descreva o que deseja, como uma cruzadinha, um
-                      caça-palavras ou uma atividade de alfabetização.
-                    </p>
-                  </div>
-                </div>
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-6 grid gap-4 md:grid-cols-3">
             <div>
               <label className="mb-2 block font-semibold text-slate-900">
-                Etapa de ensino <span className="text-red-500">*</span>
+                Etapa de ensino
+                <span className="text-red-500">
+                  {" "}*
+                </span>
               </label>
 
               <select
                 value={etapaEnsino}
                 onChange={(event) => {
-                  setEtapaEnsino(event.target.value);
+                  setEtapaEnsino(
+                    event.target.value
+                  );
                   setSerie("");
                   setDisciplina("");
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
               >
-                <option value="">Selecione</option>
+                <option value="">
+                  Selecione
+                </option>
 
-                {Object.keys(seriesPorEtapa).map((etapa) => (
-                  <option key={etapa} value={etapa}>
+                {Object.keys(
+                  seriesPorEtapa
+                ).map((etapa) => (
+                  <option
+                    key={etapa}
+                    value={etapa}
+                  >
                     {etapa}
                   </option>
                 ))}
@@ -453,161 +456,134 @@ export default function AtividadesPage() {
 
             <div>
               <label className="mb-2 block font-semibold text-slate-900">
-                Série ou turma <span className="text-red-500">*</span>
+                Série ou turma
+                <span className="text-red-500">
+                  {" "}*
+                </span>
               </label>
 
               <select
                 value={serie}
                 disabled={!etapaEnsino}
                 onChange={(event) => {
-                  setSerie(event.target.value);
+                  setSerie(
+                    event.target.value
+                  );
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
               >
-                <option value="">Selecione</option>
+                <option value="">
+                  Selecione
+                </option>
 
-                {seriesDisponiveis.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
+                {seriesDisponiveis.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
             <div>
               <label className="mb-2 block font-semibold text-slate-900">
-                Disciplina <span className="text-red-500">*</span>
+                Disciplina
+                <span className="text-red-500">
+                  {" "}*
+                </span>
               </label>
 
               <select
                 value={disciplina}
                 disabled={!etapaEnsino}
                 onChange={(event) => {
-                  setDisciplina(event.target.value);
+                  setDisciplina(
+                    event.target.value
+                  );
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
               >
-                <option value="">Selecione</option>
+                <option value="">
+                  Selecione
+                </option>
 
-                {disciplinasDisponiveis.map((item) => (
-                  <option key={item} value={item}>
-                    {item}
-                  </option>
-                ))}
+                {disciplinasDisponiveis.map(
+                  (item) => (
+                    <option
+                      key={item}
+                      value={item}
+                    >
+                      {item}
+                    </option>
+                  )
+                )}
               </select>
             </div>
-
-            <div>
-              <label className="mb-2 block font-semibold text-slate-900">
-                Conteúdo ou tema <span className="text-red-500">*</span>
-              </label>
-
-              <input
-                type="text"
-                value={conteudo}
-                onChange={(event) => {
-                  setConteudo(event.target.value);
-                  setErro("");
-                }}
-                placeholder="Ex.: Letra B, frações ou sistema solar"
-                className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              />
-            </div>
           </div>
 
-          <div className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <div>
-              <label className="mb-2 block font-semibold text-slate-900">
-                O que foi trabalhado em sala?{" "}
-                <span className="font-normal text-emerald-600">
-                  (opcional)
-                </span>
-              </label>
+          <div className="mt-6">
+            <label className="mb-2 block text-lg font-bold text-slate-950">
+              Descreva a atividade
+              <span className="text-red-500">
+                {" "}*
+              </span>
+            </label>
 
-              <textarea
-                value={trabalhadoSala}
-                onChange={(event) =>
-                  setTrabalhadoSala(event.target.value)
-                }
-                maxLength={500}
-                placeholder="Ex.: Os alunos reconheceram a letra B e formaram palavras simples."
-                className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              />
+            <textarea
+              value={pedido}
+              onChange={(event) => {
+                setPedido(
+                  event.target.value
+                );
+                setErro("");
+              }}
+              maxLength={1200}
+              placeholder="Ex.: Crie uma atividade de alfabetização sobre a letra B para o 1º ano, com imagens, letras tracejadas, palavras incompletas e 6 questões."
+              className="min-h-48 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+            />
 
-              <p className="mt-1 text-right text-sm text-slate-500">
-                {trabalhadoSala.length}/500
-              </p>
-            </div>
-
-            <div>
-              <label className="mb-2 block font-semibold text-slate-900">
-                Observações para a IA{" "}
-                <span className="font-normal text-emerald-600">
-                  (opcional)
-                </span>
-              </label>
-
-              <textarea
-                value={observacoes}
-                onChange={(event) =>
-                  setObservacoes(event.target.value)
-                }
-                maxLength={500}
-                placeholder="Ex.: Use imagens simples, pouco texto e espaço para escrever."
-                className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-              />
-
-              <p className="mt-1 text-right text-sm text-slate-500">
-                {observacoes.length}/500
-              </p>
-            </div>
+            <p className="mt-1 text-right text-sm text-slate-500">
+              {pedido.length}/1200
+            </p>
           </div>
-
-          {modoCriacao === "personalizada" && (
-            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
-              <label className="mb-2 block font-bold text-slate-950">
-                Descreva a atividade que deseja{" "}
-                <span className="text-red-500">*</span>
-              </label>
-
-              <textarea
-                value={pedidoPersonalizado}
-                onChange={(event) => {
-                  setPedidoPersonalizado(event.target.value);
-                  setErro("");
-                }}
-                maxLength={700}
-                placeholder="Ex.: Crie uma cruzadinha com os nomes dos planetas ou uma atividade de alfabetização com a letra B e seis questões."
-                className="min-h-32 w-full resize-none rounded-xl border border-blue-200 bg-white px-4 py-3 outline-none focus:border-blue-500"
-              />
-
-              <p className="mt-1 text-right text-sm text-slate-500">
-                {pedidoPersonalizado.length}/700
-              </p>
-            </div>
-          )}
 
           <div className="mt-5">
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="block font-semibold text-slate-900">
+              <label className="font-semibold text-slate-900">
                 Quantidade de questões
               </label>
 
               <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-                6 questões é o recomendado
+                6 é o recomendado
               </span>
             </div>
 
             <div className="mt-3 flex flex-wrap gap-3">
-              {["4", "5", "6", "7", "8", "10"].map((opcao) => (
+              {[
+                "4",
+                "5",
+                "6",
+                "7",
+                "8",
+                "10",
+              ].map((opcao) => (
                 <button
                   key={opcao}
                   type="button"
-                  onClick={() => setQuantidadeQuestoes(opcao)}
-                  className={`cursor-pointer rounded-xl border px-5 py-3 font-bold transition ${
-                    quantidadeQuestoes === opcao
+                  onClick={() =>
+                    setQuantidadeQuestoes(
+                      opcao
+                    )
+                  }
+                  className={`rounded-xl border px-5 py-3 font-bold transition ${
+                    quantidadeQuestoes ===
+                    opcao
                       ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                       : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
                   }`}
@@ -616,18 +592,31 @@ export default function AtividadesPage() {
                 </button>
               ))}
             </div>
-
-            <p className="mt-2 text-sm text-slate-500">
-              O PlanejAI organizará automaticamente as questões em uma ou
-              mais páginas, conforme o tamanho dos exercícios e das imagens.
-            </p>
           </div>
 
-          <div className="mt-5 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-slate-700">
-            <strong>Formatação automática:</strong> Educação Infantil,
-            1º e 2º ano serão gerados em Times New Roman e letra
-            maiúscula. Do 3º ano em diante, o texto seguirá a escrita
-            normal.
+          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-bold text-slate-800">
+              Exemplos de pedidos
+            </p>
+
+            <div className="mt-3 grid gap-2">
+              {exemplos.map(
+                (exemplo) => (
+                  <button
+                    key={exemplo}
+                    type="button"
+                    onClick={() =>
+                      usarExemplo(
+                        exemplo
+                      )
+                    }
+                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm leading-5 text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50"
+                  >
+                    “{exemplo}”
+                  </button>
+                )
+              )}
+            </div>
           </div>
 
           {erro && (
@@ -636,49 +625,39 @@ export default function AtividadesPage() {
             </div>
           )}
 
-          <div className="mt-6 rounded-2xl border border-dashed border-emerald-500 bg-emerald-50 p-6 text-center">
-            <div className="flex items-center justify-center gap-2">
-              <Sparkles className="text-emerald-700" size={24} />
+          <div className="mt-7 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={gerarAtividade}
+              disabled={gerando}
+              className="flex min-w-72 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
+            >
+              {gerando ? (
+                <>
+                  <Loader2
+                    size={21}
+                    className="animate-spin"
+                  />
+                  Criando atividade...
+                </>
+              ) : (
+                <>
+                  <Sparkles
+                    size={21}
+                  />
+                  Gerar atividade pronta
+                </>
+              )}
+            </button>
 
-              <p className="text-lg font-bold text-slate-950">
-                O PlanejAI adapta a atividade à turma selecionada.
-              </p>
-            </div>
-
-            <p className="mt-2 text-slate-600">
-              Depois você poderá revisar, editar, refazer ou excluir os
-              exercícios.
-            </p>
-
-            <div className="mt-5 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <button
-                type="button"
-                onClick={gerarAtividade}
-                disabled={gerando}
-                className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
-              >
-                {gerando ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Criando atividade...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles size={20} />
-                    Criar atividade
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={limparCampos}
-                disabled={gerando}
-                className="cursor-pointer rounded-xl border border-emerald-600 bg-white px-7 py-3 font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                Limpar campos
-              </button>
-            </div>
+            <button
+              type="button"
+              onClick={limparCampos}
+              disabled={gerando}
+              className="rounded-xl border border-emerald-600 bg-white px-7 py-4 font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+            >
+              Limpar
+            </button>
           </div>
         </div>
       </section>
