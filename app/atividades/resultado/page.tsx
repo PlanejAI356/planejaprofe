@@ -1,29 +1,22 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
+  Download,
+  FileText,
   ImageIcon,
-  Pencil,
-  Plus,
+  Printer,
   Save,
-  Sparkles,
-  Trash2,
-  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
-type ModoCriacao = "automatica" | "personalizada";
-
 type ConfiguracaoAtividade = {
-  modoCriacao: ModoCriacao;
+  modoCriacao: "automatica" | "personalizada";
   etapaEnsino: string;
   serie: string;
   disciplina: string;
   conteudo: string;
-  trabalhadoSala: string;
-  pedidoPersonalizado?: string;
-  observacoes: string;
   quantidadePaginas: number;
   fonteAtividade: string;
   usarMaiusculas: boolean;
@@ -63,141 +56,239 @@ type Exercicio = {
 type AtividadeGerada = {
   titulo: string;
   subtitulo?: string;
-  modoCriacao?: ModoCriacao;
   fonteAtividade?: string;
   usarMaiusculas?: boolean;
   quantidadePaginas?: number;
   exercicios: Exercicio[];
 };
 
-type EdicaoExercicio = {
-  titulo: string;
+const CABECALHO_PADRAO =
+  "<strong>ESCOLA:</strong> ________________________________________________<br>" +
+  "<strong>ALUNO(A):</strong> _____________________________________________<br>" +
+  "<strong>PROFESSOR(A):</strong> ____________________ " +
+  "<strong>DATA:</strong> ____/____/______";
+
+function tituloTipo(tipo: string) {
+  return tipo
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letra) => letra.toUpperCase());
+}
+
+function LinhasResposta({ quantidade = 2 }: { quantidade?: number }) {
+  return (
+    <div className="mt-3 space-y-5">
+      {Array.from({ length: quantidade }).map((_, indice) => (
+        <div
+          key={indice}
+          className="h-5 border-b border-black"
+        />
+      ))}
+    </div>
+  );
+}
+
+function ImagemPendente({
+  descricao,
+}: {
+  descricao: string;
+}) {
+  return (
+    <div className="mt-3 flex min-h-28 items-center justify-center rounded border border-dashed border-slate-400 p-3 text-center">
+      <div>
+        <ImageIcon className="mx-auto mb-2 text-slate-500" size={25} />
+        <p className="text-xs text-slate-600">
+          {descricao || "Espaço reservado para imagem"}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function RenderizarItem({
+  item,
+  indice,
+  tipo,
+}: {
+  item: ItemExercicio;
+  indice: number;
   tipo: string;
-  comando: string;
-  conteudoLivre: string;
-  textoApoio: string;
-  itensJson: string;
-  palavrasTexto: string;
-  pistasTexto: string;
-  gradeTexto: string;
-  colunasTexto: string;
-  gabarito: string;
-  imagemNecessaria: boolean;
-  imagemDescricao: string;
-};
-
-function nomeModo(modo: ModoCriacao) {
-  return modo === "personalizada"
-    ? "Atividade personalizada"
-    : "Atividade completa";
-}
-
-function textoSeguro(valor: unknown) {
-  return typeof valor === "string" ? valor : "";
-}
-
-function listaTexto(valor: unknown): string[] {
-  return Array.isArray(valor)
-    ? valor.map((item) => String(item)).filter(Boolean)
-    : [];
-}
-
-function normalizarItem(
-  item: Partial<ItemExercicio>,
-  indice: number
-): ItemExercicio {
-  return {
-    id:
-      typeof item.id === "string" && item.id.trim()
-        ? item.id
-        : `item-${indice + 1}`,
-    texto: textoSeguro(item.texto),
-    resposta: textoSeguro(item.resposta),
-    imagemNecessaria: Boolean(item.imagemNecessaria),
-    imagemDescricao: textoSeguro(item.imagemDescricao),
-    colunaA: textoSeguro(item.colunaA),
-    colunaB: textoSeguro(item.colunaB),
-    alternativas: listaTexto(item.alternativas),
-    verdadeiro:
-      typeof item.verdadeiro === "boolean"
-        ? item.verdadeiro
-        : null,
-  };
-}
-
-function normalizarExercicio(
-  exercicio: Partial<Exercicio>,
-  indice: number
-): Exercicio {
-  return {
-    id:
-      typeof exercicio.id === "string" && exercicio.id.trim()
-        ? exercicio.id
-        : `exercicio-${Date.now()}-${indice + 1}`,
-    numero: indice + 1,
-    tipo:
-      typeof exercicio.tipo === "string" && exercicio.tipo.trim()
-        ? exercicio.tipo
-        : "outro",
-    titulo:
-      typeof exercicio.titulo === "string" &&
-      exercicio.titulo.trim()
-        ? exercicio.titulo
-        : `Exercício ${indice + 1}`,
-    comando: textoSeguro(exercicio.comando),
-    conteudoLivre: textoSeguro(exercicio.conteudoLivre),
-    itens: Array.isArray(exercicio.itens)
-      ? exercicio.itens.map((item, itemIndice) =>
-          normalizarItem(
-            typeof item === "object" && item !== null
-              ? (item as Partial<ItemExercicio>)
-              : { texto: String(item) },
-            itemIndice
-          )
-        )
-      : [],
-    textoApoio: textoSeguro(exercicio.textoApoio),
-    palavras: listaTexto(exercicio.palavras),
-    pistas: listaTexto(exercicio.pistas),
-    grade: listaTexto(exercicio.grade),
-    colunas: listaTexto(exercicio.colunas),
-    imagemNecessaria: Boolean(exercicio.imagemNecessaria),
-    imagemDescricao: textoSeguro(exercicio.imagemDescricao),
-    imagemUrl:
-      typeof exercicio.imagemUrl === "string"
-        ? exercicio.imagemUrl
-        : undefined,
-    gabarito: textoSeguro(exercicio.gabarito),
-  };
-}
-
-function separarLinhas(texto: string) {
-  return texto
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter(Boolean);
-}
-
-function mostrarItem(item: ItemExercicio) {
+}) {
   if (item.colunaA || item.colunaB) {
-    return `${item.colunaA} — ${item.colunaB}`;
+    return (
+      <div className="grid grid-cols-[32px_1fr_1fr] gap-3 border-b border-slate-300 py-2">
+        <span>{indice + 1}.</span>
+        <span>{item.colunaA}</span>
+        <span>{item.colunaB}</span>
+      </div>
+    );
   }
 
   if (item.alternativas.length > 0) {
-    return `${item.texto}\n${item.alternativas
-      .map((alternativa, indice) => `${String.fromCharCode(65 + indice)}) ${alternativa}`)
-      .join("\n")}`;
+    return (
+      <div className="mb-5 break-inside-avoid">
+        <p>
+          {indice + 1}. {item.texto}
+        </p>
+        <div className="mt-2 space-y-1 pl-5">
+          {item.alternativas.map((alternativa, alternativaIndice) => (
+            <p key={alternativaIndice}>
+              ( ) {String.fromCharCode(65 + alternativaIndice)}){" "}
+              {alternativa}
+            </p>
+          ))}
+        </div>
+      </div>
+    );
   }
 
   if (typeof item.verdadeiro === "boolean") {
-    return `( ) ${item.texto}`;
+    return (
+      <p className="mb-2">
+        ( ) {item.texto}
+      </p>
+    );
   }
 
-  return item.texto || item.resposta || "Item sem texto";
+  const tipoComImagem =
+    tipo === "ditado_ilustrado" ||
+    tipo === "escreva_nome_figuras" ||
+    tipo === "circule_figuras" ||
+    item.imagemNecessaria;
+
+  if (tipoComImagem) {
+    return (
+      <div className="break-inside-avoid rounded border border-slate-300 p-3">
+        {item.imagemNecessaria &&
+          (item.resposta || item.texto) && (
+            <p className="mb-2 text-center font-semibold">
+              {item.texto}
+            </p>
+          )}
+
+        <ImagemPendente descricao={item.imagemDescricao} />
+
+        {(tipo === "ditado_ilustrado" ||
+          tipo === "escreva_nome_figuras") && (
+          <div className="mt-4 h-6 border-b border-black" />
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-3 break-inside-avoid">
+      <p>
+        {indice + 1}. {item.texto || item.resposta}
+      </p>
+
+      {(tipo === "discursiva" ||
+        tipo === "interpretacao_texto" ||
+        tipo === "problema_matematico") && (
+        <LinhasResposta quantidade={2} />
+      )}
+    </div>
+  );
 }
 
-export default function RevisaoAtividadePage() {
+function RenderizarExercicio({
+  exercicio,
+}: {
+  exercicio: Exercicio;
+}) {
+  const ehVisual =
+    exercicio.tipo === "ditado_ilustrado" ||
+    exercicio.tipo === "escreva_nome_figuras" ||
+    exercicio.tipo === "circule_figuras" ||
+    exercicio.tipo === "pinte";
+
+  return (
+    <section className="mb-7 break-inside-avoid">
+      <h2 className="font-bold">
+        {exercicio.numero}. {exercicio.titulo}
+      </h2>
+
+      {exercicio.comando && (
+        <p className="mt-1 font-semibold">{exercicio.comando}</p>
+      )}
+
+      {exercicio.textoApoio && (
+        <div className="mt-3 rounded border border-black p-3 text-justify">
+          {exercicio.textoApoio}
+        </div>
+      )}
+
+      {exercicio.conteudoLivre && (
+        <div className="mt-3 whitespace-pre-wrap">
+          {exercicio.conteudoLivre}
+        </div>
+      )}
+
+      {exercicio.imagemNecessaria && (
+        <ImagemPendente descricao={exercicio.imagemDescricao} />
+      )}
+
+      {exercicio.itens.length > 0 && (
+        <div
+          className={
+            ehVisual
+              ? "mt-4 grid grid-cols-2 gap-4 sm:grid-cols-3"
+              : "mt-4"
+          }
+        >
+          {exercicio.itens.map((item, indice) => (
+            <RenderizarItem
+              key={item.id || `${exercicio.id}-${indice}`}
+              item={item}
+              indice={indice}
+              tipo={exercicio.tipo}
+            />
+          ))}
+        </div>
+      )}
+
+      {exercicio.palavras.length > 0 && (
+        <div className="mt-4 rounded border border-black p-3">
+          <strong>PALAVRAS:</strong>{" "}
+          {exercicio.palavras.join(" • ")}
+        </div>
+      )}
+
+      {exercicio.pistas.length > 0 && (
+        <ol className="mt-4 list-decimal space-y-1 pl-6">
+          {exercicio.pistas.map((pista, indice) => (
+            <li key={indice}>{pista}</li>
+          ))}
+        </ol>
+      )}
+
+      {exercicio.grade.length > 0 && (
+        <div className="mt-4 overflow-hidden rounded border border-black p-4 text-center font-mono leading-8 tracking-widest">
+          {exercicio.grade.map((linha, indice) => (
+            <div key={indice} className="whitespace-pre">
+              {linha}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {exercicio.tipo === "producao_texto" && (
+        <LinhasResposta quantidade={8} />
+      )}
+
+      {exercicio.tipo === "tracejado" && (
+        <div className="mt-5 space-y-4 text-center text-3xl tracking-[0.35em] text-slate-400">
+          <p>{exercicio.conteudoLivre}</p>
+          <p>{exercicio.conteudoLivre}</p>
+          <p>{exercicio.conteudoLivre}</p>
+        </div>
+      )}
+    </section>
+  );
+}
+
+export default function ResultadoAtividadePage() {
   const router = useRouter();
+  const documentoRef = useRef<HTMLDivElement>(null);
 
   const [configuracao, setConfiguracao] =
     useState<ConfiguracaoAtividade | null>(null);
@@ -205,26 +296,30 @@ export default function RevisaoAtividadePage() {
   const [atividade, setAtividade] =
     useState<AtividadeGerada | null>(null);
 
-  const [exercicios, setExercicios] = useState<Exercicio[]>([]);
-  const [idEmEdicao, setIdEmEdicao] = useState<string | null>(null);
-  const [edicao, setEdicao] = useState<EdicaoExercicio | null>(null);
+  const [cabecalho, setCabecalho] = useState(CABECALHO_PADRAO);
+  const [cabecalhoSalvo, setCabecalhoSalvo] = useState(false);
+  const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
 
   useEffect(() => {
-    const configuracaoSalva = localStorage.getItem(
-      "configuracaoAtividade"
-    );
-
-    const atividadeSalva = localStorage.getItem("atividadeJson");
-
-    if (!configuracaoSalva || !atividadeSalva) {
-      setErro(
-        "Não encontrei a atividade gerada. Volte e gere a atividade novamente."
-      );
-      return;
-    }
-
     try {
+      const configuracaoSalva = localStorage.getItem(
+        "configuracaoAtividade"
+      );
+
+      const atividadeSalva =
+        localStorage.getItem("atividadeJson");
+
+      const cabecalhoSalvoLocal =
+        localStorage.getItem("cabecalhoAtividade");
+
+      if (!configuracaoSalva || !atividadeSalva) {
+        setErro(
+          "Não encontrei a atividade montada. Volte e gere uma nova atividade."
+        );
+        return;
+      }
+
       const configuracaoRecebida = JSON.parse(
         configuracaoSalva
       ) as ConfiguracaoAtividade;
@@ -235,204 +330,104 @@ export default function RevisaoAtividadePage() {
 
       if (
         !atividadeRecebida ||
-        !Array.isArray(atividadeRecebida.exercicios) ||
-        atividadeRecebida.exercicios.length === 0
+        !Array.isArray(atividadeRecebida.exercicios)
       ) {
-        throw new Error("Lista de exercícios inválida.");
+        throw new Error("Atividade inválida.");
       }
 
-      const exerciciosNormalizados =
-        atividadeRecebida.exercicios.map(
-          (exercicio, indice) =>
-            normalizarExercicio(exercicio, indice)
-        );
-
-      const atividadeNormalizada: AtividadeGerada = {
-        ...atividadeRecebida,
-        titulo:
-          atividadeRecebida.titulo || "Atividade pedagógica",
-        fonteAtividade:
-          atividadeRecebida.fonteAtividade ||
-          configuracaoRecebida.fonteAtividade ||
-          "Times New Roman",
-        usarMaiusculas:
-          atividadeRecebida.usarMaiusculas ??
-          configuracaoRecebida.usarMaiusculas ??
-          false,
-        quantidadePaginas:
-          atividadeRecebida.quantidadePaginas ||
-          configuracaoRecebida.quantidadePaginas ||
-          1,
-        exercicios: exerciciosNormalizados,
-      };
-
       setConfiguracao(configuracaoRecebida);
-      setAtividade(atividadeNormalizada);
-      setExercicios(exerciciosNormalizados);
+      setAtividade(atividadeRecebida);
 
-      localStorage.setItem(
-        "atividadeJson",
-        JSON.stringify(atividadeNormalizada)
-      );
+      if (cabecalhoSalvoLocal) {
+        setCabecalho(cabecalhoSalvoLocal);
+        setCabecalhoSalvo(true);
+      }
     } catch (error) {
       console.error("Erro ao carregar atividade:", error);
-
       setErro(
-        "A atividade foi encontrada, mas os dados ficaram inválidos. Volte e gere novamente."
+        "Os dados da atividade estão inválidos. Volte e gere novamente."
       );
+    } finally {
+      setCarregando(false);
     }
   }, []);
 
-  function persistir(lista: Exercicio[]) {
-    if (!atividade) return;
-
-    const listaNumerada = lista.map((exercicio, indice) => ({
-      ...exercicio,
-      numero: indice + 1,
-    }));
-
-    const atividadeAtualizada = {
-      ...atividade,
-      exercicios: listaNumerada,
-    };
-
-    setAtividade(atividadeAtualizada);
-    setExercicios(listaNumerada);
-
-    localStorage.setItem(
-      "atividadeJson",
-      JSON.stringify(atividadeAtualizada)
-    );
+  function salvarCabecalho() {
+    localStorage.setItem("cabecalhoAtividade", cabecalho);
+    setCabecalhoSalvo(true);
   }
 
-  function excluirExercicio(id: string) {
-    persistir(
-      exercicios.filter((exercicio) => exercicio.id !== id)
-    );
-
-    if (idEmEdicao === id) {
-      setIdEmEdicao(null);
-      setEdicao(null);
-    }
+  function imprimirOuSalvarPDF() {
+    window.print();
   }
 
-  function iniciarEdicao(exercicio: Exercicio) {
-    setIdEmEdicao(exercicio.id);
+  function baixarHtmlWord() {
+    if (!documentoRef.current || !atividade) return;
 
-    setEdicao({
-      titulo: exercicio.titulo,
-      tipo: exercicio.tipo,
-      comando: exercicio.comando,
-      conteudoLivre: exercicio.conteudoLivre,
-      textoApoio: exercicio.textoApoio,
-      itensJson: JSON.stringify(exercicio.itens, null, 2),
-      palavrasTexto: exercicio.palavras.join("\n"),
-      pistasTexto: exercicio.pistas.join("\n"),
-      gradeTexto: exercicio.grade.join("\n"),
-      colunasTexto: exercicio.colunas.join("\n"),
-      gabarito: exercicio.gabarito,
-      imagemNecessaria: exercicio.imagemNecessaria,
-      imagemDescricao: exercicio.imagemDescricao,
+    const conteudo = documentoRef.current.innerHTML;
+
+    const html = `
+      <!DOCTYPE html>
+      <html lang="pt-BR">
+        <head>
+          <meta charset="UTF-8" />
+          <title>${atividade.titulo}</title>
+          <style>
+            body {
+              font-family: "Times New Roman", serif;
+              margin: 2cm;
+              color: #000;
+              font-size: 12pt;
+              line-height: 1.5;
+            }
+            img { max-width: 180px; }
+            table { border-collapse: collapse; width: 100%; }
+            td, th { border: 1px solid #000; padding: 6px; }
+          </style>
+        </head>
+        <body>${conteudo}</body>
+      </html>
+    `;
+
+    const blob = new Blob(["\ufeff", html], {
+      type: "application/msword",
     });
 
-    setErro("");
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = "atividade-pedagogica.doc";
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+
+    URL.revokeObjectURL(url);
   }
 
-  function cancelarEdicao() {
-    setIdEmEdicao(null);
-    setEdicao(null);
-    setErro("");
-  }
-
-  function salvarEdicao(id: string) {
-    if (!edicao) return;
-
-    let itensEditados: ItemExercicio[] = [];
-
-    try {
-      const itensRecebidos = JSON.parse(edicao.itensJson);
-
-      if (!Array.isArray(itensRecebidos)) {
-        throw new Error("Os itens precisam formar uma lista.");
-      }
-
-      itensEditados = itensRecebidos.map((item, indice) =>
-        normalizarItem(item, indice)
-      );
-    } catch {
-      setErro(
-        "Os itens desse exercício estão com formato inválido. Corrija o campo de itens antes de salvar."
-      );
-      return;
-    }
-
-    const novaLista = exercicios.map((exercicio) => {
-      if (exercicio.id !== id) return exercicio;
-
-      return {
-        ...exercicio,
-        titulo: edicao.titulo.trim() || exercicio.titulo,
-        tipo: edicao.tipo.trim() || exercicio.tipo,
-        comando: edicao.comando.trim(),
-        conteudoLivre: edicao.conteudoLivre.trim(),
-        textoApoio: edicao.textoApoio.trim(),
-        itens: itensEditados,
-        palavras: separarLinhas(edicao.palavrasTexto),
-        pistas: separarLinhas(edicao.pistasTexto),
-        grade: separarLinhas(edicao.gradeTexto),
-        colunas: separarLinhas(edicao.colunasTexto),
-        gabarito: edicao.gabarito.trim(),
-        imagemNecessaria: edicao.imagemNecessaria,
-        imagemDescricao: edicao.imagemDescricao.trim(),
-      };
-    });
-
-    persistir(novaLista);
-    cancelarEdicao();
-  }
-
-  function adicionarExercicio() {
-    const novoExercicio: Exercicio = {
-      id: `exercicio-${Date.now()}`,
-      numero: exercicios.length + 1,
-      titulo: "Novo exercício",
-      tipo: "outro",
-      comando: "",
-      conteudoLivre: "",
-      itens: [],
-      textoApoio: "",
-      palavras: [],
-      pistas: [],
-      grade: [],
-      colunas: [],
-      imagemNecessaria: false,
-      imagemDescricao: "",
-      gabarito: "",
-    };
-
-    const novaLista = [...exercicios, novoExercicio];
-
-    persistir(novaLista);
-    iniciarEdicao(novoExercicio);
-  }
-
-  function montarFolhaFinal() {
-    if (!atividade) return;
-
-    persistir(exercicios);
-    router.push("/atividades/resultado");
-  }
-
-  if (erro && (!configuracao || !atividade)) {
+  if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5">
-        <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
-          <p className="font-bold text-red-700">{erro}</p>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+        <p className="font-semibold text-emerald-700">
+          Carregando atividade...
+        </p>
+      </main>
+    );
+  }
 
+  if (erro || !configuracao || !atividade) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
+        <div className="max-w-lg rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <FileText className="mx-auto text-red-500" size={35} />
+          <p className="mt-3 font-bold text-red-700">
+            {erro || "Atividade não encontrada."}
+          </p>
           <button
             type="button"
             onClick={() => router.push("/atividades")}
-            className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white transition hover:bg-emerald-700"
+            className="mt-5 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
           >
             Voltar para atividades
           </button>
@@ -441,489 +436,166 @@ export default function RevisaoAtividadePage() {
     );
   }
 
-  if (!configuracao || !atividade) {
-    return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-50">
-        <div className="flex items-center gap-3 font-semibold text-emerald-700">
-          <Sparkles className="animate-pulse" />
-          Carregando atividade...
-        </div>
-      </main>
-    );
-  }
+  const fonte =
+    atividade.fonteAtividade ||
+    configuracao.fonteAtividade ||
+    "Times New Roman";
+
+  const usarMaiusculas =
+    atividade.usarMaiusculas ??
+    configuracao.usarMaiusculas ??
+    false;
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
+    <main className="min-h-screen bg-slate-100">
+      <style jsx global>{`
+        @media print {
+          @page {
+            size: A4;
+            margin: 1.4cm;
+          }
+
+          body {
+            background: white !important;
+          }
+
+          .nao-imprimir {
+            display: none !important;
+          }
+
+          .folha-impressao {
+            width: 100% !important;
+            min-height: auto !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border: 0 !important;
+            box-shadow: none !important;
+          }
+
+          .quebra-evitar {
+            break-inside: avoid;
+          }
+        }
+      `}</style>
+
+      <header className="nao-imprimir border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div>
             <h1 className="text-xl font-bold text-emerald-900">
-              Revisão da atividade
+              Folha final da atividade
             </h1>
-
             <p className="text-sm text-slate-700">
-              {configuracao.serie} • {configuracao.disciplina} •{" "}
-              {configuracao.conteudo}
+              Revise o cabeçalho e salve ou imprima.
             </p>
           </div>
 
           <button
             type="button"
-            onClick={() => router.push("/atividades")}
-            className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+            onClick={() => router.push("/atividades/revisao")}
+            className="flex items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 shadow-sm"
           >
             <ArrowLeft size={19} />
-            Voltar
+            Voltar à revisão
           </button>
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-5">
-        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-            <div>
-              <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">
-                {nomeModo(configuracao.modoCriacao)}
-              </p>
+      <section className="mx-auto max-w-5xl px-4 py-6">
+        <div className="nao-imprimir mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <label className="block font-bold text-slate-900">
+            Cabeçalho da escola
+          </label>
 
-              <h2 className="mt-1 text-xl font-bold text-slate-950">
-                {atividade.titulo}
-              </h2>
+          <div
+            contentEditable
+            suppressContentEditableWarning
+            onInput={(event) => {
+              setCabecalho(event.currentTarget.innerHTML);
+              setCabecalhoSalvo(false);
+            }}
+            className="mt-3 min-h-28 rounded-xl border border-slate-300 bg-white p-4 outline-none focus:border-emerald-500"
+            dangerouslySetInnerHTML={{ __html: cabecalho }}
+          />
 
-              {atividade.subtitulo && (
-                <p className="mt-1 text-sm text-slate-600">
-                  {atividade.subtitulo}
-                </p>
-              )}
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+            <p
+              className={`text-sm ${
+                cabecalhoSalvo
+                  ? "font-semibold text-emerald-700"
+                  : "text-slate-500"
+              }`}
+            >
+              {cabecalhoSalvo
+                ? "Cabeçalho salvo para as próximas atividades."
+                : "Edite ou cole o cabeçalho utilizado pela escola."}
+            </p>
 
-              <p className="mt-2 text-sm text-slate-600">
-                Revise, edite ou exclua os exercícios antes de montar
-                a folha final.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-700">
-              <p>
-                <strong>Exercícios:</strong> {exercicios.length}
-              </p>
-              <p className="mt-1">
-                <strong>Páginas:</strong>{" "}
-                {configuracao.quantidadePaginas}
-              </p>
-              <p className="mt-1">
-                <strong>Fonte:</strong>{" "}
-                {configuracao.fonteAtividade}
-              </p>
-              <p className="mt-1">
-                <strong>Escrita:</strong>{" "}
-                {configuracao.usarMaiusculas
-                  ? "LETRAS MAIÚSCULAS"
-                  : "Normal"}
-              </p>
-            </div>
+            <button
+              type="button"
+              onClick={salvarCabecalho}
+              className="flex items-center gap-2 rounded-xl border border-emerald-600 px-4 py-2 font-bold text-emerald-700"
+            >
+              <Save size={17} />
+              Salvar cabeçalho
+            </button>
           </div>
+        </div>
 
-          {configuracao.modoCriacao === "personalizada" &&
-            configuracao.pedidoPersonalizado && (
-              <div className="mt-4 rounded-xl border border-blue-200 bg-white px-4 py-3">
-                <p className="text-sm font-bold text-slate-950">
-                  Pedido personalizado
-                </p>
-                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
-                  {configuracao.pedidoPersonalizado}
-                </p>
-              </div>
+        <div
+          ref={documentoRef}
+          className={`folha-impressao mx-auto min-h-[1123px] max-w-[794px] bg-white p-10 shadow-md ${
+            usarMaiusculas ? "uppercase" : ""
+          }`}
+          style={{
+            fontFamily: `"${fonte}", "Times New Roman", serif`,
+          }}
+        >
+          <div
+            className="mb-5 border-b border-black pb-4 leading-7"
+            dangerouslySetInnerHTML={{ __html: cabecalho }}
+          />
+
+          <div className="mb-7 text-center">
+            <h1 className="text-xl font-bold">
+              {atividade.titulo}
+            </h1>
+
+            {atividade.subtitulo && (
+              <p className="mt-1">
+                {atividade.subtitulo}
+              </p>
             )}
-        </div>
 
-        {erro && (
-          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-            {erro}
+            <p className="mt-1 text-sm">
+              {configuracao.disciplina} — {configuracao.serie}
+            </p>
           </div>
-        )}
 
-        <div className="mt-5 space-y-4">
-          {exercicios.map((exercicio) => {
-            const estaEditando = idEmEdicao === exercicio.id;
-
-            return (
-              <article
-                key={exercicio.id}
-                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-              >
-                <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
-                  <div>
-                    <p className="text-sm font-semibold text-emerald-700">
-                      EXERCÍCIO {exercicio.numero}
-                    </p>
-
-                    <h3 className="text-lg font-bold text-slate-950">
-                      {exercicio.titulo}
-                    </h3>
-
-                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {exercicio.tipo.replaceAll("_", " ")}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap gap-2">
-                    {estaEditando ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => salvarEdicao(exercicio.id)}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
-                        >
-                          <Save size={16} />
-                          Salvar
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={cancelarEdicao}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
-                        >
-                          <X size={16} />
-                          Cancelar
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => iniciarEdicao(exercicio)}
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
-                        >
-                          <Pencil size={16} />
-                          Editar
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() =>
-                            excluirExercicio(exercicio.id)
-                          }
-                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
-                        >
-                          <Trash2 size={16} />
-                          Excluir
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
-
-                {estaEditando && edicao ? (
-                  <div className="space-y-4 pt-4">
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <input
-                        value={edicao.titulo}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            titulo: event.target.value,
-                          })
-                        }
-                        placeholder="Título"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-
-                      <input
-                        value={edicao.tipo}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            tipo: event.target.value,
-                          })
-                        }
-                        placeholder="Tipo"
-                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <textarea
-                      value={edicao.comando}
-                      onChange={(event) =>
-                        setEdicao({
-                          ...edicao,
-                          comando: event.target.value,
-                        })
-                      }
-                      placeholder="Comando"
-                      className="min-h-24 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                    />
-
-                    <textarea
-                      value={edicao.textoApoio}
-                      onChange={(event) =>
-                        setEdicao({
-                          ...edicao,
-                          textoApoio: event.target.value,
-                        })
-                      }
-                      placeholder="Texto de apoio"
-                      className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                    />
-
-                    <textarea
-                      value={edicao.conteudoLivre}
-                      onChange={(event) =>
-                        setEdicao({
-                          ...edicao,
-                          conteudoLivre: event.target.value,
-                        })
-                      }
-                      placeholder="Conteúdo livre"
-                      className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                    />
-
-                    <div>
-                      <label className="mb-2 block font-semibold text-slate-900">
-                        Itens estruturados
-                      </label>
-                      <textarea
-                        value={edicao.itensJson}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            itensJson: event.target.value,
-                          })
-                        }
-                        className="min-h-64 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm outline-none focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <div className="grid gap-4 sm:grid-cols-2">
-                      <textarea
-                        value={edicao.palavrasTexto}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            palavrasTexto: event.target.value,
-                          })
-                        }
-                        placeholder="Palavras — uma por linha"
-                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-
-                      <textarea
-                        value={edicao.pistasTexto}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            pistasTexto: event.target.value,
-                          })
-                        }
-                        placeholder="Pistas — uma por linha"
-                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-
-                      <textarea
-                        value={edicao.gradeTexto}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            gradeTexto: event.target.value,
-                          })
-                        }
-                        placeholder="Grade — uma linha por linha"
-                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-
-                      <textarea
-                        value={edicao.colunasTexto}
-                        onChange={(event) =>
-                          setEdicao({
-                            ...edicao,
-                            colunasTexto: event.target.value,
-                          })
-                        }
-                        placeholder="Colunas — uma por linha"
-                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                      />
-                    </div>
-
-                    <textarea
-                      value={edicao.gabarito}
-                      onChange={(event) =>
-                        setEdicao({
-                          ...edicao,
-                          gabarito: event.target.value,
-                        })
-                      }
-                      placeholder="Gabarito"
-                      className="min-h-24 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
-                    />
-
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-                      <label className="flex cursor-pointer items-center gap-3 font-semibold text-slate-800">
-                        <input
-                          type="checkbox"
-                          checked={edicao.imagemNecessaria}
-                          onChange={(event) =>
-                            setEdicao({
-                              ...edicao,
-                              imagemNecessaria:
-                                event.target.checked,
-                            })
-                          }
-                          className="h-5 w-5 cursor-pointer accent-emerald-600"
-                        />
-                        Este exercício precisa de imagem geral
-                      </label>
-
-                      {edicao.imagemNecessaria && (
-                        <textarea
-                          value={edicao.imagemDescricao}
-                          onChange={(event) =>
-                            setEdicao({
-                              ...edicao,
-                              imagemDescricao:
-                                event.target.value,
-                            })
-                          }
-                          placeholder="Descrição da imagem"
-                          className="mt-3 min-h-24 w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
-                        />
-                      )}
-                    </div>
-                  </div>
-                ) : (
-                  <div className="pt-4">
-                    {exercicio.textoApoio && (
-                      <div className="mb-4 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 leading-7 text-slate-800">
-                        {exercicio.textoApoio}
-                      </div>
-                    )}
-
-                    {exercicio.comando && (
-                      <p className="font-semibold leading-7 text-slate-900">
-                        {exercicio.comando}
-                      </p>
-                    )}
-
-                    {exercicio.conteudoLivre && (
-                      <div className="mt-3 whitespace-pre-wrap leading-7 text-slate-800">
-                        {exercicio.conteudoLivre}
-                      </div>
-                    )}
-
-                    {exercicio.itens.length > 0 && (
-                      <div className="mt-4 space-y-3">
-                        {exercicio.itens.map((item, indice) => (
-                          <div
-                            key={item.id || `${exercicio.id}-${indice}`}
-                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800"
-                          >
-                            <div className="whitespace-pre-wrap">
-                              {mostrarItem(item)}
-                            </div>
-
-                            {item.imagemNecessaria && (
-                              <div className="mt-3 flex items-start gap-3 rounded-lg border border-dashed border-blue-300 bg-blue-50 p-3">
-                                <ImageIcon
-                                  size={22}
-                                  className="shrink-0 text-blue-600"
-                                />
-                                <p className="text-sm text-slate-600">
-                                  {item.imagemDescricao ||
-                                    "Imagem necessária para este item."}
-                                </p>
-                              </div>
-                            )}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {exercicio.palavras.length > 0 && (
-                      <div className="mt-4">
-                        <strong>Palavras:</strong>{" "}
-                        {exercicio.palavras.join(", ")}
-                      </div>
-                    )}
-
-                    {exercicio.pistas.length > 0 && (
-                      <div className="mt-4">
-                        <strong>Pistas:</strong>
-                        <ol className="mt-2 list-decimal space-y-1 pl-6">
-                          {exercicio.pistas.map((pista, indice) => (
-                            <li key={`${exercicio.id}-pista-${indice}`}>
-                              {pista}
-                            </li>
-                          ))}
-                        </ol>
-                      </div>
-                    )}
-
-                    {exercicio.grade.length > 0 && (
-                      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono leading-7">
-                        {exercicio.grade.map((linha, indice) => (
-                          <div
-                            key={`${exercicio.id}-grade-${indice}`}
-                            className="whitespace-pre"
-                          >
-                            {linha}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-
-                    {exercicio.imagemNecessaria && (
-                      <div className="mt-4 rounded-xl border border-dashed border-blue-300 bg-blue-50 p-4">
-                        <div className="flex items-start gap-3">
-                          <ImageIcon
-                            size={25}
-                            className="shrink-0 text-blue-600"
-                          />
-                          <div>
-                            <p className="font-bold text-slate-900">
-                              Imagem geral necessária
-                            </p>
-                            <p className="mt-1 text-sm text-slate-600">
-                              {exercicio.imagemDescricao ||
-                                "A descrição ainda não foi informada."}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {exercicio.gabarito && (
-                      <details className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-                        <summary className="cursor-pointer font-bold text-emerald-800">
-                          Ver gabarito
-                        </summary>
-                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
-                          {exercicio.gabarito}
-                        </p>
-                      </details>
-                    )}
-                  </div>
-                )}
-              </article>
-            );
-          })}
+          {atividade.exercicios.map((exercicio) => (
+            <RenderizarExercicio
+              key={exercicio.id}
+              exercicio={exercicio}
+            />
+          ))}
         </div>
 
-        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+        <div className="nao-imprimir mt-5 flex flex-col justify-center gap-3 sm:flex-row">
           <button
             type="button"
-            onClick={adicionarExercicio}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700 transition hover:bg-emerald-50"
+            onClick={baixarHtmlWord}
+            className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700"
           >
-            <Plus size={20} />
-            Adicionar exercício
+            <Download size={19} />
+            Baixar Word
           </button>
 
           <button
             type="button"
-            onClick={montarFolhaFinal}
-            disabled={exercicios.length === 0}
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+            onClick={imprimirOuSalvarPDF}
+            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-bold text-white"
           >
-            <Sparkles size={20} />
-            Montar folha final
+            <Printer size={19} />
+            Imprimir ou salvar em PDF
           </button>
         </div>
       </section>
