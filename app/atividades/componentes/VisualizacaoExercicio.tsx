@@ -9,6 +9,7 @@ import DitadoIlustrado from "../visualizacao/DitadoIlustrado";
 import LigueColunas from "../visualizacao/LigueColunas";
 import MultiplaEscolha from "../visualizacao/MultiplaEscolha";
 import VerdadeiroFalso from "../visualizacao/VerdadeiroFalso";
+import LetraTracejada from "../visualizacao/LetraTracejada";
 
 export type ItemExercicio = {
   id: string;
@@ -341,6 +342,11 @@ function ConteudoPorTipo({
   exercicio,
 }: Props) {
   switch (exercicio.tipo) {
+    case "letra_tracejada":
+case "tracejado":
+  return (
+    <LetraTracejada exercicio={exercicio} />
+  );
     case "ditado_ilustrado":
     case "escreva_nome_figuras":
       return <DitadoIlustrado exercicio={exercicio} />;

@@ -114,7 +114,7 @@ export default function AtividadesPage() {
   const [trabalhadoSala, setTrabalhadoSala] = useState("");
   const [pedidoPersonalizado, setPedidoPersonalizado] = useState("");
   const [observacoes, setObservacoes] = useState("");
-  const [quantidadePaginas, setQuantidadePaginas] = useState("1");
+  const [quantidadeQuestoes, setQuantidadeQuestoes] = useState("6");
 
   const [erro, setErro] = useState("");
   const [gerando, setGerando] = useState(false);
@@ -142,7 +142,7 @@ export default function AtividadesPage() {
     setTrabalhadoSala("");
     setPedidoPersonalizado("");
     setObservacoes("");
-    setQuantidadePaginas("1");
+    setQuantidadeQuestoes("6");
     setErro("");
   }
 
@@ -169,6 +169,11 @@ export default function AtividadesPage() {
       serie === "1º ano" ||
       serie === "2º ano";
 
+    const totalQuestoes = Number(quantidadeQuestoes);
+
+    const quantidadePaginas =
+      totalQuestoes <= 6 ? 1 : totalQuestoes <= 10 ? 2 : 3;
+
     const configuracao = {
       modoCriacao,
       etapaEnsino,
@@ -178,7 +183,8 @@ export default function AtividadesPage() {
       trabalhadoSala: trabalhadoSala.trim(),
       pedidoPersonalizado: pedidoPersonalizado.trim(),
       observacoes: observacoes.trim(),
-      quantidadePaginas: Number(quantidadePaginas),
+      quantidadeQuestoes: totalQuestoes,
+      quantidadePaginas,
       fonteAtividade: "Times New Roman",
       usarMaiusculas,
     };
@@ -584,30 +590,36 @@ export default function AtividadesPage() {
           )}
 
           <div className="mt-5">
-            <label className="mb-3 block font-semibold text-slate-900">
-              Tamanho da atividade
-            </label>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <label className="block font-semibold text-slate-900">
+                Quantidade de questões
+              </label>
 
-            <div className="flex flex-wrap gap-3">
-              {["1", "2", "3"].map((opcao) => (
+              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
+                6 questões é o recomendado
+              </span>
+            </div>
+
+            <div className="mt-3 flex flex-wrap gap-3">
+              {["4", "5", "6", "7", "8", "10"].map((opcao) => (
                 <button
                   key={opcao}
                   type="button"
-                  onClick={() => setQuantidadePaginas(opcao)}
+                  onClick={() => setQuantidadeQuestoes(opcao)}
                   className={`cursor-pointer rounded-xl border px-5 py-3 font-bold transition ${
-                    quantidadePaginas === opcao
+                    quantidadeQuestoes === opcao
                       ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                       : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
                   }`}
                 >
-                  {opcao} {opcao === "1" ? "página" : "páginas"}
+                  {opcao}
                 </button>
               ))}
             </div>
 
             <p className="mt-2 text-sm text-slate-500">
-              O PlanejAI define automaticamente a quantidade e o tipo de
-              exercícios que cabem em cada página.
+              O PlanejAI organizará automaticamente as questões em uma ou
+              mais páginas, conforme o tamanho dos exercícios e das imagens.
             </p>
           </div>
 

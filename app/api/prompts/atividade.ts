@@ -10,6 +10,7 @@ type DadosAtividade = {
   trabalhadoSala?: string;
   pedidoPersonalizado?: string;
   observacoes?: string;
+  quantidadeQuestoes?: number;
   quantidadePaginas?: number;
   fonteAtividade?: string;
   usarMaiusculas?: boolean;
@@ -40,6 +41,16 @@ export function gerarPromptAtividade(body: DadosAtividade) {
   const observacoes = String(
     body.observacoes || ""
   ).trim();
+
+  const quantidadeQuestoesRecebida = Number(
+    body.quantidadeQuestoes || 6
+  );
+
+  const quantidadeQuestoes = Number.isFinite(
+    quantidadeQuestoesRecebida
+  )
+    ? Math.max(4, Math.min(10, Math.floor(quantidadeQuestoesRecebida)))
+    : 6;
 
   const quantidadePaginasRecebida = Number(
     body.quantidadePaginas || 1
@@ -116,24 +127,7 @@ export function gerarPromptAtividade(body: DadosAtividade) {
 
   const ehEJA = etapaEnsino === "EJA";
 
-  const quantidadeExercicios =
-    quantidadePaginas === 1
-      ? ehEducacaoInfantil
-        ? 4
-        : ehPrimeiroAno || ehSegundoAno
-          ? 5
-          : 6
-      : quantidadePaginas === 2
-        ? ehEducacaoInfantil
-          ? 7
-          : ehPrimeiroAno || ehSegundoAno
-            ? 9
-            : 10
-        : ehEducacaoInfantil
-          ? 10
-          : ehPrimeiroAno || ehSegundoAno
-            ? 12
-            : 14;
+  const quantidadeExercicios = quantidadeQuestoes;
 
   const regraEscrita = usarMaiusculas
     ? `
@@ -270,14 +264,23 @@ REGRAS GERAIS:
 - Nunca solicitar uma única imagem com vários objetos diferentes.
 - Caça-palavras, cruzadinhas, tabelas, sequências, colunas e grades devem ser produzidos como dados estruturados, nunca como imagem.
 - Cada exercício deve conter todo o material necessário para ser realizado.
+- Revisar a coerência pedagógica de cada palavra, frase, alternativa e imagem antes de responder.
+- Não misturar palavras que começam com letras diferentes quando o comando pede uma letra específica.
+- Em atividades de alfabetização, usar vocabulário simples, concreto, conhecido pelas crianças e fácil de ilustrar.
+- Evitar palavras raras, ambíguas ou difíceis de representar visualmente.
+- Quando houver distratores, eles devem aparecer somente quando o comando realmente pedir comparação, seleção ou identificação.
 - Não escrever comandos como "observe a imagem" quando nenhuma imagem tiver sido solicitada.
 - Não usar caça-palavras ou cruzadinha apenas para ocupar espaço.
-- Distribuir aproximadamente ${quantidadeExercicios} exercícios em ${quantidadePaginas} página(s).
+- Criar EXATAMENTE ${quantidadeQuestoes} questões principais.
+- Cada objeto de "exercicios" representa uma questão principal da folha.
+- Não juntar duas questões diferentes dentro do mesmo exercício.
+- Distribuir as ${quantidadeQuestoes} questões em aproximadamente ${quantidadePaginas} página(s).
 - O sistema organizará as quebras de página; crie exercícios com tamanho compatível com a quantidade de páginas.
 `;
 
   const tiposPermitidos = `
 TIPOS DE EXERCÍCIO PERMITIDOS:
+- letra_tracejada
 - tracejado
 - pinte
 - circule_letras
@@ -313,10 +316,13 @@ TIPOS DE EXERCÍCIO PERMITIDOS:
   const regrasPorTipo = `
 REGRAS DE ESTRUTURA POR TIPO:
 
-TRACEJADO:
-- Usar para letras, números, sílabas, palavras curtas ou traçados simples.
-- Informar em "conteudoLivre" exatamente o que deve aparecer pontilhado.
-- Não usar imagem para representar o tracejado.
+LETRA TRACEJADA / TRACEJADO:
+- Usar "letra_tracejada" quando o conteúdo for uma letra do alfabeto para cobrir.
+- Usar "tracejado" para números, sílabas, palavras curtas ou outros traçados.
+- Em "conteudoLivre", informar somente o símbolo ou modelo que deverá ser desenhado pontilhado, por exemplo: "B".
+- Não repetir a letra como texto comum, como "B B B B B".
+- O sistema desenhará uma letra grande pontilhada e uma sequência de letras pontilhadas menores.
+- Não usar imagem gerada para representar letras tracejadas.
 
 PINTE / CIRCULE FIGURAS:
 - Criar itens misturando respostas corretas e distratores quando necessário.
@@ -395,7 +401,8 @@ Disciplina: ${disciplina}
 Conteúdo ou tema: ${conteudo}
 O que foi trabalhado em sala: ${trabalhadoSala || "Não informado"}
 Observações: ${observacoes || "Não informado"}
-Quantidade de páginas: ${quantidadePaginas}
+Quantidade de questões: ${quantidadeQuestoes}
+Quantidade estimada de páginas: ${quantidadePaginas}
 Fonte: ${fonteAtividade}
 Modo de criação: ${modoCriacao}
 `;
@@ -414,6 +421,7 @@ FORMATO JSON OBRIGATÓRIO:
   "modoCriacao": "${modoCriacao}",
   "fonteAtividade": "${fonteAtividade}",
   "usarMaiusculas": ${usarMaiusculas},
+  "quantidadeQuestoes": ${quantidadeQuestoes},
   "quantidadePaginas": ${quantidadePaginas},
   "exercicios": [
     {
@@ -450,7 +458,7 @@ FORMATO JSON OBRIGATÓRIO:
 
 REGRAS DO JSON:
 - Todos os exercícios devem possuir todos os campos mostrados no modelo.
-- "exercicios" deve conter aproximadamente ${quantidadeExercicios} exercícios.
+- "exercicios" deve conter EXATAMENTE ${quantidadeQuestoes} exercícios.
 - "itens" deve sempre ser uma lista.
 - "palavras", "pistas", "grade", "colunas" e "alternativas" devem sempre ser listas.
 - Usar string vazia quando um campo textual não se aplicar.
@@ -471,6 +479,7 @@ ${pedidoPersonalizado}
 
 REGRAS DO MODO PERSONALIZADO:
 - Cumprir o pedido do professor com prioridade.
+- Respeitar exatamente a quantidade de questões escolhida, salvo quando o próprio pedido determinar uma quantidade diferente de forma explícita.
 - Adaptar o pedido à série e à disciplina.
 - Não ignorar as regras de escrita e adequação etária.
 - Caso o professor solicite seis questões, criar exatamente seis exercícios ou seis itens, conforme o sentido do pedido.
@@ -480,6 +489,7 @@ REGRAS DO MODO PERSONALIZADO:
       : `
 REGRAS DO MODO AUTOMÁTICO:
 - Escolher automaticamente os exercícios mais adequados à série, disciplina e conteúdo.
+- Criar exatamente ${quantidadeQuestoes} questões principais.
 - O professor não escolheu tipos de questões; essa decisão é responsabilidade pedagógica da IA.
 - Criar variedade real, sem parecer uma avaliação.
 - Começar com reconhecimento ou retomada.
@@ -487,6 +497,12 @@ REGRAS DO MODO AUTOMÁTICO:
 - Finalizar com uma atividade de síntese, criação, resolução ou desafio compatível com a série.
 - Para Educação Infantil, 1º e 2º ano, priorizar propostas visuais, alfabetização, escrita inicial, associação e atividades concretas.
 - Para séries maiores, ampliar interpretação, análise, aplicação e produção.
+- Para Educação Infantil, 1º e 2º ano, montar uma folha visual semelhante a uma atividade pedagógica ilustrada.
+- Quando o conteúdo for uma letra do alfabeto, variar entre letra tracejada, identificação visual, imagens que começam com a letra, completar palavras, ligar figuras a palavras e leitura de frases curtas.
+- Não usar palavras que contrariem o comando. Exemplo: em uma atividade sobre a letra B, não colocar GATO em uma lista de palavras que começam com B.
+- Em exercícios de ligar figuras e palavras, cada figura e cada palavra devem formar pares corretos e sem ambiguidade.
+- Em exercícios de completar palavras com uma letra, a palavra incompleta deve ter apenas a lacuna necessária, por exemplo: "_OLA" para BOLA.
+- Em exercícios visuais, usar de 3 a 6 itens por questão, conforme o espaço disponível.
 `;
 
   return `
