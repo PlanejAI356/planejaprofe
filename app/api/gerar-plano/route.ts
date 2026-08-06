@@ -947,24 +947,40 @@ FORMATO OBRIGATÓRIO:
     }
 
     const resposta = await openai.chat.completions.create({
-      model: "gpt-4.1-mini",
-      messages: [
-        {
-          role: "user",
-          content: comando,
+  model: "gpt-4.1-mini",
+  messages: [
+    {
+      role: "user",
+      content: comando,
+    },
+  ],
+  ...(tipo === "prova_json" ||
+  tipo === "atividade_pedagogica"
+    ? {
+        response_format: {
+          type: "json_object" as const,
         },
-      ],
-      ...(tipo === "prova_json" ||
-      tipo === "atividade_pedagogica"
-        ? {
-            response_format: {
-              type: "json_object" as const,
-            },
-          }
-        : {}),
-    });
+        max_completion_tokens: 8000,
+      }
+    : {}),
+});
 
-    let texto = resposta.choices[0].message.content || "";
+const primeiraEscolha = resposta.choices?.[0];
+
+console.log("TIPO DE GERAÇÃO:", tipo);
+console.log(
+  "MOTIVO DE FINALIZAÇÃO:",
+  primeiraEscolha?.finish_reason
+);
+console.log(
+  "CONTEÚDO RECEBIDO:",
+  primeiraEscolha?.message?.content
+);
+
+let texto =
+  typeof primeiraEscolha?.message?.content === "string"
+    ? primeiraEscolha.message.content
+    : "";
 
     if (tipo === "objetivos") {
       texto = texto.replace(
@@ -1044,6 +1060,74 @@ FORMATO OBRIGATÓRIO:
         );
       }
     }
+
+    if (tipo === "atividade_pedagogica") {
+  try {
+    const textoLimpo = texto
+      .replace(/^```json\s*/i, "")
+      .replace(/^```\s*/i, "")
+      .replace(/```\s*$/i, "")
+      .trim();
+
+    if (!textoLimpo) {
+      throw new Error(
+        "A inteligência artificial retornou uma atividade vazia."
+      );
+    }
+
+    const atividadeRecebida = JSON.parse(textoLimpo);
+
+    if (
+      !atividadeRecebida ||
+      typeof atividadeRecebida !== "object" ||
+      !Array.isArray(atividadeRecebida.exercicios)
+    ) {
+      throw new Error(
+        "JSON da atividade inválido."
+      );
+    }
+
+    const exercicios = atividadeRecebida.exercicios.map(
+      (exercicio: any, indice: number) => ({
+        ...exercicio,
+        id: `exercicio-${Date.now()}-${indice + 1}`,
+        numero: indice + 1,
+        itens: Array.isArray(exercicio.itens)
+          ? exercicio.itens.map(
+              (item: any, indiceItem: number) => ({
+                ...item,
+                id:
+                  item.id ||
+                  `item-${indice + 1}-${indiceItem + 1}`,
+              })
+            )
+          : [],
+      })
+    );
+
+    return Response.json({
+      atividade: {
+        ...atividadeRecebida,
+        exercicios,
+      },
+    });
+  } catch (erroJson) {
+    console.error(
+      "ERRO AO INTERPRETAR JSON DA ATIVIDADE:",
+      erroJson
+    );
+
+    return Response.json(
+      {
+        erro:
+          "A atividade foi gerada, mas o JSON retornou inválido.",
+      },
+      {
+        status: 500,
+      }
+    );
+  }
+}
 
     return Response.json({
       texto,

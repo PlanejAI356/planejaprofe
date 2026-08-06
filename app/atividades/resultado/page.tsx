@@ -1,512 +1,930 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
-  AlignCenter,
-  AlignJustify,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Columns2,
-  FileText,
-  GraduationCap,
-  Italic,
-  LayoutPanelTop,
-  Loader2,
-  Redo2,
+  ArrowLeft,
+  ImageIcon,
+  Pencil,
+  Plus,
   Save,
-  Underline,
-  Undo2,
+  Sparkles,
+  Trash2,
+  X,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
-import TopoAvaliacoes from "../../avaliacoes/componentes/TopoAvaliacoes";
-import { exportarAvaliacao } from "../../avaliacoes/utils/exportarAvaliacao";
-import { exportarAvaliacaoWord } from "../../avaliacoes/utils/exportarAvaliacaoWord";
-import VisualizacaoExercicio, {
-  ExercicioAtividade,
-} from "../componentes/VisualizacaoExercicio";
+type ModoCriacao = "automatica" | "personalizada";
+
+type ConfiguracaoAtividade = {
+  modoCriacao: ModoCriacao;
+  etapaEnsino: string;
+  serie: string;
+  disciplina: string;
+  conteudo: string;
+  trabalhadoSala: string;
+  pedidoPersonalizado?: string;
+  observacoes: string;
+  quantidadePaginas: number;
+  fonteAtividade: string;
+  usarMaiusculas: boolean;
+};
+
+type ItemExercicio = {
+  id: string;
+  texto: string;
+  resposta: string;
+  imagemNecessaria: boolean;
+  imagemDescricao: string;
+  colunaA: string;
+  colunaB: string;
+  alternativas: string[];
+  verdadeiro: boolean | null;
+};
+
+type Exercicio = {
+  id: string;
+  numero: number;
+  tipo: string;
+  titulo: string;
+  comando: string;
+  conteudoLivre: string;
+  itens: ItemExercicio[];
+  textoApoio: string;
+  palavras: string[];
+  pistas: string[];
+  grade: string[];
+  colunas: string[];
+  imagemNecessaria: boolean;
+  imagemDescricao: string;
+  imagemUrl?: string;
+  gabarito: string;
+};
 
 type AtividadeGerada = {
   titulo: string;
   subtitulo?: string;
-  modoCriacao?: "folha" | "especifica" | "revisao";
-  exercicios: ExercicioAtividade[];
+  modoCriacao?: ModoCriacao;
+  fonteAtividade?: string;
+  usarMaiusculas?: boolean;
+  quantidadePaginas?: number;
+  exercicios: Exercicio[];
 };
 
-export default function ResultadoAtividadePage() {
-  const [atividade, setAtividade] = useState<AtividadeGerada | null>(null);
-  const [conteudoEditado, setConteudoEditado] = useState("");
-  const [cabecalho, setCabecalho] = useState("");
-  const [carregando, setCarregando] = useState(true);
-  const [duasColunas, setDuasColunas] = useState(false);
-  const [cabecalhoSalvo, setCabecalhoSalvo] = useState(false);
-  const [mensagem, setMensagem] = useState("");
+type EdicaoExercicio = {
+  titulo: string;
+  tipo: string;
+  comando: string;
+  conteudoLivre: string;
+  textoApoio: string;
+  itensJson: string;
+  palavrasTexto: string;
+  pistasTexto: string;
+  gradeTexto: string;
+  colunasTexto: string;
+  gabarito: string;
+  imagemNecessaria: boolean;
+  imagemDescricao: string;
+};
 
-  const editorRef = useRef<HTMLDivElement>(null);
-  const cabecalhoRef = useRef<HTMLDivElement>(null);
-  const documentoRef = useRef<HTMLDivElement>(null);
+function nomeModo(modo: ModoCriacao) {
+  return modo === "personalizada"
+    ? "Atividade personalizada"
+    : "Atividade completa";
+}
+
+function textoSeguro(valor: unknown) {
+  return typeof valor === "string" ? valor : "";
+}
+
+function listaTexto(valor: unknown): string[] {
+  return Array.isArray(valor)
+    ? valor.map((item) => String(item)).filter(Boolean)
+    : [];
+}
+
+function normalizarItem(
+  item: Partial<ItemExercicio>,
+  indice: number
+): ItemExercicio {
+  return {
+    id:
+      typeof item.id === "string" && item.id.trim()
+        ? item.id
+        : `item-${indice + 1}`,
+    texto: textoSeguro(item.texto),
+    resposta: textoSeguro(item.resposta),
+    imagemNecessaria: Boolean(item.imagemNecessaria),
+    imagemDescricao: textoSeguro(item.imagemDescricao),
+    colunaA: textoSeguro(item.colunaA),
+    colunaB: textoSeguro(item.colunaB),
+    alternativas: listaTexto(item.alternativas),
+    verdadeiro:
+      typeof item.verdadeiro === "boolean"
+        ? item.verdadeiro
+        : null,
+  };
+}
+
+function normalizarExercicio(
+  exercicio: Partial<Exercicio>,
+  indice: number
+): Exercicio {
+  return {
+    id:
+      typeof exercicio.id === "string" && exercicio.id.trim()
+        ? exercicio.id
+        : `exercicio-${Date.now()}-${indice + 1}`,
+    numero: indice + 1,
+    tipo:
+      typeof exercicio.tipo === "string" && exercicio.tipo.trim()
+        ? exercicio.tipo
+        : "outro",
+    titulo:
+      typeof exercicio.titulo === "string" &&
+      exercicio.titulo.trim()
+        ? exercicio.titulo
+        : `Exercício ${indice + 1}`,
+    comando: textoSeguro(exercicio.comando),
+    conteudoLivre: textoSeguro(exercicio.conteudoLivre),
+    itens: Array.isArray(exercicio.itens)
+      ? exercicio.itens.map((item, itemIndice) =>
+          normalizarItem(
+            typeof item === "object" && item !== null
+              ? (item as Partial<ItemExercicio>)
+              : { texto: String(item) },
+            itemIndice
+          )
+        )
+      : [],
+    textoApoio: textoSeguro(exercicio.textoApoio),
+    palavras: listaTexto(exercicio.palavras),
+    pistas: listaTexto(exercicio.pistas),
+    grade: listaTexto(exercicio.grade),
+    colunas: listaTexto(exercicio.colunas),
+    imagemNecessaria: Boolean(exercicio.imagemNecessaria),
+    imagemDescricao: textoSeguro(exercicio.imagemDescricao),
+    imagemUrl:
+      typeof exercicio.imagemUrl === "string"
+        ? exercicio.imagemUrl
+        : undefined,
+    gabarito: textoSeguro(exercicio.gabarito),
+  };
+}
+
+function separarLinhas(texto: string) {
+  return texto
+    .split("\n")
+    .map((linha) => linha.trim())
+    .filter(Boolean);
+}
+
+function mostrarItem(item: ItemExercicio) {
+  if (item.colunaA || item.colunaB) {
+    return `${item.colunaA} — ${item.colunaB}`;
+  }
+
+  if (item.alternativas.length > 0) {
+    return `${item.texto}\n${item.alternativas
+      .map((alternativa, indice) => `${String.fromCharCode(65 + indice)}) ${alternativa}`)
+      .join("\n")}`;
+  }
+
+  if (typeof item.verdadeiro === "boolean") {
+    return `( ) ${item.texto}`;
+  }
+
+  return item.texto || item.resposta || "Item sem texto";
+}
+
+export default function RevisaoAtividadePage() {
+  const router = useRouter();
+
+  const [configuracao, setConfiguracao] =
+    useState<ConfiguracaoAtividade | null>(null);
+
+  const [atividade, setAtividade] =
+    useState<AtividadeGerada | null>(null);
+
+  const [exercicios, setExercicios] = useState<Exercicio[]>([]);
+  const [idEmEdicao, setIdEmEdicao] = useState<string | null>(null);
+  const [edicao, setEdicao] = useState<EdicaoExercicio | null>(null);
+  const [erro, setErro] = useState("");
 
   useEffect(() => {
-    const atividadeSalva = localStorage.getItem("atividadeJson");
-    const atividadeEditada =
-      localStorage.getItem("atividadeGeradaEditada") || "";
-    const cabecalhoSalvoLocal =
-      localStorage.getItem("cabecalhoAtividade") || "";
+    const configuracaoSalva = localStorage.getItem(
+      "configuracaoAtividade"
+    );
 
-    if (!atividadeSalva) {
-      setMensagem(
-        "Nenhuma atividade foi encontrada. Volte à configuração e gere uma nova atividade."
+    const atividadeSalva = localStorage.getItem("atividadeJson");
+
+    if (!configuracaoSalva || !atividadeSalva) {
+      setErro(
+        "Não encontrei a atividade gerada. Volte e gere a atividade novamente."
       );
-      setCarregando(false);
       return;
     }
 
     try {
+      const configuracaoRecebida = JSON.parse(
+        configuracaoSalva
+      ) as ConfiguracaoAtividade;
+
       const atividadeRecebida = JSON.parse(
         atividadeSalva
       ) as AtividadeGerada;
 
       if (
         !atividadeRecebida ||
-        !Array.isArray(atividadeRecebida.exercicios)
+        !Array.isArray(atividadeRecebida.exercicios) ||
+        atividadeRecebida.exercicios.length === 0
       ) {
-        throw new Error("A atividade não possui exercícios válidos.");
+        throw new Error("Lista de exercícios inválida.");
       }
 
-      setAtividade(atividadeRecebida);
-      setConteudoEditado(atividadeEditada);
-      setCabecalho(cabecalhoSalvoLocal);
-      setCabecalhoSalvo(Boolean(cabecalhoSalvoLocal.trim()));
+      const exerciciosNormalizados =
+        atividadeRecebida.exercicios.map(
+          (exercicio, indice) =>
+            normalizarExercicio(exercicio, indice)
+        );
+
+      const atividadeNormalizada: AtividadeGerada = {
+        ...atividadeRecebida,
+        titulo:
+          atividadeRecebida.titulo || "Atividade pedagógica",
+        fonteAtividade:
+          atividadeRecebida.fonteAtividade ||
+          configuracaoRecebida.fonteAtividade ||
+          "Times New Roman",
+        usarMaiusculas:
+          atividadeRecebida.usarMaiusculas ??
+          configuracaoRecebida.usarMaiusculas ??
+          false,
+        quantidadePaginas:
+          atividadeRecebida.quantidadePaginas ||
+          configuracaoRecebida.quantidadePaginas ||
+          1,
+        exercicios: exerciciosNormalizados,
+      };
+
+      setConfiguracao(configuracaoRecebida);
+      setAtividade(atividadeNormalizada);
+      setExercicios(exerciciosNormalizados);
+
+      localStorage.setItem(
+        "atividadeJson",
+        JSON.stringify(atividadeNormalizada)
+      );
     } catch (error) {
       console.error("Erro ao carregar atividade:", error);
-      setMensagem(
-        "Os dados da atividade ficaram inválidos. Volte e gere novamente."
+
+      setErro(
+        "A atividade foi encontrada, mas os dados ficaram inválidos. Volte e gere novamente."
       );
-    } finally {
-      setCarregando(false);
     }
   }, []);
 
-  function executarComando(comando: string, valor?: string) {
-    document.execCommand(comando, false, valor);
-    editorRef.current?.focus();
+  function persistir(lista: Exercicio[]) {
+    if (!atividade) return;
+
+    const listaNumerada = lista.map((exercicio, indice) => ({
+      ...exercicio,
+      numero: indice + 1,
+    }));
+
+    const atividadeAtualizada = {
+      ...atividade,
+      exercicios: listaNumerada,
+    };
+
+    setAtividade(atividadeAtualizada);
+    setExercicios(listaNumerada);
+
+    localStorage.setItem(
+      "atividadeJson",
+      JSON.stringify(atividadeAtualizada)
+    );
   }
 
-  function salvarCabecalho() {
-    const novoCabecalho = cabecalhoRef.current?.innerHTML || "";
-    const cabecalhoSomenteTexto =
-      cabecalhoRef.current?.innerText.trim() || "";
+  function excluirExercicio(id: string) {
+    persistir(
+      exercicios.filter((exercicio) => exercicio.id !== id)
+    );
 
-    if (!cabecalhoSomenteTexto) {
-      localStorage.removeItem("cabecalhoAtividade");
-      setCabecalho("");
-      setCabecalhoSalvo(false);
-      return;
+    if (idEmEdicao === id) {
+      setIdEmEdicao(null);
+      setEdicao(null);
     }
-
-    localStorage.setItem("cabecalhoAtividade", novoCabecalho);
-    setCabecalho(novoCabecalho);
-    setCabecalhoSalvo(true);
   }
 
-  function salvarConteudoAtual() {
-    const htmlAtual = editorRef.current?.innerHTML || "";
+  function iniciarEdicao(exercicio: Exercicio) {
+    setIdEmEdicao(exercicio.id);
+
+    setEdicao({
+      titulo: exercicio.titulo,
+      tipo: exercicio.tipo,
+      comando: exercicio.comando,
+      conteudoLivre: exercicio.conteudoLivre,
+      textoApoio: exercicio.textoApoio,
+      itensJson: JSON.stringify(exercicio.itens, null, 2),
+      palavrasTexto: exercicio.palavras.join("\n"),
+      pistasTexto: exercicio.pistas.join("\n"),
+      gradeTexto: exercicio.grade.join("\n"),
+      colunasTexto: exercicio.colunas.join("\n"),
+      gabarito: exercicio.gabarito,
+      imagemNecessaria: exercicio.imagemNecessaria,
+      imagemDescricao: exercicio.imagemDescricao,
+    });
+
+    setErro("");
+  }
+
+  function cancelarEdicao() {
+    setIdEmEdicao(null);
+    setEdicao(null);
+    setErro("");
+  }
+
+  function salvarEdicao(id: string) {
+    if (!edicao) return;
+
+    let itensEditados: ItemExercicio[] = [];
 
     try {
-      localStorage.setItem("atividadeGeradaEditada", htmlAtual);
-      setConteudoEditado(htmlAtual);
-      return true;
+      const itensRecebidos = JSON.parse(edicao.itensJson);
+
+      if (!Array.isArray(itensRecebidos)) {
+        throw new Error("Os itens precisam formar uma lista.");
+      }
+
+      itensEditados = itensRecebidos.map((item, indice) =>
+        normalizarItem(item, indice)
+      );
     } catch {
-      setMensagem(
-        "A atividade foi editada, mas o navegador não conseguiu salvar as alterações."
+      setErro(
+        "Os itens desse exercício estão com formato inválido. Corrija o campo de itens antes de salvar."
       );
-      return false;
+      return;
     }
+
+    const novaLista = exercicios.map((exercicio) => {
+      if (exercicio.id !== id) return exercicio;
+
+      return {
+        ...exercicio,
+        titulo: edicao.titulo.trim() || exercicio.titulo,
+        tipo: edicao.tipo.trim() || exercicio.tipo,
+        comando: edicao.comando.trim(),
+        conteudoLivre: edicao.conteudoLivre.trim(),
+        textoApoio: edicao.textoApoio.trim(),
+        itens: itensEditados,
+        palavras: separarLinhas(edicao.palavrasTexto),
+        pistas: separarLinhas(edicao.pistasTexto),
+        grade: separarLinhas(edicao.gradeTexto),
+        colunas: separarLinhas(edicao.colunasTexto),
+        gabarito: edicao.gabarito.trim(),
+        imagemNecessaria: edicao.imagemNecessaria,
+        imagemDescricao: edicao.imagemDescricao.trim(),
+      };
+    });
+
+    persistir(novaLista);
+    cancelarEdicao();
   }
 
-  async function baixarPDF() {
-    const documento = documentoRef.current;
+  function adicionarExercicio() {
+    const novoExercicio: Exercicio = {
+      id: `exercicio-${Date.now()}`,
+      numero: exercicios.length + 1,
+      titulo: "Novo exercício",
+      tipo: "outro",
+      comando: "",
+      conteudoLivre: "",
+      itens: [],
+      textoApoio: "",
+      palavras: [],
+      pistas: [],
+      grade: [],
+      colunas: [],
+      imagemNecessaria: false,
+      imagemDescricao: "",
+      gabarito: "",
+    };
 
-    if (!documento) {
-      alert("Não foi possível localizar a atividade.");
-      return;
-    }
+    const novaLista = [...exercicios, novoExercicio];
 
-    if (!(editorRef.current?.innerText.trim() || "")) {
-      alert("Nenhuma atividade foi encontrada.");
-      return;
-    }
-
-    try {
-      salvarConteudoAtual();
-      await exportarAvaliacao(documento, {
-        tituloArquivo: "atividade",
-      });
-    } catch (error) {
-      console.error("Erro ao exportar PDF:", error);
-      alert("Não foi possível preparar o PDF da atividade.");
-    }
+    persistir(novaLista);
+    iniciarEdicao(novoExercicio);
   }
 
-  async function baixarWord() {
-    const atividadeElemento = editorRef.current;
+  function montarFolhaFinal() {
+    if (!atividade) return;
 
-    if (!atividadeElemento) {
-      alert("Não foi possível localizar a atividade.");
-      return;
-    }
-
-    if (!atividadeElemento.innerText.trim()) {
-      alert("Nenhuma atividade foi encontrada.");
-      return;
-    }
-
-    try {
-      salvarConteudoAtual();
-
-      await exportarAvaliacaoWord(
-        cabecalhoRef.current,
-        atividadeElemento,
-        {
-          tituloArquivo: "atividade",
-          duasColunas,
-        }
-      );
-    } catch (error) {
-      console.error("Erro ao gerar Word:", error);
-      alert("Não foi possível gerar o arquivo Word.");
-    }
+    persistir(exercicios);
+    router.push("/atividades/resultado");
   }
 
-  function renderizarAtividadeEstruturada() {
-    if (!atividade) return null;
-
+  if (erro && (!configuracao || !atividade)) {
     return (
-      <div>
-        <div className="mb-7 text-center">
-          <h2 className="text-2xl font-extrabold uppercase text-slate-950">
-            {atividade.titulo || "Atividade pedagógica"}
-          </h2>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5">
+        <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
+          <p className="font-bold text-red-700">{erro}</p>
 
-          {atividade.subtitulo && (
-            <p className="mt-2 text-sm font-semibold text-slate-600">
-              {atividade.subtitulo}
-            </p>
-          )}
+          <button
+            type="button"
+            onClick={() => router.push("/atividades")}
+            className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white transition hover:bg-emerald-700"
+          >
+            Voltar para atividades
+          </button>
         </div>
+      </main>
+    );
+  }
 
-        <div className="space-y-8">
-          {atividade.exercicios.map((exercicio, indice) => (
-            <article
-              key={exercicio.id || `exercicio-${indice}`}
-              className="break-inside-avoid"
-            >
-              <div className="mb-3 flex items-start gap-3">
-                <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-900 bg-white font-bold text-slate-950">
-                  {indice + 1}
-                </span>
-
-                <h3 className="pt-1 text-lg font-bold text-slate-950">
-                  {exercicio.titulo}
-                </h3>
-              </div>
-
-              <VisualizacaoExercicio
-                exercicio={{
-                  ...exercicio,
-                  gabarito: "",
-                }}
-              />
-            </article>
-          ))}
+  if (!configuracao || !atividade) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
+        <div className="flex items-center gap-3 font-semibold text-emerald-700">
+          <Sparkles className="animate-pulse" />
+          Carregando atividade...
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <TopoAvaliacoes
-        destinoVoltar="/atividades/revisao"
-        textoVoltar="Revisar atividade"
-      />
+      <header className="border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+          <div>
+            <h1 className="text-xl font-bold text-emerald-900">
+              Revisão da atividade
+            </h1>
 
-      <section className="mx-auto max-w-6xl px-4 py-5">
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="flex items-center justify-center gap-2 bg-green-700 px-5 py-4 text-white">
-            <GraduationCap size={23} />
-            <h1 className="text-xl font-extrabold">Atividade do aluno</h1>
+            <p className="text-sm text-slate-700">
+              {configuracao.serie} • {configuracao.disciplina} •{" "}
+              {configuracao.conteudo}
+            </p>
           </div>
 
-          <div className="p-5">
-            <div className="mb-4 rounded-xl bg-green-50 px-4 py-3 text-center text-sm font-semibold text-green-700">
-              Edite a atividade, cole o cabeçalho da escola e organize o
-              documento antes de baixar.
+          <button
+            type="button"
+            onClick={() => router.push("/atividades")}
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-5 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+          >
+            <ArrowLeft size={19} />
+            Voltar
+          </button>
+        </div>
+      </header>
+
+      <section className="mx-auto max-w-5xl px-4 py-6 sm:px-5">
+        <div className="rounded-2xl border border-emerald-200 bg-emerald-50 p-5">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+              <p className="text-sm font-bold uppercase tracking-wide text-emerald-700">
+                {nomeModo(configuracao.modoCriacao)}
+              </p>
+
+              <h2 className="mt-1 text-xl font-bold text-slate-950">
+                {atividade.titulo}
+              </h2>
+
+              {atividade.subtitulo && (
+                <p className="mt-1 text-sm text-slate-600">
+                  {atividade.subtitulo}
+                </p>
+              )}
+
+              <p className="mt-2 text-sm text-slate-600">
+                Revise, edite ou exclua os exercícios antes de montar
+                a folha final.
+              </p>
             </div>
 
-            {!carregando && atividade && (
-              <div className="mb-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
-                <button
-                  type="button"
-                  title="Desfazer"
-                  onClick={() => executarComando("undo")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <Undo2 size={18} />
-                </button>
+            <div className="rounded-xl border border-emerald-200 bg-white px-4 py-3 text-sm text-slate-700">
+              <p>
+                <strong>Exercícios:</strong> {exercicios.length}
+              </p>
+              <p className="mt-1">
+                <strong>Páginas:</strong>{" "}
+                {configuracao.quantidadePaginas}
+              </p>
+              <p className="mt-1">
+                <strong>Fonte:</strong>{" "}
+                {configuracao.fonteAtividade}
+              </p>
+              <p className="mt-1">
+                <strong>Escrita:</strong>{" "}
+                {configuracao.usarMaiusculas
+                  ? "LETRAS MAIÚSCULAS"
+                  : "Normal"}
+              </p>
+            </div>
+          </div>
 
-                <button
-                  type="button"
-                  title="Refazer"
-                  onClick={() => executarComando("redo")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <Redo2 size={18} />
-                </button>
-
-                <div className="mx-1 h-7 w-px bg-slate-200" />
-
-                <button
-                  type="button"
-                  title="Negrito"
-                  onClick={() => executarComando("bold")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <Bold size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Itálico"
-                  onClick={() => executarComando("italic")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <Italic size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Sublinhado"
-                  onClick={() => executarComando("underline")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <Underline size={18} />
-                </button>
-
-                <div className="mx-1 h-7 w-px bg-slate-200" />
-
-                <button
-                  type="button"
-                  title="Alinhar à esquerda"
-                  onClick={() => executarComando("justifyLeft")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <AlignLeft size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Centralizar"
-                  onClick={() => executarComando("justifyCenter")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <AlignCenter size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Alinhar à direita"
-                  onClick={() => executarComando("justifyRight")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <AlignRight size={18} />
-                </button>
-
-                <button
-                  type="button"
-                  title="Justificar"
-                  onClick={() => executarComando("justifyFull")}
-                  className="cursor-pointer rounded-lg border border-slate-200 p-2 text-slate-700 transition hover:bg-slate-100"
-                >
-                  <AlignJustify size={18} />
-                </button>
-
-                <div className="mx-1 h-7 w-px bg-slate-200" />
-
-                <select
-                  title="Tamanho da fonte"
-                  defaultValue="3"
-                  onChange={(evento) =>
-                    executarComando("fontSize", evento.target.value)
-                  }
-                  className="cursor-pointer rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 outline-none"
-                >
-                  <option value="2">Pequena</option>
-                  <option value="3">Normal</option>
-                  <option value="4">Média</option>
-                  <option value="5">Grande</option>
-                </select>
-
-                <button
-                  type="button"
-                  title={
-                    duasColunas
-                      ? "Usar uma coluna"
-                      : "Usar duas colunas"
-                  }
-                  onClick={() => setDuasColunas((valor) => !valor)}
-                  className={`flex cursor-pointer items-center gap-2 rounded-lg border px-3 py-2 text-sm font-bold transition ${
-                    duasColunas
-                      ? "border-green-700 bg-green-50 text-green-800"
-                      : "border-slate-200 text-slate-700 hover:bg-slate-100"
-                  }`}
-                >
-                  {duasColunas ? (
-                    <LayoutPanelTop size={18} />
-                  ) : (
-                    <Columns2 size={18} />
-                  )}
-
-                  {duasColunas ? "Uma coluna" : "Duas colunas"}
-                </button>
-
-                <button
-                  type="button"
-                  onClick={salvarConteudoAtual}
-                  className="ml-auto flex cursor-pointer items-center gap-2 rounded-lg bg-green-700 px-4 py-2 text-sm font-extrabold text-white transition hover:bg-green-800"
-                >
-                  <Save size={18} />
-                  Salvar alterações
-                </button>
+          {configuracao.modoCriacao === "personalizada" &&
+            configuracao.pedidoPersonalizado && (
+              <div className="mt-4 rounded-xl border border-blue-200 bg-white px-4 py-3">
+                <p className="text-sm font-bold text-slate-950">
+                  Pedido personalizado
+                </p>
+                <p className="mt-1 whitespace-pre-wrap text-sm text-slate-600">
+                  {configuracao.pedidoPersonalizado}
+                </p>
               </div>
             )}
+        </div>
 
-            {mensagem && (
-              <div className="mb-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                {mensagem}
-              </div>
-            )}
+        {erro && (
+          <div className="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
+            {erro}
+          </div>
+        )}
 
-            <div className="max-h-[760px] overflow-auto rounded-xl border border-slate-200 bg-slate-100 p-4 sm:p-6">
-              {carregando ? (
-                <div className="flex min-h-[560px] items-center justify-center gap-2 text-sm text-slate-500">
-                  <Loader2 size={18} className="animate-spin" />
-                  Carregando atividade...
-                </div>
-              ) : atividade ? (
-                <div
-                  ref={documentoRef}
-                  className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-slate-300 bg-white px-8 py-10 shadow-md sm:px-12"
-                >
-                  <div className="mb-4">
-                    <div
-                      ref={cabecalhoRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-                      className="min-h-[130px] w-full rounded-lg border border-dashed border-slate-300 px-5 py-4 text-center text-sm leading-6 text-slate-900 outline-none transition empty:before:pointer-events-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                      dangerouslySetInnerHTML={{
-                        __html: cabecalho,
-                      }}
-                    />
+        <div className="mt-5 space-y-4">
+          {exercicios.map((exercicio) => {
+            const estaEditando = idEmEdicao === exercicio.id;
 
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <p
-                        className={`text-xs font-semibold ${
-                          cabecalhoSalvo
-                            ? "text-green-700"
-                            : "text-slate-500"
-                        }`}
-                      >
-                        {cabecalhoSalvo
-                          ? "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
-                          : "Copie o cabeçalho usado pela escola e cole nessa área."}
-                      </p>
+            return (
+              <article
+                key={exercicio.id}
+                className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+              >
+                <div className="flex flex-col gap-3 border-b border-slate-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <p className="text-sm font-semibold text-emerald-700">
+                      EXERCÍCIO {exercicio.numero}
+                    </p>
 
-                      <button
-                        type="button"
-                        onClick={salvarCabecalho}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
-                      >
-                        <Save size={16} />
-                        Salvar cabeçalho
-                      </button>
-                    </div>
+                    <h3 className="text-lg font-bold text-slate-950">
+                      {exercicio.titulo}
+                    </h3>
+
+                    <p className="mt-1 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {exercicio.tipo.replaceAll("_", " ")}
+                    </p>
                   </div>
 
-                  <div className="mb-6 border-t border-slate-300" />
+                  <div className="flex flex-wrap gap-2">
+                    {estaEditando ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => salvarEdicao(exercicio.id)}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-700"
+                        >
+                          <Save size={16} />
+                          Salvar
+                        </button>
 
-                  {conteudoEditado ? (
-                    <div
-                      ref={editorRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={salvarConteudoAtual}
-                      className={`min-h-[760px] break-words text-sm leading-7 text-slate-900 outline-none ${
-                        duasColunas
-                          ? "columns-2 gap-10 [column-rule:1px_solid_#cbd5e1]"
-                          : "columns-1"
-                      }`}
-                      dangerouslySetInnerHTML={{
-                        __html: conteudoEditado,
-                      }}
-                    />
-                  ) : (
-                    <div
-                      ref={editorRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      onInput={salvarConteudoAtual}
-                      className={`min-h-[760px] break-words text-sm leading-7 text-slate-900 outline-none ${
-                        duasColunas
-                          ? "columns-2 gap-10 [column-rule:1px_solid_#cbd5e1]"
-                          : "columns-1"
-                      }`}
-                    >
-                      {renderizarAtividadeEstruturada()}
+                        <button
+                          type="button"
+                          onClick={cancelarEdicao}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+                        >
+                          <X size={16} />
+                          Cancelar
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => iniciarEdicao(exercicio)}
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-slate-300 px-3 py-2 text-sm font-semibold text-slate-700"
+                        >
+                          <Pencil size={16} />
+                          Editar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            excluirExercicio(exercicio.id)
+                          }
+                          className="flex cursor-pointer items-center gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm font-semibold text-red-700"
+                        >
+                          <Trash2 size={16} />
+                          Excluir
+                        </button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {estaEditando && edicao ? (
+                  <div className="space-y-4 pt-4">
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <input
+                        value={edicao.titulo}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            titulo: event.target.value,
+                          })
+                        }
+                        placeholder="Título"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
+
+                      <input
+                        value={edicao.tipo}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            tipo: event.target.value,
+                          })
+                        }
+                        placeholder="Tipo"
+                        className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
                     </div>
-                  )}
-                </div>
-              ) : (
-                <div className="flex min-h-[560px] flex-col items-center justify-center text-center">
-                  <FileText size={40} className="mb-3 text-slate-300" />
-                  <p className="text-sm font-semibold text-slate-600">
-                    Nenhuma atividade foi encontrada.
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Volte à configuração e gere uma nova atividade.
-                  </p>
-                </div>
-              )}
-            </div>
 
-            <div className="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex flex-wrap gap-3">
-                <button
-                  type="button"
-                  onClick={baixarWord}
-                  className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Baixar Word
-                </button>
+                    <textarea
+                      value={edicao.comando}
+                      onChange={(event) =>
+                        setEdicao({
+                          ...edicao,
+                          comando: event.target.value,
+                        })
+                      }
+                      placeholder="Comando"
+                      className="min-h-24 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                    />
 
-                <button
-                  type="button"
-                  onClick={baixarPDF}
-                  className="cursor-pointer rounded-xl bg-green-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-green-800"
-                >
-                  Baixar PDF
-                </button>
+                    <textarea
+                      value={edicao.textoApoio}
+                      onChange={(event) =>
+                        setEdicao({
+                          ...edicao,
+                          textoApoio: event.target.value,
+                        })
+                      }
+                      placeholder="Texto de apoio"
+                      className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                    />
 
-                <button
-                  type="button"
-                  className="cursor-pointer rounded-xl border border-green-700 px-5 py-3 text-sm font-extrabold text-green-800 transition hover:bg-green-50"
-                >
-                  Gerar versão do professor
-                </button>
-              </div>
-            </div>
-          </div>
+                    <textarea
+                      value={edicao.conteudoLivre}
+                      onChange={(event) =>
+                        setEdicao({
+                          ...edicao,
+                          conteudoLivre: event.target.value,
+                        })
+                      }
+                      placeholder="Conteúdo livre"
+                      className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                    />
+
+                    <div>
+                      <label className="mb-2 block font-semibold text-slate-900">
+                        Itens estruturados
+                      </label>
+                      <textarea
+                        value={edicao.itensJson}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            itensJson: event.target.value,
+                          })
+                        }
+                        className="min-h-64 w-full resize-y rounded-xl border border-slate-300 px-4 py-3 font-mono text-sm outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      <textarea
+                        value={edicao.palavrasTexto}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            palavrasTexto: event.target.value,
+                          })
+                        }
+                        placeholder="Palavras — uma por linha"
+                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
+
+                      <textarea
+                        value={edicao.pistasTexto}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            pistasTexto: event.target.value,
+                          })
+                        }
+                        placeholder="Pistas — uma por linha"
+                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
+
+                      <textarea
+                        value={edicao.gradeTexto}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            gradeTexto: event.target.value,
+                          })
+                        }
+                        placeholder="Grade — uma linha por linha"
+                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
+
+                      <textarea
+                        value={edicao.colunasTexto}
+                        onChange={(event) =>
+                          setEdicao({
+                            ...edicao,
+                            colunasTexto: event.target.value,
+                          })
+                        }
+                        placeholder="Colunas — uma por linha"
+                        className="min-h-28 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <textarea
+                      value={edicao.gabarito}
+                      onChange={(event) =>
+                        setEdicao({
+                          ...edicao,
+                          gabarito: event.target.value,
+                        })
+                      }
+                      placeholder="Gabarito"
+                      className="min-h-24 w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-emerald-500"
+                    />
+
+                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
+                      <label className="flex cursor-pointer items-center gap-3 font-semibold text-slate-800">
+                        <input
+                          type="checkbox"
+                          checked={edicao.imagemNecessaria}
+                          onChange={(event) =>
+                            setEdicao({
+                              ...edicao,
+                              imagemNecessaria:
+                                event.target.checked,
+                            })
+                          }
+                          className="h-5 w-5 cursor-pointer accent-emerald-600"
+                        />
+                        Este exercício precisa de imagem geral
+                      </label>
+
+                      {edicao.imagemNecessaria && (
+                        <textarea
+                          value={edicao.imagemDescricao}
+                          onChange={(event) =>
+                            setEdicao({
+                              ...edicao,
+                              imagemDescricao:
+                                event.target.value,
+                            })
+                          }
+                          placeholder="Descrição da imagem"
+                          className="mt-3 min-h-24 w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                        />
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="pt-4">
+                    {exercicio.textoApoio && (
+                      <div className="mb-4 whitespace-pre-wrap rounded-xl border border-slate-200 bg-slate-50 p-4 leading-7 text-slate-800">
+                        {exercicio.textoApoio}
+                      </div>
+                    )}
+
+                    {exercicio.comando && (
+                      <p className="font-semibold leading-7 text-slate-900">
+                        {exercicio.comando}
+                      </p>
+                    )}
+
+                    {exercicio.conteudoLivre && (
+                      <div className="mt-3 whitespace-pre-wrap leading-7 text-slate-800">
+                        {exercicio.conteudoLivre}
+                      </div>
+                    )}
+
+                    {exercicio.itens.length > 0 && (
+                      <div className="mt-4 space-y-3">
+                        {exercicio.itens.map((item, indice) => (
+                          <div
+                            key={item.id || `${exercicio.id}-${indice}`}
+                            className="rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-slate-800"
+                          >
+                            <div className="whitespace-pre-wrap">
+                              {mostrarItem(item)}
+                            </div>
+
+                            {item.imagemNecessaria && (
+                              <div className="mt-3 flex items-start gap-3 rounded-lg border border-dashed border-blue-300 bg-blue-50 p-3">
+                                <ImageIcon
+                                  size={22}
+                                  className="shrink-0 text-blue-600"
+                                />
+                                <p className="text-sm text-slate-600">
+                                  {item.imagemDescricao ||
+                                    "Imagem necessária para este item."}
+                                </p>
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {exercicio.palavras.length > 0 && (
+                      <div className="mt-4">
+                        <strong>Palavras:</strong>{" "}
+                        {exercicio.palavras.join(", ")}
+                      </div>
+                    )}
+
+                    {exercicio.pistas.length > 0 && (
+                      <div className="mt-4">
+                        <strong>Pistas:</strong>
+                        <ol className="mt-2 list-decimal space-y-1 pl-6">
+                          {exercicio.pistas.map((pista, indice) => (
+                            <li key={`${exercicio.id}-pista-${indice}`}>
+                              {pista}
+                            </li>
+                          ))}
+                        </ol>
+                      </div>
+                    )}
+
+                    {exercicio.grade.length > 0 && (
+                      <div className="mt-4 overflow-x-auto rounded-xl border border-slate-200 bg-slate-50 p-4 font-mono leading-7">
+                        {exercicio.grade.map((linha, indice) => (
+                          <div
+                            key={`${exercicio.id}-grade-${indice}`}
+                            className="whitespace-pre"
+                          >
+                            {linha}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {exercicio.imagemNecessaria && (
+                      <div className="mt-4 rounded-xl border border-dashed border-blue-300 bg-blue-50 p-4">
+                        <div className="flex items-start gap-3">
+                          <ImageIcon
+                            size={25}
+                            className="shrink-0 text-blue-600"
+                          />
+                          <div>
+                            <p className="font-bold text-slate-900">
+                              Imagem geral necessária
+                            </p>
+                            <p className="mt-1 text-sm text-slate-600">
+                              {exercicio.imagemDescricao ||
+                                "A descrição ainda não foi informada."}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {exercicio.gabarito && (
+                      <details className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                        <summary className="cursor-pointer font-bold text-emerald-800">
+                          Ver gabarito
+                        </summary>
+                        <p className="mt-2 whitespace-pre-wrap text-sm leading-6 text-slate-700">
+                          {exercicio.gabarito}
+                        </p>
+                      </details>
+                    )}
+                  </div>
+                )}
+              </article>
+            );
+          })}
+        </div>
+
+        <div className="mt-6 flex flex-col justify-center gap-3 sm:flex-row">
+          <button
+            type="button"
+            onClick={adicionarExercicio}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700 transition hover:bg-emerald-50"
+          >
+            <Plus size={20} />
+            Adicionar exercício
+          </button>
+
+          <button
+            type="button"
+            onClick={montarFolhaFinal}
+            disabled={exercicios.length === 0}
+            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-300"
+          >
+            <Sparkles size={20} />
+            Montar folha final
+          </button>
         </div>
       </section>
     </main>
