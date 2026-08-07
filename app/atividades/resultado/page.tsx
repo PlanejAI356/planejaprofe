@@ -4,8 +4,11 @@ import { useEffect, useState } from "react";
 import {
   ArrowLeft,
   Download,
+  Pencil,
   Printer,
   RefreshCw,
+  Save,
+  X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -17,14 +20,30 @@ type ConfiguracaoAtividadeImagem = {
   quantidadeQuestoes?: number;
 };
 
+const CABECALHO_PADRAO =
+  "<strong>ESCOLA:</strong> ________________________________________________<br>" +
+  "<strong>ALUNO(A):</strong> _____________________________________________<br>" +
+  "<strong>TURMA:</strong> ____________________ &nbsp;&nbsp;&nbsp; " +
+  "<strong>DATA:</strong> ____/____/______";
+
 export default function ResultadoAtividadePage() {
   const router = useRouter();
 
   const [imagem, setImagem] = useState("");
   const [configuracao, setConfiguracao] =
     useState<ConfiguracaoAtividadeImagem | null>(null);
+
   const [erro, setErro] = useState("");
   const [carregando, setCarregando] = useState(true);
+
+  const [mostrarCabecalho, setMostrarCabecalho] =
+    useState(false);
+
+  const [cabecalho, setCabecalho] =
+    useState(CABECALHO_PADRAO);
+
+  const [cabecalhoSalvo, setCabecalhoSalvo] =
+    useState(false);
 
   useEffect(() => {
     try {
@@ -34,6 +53,11 @@ export default function ResultadoAtividadePage() {
       const configuracaoSalva =
         localStorage.getItem(
           "configuracaoAtividadeImagem"
+        );
+
+      const cabecalhoSalvoLocal =
+        localStorage.getItem(
+          "cabecalhoAtividade"
         );
 
       if (
@@ -52,6 +76,12 @@ export default function ResultadoAtividadePage() {
         setConfiguracao(
           JSON.parse(configuracaoSalva)
         );
+      }
+
+      if (cabecalhoSalvoLocal) {
+        setCabecalho(cabecalhoSalvoLocal);
+        setCabecalhoSalvo(true);
+        setMostrarCabecalho(true);
       }
     } catch (error) {
       console.error(
@@ -94,6 +124,20 @@ export default function ResultadoAtividadePage() {
     link.remove();
   }
 
+  function salvarCabecalho() {
+    localStorage.setItem(
+      "cabecalhoAtividade",
+      cabecalho
+    );
+
+    setCabecalhoSalvo(true);
+    setMostrarCabecalho(true);
+  }
+
+  function removerCabecalhoDaFolha() {
+    setMostrarCabecalho(false);
+  }
+
   if (carregando) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100">
@@ -128,10 +172,14 @@ export default function ResultadoAtividadePage() {
   return (
     <main className="min-h-screen bg-slate-100">
       <style jsx global>{`
+        .folha-completa {
+          box-sizing: border-box;
+        }
+
         @media print {
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 8mm;
           }
 
           html,
@@ -145,21 +193,31 @@ export default function ResultadoAtividadePage() {
             display: none !important;
           }
 
-          .area-impressao {
-            width: 210mm !important;
-            min-height: 297mm !important;
-            margin: 0 !important;
+          .folha-completa {
+            width: 194mm !important;
+            margin: 0 auto !important;
             padding: 0 !important;
             background: white !important;
             box-shadow: none !important;
           }
 
+          .cabecalho-impressao {
+            margin-bottom: 4mm !important;
+            padding-bottom: 3mm !important;
+            border-bottom: 1px solid #000 !important;
+            color: #000 !important;
+            font-family: Arial, Helvetica, sans-serif !important;
+            font-size: 10.5pt !important;
+            line-height: 1.55 !important;
+          }
+
           .imagem-atividade {
             display: block !important;
-            width: 210mm !important;
-            height: 297mm !important;
+            width: 100% !important;
+            height: auto !important;
+            max-height: 252mm !important;
             object-fit: contain !important;
-            margin: 0 !important;
+            margin: 0 auto !important;
           }
         }
       `}</style>
@@ -172,7 +230,7 @@ export default function ResultadoAtividadePage() {
             </h1>
 
             <p className="text-sm text-slate-700">
-              Confira a folha gerada antes de baixar ou imprimir.
+              Confira a folha antes de baixar ou imprimir.
             </p>
           </div>
 
@@ -189,11 +247,10 @@ export default function ResultadoAtividadePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
         {configuracao && (
-          <div className="nao-imprimir mb-5 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
             <p className="text-sm text-slate-600">
               <strong>
-                {configuracao.serie ||
-                  "Turma"}
+                {configuracao.serie || "Turma"}
               </strong>
 
               {configuracao.disciplina
@@ -204,16 +261,97 @@ export default function ResultadoAtividadePage() {
                 ? ` • ${configuracao.quantidadeQuestoes} questões`
                 : ""}
             </p>
-
-            {configuracao.pedido && (
-              <p className="mt-2 text-sm leading-6 text-slate-700">
-                {configuracao.pedido}
-              </p>
-            )}
           </div>
         )}
 
-        <div className="area-impressao mx-auto w-full max-w-[794px] overflow-hidden bg-white shadow-xl">
+        <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h2 className="font-bold text-slate-950">
+                Cabeçalho da atividade
+              </h2>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Edite ou cole o cabeçalho utilizado pela sua escola.
+              </p>
+            </div>
+
+            {!mostrarCabecalho ? (
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarCabecalho(true)
+                }
+                className="flex items-center gap-2 rounded-xl border border-emerald-600 bg-white px-4 py-2 font-bold text-emerald-700"
+              >
+                <Pencil size={17} />
+                Adicionar cabeçalho
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={removerCabecalhoDaFolha}
+                className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-600"
+              >
+                <X size={17} />
+                Ocultar cabeçalho
+              </button>
+            )}
+          </div>
+
+          {mostrarCabecalho && (
+            <div className="mt-4">
+              <div
+                contentEditable
+                suppressContentEditableWarning
+                onInput={(event) => {
+                  setCabecalho(
+                    event.currentTarget.innerHTML
+                  );
+                  setCabecalhoSalvo(false);
+                }}
+                className="min-h-28 rounded-xl border border-slate-300 bg-white p-4 text-sm leading-7 outline-none focus:border-emerald-500"
+                dangerouslySetInnerHTML={{
+                  __html: cabecalho,
+                }}
+              />
+
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                <p
+                  className={`text-sm ${
+                    cabecalhoSalvo
+                      ? "font-semibold text-emerald-700"
+                      : "text-slate-500"
+                  }`}
+                >
+                  {cabecalhoSalvo
+                    ? "Cabeçalho salvo para as próximas atividades."
+                    : "Você pode colar aqui o cabeçalho padrão da escola."}
+                </p>
+
+                <button
+                  type="button"
+                  onClick={salvarCabecalho}
+                  className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white"
+                >
+                  <Save size={17} />
+                  Salvar cabeçalho
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="folha-completa mx-auto w-full max-w-[794px] bg-white shadow-xl">
+          {mostrarCabecalho && (
+            <div
+              className="cabecalho-impressao px-7 pt-6 text-sm leading-7"
+              dangerouslySetInnerHTML={{
+                __html: cabecalho,
+              }}
+            />
+          )}
+
           <img
             src={imagem}
             alt="Atividade pedagógica gerada pelo PlanejAI"

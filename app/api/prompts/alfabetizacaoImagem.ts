@@ -11,7 +11,10 @@ export function gerarPromptAlfabetizacaoImagem(
 ) {
   const quantidade = Math.max(
     1,
-    Math.min(10, Number(dados.quantidadeQuestoes || 6))
+    Math.min(
+      10,
+      Number(dados.quantidadeQuestoes || 6)
+    )
   );
 
   return `
@@ -58,20 +61,50 @@ FORMATO:
 - Evitar excesso de decoração.
 - Priorizar clareza e legibilidade.
 
+DIAGRAMAÇÃO:
+
+- Reservar aproximadamente 3 centímetros no topo para o cabeçalho externo do PlanejAI.
+- Distribuir as questões uniformemente abaixo dessa área.
+- Não deixar grandes espaços vazios entre as questões.
+- Não apertar demais os exercícios.
+- Aproveitar bem a largura útil da folha.
+- Manter margens regulares.
+- Deixar espaço suficiente para a criança responder.
+- Manter desenhos e textos proporcionalmente equilibrados.
+- Não deixar nenhum exercício encostado nas bordas.
+
 CABEÇALHO:
 
-No topo da folha, colocar:
+NÃO criar cabeçalho de identificação dentro da imagem.
 
-NOME: ______________________________________
+NÃO escrever:
 
-DATA: ____ / ____ / ______
+- NOME
+- ALUNO(A)
+- ESCOLA
+- TURMA
+- DATA
+- PROFESSOR
 
-Se houver espaço, também poderá incluir:
+Essas informações serão adicionadas posteriormente pelo sistema PlanejAI.
 
-TURMA: __________________
+Reservar aproximadamente 3 centímetros de espaço em branco na parte superior da folha.
 
-Não inventar nome da escola.
-Não inventar nome de professor.
+Esse espaço deve ficar totalmente livre.
+
+Não criar:
+
+- linhas para preenchimento;
+- caixas;
+- molduras;
+- logotipos;
+- brasões;
+- textos institucionais;
+- títulos dentro desse espaço.
+
+O título da atividade deve começar somente abaixo da área reservada.
+
+A atividade deve ser diagramada considerando que o PlanejAI poderá inserir um cabeçalho personalizado nessa área.
 
 TÍTULO:
 
@@ -102,7 +135,7 @@ LETRA PARA ALFABETIZAÇÃO:
 - A letra pontilhada deve ter formato simples e fácil para a criança copiar.
 - Não transformar a letra pontilhada em uma fonte serifada.
 - Usar preferencialmente letras maiúsculas para ${dados.serie}
-quando adequado à fase de alfabetização.
+  quando adequado à fase de alfabetização.
 
 QUESTÕES:
 
@@ -147,7 +180,7 @@ Quando usar imagens:
 - Não usar marcas-d'água.
 - Não usar textos dentro dos desenhos.
 - Não colocar o nome do objeto automaticamente,
-a menos que a própria questão precise mostrar a palavra.
+  a menos que a própria questão precise mostrar a palavra.
 
 COERÊNCIA ENTRE LETRA E FIGURA:
 
@@ -239,8 +272,8 @@ Quando criar exercício de cobrir letra:
 - mostrar de 4 a 8 letras menores pontilhadas;
 - incluir linhas abaixo para a criança tentar escrever sozinha;
 - não escrever apenas:
-B B B B B
-como texto comum.
+  B B B B B
+  como texto comum.
 
 COMANDOS:
 
@@ -274,7 +307,7 @@ Para Educação Infantil, 1º e 2º ano:
 - usar imagens maiores;
 - usar comandos simples;
 - priorizar identificação, associação, oralidade,
-leitura inicial e escrita inicial;
+  leitura inicial e escrita inicial;
 - não criar questões discursivas longas;
 - não criar interpretação de texto extensa.
 
@@ -303,8 +336,18 @@ Antes de entregar a imagem:
 8. Conferir se a letra de traçado é simples e não serifada.
 9. Conferir se a atividade é adequada para ${dados.serie}.
 10. Conferir se a folha está pronta para impressão.
+11. Conferir se o espaço superior reservado para o cabeçalho permanece vazio.
 
-Produza SOMENTE a folha pedagógica pronta.
-Não escreva comentários fora da folha.
+Produza somente a imagem da atividade pedagógica.
+
+Não escreva explicações fora da folha.
+
+Não criar cabeçalho de identificação.
+
+Não criar rodapé.
+
+Não adicionar logotipo ou marca-d'água.
+
+A folha será finalizada pelo sistema PlanejAI, que poderá inserir um cabeçalho personalizado no espaço reservado no topo.
 `.trim();
 }
