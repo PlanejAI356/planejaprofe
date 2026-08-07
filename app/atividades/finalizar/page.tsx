@@ -538,22 +538,25 @@ export default function FinalizarAtividadePage() {
             </div>
 
             <div
-              ref={cabecalhoRef}
-              contentEditable
-              suppressContentEditableWarning
-              data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-              onInput={(event) => {
-                setCabecalho(
-                  event.currentTarget.innerHTML
-                );
-                setCabecalhoSalvo(false);
-                setMensagem("");
-              }}
-              className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-              dangerouslySetInnerHTML={{
-                __html: cabecalho,
-              }}
-            />
+  ref={cabecalhoRef}
+  contentEditable
+  suppressContentEditableWarning
+  data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
+  onInput={() => {
+    setCabecalhoSalvo(false);
+    setMensagem("");
+  }}
+  onBlur={() => {
+    const htmlAtual =
+      cabecalhoRef.current?.innerHTML || "";
+
+    setCabecalho(htmlAtual);
+  }}
+  className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+  dangerouslySetInnerHTML={{
+    __html: cabecalho,
+  }}
+/>
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p
