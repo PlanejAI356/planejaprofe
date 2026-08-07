@@ -1,13 +1,31 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
 import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
   ArrowLeft,
-  Printer,
+  Bold,
+  Download,
+  Italic,
   Save,
-  RotateCcw,
+  Underline,
 } from "lucide-react";
+
 import { useRouter } from "next/navigation";
+
+import pdfMake from "pdfmake/build/pdfmake";
+import pdfFonts from "pdfmake/build/vfs_fonts";
+import htmlToPdfmake from "html-to-pdfmake";
+
+(pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -17,82 +35,18 @@ type ConfiguracaoAtividadeImagem = {
   quantidadeQuestoes?: number;
 };
 
-const CABECALHO_PADRAO = `
-<table style="width:100%; border-collapse:collapse; font-family:Arial, Helvetica, sans-serif; font-size:12px;">
-  <tbody>
-    <tr>
-      <td rowspan="4" style="width:120px; border:1px solid #000; text-align:center; vertical-align:middle; padding:8px;">
-        <strong>LOGO</strong>
-      </td>
-
-      <td colspan="2" style="border:1px solid #000; text-align:center; padding:6px; font-weight:700;">
-        NOME DA ESCOLA
-      </td>
-
-      <td rowspan="2" style="width:120px; border:1px solid #000; text-align:center; vertical-align:middle; padding:6px;">
-        <strong>DATA</strong><br><br>
-        ____/____/______
-      </td>
-    </tr>
-
-    <tr>
-      <td style="border:1px solid #000; padding:6px;">
-        <strong>Componente Curricular:</strong>
-      </td>
-
-      <td style="border:1px solid #000; padding:6px;">
-        <strong>Professor(a):</strong>
-      </td>
-    </tr>
-
-    <tr>
-      <td style="border:1px solid #000; padding:6px;">
-        <strong>Turno:</strong>
-      </td>
-
-      <td style="border:1px solid #000; padding:6px;">
-        <strong>Série:</strong>
-      </td>
-
-      <td style="border:1px solid #000; text-align:center; padding:6px;">
-        <strong>NOTA</strong>
-      </td>
-    </tr>
-
-    <tr>
-      <td colspan="2" style="border:1px solid #000; padding:6px;">
-        <strong>Objeto(s) de Conhecimento:</strong>
-      </td>
-
-      <td style="border:1px solid #000; padding:6px;">
-        &nbsp;
-      </td>
-    </tr>
-
-    <tr>
-      <td colspan="4" style="border:1px solid #000; padding:6px;">
-        <strong>Aluno(a):</strong>
-      </td>
-    </tr>
-  </tbody>
-</table>
-`;
-
 export default function FinalizarAtividadePage() {
   const router = useRouter();
+  const cabecalhoRef = useRef<HTMLDivElement>(null);
 
   const [imagem, setImagem] = useState("");
   const [configuracao, setConfiguracao] =
     useState<ConfiguracaoAtividadeImagem | null>(null);
-
-  const [cabecalhoPadrao, setCabecalhoPadrao] =
-    useState(CABECALHO_PADRAO);
-
-  const [cabecalhoAtual, setCabecalhoAtual] =
-    useState(CABECALHO_PADRAO);
-
-  const [mensagem, setMensagem] = useState("");
+  const [cabecalho, setCabecalho] = useState("");
+  const [cabecalhoSalvo, setCabecalhoSalvo] =
+    useState(false);
   const [erro, setErro] = useState("");
+  const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
 
   useEffect(() => {
@@ -105,10 +59,10 @@ export default function FinalizarAtividadePage() {
           "configuracaoAtividadeImagem"
         );
 
-      const cabecalhoSalvo =
-        localStorage.getItem(
-          "cabecalhoAtividadePadrao"
-        );
+      const cabecalhoSalvoLocal =
+        localStorage.getItem("cabecalhoAtividade") ||
+        localStorage.getItem("cabecalhoAvaliacao") ||
+        "";
 
       if (
         !imagemSalva ||
@@ -128,13 +82,13 @@ export default function FinalizarAtividadePage() {
         );
       }
 
-      if (cabecalhoSalvo) {
-        setCabecalhoPadrao(cabecalhoSalvo);
-        setCabecalhoAtual(cabecalhoSalvo);
-      }
+      setCabecalho(cabecalhoSalvoLocal);
+      setCabecalhoSalvo(
+        Boolean(cabecalhoSalvoLocal.trim())
+      );
     } catch (error) {
       console.error(
-        "Erro ao carregar finalização da atividade:",
+        "Erro ao carregar a atividade:",
         error
       );
 
@@ -149,43 +103,260 @@ export default function FinalizarAtividadePage() {
   const resumo = useMemo(() => {
     if (!configuracao) return "";
 
-    const partes = [
+    return [
       configuracao.serie,
       configuracao.disciplina,
       configuracao.quantidadeQuestoes
         ? `${configuracao.quantidadeQuestoes} questões`
         : "",
-    ].filter(Boolean);
-
-    return partes.join(" • ");
+    ]
+      .filter(Boolean)
+      .join(" • ");
   }, [configuracao]);
 
-  function salvarComoPadrao() {
+  function executarComando(
+    comando: string,
+    valor?: string
+  ) {
+    document.execCommand(
+      comando,
+      false,
+      valor
+    );
+
+    cabecalhoRef.current?.focus();
+
+    const html =
+      cabecalhoRef.current?.innerHTML || "";
+
+    setCabecalho(html);
+    setCabecalhoSalvo(false);
+  }
+
+  function salvarCabecalho() {
+    const novoCabecalho =
+      cabecalhoRef.current?.innerHTML || "";
+
+    const somenteTexto =
+      cabecalhoRef.current?.innerText.trim() || "";
+
+    if (!somenteTexto) {
+      localStorage.removeItem("cabecalhoAtividade");
+
+      setCabecalho("");
+      setCabecalhoSalvo(false);
+      setMensagem("Cabeçalho removido.");
+      return;
+    }
+
     localStorage.setItem(
-      "cabecalhoAtividadePadrao",
-      cabecalhoAtual
+      "cabecalhoAtividade",
+      novoCabecalho
     );
 
-    setCabecalhoPadrao(cabecalhoAtual);
+    setCabecalho(novoCabecalho);
+    setCabecalhoSalvo(true);
+
     setMensagem(
-      "Cabeçalho salvo como padrão para as próximas atividades."
+      "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
     );
   }
 
-  function restaurarPadrao() {
-    setCabecalhoAtual(cabecalhoPadrao);
-    setMensagem(
-      "Cabeçalho padrão restaurado nesta atividade."
+  function obterHtmlCabecalho() {
+    return (
+      cabecalhoRef.current?.innerHTML ||
+      cabecalho ||
+      ""
     );
   }
 
-  function imprimirOuSalvarPDF() {
-    window.print();
+  function baixarPDF() {
+    if (!imagem) {
+      alert("Nenhuma atividade foi encontrada.");
+      return;
+    }
+
+    try {
+      const htmlCabecalho = obterHtmlCabecalho();
+
+      const conteudoCabecalho =
+        htmlCabecalho.trim()
+          ? htmlToPdfmake(
+              htmlCabecalho,
+              { window }
+            )
+          : [];
+
+      const documento: any = {
+        pageSize: "A4",
+        pageMargins: [34, 32, 34, 32],
+        defaultStyle: {
+          fontSize: 10,
+          lineHeight: 1.15,
+        },
+        content: [
+          ...(htmlCabecalho.trim()
+            ? [
+                {
+                  stack:
+                    Array.isArray(conteudoCabecalho)
+                      ? conteudoCabecalho
+                      : [conteudoCabecalho],
+                  margin: [0, 0, 0, 8],
+                },
+              ]
+            : []),
+          {
+            image: imagem,
+            width: 527,
+            alignment: "center",
+            margin: [0, 0, 0, 0],
+          },
+        ],
+      };
+
+      pdfMake
+        .createPdf(documento)
+        .download("atividade-planejai.pdf");
+    } catch (error) {
+      console.error(
+        "Erro ao gerar PDF:",
+        error
+      );
+
+      alert(
+        "Não foi possível gerar o PDF."
+      );
+    }
+  }
+
+  function baixarWord() {
+    if (!imagem) {
+      alert("Nenhuma atividade foi encontrada.");
+      return;
+    }
+
+    try {
+      const htmlCabecalho =
+        obterHtmlCabecalho();
+
+      const html = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8" />
+            <meta
+              name="ProgId"
+              content="Word.Document"
+            />
+
+            <style>
+              @page {
+                size: A4 portrait;
+                margin: 1cm;
+              }
+
+              body {
+                font-family: Arial, Helvetica, sans-serif;
+                margin: 0;
+                color: #000;
+              }
+
+              .cabecalho {
+                width: 100%;
+                margin-bottom: 10px;
+              }
+
+              .cabecalho table {
+                width: 100%;
+                border-collapse: collapse;
+              }
+
+              .cabecalho td,
+              .cabecalho th {
+                border: 1px solid #000;
+              }
+
+              .cabecalho img {
+                max-width: 120px;
+                max-height: 80px;
+                object-fit: contain;
+              }
+
+              .atividade {
+                width: 100%;
+                text-align: center;
+              }
+
+              .atividade img {
+                display: block;
+                width: 100%;
+                max-width: 19cm;
+                height: auto;
+                margin: 0 auto;
+              }
+            </style>
+          </head>
+
+          <body>
+            ${
+              htmlCabecalho.trim()
+                ? `
+                  <div class="cabecalho">
+                    ${htmlCabecalho}
+                  </div>
+                `
+                : ""
+            }
+
+            <div class="atividade">
+              <img
+                src="${imagem}"
+                alt="Atividade pedagógica"
+              />
+            </div>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob(
+        ["\ufeff", html],
+        {
+          type:
+            "application/msword;charset=utf-8",
+        }
+      );
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const link =
+        document.createElement("a");
+
+      link.href = url;
+      link.download =
+        "atividade-planejai.doc";
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error(
+        "Erro ao gerar Word:",
+        error
+      );
+
+      alert(
+        "Não foi possível gerar o arquivo Word."
+      );
+    }
   }
 
   if (carregando) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100">
+      <main className="flex min-h-screen items-center justify-center bg-slate-50">
         <p className="font-semibold text-emerald-700">
           Preparando atividade...
         </p>
@@ -195,7 +366,7 @@ export default function FinalizarAtividadePage() {
 
   if (erro || !imagem) {
     return (
-      <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4">
         <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
           <p className="font-bold text-red-700">
             {erro ||
@@ -217,87 +388,36 @@ export default function FinalizarAtividadePage() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-100">
+    <main className="min-h-screen bg-slate-50">
       <style jsx global>{`
-        .editor-cabecalho table,
-        .cabecalho-final table {
+        .cabecalho-editor table,
+        .cabecalho-preview table {
           width: 100% !important;
           border-collapse: collapse !important;
         }
 
-        .editor-cabecalho td,
-        .editor-cabecalho th,
-        .cabecalho-final td,
-        .cabecalho-final th {
-          border: 1px solid #000 !important;
+        .cabecalho-editor td,
+        .cabecalho-editor th,
+        .cabecalho-preview td,
+        .cabecalho-preview th {
+          border: 1px solid #000;
         }
 
-        .editor-cabecalho img,
-        .cabecalho-final img {
-          max-height: 82px;
-          max-width: 115px;
+        .cabecalho-editor img,
+        .cabecalho-preview img {
+          max-width: 120px;
+          max-height: 80px;
           object-fit: contain;
         }
 
-        @media print {
-          @page {
-            size: A4 portrait;
-            margin: 7mm;
-          }
-
-          html,
-          body {
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #fff !important;
-          }
-
-          .nao-imprimir {
-            display: none !important;
-          }
-
-          .pagina-final {
-            width: 196mm !important;
-            max-width: 196mm !important;
-            min-height: 0 !important;
-            margin: 0 auto !important;
-            padding: 0 !important;
-            box-shadow: none !important;
-            background: white !important;
-          }
-
-          .cabecalho-final {
-            width: 100% !important;
-            margin-bottom: 4mm !important;
-            font-size: 9pt !important;
-            line-height: 1.15 !important;
-            break-inside: avoid !important;
-            page-break-inside: avoid !important;
-          }
-
-          .cabecalho-final table {
-            width: 100% !important;
-            table-layout: fixed !important;
-          }
-
-          .cabecalho-final td,
-          .cabecalho-final th {
-            padding: 2.2mm !important;
-            border: 1px solid #000 !important;
-          }
-
-          .imagem-atividade-final {
-            display: block !important;
-            width: 100% !important;
-            max-height: 238mm !important;
-            height: auto !important;
-            object-fit: contain !important;
-            margin: 0 auto !important;
-          }
+        .cabecalho-editor:empty::before {
+          content: attr(data-placeholder);
+          color: #94a3b8;
+          pointer-events: none;
         }
       `}</style>
 
-      <header className="nao-imprimir border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
+      <header className="border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
         <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
           <div>
             <h1 className="text-xl font-bold text-emerald-900">
@@ -305,14 +425,16 @@ export default function FinalizarAtividadePage() {
             </h1>
 
             <p className="text-sm text-slate-700">
-              Ajuste o cabeçalho e confira a folha antes de imprimir.
+              Edite o cabeçalho e baixe a atividade em Word ou PDF.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() =>
-              router.push("/atividades/resultado")
+              router.push(
+                "/atividades/resultado"
+              )
             }
             className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
           >
@@ -322,94 +444,185 @@ export default function FinalizarAtividadePage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
         {resumo && (
-          <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-slate-600">
-              {resumo}
-            </p>
+          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-700">
+            {resumo}
           </div>
         )}
 
-        <div className="nao-imprimir mb-5 rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-bold text-slate-950">
-                Cabeçalho
-              </h2>
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 p-5">
+            <h2 className="font-bold text-slate-950">
+              Cabeçalho da escola
+            </h2>
 
-              <p className="mt-1 text-sm leading-5 text-slate-500">
-                Edite o cabeçalho desta atividade. As alterações só serão salvas para as próximas atividades se você clicar em “Salvar como padrão”.
-              </p>
+            <p className="mt-1 text-sm text-slate-500">
+              Copie o cabeçalho usado pela escola e cole na área abaixo. Você pode editar antes de baixar.
+            </p>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
+              <button
+                type="button"
+                title="Negrito"
+                onClick={() =>
+                  executarComando("bold")
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <Bold size={18} />
+              </button>
+
+              <button
+                type="button"
+                title="Itálico"
+                onClick={() =>
+                  executarComando("italic")
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <Italic size={18} />
+              </button>
+
+              <button
+                type="button"
+                title="Sublinhado"
+                onClick={() =>
+                  executarComando("underline")
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <Underline size={18} />
+              </button>
+
+              <div className="mx-1 h-7 w-px bg-slate-300" />
+
+              <button
+                type="button"
+                title="Alinhar à esquerda"
+                onClick={() =>
+                  executarComando(
+                    "justifyLeft"
+                  )
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <AlignLeft size={18} />
+              </button>
+
+              <button
+                type="button"
+                title="Centralizar"
+                onClick={() =>
+                  executarComando(
+                    "justifyCenter"
+                  )
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <AlignCenter size={18} />
+              </button>
+
+              <button
+                type="button"
+                title="Alinhar à direita"
+                onClick={() =>
+                  executarComando(
+                    "justifyRight"
+                  )
+                }
+                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+              >
+                <AlignRight size={18} />
+              </button>
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={restaurarPadrao}
-                className="flex items-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2 font-semibold text-slate-700"
+            <div
+              ref={cabecalhoRef}
+              contentEditable
+              suppressContentEditableWarning
+              data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
+              onInput={(event) => {
+                setCabecalho(
+                  event.currentTarget.innerHTML
+                );
+                setCabecalhoSalvo(false);
+                setMensagem("");
+              }}
+              className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              dangerouslySetInnerHTML={{
+                __html: cabecalho,
+              }}
+            />
+
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+              <p
+                className={`text-xs font-semibold ${
+                  cabecalhoSalvo
+                    ? "text-emerald-700"
+                    : "text-slate-500"
+                }`}
               >
-                <RotateCcw size={16} />
-                Restaurar padrão
-              </button>
+                {cabecalhoSalvo
+                  ? "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
+                  : "Você pode alterar o cabeçalho desta atividade antes de baixar."}
+              </p>
 
               <button
                 type="button"
-                onClick={salvarComoPadrao}
-                className="flex items-center gap-2 rounded-xl bg-emerald-600 px-4 py-2 font-bold text-white"
+                onClick={salvarCabecalho}
+                className="flex items-center gap-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-50"
               >
-                <Save size={17} />
-                Salvar como padrão
+                <Save size={16} />
+                Salvar cabeçalho
               </button>
+            </div>
+
+            {mensagem && (
+              <p className="mt-2 text-xs font-semibold text-emerald-700">
+                {mensagem}
+              </p>
+            )}
+          </div>
+
+          <div className="bg-slate-100 p-4 sm:p-6">
+            <div className="mx-auto w-full max-w-[794px] bg-white p-6 shadow-md">
+              {cabecalho.trim() && (
+                <div
+                  className="cabecalho-preview mb-4 overflow-hidden"
+                  dangerouslySetInnerHTML={{
+                    __html: cabecalho,
+                  }}
+                />
+              )}
+
+              <img
+                src={imagem}
+                alt="Atividade pedagógica final"
+                className="block h-auto w-full object-contain"
+              />
             </div>
           </div>
 
-          <div
-            contentEditable
-            suppressContentEditableWarning
-            onInput={(event) => {
-              setCabecalhoAtual(
-                event.currentTarget.innerHTML
-              );
-              setMensagem("");
-            }}
-            className="editor-cabecalho mt-4 min-h-40 overflow-x-auto rounded-xl border-2 border-slate-300 bg-white p-4 outline-none focus:border-emerald-500"
-            dangerouslySetInnerHTML={{
-              __html: cabecalhoAtual,
-            }}
-          />
+          <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-end">
+            <button
+              type="button"
+              onClick={baixarWord}
+              className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+            >
+              <Download size={18} />
+              Baixar Word
+            </button>
 
-          {mensagem && (
-            <p className="mt-3 text-sm font-semibold text-emerald-700">
-              {mensagem}
-            </p>
-          )}
-        </div>
-
-        <div className="pagina-final mx-auto w-full max-w-[794px] bg-white p-6 shadow-xl">
-          <div
-            className="cabecalho-final overflow-hidden"
-            dangerouslySetInnerHTML={{
-              __html: cabecalhoAtual,
-            }}
-          />
-
-          <img
-            src={imagem}
-            alt="Atividade pedagógica final"
-            className="imagem-atividade-final mt-4 block h-auto w-full object-contain"
-          />
-        </div>
-
-        <div className="nao-imprimir mt-6 flex justify-center">
-          <button
-            type="button"
-            onClick={imprimirOuSalvarPDF}
-            className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-3 font-bold text-white"
-          >
-            <Printer size={19} />
-            Imprimir ou salvar em PDF
-          </button>
+            <button
+              type="button"
+              onClick={baixarPDF}
+              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
+            >
+              <Download size={18} />
+              Baixar PDF
+            </button>
+          </div>
         </div>
       </section>
     </main>
