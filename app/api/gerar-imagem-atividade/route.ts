@@ -1,91 +1,109 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+import { gerarPromptAlfabetizacaoImagem } from "../prompts/alfabetizacaoImagem";
 
 export const runtime = "nodejs";
-export const maxDuration = 120;
+export const maxDuration = 180;
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
 type CorpoRequisicao = {
-  descricao?: string;
-  palavra?: string;
-  estilo?: string;
+  etapaEnsino?: string;
+  serie?: string;
+  disciplina?: string;
+  pedido?: string;
+  quantidadeQuestoes?: number;
 };
 
 export async function POST(request: Request) {
   try {
-    const body = (await request.json()) as CorpoRequisicao;
+    const body =
+      (await request.json()) as CorpoRequisicao;
 
-    const descricao = String(
-      body.descricao || body.palavra || ""
+    const etapaEnsino = String(
+      body.etapaEnsino || ""
     ).trim();
 
-    const estilo = String(
-      body.estilo || "ilustração infantil didática"
+    const serie = String(
+      body.serie || ""
     ).trim();
 
-    if (!descricao) {
+    const disciplina = String(
+      body.disciplina || ""
+    ).trim();
+
+    const pedido = String(
+      body.pedido || ""
+    ).trim();
+
+    const quantidadeQuestoes = Math.max(
+      1,
+      Math.min(
+        10,
+        Number(body.quantidadeQuestoes || 6)
+      )
+    );
+
+    if (!etapaEnsino) {
       return NextResponse.json(
         {
           erro:
-            "A descrição da figura não foi informada.",
+            "A etapa de ensino não foi informada.",
         },
         { status: 400 }
       );
     }
 
-    if (descricao.length > 500) {
+    if (!serie) {
       return NextResponse.json(
         {
           erro:
-            "A descrição da figura está muito longa.",
+            "A série ou turma não foi informada.",
         },
         { status: 400 }
       );
     }
 
-    const prompt = `
-Crie UMA ÚNICA FIGURA para uma atividade pedagógica infantil.
+    if (!disciplina) {
+      return NextResponse.json(
+        {
+          erro:
+            "A disciplina não foi informada.",
+        },
+        { status: 400 }
+      );
+    }
 
-OBJETO OU PERSONAGEM:
-${descricao}
+    if (!pedido) {
+      return NextResponse.json(
+        {
+          erro:
+            "Descreva a atividade que deseja criar.",
+        },
+        { status: 400 }
+      );
+    }
 
-ESTILO:
-${estilo}
+    const promptFinal =
+      gerarPromptAlfabetizacaoImagem({
+        etapaEnsino,
+        serie,
+        disciplina,
+        pedido,
+        quantidadeQuestoes,
+      });
 
-REGRAS OBRIGATÓRIAS:
-- Mostrar somente um objeto, animal, alimento, brinquedo, pessoa ou personagem principal.
-- Manter o elemento inteiro e centralizado.
-- Usar fundo branco puro.
-- Não criar cenário.
-- Não criar moldura.
-- Não adicionar sombras fortes.
-- Não adicionar outros objetos decorativos.
-- Não escrever nenhuma palavra.
-- Não escrever letras.
-- Não escrever números.
-- Não criar legenda.
-- Não criar título.
-- Não criar marca-d'água.
-- Não mostrar a resposta escrita.
-- Usar contorno nítido e formas fáceis de reconhecer.
-- Criar uma ilustração educativa apropriada para crianças.
-- Manter boa nitidez para impressão em folha A4.
-- A figura deve funcionar bem em tamanho pequeno dentro de um exercício.
-- Evitar detalhes excessivos.
-- Não cortar nenhuma parte importante do objeto.
-`.trim();
-
-    const resultado = await openai.images.generate({
-      model: "gpt-image-2",
-      prompt,
-      size: "1024x1024",
-      quality: "low",
-      output_format: "jpeg",
-      output_compression: 75,
-    });
+    const resultado =
+      await openai.images.generate({
+        model: "gpt-image-2",
+        prompt: promptFinal,
+        size: "1024x1536",
+        quality: "medium",
+        output_format: "jpeg",
+        output_compression: 90,
+      });
 
     const imagemBase64 =
       resultado.data?.[0]?.b64_json;
@@ -94,7 +112,7 @@ REGRAS OBRIGATÓRIAS:
       return NextResponse.json(
         {
           erro:
-            "A figura não foi retornada pela inteligência artificial.",
+            "A atividade não foi retornada pela inteligência artificial.",
         },
         { status: 500 }
       );
@@ -105,18 +123,22 @@ REGRAS OBRIGATÓRIAS:
     });
   } catch (error) {
     console.error(
-      "Erro ao gerar imagem da atividade:",
+      "Erro ao gerar atividade em imagem:",
       error
     );
 
     const mensagem =
       error instanceof Error
         ? error.message
-        : "Não foi possível gerar a figura.";
+        : "Não foi possível gerar a atividade.";
 
     return NextResponse.json(
-      { erro: mensagem },
-      { status: 500 }
+      {
+        erro: mensagem,
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

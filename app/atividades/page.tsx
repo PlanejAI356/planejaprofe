@@ -150,72 +150,38 @@ export default function AtividadesPage() {
     }
 
     if (!pedido.trim()) {
-      setErro(
-        "Escreva o que você deseja criar."
-      );
+      setErro("Escreva o que você deseja criar.");
       return;
     }
 
-    const totalQuestoes = Number(
-      quantidadeQuestoes
-    );
-
-    const quantidadePaginas =
-      totalQuestoes <= 6
-        ? 1
-        : totalQuestoes <= 10
-          ? 2
-          : 3;
-
-    const usarMaiusculas =
-      etapaEnsino === "Educação Infantil" ||
-      serie === "1º ano" ||
-      serie === "2º ano";
+    const totalQuestoes = Number(quantidadeQuestoes);
 
     const configuracao = {
-      modoCriacao: "personalizada" as const,
       etapaEnsino,
       serie,
       disciplina,
-      conteudo: pedido.trim(),
-      trabalhadoSala: "",
-      pedidoPersonalizado: pedido.trim(),
-      observacoes:
-        "Crie uma atividade completa, visual, pedagogicamente correta e pronta para impressão. Use imagens apenas quando forem úteis. Não deixe exercícios incompletos.",
+      pedido: pedido.trim(),
       quantidadeQuestoes: totalQuestoes,
-      quantidadePaginas,
-      fonteAtividade: "Times New Roman",
-      usarMaiusculas,
     };
 
     try {
       setGerando(true);
 
       const resposta = await fetch(
-        "/api/gerar-plano",
+        "/api/gerar-atividade-imagem",
         {
           method: "POST",
           headers: {
-            "Content-Type":
-              "application/json",
+            "Content-Type": "application/json",
           },
-          body: JSON.stringify({
-            tipo: "atividade_pedagogica",
-            ...configuracao,
-          }),
+          body: JSON.stringify(configuracao),
         }
       );
 
       const tipoResposta =
-        resposta.headers.get(
-          "content-type"
-        ) || "";
+        resposta.headers.get("content-type") || "";
 
-      if (
-        !tipoResposta.includes(
-          "application/json"
-        )
-      ) {
+      if (!tipoResposta.includes("application/json")) {
         if (resposta.status === 504) {
           throw new Error(
             "A geração demorou mais que o esperado. Tente novamente."
@@ -227,8 +193,7 @@ export default function AtividadesPage() {
         );
       }
 
-      const resultado =
-        await resposta.json();
+      const resultado = await resposta.json();
 
       if (!resposta.ok) {
         throw new Error(
@@ -237,94 +202,36 @@ export default function AtividadesPage() {
         );
       }
 
-      const atividadeGerada =
-        resultado.atividade as
-          | {
-              titulo?: string;
-              subtitulo?: string;
-              exercicios?: Array<
-                Record<string, unknown>
-              >;
-            }
-          | undefined;
-
       if (
-        !atividadeGerada ||
-        typeof atividadeGerada !==
-          "object" ||
-        !Array.isArray(
-          atividadeGerada.exercicios
-        ) ||
-        atividadeGerada.exercicios
-          .length === 0
+        typeof resultado.imagem !== "string" ||
+        !resultado.imagem.startsWith("data:image/")
       ) {
         throw new Error(
-          "A inteligência artificial não retornou uma atividade válida."
+          "A imagem da atividade não foi retornada corretamente."
         );
       }
 
-      const momento = Date.now();
-
-      const exerciciosComId =
-        atividadeGerada.exercicios.map(
-          (exercicio, indice) => ({
-            ...exercicio,
-            id:
-              typeof exercicio.id ===
-                "string" &&
-              exercicio.id.trim()
-                ? exercicio.id
-                : `exercicio-${momento}-${indice + 1}`,
-            numero: indice + 1,
-            itens: Array.isArray(
-              exercicio.itens
-            )
-              ? exercicio.itens.map(
-                  (
-                    item: Record<
-                      string,
-                      unknown
-                    >,
-                    itemIndice: number
-                  ) => ({
-                    ...item,
-                    id:
-                      typeof item.id ===
-                        "string" &&
-                      item.id.trim()
-                        ? item.id
-                        : `item-${momento}-${indice + 1}-${itemIndice + 1}`,
-                  })
-                )
-              : [],
-          })
-        );
-
       localStorage.setItem(
-        "atividadeJson",
-        JSON.stringify({
-          ...atividadeGerada,
-          fonteAtividade:
-            "Times New Roman",
-          usarMaiusculas,
-          quantidadeQuestoes:
-            totalQuestoes,
-          quantidadePaginas,
-          exercicios: exerciciosComId,
-        })
+        "atividadeImagem",
+        resultado.imagem
       );
 
       localStorage.setItem(
-        "configuracaoAtividade",
+        "configuracaoAtividadeImagem",
         JSON.stringify(configuracao)
       );
 
-      router.push(
-        "/atividades/revisao"
-      );
+      if (typeof resultado.promptFinal === "string") {
+        localStorage.setItem(
+          "promptAtividadeImagem",
+          resultado.promptFinal
+        );
+      }
+
+      router.push("/atividades/resultado");
     } catch (error) {
       console.error(
-        "Erro ao gerar atividade:",
+        "Erro ao gerar atividade em imagem:",
         error
       );
 
@@ -411,7 +318,7 @@ export default function AtividadesPage() {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Escreva como falaria com uma assistente. O PlanejAI escolherá os exercícios, o formato e as imagens.
+                Escreva como falaria com uma assistente. O PlanejAI criará a folha completa e mostrará a atividade pronta na próxima página.
               </p>
             </div>
           </div>
@@ -638,7 +545,7 @@ export default function AtividadesPage() {
                     size={21}
                     className="animate-spin"
                   />
-                  Criando atividade...
+                  Gerando folha pronta...
                 </>
               ) : (
                 <>
