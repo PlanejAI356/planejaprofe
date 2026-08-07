@@ -61,14 +61,15 @@ FORMATO:
 - Evitar excesso de decoração.
 - Priorizar clareza e legibilidade.
 
-DIAGRAMAÇÃO:
+DDIAGRAMAÇÃO:
 
-- Reservar aproximadamente 3 centímetros no topo para o cabeçalho externo do PlanejAI.
-- Distribuir as questões uniformemente abaixo dessa área.
-- Não deixar grandes espaços vazios entre as questões.
+- Usar bem toda a área útil da folha.
+- Manter apenas margens normais de impressão.
+- O título da atividade pode começar próximo ao topo da folha.
+- Distribuir as questões uniformemente.
+- Não deixar grandes espaços vazios.
 - Não apertar demais os exercícios.
-- Aproveitar bem a largura útil da folha.
-- Manter margens regulares.
+- Aproveitar bem a largura e a altura da página.
 - Deixar espaço suficiente para a criança responder.
 - Manter desenhos e textos proporcionalmente equilibrados.
 - Não deixar nenhum exercício encostado nas bordas.
@@ -86,11 +87,11 @@ NÃO escrever:
 - DATA
 - PROFESSOR
 
-Essas informações serão adicionadas posteriormente pelo sistema PlanejAI.
+Não reservar espaço para cabeçalho.
 
-Reservar aproximadamente 3 centímetros de espaço em branco na parte superior da folha.
+O cabeçalho será acrescentado em outra página pelo sistema PlanejAI.
 
-Esse espaço deve ficar totalmente livre.
+A imagem deve conter somente o título e a atividade pedagógica.
 
 Não criar:
 
