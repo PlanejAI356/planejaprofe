@@ -28,21 +28,24 @@ export async function usarPlanejamentoGratis() {
     };
   }
 
+  // Usuário Premium tem acesso liberado
   if (perfil.plano === "premium") {
     return {
       permitido: true,
-      mensagem: "Plano premium ativo.",
+      mensagem: "Plano Premium ativo.",
     };
   }
 
+  // Usuário gratuito sem liberações restantes
   if (perfil.planos_restantes <= 0) {
     return {
       permitido: false,
       mensagem:
-        "Você utilizou seus 3 planejamentos gratuitos. Assine o Plano Premium para continuar.",
+        "Seu teste gratuito já foi utilizado. Assine o Plano Premium para continuar.",
     };
   }
 
+  // Desconta uma utilização gratuita
   const { error } = await supabase
     .from("profiles")
     .update({
@@ -53,7 +56,7 @@ export async function usarPlanejamentoGratis() {
   if (error) {
     return {
       permitido: false,
-      mensagem: "Erro ao atualizar seus planejamentos gratuitos.",
+      mensagem: "Erro ao atualizar seu acesso gratuito.",
     };
   }
 
