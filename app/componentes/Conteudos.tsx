@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { supabase } from "../lib/supabase";
 import { usarPlanejamentoGratis } from "../lib/profile";
 
 type DataAula = {
@@ -46,16 +47,28 @@ export default function Conteudos({
     setMostrarModalPremium(true);
   }
 
-  async function verificarPermissao() {
-    const permissao = await usarPlanejamentoGratis();
+ async function verificarPermissao() {
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-    if (!permissao.permitido) {
-      mostrarBloqueioPremium(permissao.mensagem);
-      return false;
-    }
-
+  // Sem login = teste grátis da página inicial.
+  // Não existe perfil ainda, então não devemos consultar planos_restantes.
+  if (!user) {
     return true;
   }
+
+  // Usuário logado: verifica se é Premium ou se ainda possui
+  // algum planejamento gratuito disponível.
+  const permissao = await usarPlanejamentoGratis();
+
+  if (!permissao.permitido) {
+    mostrarBloqueioPremium(permissao.mensagem);
+    return false;
+  }
+
+  return true;
+}
 
   async function gerarPlanoIA() {
     if (!tema.trim()) {
@@ -229,7 +242,7 @@ export default function Conteudos({
 
             <p className="mb-5 text-slate-600">
               {mensagemPremium ||
-                "Você utilizou seus 3 planejamentos gratuitos. Assine o Plano Premium para continuar."}
+  "Seu teste gratuito já foi utilizado. Assine o Plano Premium para continuar."}
             </p>
 
             <div className="mb-5 rounded-2xl bg-slate-50 p-4 text-left text-sm text-slate-700">
