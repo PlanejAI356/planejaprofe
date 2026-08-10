@@ -38,6 +38,7 @@ type ConfiguracaoAtividadeImagem = {
 export default function FinalizarAtividadePage() {
   const router = useRouter();
   const cabecalhoRef = useRef<HTMLDivElement>(null);
+  const paginaRef = useRef<HTMLDivElement>(null);
 
   const [imagem, setImagem] = useState("");
   const [configuracao, setConfiguracao] =
@@ -187,30 +188,54 @@ export default function FinalizarAtividadePage() {
             )
           : [];
 
+      const conteudoDaPagina: any[] = [];
+
+      if (htmlCabecalho.trim()) {
+        conteudoDaPagina.push({
+          stack: Array.isArray(conteudoCabecalho)
+            ? conteudoCabecalho
+            : [conteudoCabecalho],
+          margin: [0, 0, 0, 8],
+        });
+      }
+
+      conteudoDaPagina.push({
+        image: imagem,
+        fit: [500, 670],
+        alignment: "center",
+        margin: [0, 0, 0, 0],
+      });
+
       const documento: any = {
         pageSize: "A4",
-        pageMargins: [34, 32, 34, 32],
+        pageMargins: [26, 26, 26, 26],
         defaultStyle: {
           fontSize: 10,
           lineHeight: 1.15,
         },
         content: [
-          ...(htmlCabecalho.trim()
-            ? [
-                {
-                  stack:
-                    Array.isArray(conteudoCabecalho)
-                      ? conteudoCabecalho
-                      : [conteudoCabecalho],
-                  margin: [0, 0, 0, 8],
-                },
-              ]
-            : []),
           {
-            image: imagem,
-            fit: [520, 650],
-            alignment: "center",
-            margin: [0, 0, 0, 0],
+            table: {
+              widths: ["*"],
+              body: [
+                [
+                  {
+                    stack: conteudoDaPagina,
+                    margin: [10, 10, 10, 10],
+                  },
+                ],
+              ],
+            },
+            layout: {
+              hLineWidth: () => 1,
+              vLineWidth: () => 1,
+              hLineColor: () => "#000000",
+              vLineColor: () => "#000000",
+              paddingLeft: () => 0,
+              paddingRight: () => 0,
+              paddingTop: () => 0,
+              paddingBottom: () => 0,
+            },
           },
         ],
       };
@@ -256,10 +281,23 @@ export default function FinalizarAtividadePage() {
                 margin: 1cm;
               }
 
+              html,
+              body {
+                margin: 0;
+                padding: 0;
+              }
+
               body {
                 font-family: Arial, Helvetica, sans-serif;
-                margin: 0;
                 color: #000;
+                background: #fff;
+              }
+
+              .pagina {
+                box-sizing: border-box;
+                width: 100%;
+                border: 1px solid #000;
+                padding: 10px;
               }
 
               .cabecalho {
@@ -291,7 +329,7 @@ export default function FinalizarAtividadePage() {
               .atividade img {
                 display: block;
                 width: 100%;
-                max-width: 19cm;
+                max-width: 18.2cm;
                 height: auto;
                 margin: 0 auto;
               }
@@ -299,21 +337,23 @@ export default function FinalizarAtividadePage() {
           </head>
 
           <body>
-            ${
-              htmlCabecalho.trim()
-                ? `
-                  <div class="cabecalho">
-                    ${htmlCabecalho}
-                  </div>
-                `
-                : ""
-            }
+            <div class="pagina">
+              ${
+                htmlCabecalho.trim()
+                  ? `
+                    <div class="cabecalho">
+                      ${htmlCabecalho}
+                    </div>
+                  `
+                  : ""
+              }
 
-            <div class="atividade">
-              <img
-                src="${imagem}"
-                alt="Atividade pedagógica"
-              />
+              <div class="atividade">
+                <img
+                  src="${imagem}"
+                  alt="Atividade pedagógica"
+                />
+              </div>
             </div>
           </body>
         </html>
@@ -336,12 +376,15 @@ export default function FinalizarAtividadePage() {
       link.href = url;
       link.download =
         "atividade-planejai.doc";
+      link.style.display = "none";
 
       document.body.appendChild(link);
       link.click();
-      link.remove();
 
-      URL.revokeObjectURL(url);
+      setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(url);
+      }, 1500);
     } catch (error) {
       console.error(
         "Erro ao gerar Word:",
@@ -378,7 +421,7 @@ export default function FinalizarAtividadePage() {
             onClick={() =>
               router.push("/atividades")
             }
-            className="mt-5 rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
+            className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
           >
             Voltar para atividades
           </button>
@@ -436,7 +479,7 @@ export default function FinalizarAtividadePage() {
                 "/atividades/resultado"
               )
             }
-            className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+            className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
           >
             <ArrowLeft size={19} />
             Voltar para a atividade
@@ -468,7 +511,7 @@ export default function FinalizarAtividadePage() {
                 onClick={() =>
                   executarComando("bold")
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <Bold size={18} />
               </button>
@@ -479,7 +522,7 @@ export default function FinalizarAtividadePage() {
                 onClick={() =>
                   executarComando("italic")
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <Italic size={18} />
               </button>
@@ -490,7 +533,7 @@ export default function FinalizarAtividadePage() {
                 onClick={() =>
                   executarComando("underline")
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <Underline size={18} />
               </button>
@@ -505,7 +548,7 @@ export default function FinalizarAtividadePage() {
                     "justifyLeft"
                   )
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <AlignLeft size={18} />
               </button>
@@ -518,7 +561,7 @@ export default function FinalizarAtividadePage() {
                     "justifyCenter"
                   )
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <AlignCenter size={18} />
               </button>
@@ -531,7 +574,7 @@ export default function FinalizarAtividadePage() {
                     "justifyRight"
                   )
                 }
-                className="rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
+                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
                 <AlignRight size={18} />
               </button>
@@ -574,7 +617,7 @@ export default function FinalizarAtividadePage() {
               <button
                 type="button"
                 onClick={salvarCabecalho}
-                className="flex items-center gap-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-50"
+                className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-50"
               >
                 <Save size={16} />
                 Salvar cabeçalho
@@ -589,7 +632,10 @@ export default function FinalizarAtividadePage() {
           </div>
 
           <div className="bg-slate-100 p-4 sm:p-6">
-            <div className="mx-auto w-full max-w-[794px] bg-white p-6 shadow-md">
+            <div
+              ref={paginaRef}
+              className="mx-auto w-full max-w-[794px] border border-black bg-white p-5 shadow-md sm:p-6"
+            >
               {cabecalho.trim() && (
                 <div
                   className="cabecalho-preview mb-4 overflow-hidden"
@@ -611,7 +657,7 @@ export default function FinalizarAtividadePage() {
             <button
               type="button"
               onClick={baixarWord}
-              className="flex items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
             >
               <Download size={18} />
               Baixar Word
@@ -620,7 +666,7 @@ export default function FinalizarAtividadePage() {
             <button
               type="button"
               onClick={baixarPDF}
-              className="flex items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
             >
               <Download size={18} />
               Baixar PDF

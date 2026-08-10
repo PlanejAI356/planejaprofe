@@ -116,6 +116,16 @@ export default function AtividadesPage() {
   const [palavrasCacaPalavras, setPalavrasCacaPalavras] =
     useState("");
 
+  // Opções específicas da cruzadinha.
+  const [tipoPistaCruzadinha, setTipoPistaCruzadinha] =
+    useState("perguntas");
+  const [palavrasCruzadinha, setPalavrasCruzadinha] =
+    useState("");
+
+  // Opção específica do Ordene.
+  const [tipoOrdenacao, setTipoOrdenacao] =
+    useState("automatico");
+
   // Autoditado também passa a ter quantidade digitável.
   const [quantidadeAutoditado, setQuantidadeAutoditado] =
     useState("6");
@@ -161,6 +171,9 @@ export default function AtividadesPage() {
     setTipoAtividade("");
     setNivelCacaPalavras("facil");
     setPalavrasCacaPalavras("");
+    setTipoPistaCruzadinha("perguntas");
+    setPalavrasCruzadinha("");
+    setTipoOrdenacao("automatico");
     setQuantidadeAutoditado("6");
     setPalavrasAutoditado("");
     setErro("");
@@ -226,6 +239,21 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
         tipoAtividade === "caca_palavras"
           ? palavrasCacaPalavras.trim()
           : "",
+
+      tipoPistaCruzadinha:
+        tipoAtividade === "cruzadinha"
+          ? tipoPistaCruzadinha
+          : null,
+
+      palavrasCruzadinha:
+        tipoAtividade === "cruzadinha"
+          ? palavrasCruzadinha.trim()
+          : "",
+
+      tipoOrdenacao:
+        tipoAtividade === "ordene"
+          ? tipoOrdenacao
+          : null,
 
       quantidadeAutoditado:
         tipoAtividade === "autoditado"
@@ -343,7 +371,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <ArrowLeft size={19} />
               Voltar
@@ -356,7 +384,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   "/atividades/minhas-atividades"
                 )
               }
-              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <ClipboardList size={19} />
               Minhas atividades
@@ -364,7 +392,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
 
             <button
               type="button"
-              className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <LogOut size={19} />
               Sair
@@ -410,7 +438,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setDisciplina("");
                   setErro("");
                 }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
               >
                 <option value="">
                   Selecione
@@ -444,7 +472,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setSerie(event.target.value);
                   setErro("");
                 }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
               >
                 <option value="">
                   Selecione
@@ -478,7 +506,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setDisciplina(event.target.value);
                   setErro("");
                 }}
-                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
               >
                 <option value="">
                   Selecione
@@ -535,7 +563,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                     );
                     setErro("");
                   }}
-                  className={`rounded-2xl border px-3 py-4 text-center transition ${
+                  className={`cursor-pointer rounded-2xl border px-3 py-4 text-center transition ${
                     tipoAtividade === valor
                       ? "border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm ring-2 ring-emerald-100"
                       : "border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/60"
@@ -581,7 +609,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                         onClick={() =>
                           setNivelCacaPalavras(valor)
                         }
-                        className={`rounded-xl border px-5 py-2.5 font-bold transition ${
+                        className={`cursor-pointer rounded-xl border px-5 py-2.5 font-bold transition ${
                           nivelCacaPalavras === valor
                             ? "border-emerald-600 bg-emerald-600 text-white"
                             : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400"
@@ -618,6 +646,116 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                     palavras relacionadas ao conteúdo e à série.
                   </p>
                 </div>
+              </div>
+            </div>
+          )}
+
+          {tipoAtividade === "cruzadinha" && (
+            <div className="mt-5 rounded-2xl border border-violet-200 bg-violet-50/50 p-5">
+              <h3 className="text-base font-bold text-slate-900">
+                Opções da cruzadinha
+              </h3>
+
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Como criar as pistas?
+                  </label>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    {[
+                      ["perguntas", "Perguntas"],
+                      ["definicoes", "Definições"],
+                      ["imagens", "Imagens"],
+                      ["mista", "Mista"],
+                    ].map(([valor, rotulo]) => (
+                      <button
+                        key={valor}
+                        type="button"
+                        onClick={() =>
+                          setTipoPistaCruzadinha(valor)
+                        }
+                        className={`cursor-pointer rounded-xl border px-3 py-2.5 text-sm font-bold transition ${
+                          tipoPistaCruzadinha === valor
+                            ? "border-violet-600 bg-violet-600 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:border-violet-400"
+                        }`}
+                      >
+                        {rotulo}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Palavras que deseja incluir
+                    <span className="ml-2 text-sm font-normal text-slate-500">
+                      (opcional)
+                    </span>
+                  </label>
+
+                  <input
+                    type="text"
+                    value={palavrasCruzadinha}
+                    onChange={(event) =>
+                      setPalavrasCruzadinha(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Ex.: Mercúrio, Vênus, Terra, Marte"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-violet-500 focus:ring-4 focus:ring-violet-100"
+                  />
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Deixe em branco para o PlanejAI escolher palavras adequadas ao conteúdo e à série.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {tipoAtividade === "ordene" && (
+            <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50/50 p-5">
+              <h3 className="text-base font-bold text-slate-900">
+                Opções do Ordene
+              </h3>
+
+              <div className="mt-4">
+                <label className="mb-2 block font-semibold text-slate-800">
+                  O que deseja ordenar?
+                </label>
+
+                <select
+                  value={tipoOrdenacao}
+                  onChange={(event) =>
+                    setTipoOrdenacao(event.target.value)
+                  }
+                  className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-amber-500 focus:ring-4 focus:ring-amber-100"
+                >
+                  <option value="automatico">
+                    Deixar o PlanejAI decidir
+                  </option>
+                  <option value="processo">
+                    Etapas de um processo
+                  </option>
+                  <option value="acontecimentos">
+                    Sequência de acontecimentos
+                  </option>
+                  <option value="cronologica">
+                    Ordem cronológica
+                  </option>
+                  <option value="menor_maior">
+                    Menor para maior / maior para menor
+                  </option>
+                  <option value="historia">
+                    Sequência de uma história
+                  </option>
+                </select>
+
+                <p className="mt-2 text-sm text-slate-500">
+                  O PlanejAI só criará uma atividade de ordenar quando existir uma sequência lógica real.
+                </p>
               </div>
             </div>
           )}
@@ -760,7 +898,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
               type="button"
               onClick={gerarAtividade}
               disabled={gerando}
-              className="flex min-w-72 items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
+              className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
             >
               {gerando ? (
                 <>
@@ -782,7 +920,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
               type="button"
               onClick={limparCampos}
               disabled={gerando}
-              className="rounded-xl border border-emerald-600 bg-white px-7 py-4 font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:opacity-50"
+              className="cursor-pointer rounded-xl border border-emerald-600 bg-white px-7 py-4 font-semibold text-emerald-700 transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               Limpar
             </button>

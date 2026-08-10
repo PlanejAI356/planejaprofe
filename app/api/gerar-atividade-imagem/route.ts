@@ -22,6 +22,11 @@ type CorpoRequisicao = {
   nivelCacaPalavras?: string | null;
   palavrasCacaPalavras?: string;
 
+  tipoPistaCruzadinha?: string | null;
+  palavrasCruzadinha?: string;
+
+  tipoOrdenacao?: string | null;
+
   quantidadeAutoditado?: number | null;
   palavrasAutoditado?: string;
 };
@@ -83,6 +88,22 @@ export async function POST(request: Request) {
     const palavrasCacaPalavras = String(
       body.palavrasCacaPalavras || ""
     ).trim();
+
+    const tipoPistaCruzadinha = String(
+      body.tipoPistaCruzadinha || "perguntas"
+    )
+      .trim()
+      .toLowerCase();
+
+    const palavrasCruzadinha = String(
+      body.palavrasCruzadinha || ""
+    ).trim();
+
+    const tipoOrdenacao = String(
+      body.tipoOrdenacao || "automatico"
+    )
+      .trim()
+      .toLowerCase();
 
     /*
      * Quantidade do autoditado é independente
@@ -190,10 +211,14 @@ REGRAS:
         regrasNivel = `
 NÍVEL FÁCIL:
 - Criar uma grade pequena e visualmente limpa.
-- Usar poucas palavras.
-- Priorizar palavras na horizontal e vertical.
+- Usar uma quantidade moderada de palavras adequada à série.
+- Distribuir as palavras em POSIÇÕES DIFERENTES da grade.
+- Utilizar palavras na horizontal, vertical e algumas diagonais simples.
 - Não utilizar palavras invertidas.
-- Evitar excesso de letras distratoras.
+- Não colocar várias palavras completas uma embaixo da outra.
+- Não concentrar todas as palavras no mesmo canto ou nas mesmas linhas.
+- Misturar letras distratoras entre as palavras para que elas não fiquem imediatamente visíveis.
+- Manter o desafio fácil, mas o estudante ainda deve precisar procurar as palavras.
 - Adequar o tamanho da grade à idade dos estudantes.
 `;
       }
@@ -202,10 +227,12 @@ NÍVEL FÁCIL:
         regrasNivel = `
 NÍVEL MÉDIO:
 - Criar uma grade de tamanho intermediário.
-- Utilizar mais palavras do que no nível fácil.
+- Distribuir as palavras por diferentes regiões da grade.
 - Usar palavras na horizontal, vertical e diagonal.
 - Pode utilizar algumas palavras invertidas, sem exagerar.
+- Não organizar palavras completas em linhas consecutivas.
 - Acrescentar letras distratoras suficientes para aumentar o desafio.
+- Evitar padrões visuais que entreguem facilmente onde estão as palavras.
 `;
       }
 
@@ -214,9 +241,12 @@ NÍVEL MÉDIO:
 NÍVEL DIFÍCIL:
 - Criar uma grade maior.
 - Utilizar várias palavras.
-- Distribuir palavras na horizontal, vertical e diagonal.
+- Distribuir as palavras por toda a grade.
+- Usar horizontal, vertical e diagonal.
 - Utilizar também palavras invertidas.
+- Permitir cruzamento e sobreposição de letras quando isso continuar funcional.
 - Acrescentar mais letras distratoras.
+- Evitar qualquer organização em linhas ou blocos previsvisíveis.
 - O caça-palavras deve ser desafiador, mas solucionável.
 `;
       }
@@ -224,7 +254,7 @@ NÍVEL DIFÍCIL:
       regrasTipoAtividade = `
 TIPO DE ATIVIDADE OBRIGATÓRIO: CAÇA-PALAVRAS.
 
-Crie UMA atividade de caça-palavras verdadeira e funcional.
+Crie UMA atividade de caça-palavras verdadeira, funcional e bem distribuída.
 
 IMPORTANTE:
 - Caça-palavras não deve ser tratado como várias questões.
@@ -236,10 +266,18 @@ ${regrasNivel}
 REGRAS OBRIGATÓRIAS DO CAÇA-PALAVRAS:
 
 - Todas as palavras apresentadas ao estudante devem realmente existir dentro da grade.
+- Cada palavra da lista deve aparecer UMA VEZ de forma completa e correta, salvo cruzamentos naturais.
 - Não inventar palavras na lista que não estejam na grade.
 - Não colocar palavras incompletas.
-- Não trocar letras das palavras.
-- Conferir a grade antes de finalizar.
+- Não trocar, omitir ou duplicar letras dentro das palavras.
+- Respeitar rigorosamente a ortografia correta em português do Brasil.
+- Respeitar acentos e sinais gráficos quando fizerem parte da grafia correta da palavra.
+- Se o professor informar as palavras, copiar EXATAMENTE a grafia fornecida por ele.
+- Conferir LETRA POR LETRA cada palavra da lista dentro da grade antes de finalizar.
+- Conferir novamente palavras com acento, nomes próprios e termos científicos.
+- Espalhar as palavras por diferentes linhas, colunas e regiões da grade.
+- Não colocar uma sequência de palavras completas uma embaixo da outra.
+- Não deixar a localização das palavras óbvia pela diagramação.
 - Colocar um comando claro, como "Encontre as palavras no caça-palavras".
 - Mostrar abaixo ou acima da grade a lista de palavras que devem ser encontradas.
 - Utilizar letras maiúsculas, nítidas e centralizadas.
@@ -260,6 +298,8 @@ REGRA MUITO IMPORTANTE:
 
 - Utilizar obrigatoriamente todas as palavras informadas pelo professor.
 - Não substituir essas palavras por outras.
+- Preservar a escrita correta e completa de cada palavra.
+- Conferir cada palavra da lista contra a grade antes de gerar a imagem final.
 - É permitido acrescentar outras palavras somente se necessário para completar pedagogicamente a atividade.
 `
     : `
@@ -269,6 +309,8 @@ Escolha palavras adequadas:
 - ao conteúdo solicitado;
 - à disciplina;
 - e principalmente à série ${serie}.
+
+Antes de montar a grade, confira a ortografia correta de todas as palavras escolhidas.
 `
 }
 `;
@@ -334,27 +376,114 @@ Escolha palavras adequadas:
      * CRUZADINHA
      */
     if (tipoAtividade === "cruzadinha") {
+      let regraTipoPista = "";
+
+      if (tipoPistaCruzadinha === "perguntas") {
+        regraTipoPista = `
+FORMATO DAS PISTAS: PERGUNTAS.
+- Criar perguntas curtas e claras sobre o conteúdo.
+- Cada resposta da pergunta deve ser uma palavra que entra na grade.
+`;
+      }
+
+      if (tipoPistaCruzadinha === "definicoes") {
+        regraTipoPista = `
+FORMATO DAS PISTAS: DEFINIÇÕES.
+- Criar definições curtas e objetivas.
+- Cada definição deve levar a uma única palavra-resposta.
+`;
+      }
+
+      if (tipoPistaCruzadinha === "imagens") {
+        regraTipoPista = `
+FORMATO DAS PISTAS: IMAGENS.
+- Utilizar imagens simples, claras e reconhecíveis como pistas.
+- Cada imagem deve representar inequivocamente a palavra-resposta.
+- Não escrever a resposta junto da imagem.
+- Usar esse formato apenas quando as palavras puderem ser representadas visualmente de forma clara.
+`;
+      }
+
+      if (tipoPistaCruzadinha === "mista") {
+        regraTipoPista = `
+FORMATO DAS PISTAS: MISTA.
+- Misturar perguntas, definições e imagens somente quando cada formato fizer sentido.
+- Manter as pistas claras e adequadas à série.
+- Não usar imagem como pista se ela puder gerar ambiguidade.
+`;
+      }
+
+      const regraQuantidadeCruzadinha =
+        quantidadeQuestoes !== null
+          ? `
+QUANTIDADE DE PALAVRAS/PISTAS:
+- Utilizar exatamente ${quantidadeQuestoes} palavras com suas respectivas pistas.
+- Nesta atividade, a quantidade informada pelo professor significa quantidade de palavras/pistas da cruzadinha.
+`
+          : `
+QUANTIDADE DE PALAVRAS/PISTAS:
+- O professor não informou uma quantidade.
+- Escolher uma quantidade que caiba bem na folha e seja adequada à série ${serie}.
+`;
+
       regrasTipoAtividade = `
 TIPO DE ATIVIDADE OBRIGATÓRIO: CRUZADINHA.
 
-Crie UMA cruzadinha verdadeira e funcional.
+Crie UMA cruzadinha verdadeira, funcional e pedagogicamente coerente.
+
+${regraTipoPista}
+
+${regraQuantidadeCruzadinha}
 
 IMPORTANTE:
 - A cruzadinha é uma atividade única.
-- Não criar várias cruzadinhas apenas para cumprir quantidade de questões.
-- As pistas podem ser perguntas, definições ou descrições relacionadas ao conteúdo.
-- Quando o professor não fornecer palavras específicas, escolher respostas adequadas ao conteúdo e à série.
-
-REGRAS:
-
-- As palavras devem se cruzar corretamente.
-- Numerar as palavras na grade.
-- Criar pistas correspondentes à numeração.
-- As pistas devem ser adequadas para ${serie}.
-- Não mostrar as respostas preenchidas.
-- Utilizar quadrinhos bem alinhados.
+- Não criar várias cruzadinhas para cumprir quantidade.
+- A numeração da grade deve corresponder exatamente à numeração das pistas.
+- Cada pista deve ter uma única resposta correta.
+- Todas as respostas precisam realmente existir na grade.
+- As palavras precisam se cruzar de verdade, compartilhando letras compatíveis.
+- Não criar palavras isoladas que não participem da estrutura quando for possível cruzá-las.
 - Não criar uma simples lista de perguntas fingindo ser uma cruzadinha.
-- Conferir se cada resposta cabe corretamente na quantidade de quadrinhos.
+- Não mostrar nenhuma resposta preenchida.
+- Utilizar quadrinhos regulares, alinhados e em quantidade exata para cada resposta.
+- Conferir letra por letra se cada resposta cabe nos quadrinhos.
+- Conferir rigorosamente ortografia, acentuação e grafia das palavras.
+- As pistas devem ser adequadas à idade e ao nível de ${serie}.
+- Não utilizar pistas ambíguas.
+
+${
+  palavrasCruzadinha
+    ? `
+PALAVRAS INFORMADAS PELO PROFESSOR:
+
+${palavrasCruzadinha}
+
+REGRAS PARA ESSAS PALAVRAS:
+- Utilizar obrigatoriamente as palavras informadas, respeitando a quantidade solicitada quando houver.
+- Não trocar essas palavras por outras.
+- Preservar a grafia correta.
+- Criar pistas coerentes com cada palavra.
+- Organizar as palavras para que se cruzem corretamente na grade.
+`
+    : `
+O professor não informou palavras específicas.
+
+Escolha palavras:
+- diretamente relacionadas ao conteúdo;
+- adequadas à disciplina ${disciplina};
+- adequadas à série ${serie};
+- e que permitam construir uma cruzadinha funcional.
+`
+}
+
+REVISÃO OBRIGATÓRIA DA CRUZADINHA:
+1. Conferir cada pista.
+2. Conferir cada resposta.
+3. Conferir a ortografia.
+4. Conferir a quantidade de quadrinhos.
+5. Conferir todos os cruzamentos.
+6. Conferir se a numeração da grade corresponde às pistas.
+7. Conferir se nenhuma resposta foi revelada.
 `;
     }
 
@@ -465,19 +594,93 @@ REGRAS:
      * ORDENAR
      */
     if (tipoAtividade === "ordene") {
+      let regraOrdenacao = "";
+
+      if (tipoOrdenacao === "processo") {
+        regraOrdenacao = `
+CRITÉRIO ESCOLHIDO: ETAPAS DE UM PROCESSO.
+- Utilizar somente um processo que possua etapas reais e reconhecidas.
+- Embaralhar as etapas para o estudante ordenar.
+`;
+      }
+
+      if (tipoOrdenacao === "acontecimentos") {
+        regraOrdenacao = `
+CRITÉRIO ESCOLHIDO: SEQUÊNCIA DE ACONTECIMENTOS.
+- Utilizar acontecimentos que tenham uma sequência lógica ou temporal verdadeira.
+- Embaralhar os acontecimentos antes de apresentá-los.
+`;
+      }
+
+      if (tipoOrdenacao === "cronologica") {
+        regraOrdenacao = `
+CRITÉRIO ESCOLHIDO: ORDEM CRONOLÓGICA.
+- Utilizar fatos ou eventos que tenham datas ou sequência temporal real.
+- Não inventar datas nem relações cronológicas.
+`;
+      }
+
+      if (tipoOrdenacao === "menor_maior") {
+        regraOrdenacao = `
+CRITÉRIO ESCOLHIDO: MENOR PARA MAIOR / MAIOR PARA MENOR.
+- Usar apenas elementos que possam ser comparados objetivamente pelo critério informado.
+- O comando deve dizer claramente se a ordem é crescente ou decrescente.
+`;
+      }
+
+      if (tipoOrdenacao === "historia") {
+        regraOrdenacao = `
+CRITÉRIO ESCOLHIDO: SEQUÊNCIA DE UMA HISTÓRIA.
+- Criar uma sequência narrativa curta e coerente.
+- Embaralhar cenas, frases ou acontecimentos.
+- A sequência correta deve ser dedutível pelo estudante.
+`;
+      }
+
+      if (tipoOrdenacao === "automatico") {
+        regraOrdenacao = `
+CRITÉRIO: O PLANEJAI DEVE ESCOLHER.
+- Examinar o conteúdo e identificar uma sequência REAL que possa ser ordenada.
+- Preferir processos, ciclos com começo pedagógico definido, acontecimentos, sequência narrativa, ordem cronológica ou comparação objetiva.
+- Se o conteúdo geral não tiver uma ordem natural, escolher dentro dele um aspecto que realmente possua uma sequência.
+- NÃO inventar uma ordem artificial apenas para usar o formato Ordene.
+`;
+      }
+
       regrasTipoAtividade = `
 TIPO DE ATIVIDADE OBRIGATÓRIO: ORDENE / SEQUÊNCIA.
 
-REGRAS:
+${regraOrdenacao}
 
-- Criar atividades em que o estudante organize elementos em uma ordem correta.
-- A ordem pode ser temporal, numérica, alfabética, lógica, textual ou relacionada a etapas de um processo.
-- Não apresentar os itens já na ordem correta.
-- Deixar espaço adequado para o estudante registrar a sequência.
-- Utilizar imagens quando forem pedagogicamente úteis.
-- Adequar a complexidade à série ${serie}.
-- Para crianças pequenas, priorizar sequências simples e visuais.
-- Para séries posteriores, permitir sequências conceituais ou processos mais complexos.
+REGRAS OBRIGATÓRIAS:
+
+- A atividade só pode pedir ordenação quando existir um critério de ordem real, claro e pedagogicamente justificável.
+- NÃO inventar sequência para conjuntos que não possuem ordem natural.
+- Exemplo do que NÃO fazer: numerar sistemas do corpo humano como se houvesse uma ordem universal entre eles.
+- Não atribuir números de resposta aos itens antes do aluno resolver.
+- Os itens devem aparecer EMBARALHADOS.
+- Deve existir somente um espaço claro para o aluno registrar a ordem: quadrinho vazio, linha ou numeração a preencher.
+- Não colocar a resposta correta ao lado, dentro ou acima do item.
+- O comando deve explicar exatamente o critério: cronológico, etapas do processo, crescente, sequência da história etc.
+- Não usar comandos vagos como "coloque na ordem correta" sem explicar qual ordem.
+- Se houver imagens, elas devem ser claras e necessárias para compreender a sequência.
+- A sequência deve ser adequada à série ${serie}.
+- Para crianças pequenas, usar poucas etapas e forte apoio visual.
+- Para séries posteriores, permitir processos conceituais mais complexos.
+- Conferir se existe UMA sequência correta e justificável antes de finalizar.
+
+${
+  quantidadeQuestoes !== null
+    ? `
+QUANTIDADE:
+- Utilizar ${quantidadeQuestoes} itens/etapas SOMENTE se essa quantidade fizer sentido para a sequência real.
+- Nunca inventar etapas extras apenas para atingir o número informado.
+`
+    : `
+QUANTIDADE:
+- Escolher uma quantidade de itens/etapas adequada à sequência real e à série.
+`
+}
 `;
     }
 
@@ -512,6 +715,14 @@ Antes de gerar a folha, confira se:
 - e organização visual
 
 são realmente apropriados para ${serie}.
+
+REGRA FINAL DE QUALIDADE:
+
+- Conferir ortografia e acentuação de TODAS as palavras antes de gerar a imagem.
+- Não criar palavras inexistentes, letras trocadas ou palavras incompletas.
+- Em atividades com grade, conferir letra por letra antes de finalizar.
+- Nunca revelar respostas que o estudante deve descobrir.
+- Nunca inventar uma relação pedagógica que não exista apenas para encaixar o conteúdo no formato escolhido.
 
 REGRA FINAL DE CONFIGURAÇÃO:
 
