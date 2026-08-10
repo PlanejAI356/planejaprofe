@@ -10,6 +10,7 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 const seriesPorEtapa: Record<string, string[]> = {
   "Educação Infantil": ["Creche", "Pré I", "Pré II"],
@@ -313,6 +314,70 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
         );
       }
 
+      /*
+       * Salva a atividade no Supabase quando houver
+       * um usuário autenticado.
+       *
+       * Se o salvamento falhar, a atividade continua
+       * disponível normalmente na tela de resultado.
+       */
+      try {
+        const {
+          data: { user },
+          error: erroUsuario,
+        } = await supabase.auth.getUser();
+
+        if (erroUsuario) {
+          console.error(
+            "Erro ao identificar usuário para salvar atividade:",
+            erroUsuario
+          );
+        } else if (user) {
+          const tituloAtividade =
+            pedido.trim().length > 70
+              ? `${pedido.trim().slice(0, 70)}...`
+              : pedido.trim();
+
+          const { data: atividadeSalva, error: erroSalvar } =
+            await supabase
+              .from("atividades")
+              .insert({
+                usuario_id: user.id,
+                titulo:
+                  tituloAtividade ||
+                  `${disciplina} - ${serie}`,
+                etapa_ensino: etapaEnsino,
+                serie,
+                disciplina,
+                pedido: pedido.trim(),
+                tipo_atividade:
+                  tipoAtividade || null,
+                quantidade_questoes:
+                  totalQuestoes,
+                imagem: resultado.imagem,
+              })
+              .select("id")
+              .single();
+
+          if (erroSalvar) {
+            console.error(
+              "Erro ao salvar atividade:",
+              erroSalvar
+            );
+          } else if (atividadeSalva?.id) {
+            localStorage.setItem(
+              "atividadeSalvaId",
+              atividadeSalva.id
+            );
+          }
+        }
+      } catch (erroSalvarAtividade) {
+        console.error(
+          "Erro inesperado ao salvar atividade:",
+          erroSalvarAtividade
+        );
+      }
+
       localStorage.setItem(
         "atividadeImagem",
         resultado.imagem
@@ -344,6 +409,37 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
       );
     } finally {
       setGerando(false);
+    }
+  }
+
+  async function sair() {
+    try {
+      const { error } =
+        await supabase.auth.signOut();
+
+      if (error) {
+        console.error(
+          "Erro ao sair:",
+          error
+        );
+
+        alert(
+          "Não foi possível sair da conta."
+        );
+
+        return;
+      }
+
+      window.location.href = "/login";
+    } catch (error) {
+      console.error(
+        "Erro inesperado ao sair:",
+        error
+      );
+
+      alert(
+        "Não foi possível sair da conta."
+      );
     }
   }
 
@@ -392,7 +488,8 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
 
             <button
               type="button"
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              onClick={sair}
+              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
               <LogOut size={19} />
               Sair
@@ -401,7 +498,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
         </div>
       </header>
 
-      <section className="mx-auto max-w-5xl px-4 py-7 sm:px-6">
+      <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6">
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
           <div className="flex items-start gap-4 border-b border-slate-200 pb-6">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
@@ -926,7 +1023,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
             </button>
           </div>
         </div>
-      </section>
+      </div>
     </main>
   );
 }

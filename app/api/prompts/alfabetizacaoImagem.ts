@@ -238,6 +238,21 @@ Quando usar imagens:
 - não colocar automaticamente o nome do objeto quando ele for a resposta esperada;
 - escolher imagens adequadas à idade da turma.
 
+ATIVIDADES DE PINTAR OU COLORIR:
+
+Quando uma questão pedir ao estudante para PINTAR ou COLORIR:
+
+- TODAS as figuras pertencentes àquela questão devem ser apresentadas em PRETO E BRANCO;
+- usar somente contornos pretos nítidos sobre fundo branco;
+- não preencher nenhuma parte das figuras com cores;
+- nenhuma figura dessa questão pode vir previamente colorida;
+- isso vale tanto para as respostas corretas quanto para as incorretas;
+- não utilizar cores como pista para indicar a resposta;
+- criar as figuras com aparência de desenho próprio para colorir;
+- deixar áreas internas adequadas para a criança pintar;
+- esta regra vale para toda instrução equivalente a "pinte", "colorir" ou "colora";
+- outras questões que NÃO peçam pintura podem utilizar imagens coloridas quando pedagogicamente adequado.
+
 COERÊNCIA ENTRE FIGURA E PALAVRA:
 
 Conferir rigorosamente se cada imagem corresponde à palavra,
@@ -325,6 +340,7 @@ Antes de entregar a imagem:
 10. Conferir se não foi criado cabeçalho de identificação.
 11. Conferir se qualquer tipo específico solicitado pelo sistema foi respeitado integralmente.
 12. Conferir se não foram criadas questões desnecessárias quando o formato solicitado for uma atividade visual única.
+13. Se alguma questão pedir para PINTAR ou COLORIR, conferir se TODAS as figuras daquela questão estão em preto e branco e sem nenhum preenchimento colorido.
 
 Produza somente a imagem da atividade pedagógica.
 

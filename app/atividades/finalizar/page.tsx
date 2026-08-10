@@ -24,6 +24,14 @@ import { useRouter } from "next/navigation";
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import htmlToPdfmake from "html-to-pdfmake";
+import {
+  Document,
+  ImageRun,
+  Packer,
+  Paragraph,
+  TextRun,
+} from "docx";
+import { saveAs } from "file-saver";
 
 (pdfMake as any).vfs = (pdfFonts as any).vfs;
 
@@ -182,36 +190,19 @@ export default function FinalizarAtividadePage() {
 
       const conteudoCabecalho =
         htmlCabecalho.trim()
-          ? htmlToPdfmake(
-              htmlCabecalho,
-              { window }
-            )
+          ? htmlToPdfmake(htmlCabecalho, { window })
           : [];
 
-      const conteudoDaPagina: any[] = [];
-
-      if (htmlCabecalho.trim()) {
-        conteudoDaPagina.push({
-          stack: Array.isArray(conteudoCabecalho)
-            ? conteudoCabecalho
-            : [conteudoCabecalho],
-          margin: [0, 0, 0, 8],
-        });
-      }
-
-      conteudoDaPagina.push({
-        image: imagem,
-        fit: [500, 670],
-        alignment: "center",
-        margin: [0, 0, 0, 0],
-      });
+      const elementosCabecalho = Array.isArray(conteudoCabecalho)
+        ? conteudoCabecalho
+        : [conteudoCabecalho];
 
       const documento: any = {
         pageSize: "A4",
-        pageMargins: [26, 26, 26, 26],
+        pageMargins: [28, 28, 28, 28],
         defaultStyle: {
           fontSize: 10,
-          lineHeight: 1.15,
+          lineHeight: 1.1,
         },
         content: [
           {
@@ -220,8 +211,22 @@ export default function FinalizarAtividadePage() {
               body: [
                 [
                   {
-                    stack: conteudoDaPagina,
-                    margin: [10, 10, 10, 10],
+                    stack: [
+                      ...(htmlCabecalho.trim()
+                        ? [
+                            {
+                              stack: elementosCabecalho,
+                              margin: [0, 0, 0, 8],
+                            },
+                          ]
+                        : []),
+                      {
+                        image: imagem,
+                        fit: [500, 690],
+                        alignment: "center",
+                      },
+                    ],
+                    margin: [8, 8, 8, 8],
                   },
                 ],
               ],
@@ -240,9 +245,9 @@ export default function FinalizarAtividadePage() {
         ],
       };
 
-      pdfMake
-        .createPdf(documento)
-        .download("atividade-planejai.pdf");
+      pdfMake.createPdf(documento).download(
+        "atividade-planejai.pdf"
+      );
     } catch (error) {
       console.error(
         "Erro ao gerar PDF:",
@@ -255,136 +260,108 @@ export default function FinalizarAtividadePage() {
     }
   }
 
-  function baixarWord() {
+  async function baixarWord() {
     if (!imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
 
     try {
-      const htmlCabecalho =
-        obterHtmlCabecalho();
+      const textoCabecalho =
+        cabecalhoRef.current?.innerText ||
+        cabecalho.replace(/<[^>]*>/g, " ");
 
-      const html = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-          <head>
-            <meta charset="UTF-8" />
-            <meta
-              name="ProgId"
-              content="Word.Document"
-            />
+      const respostaImagem = await fetch(imagem);
+      const blobImagem = await respostaImagem.blob();
+      const bufferImagem =
+        await blobImagem.arrayBuffer();
 
-            <style>
-              @page {
-                size: A4 portrait;
-                margin: 1cm;
-              }
+      const paragrafosCabecalho = textoCabecalho
+        .split("\n")
+        .map((linha) => linha.trim())
+        .filter(Boolean)
+        .map(
+          (linha) =>
+            new Paragraph({
+              children: [
+                new TextRun({
+                  text: linha,
+                  size: 20,
+                }),
+              ],
+              spacing: {
+                after: 80,
+              },
+            })
+        );
 
-              html,
-              body {
-                margin: 0;
-                padding: 0;
-              }
+      const documento = new Document({
+        sections: [
+          {
+            properties: {
+              page: {
+                size: {
+                  width: 11906,
+                  height: 16838,
+                },
+                margin: {
+                  top: 567,
+                  right: 567,
+                  bottom: 567,
+                  left: 567,
+                },
+              },
+            },
+            children: [
+              ...paragrafosCabecalho,
 
-              body {
-                font-family: Arial, Helvetica, sans-serif;
-                color: #000;
-                background: #fff;
-              }
+              ...(paragrafosCabecalho.length
+                ? [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: "",
+                        }),
+                      ],
+                      border: {
+                        bottom: {
+                          color: "000000",
+                          size: 4,
+                          style: "single",
+                        },
+                      },
+                      spacing: {
+                        after: 160,
+                      },
+                    }),
+                  ]
+                : []),
 
-              .pagina {
-                box-sizing: border-box;
-                width: 100%;
-                border: 1px solid #000;
-                padding: 10px;
-              }
+              new Paragraph({
+                alignment: "center",
+                children: [
+                  new ImageRun({
+                    data: bufferImagem,
+                    transformation: {
+                      width: 650,
+                      height: 975,
+                    },
+                    type: "jpg",
+                  }),
+                ],
+              }),
+            ],
+          },
+        ],
+      });
 
-              .cabecalho {
-                width: 100%;
-                margin-bottom: 10px;
-              }
+      const arquivo =
+        await Packer.toBlob(documento);
 
-              .cabecalho table {
-                width: 100%;
-                border-collapse: collapse;
-              }
-
-              .cabecalho td,
-              .cabecalho th {
-                border: 1px solid #000;
-              }
-
-              .cabecalho img {
-                max-width: 120px;
-                max-height: 80px;
-                object-fit: contain;
-              }
-
-              .atividade {
-                width: 100%;
-                text-align: center;
-              }
-
-              .atividade img {
-                display: block;
-                width: 100%;
-                max-width: 18.2cm;
-                height: auto;
-                margin: 0 auto;
-              }
-            </style>
-          </head>
-
-          <body>
-            <div class="pagina">
-              ${
-                htmlCabecalho.trim()
-                  ? `
-                    <div class="cabecalho">
-                      ${htmlCabecalho}
-                    </div>
-                  `
-                  : ""
-              }
-
-              <div class="atividade">
-                <img
-                  src="${imagem}"
-                  alt="Atividade pedagógica"
-                />
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-
-      const blob = new Blob(
-        ["\ufeff", html],
-        {
-          type:
-            "application/msword;charset=utf-8",
-        }
+      saveAs(
+        arquivo,
+        "atividade-planejai.docx"
       );
-
-      const url =
-        URL.createObjectURL(blob);
-
-      const link =
-        document.createElement("a");
-
-      link.href = url;
-      link.download =
-        "atividade-planejai.doc";
-      link.style.display = "none";
-
-      document.body.appendChild(link);
-      link.click();
-
-      setTimeout(() => {
-        link.remove();
-        URL.revokeObjectURL(url);
-      }, 1500);
     } catch (error) {
       console.error(
         "Erro ao gerar Word:",
