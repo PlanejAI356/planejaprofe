@@ -126,7 +126,7 @@ export async function POST(req: Request) {
 
         external_reference: email,
 
-        notification_url: `${process.env.NEXT_PUBLIC_SITE_URL}/api/webhook/mercadopago`,
+        notification_url: "https://planejaioficial.com.br/api/webhook/mercadopago",
 
         back_urls: {
           success: `${process.env.NEXT_PUBLIC_SITE_URL}/pagamento/sucesso`,

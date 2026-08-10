@@ -10,15 +10,13 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    console.log("Webhook recebido:", body);
+    console.log("=== WEBHOOK MERCADO PAGO RECEBIDO ===");
+    console.log("Body:", body);
 
     const paymentId = body?.data?.id;
 
     if (!paymentId || String(paymentId) === "123456") {
-      console.log(
-        "Webhook ignorado. ID inválido ou simulação:",
-        paymentId
-      );
+      console.log("Webhook ignorado. ID inválido:", paymentId);
 
       return NextResponse.json({
         recebido: true,
@@ -26,8 +24,7 @@ export async function POST(req: Request) {
     }
 
     /*
-     * Consulta o pagamento diretamente
-     * no Mercado Pago.
+     * 1. CONSULTA O PAGAMENTO NO MERCADO PAGO
      */
     const payment = new Payment(client);
 
@@ -35,14 +32,15 @@ export async function POST(req: Request) {
       id: paymentId,
     });
 
-    console.log(
-      "Pagamento consultado:",
-      pagamento
-    );
+    console.log("Pagamento:", {
+      id: pagamento.id,
+      status: pagamento.status,
+      external_reference: pagamento.external_reference,
+      payer_email: pagamento.payer?.email,
+    });
 
     /*
-     * Só liberamos Premium e comissão
-     * quando o pagamento estiver aprovado.
+     * Só continua se o pagamento estiver aprovado.
      */
     if (pagamento.status !== "approved") {
       console.log(
@@ -56,16 +54,15 @@ export async function POST(req: Request) {
     }
 
     /*
-     * O e-mail continua vindo primeiro
-     * do external_reference.
+     * 2. DESCOBRE O EMAIL DO CLIENTE
      */
     const emailBruto =
       pagamento.external_reference ||
       pagamento.payer?.email;
 
     if (!emailBruto) {
-      console.log(
-        "Nenhum email encontrado no pagamento."
+      console.error(
+        "ERRO: pagamento aprovado, mas nenhum email foi encontrado."
       );
 
       return NextResponse.json({
@@ -77,39 +74,24 @@ export async function POST(req: Request) {
       .trim()
       .toLowerCase();
 
-    console.log(
-      "Email para liberar Premium:",
-      email
-    );
+    console.log("Email do cliente:", email);
 
     /*
-     * 1. LIBERA O PREMIUM
+     * 3. CONFIRMA SE O PERFIL EXISTE
      */
     const {
-      data: perfilAtualizado,
-      error: erroPerfil,
+      data: perfil,
+      error: erroBuscarPerfil,
     } = await supabaseAdmin
       .from("profiles")
-      .update({
-        plano: "premium",
-        planos_restantes: 999999,
-        mercado_pago_id: String(paymentId),
-      })
+      .select("id, email, plano, planos_restantes, mercado_pago_id")
       .eq("email", email)
-      .select();
+      .maybeSingle();
 
-    console.log(
-      "Resultado Supabase profiles:",
-      {
-        data: perfilAtualizado,
-        error: erroPerfil,
-      }
-    );
-
-    if (erroPerfil) {
+    if (erroBuscarPerfil) {
       console.error(
-        "Erro ao atualizar perfil:",
-        erroPerfil
+        "ERRO ao procurar perfil:",
+        erroBuscarPerfil
       );
 
       return NextResponse.json({
@@ -117,12 +99,74 @@ export async function POST(req: Request) {
       });
     }
 
+    if (!perfil) {
+      console.error(
+        "ERRO CRÍTICO: pagamento aprovado, mas nenhum perfil foi encontrado para:",
+        email
+      );
+
+      return NextResponse.json({
+        recebido: true,
+      });
+    }
+
+    console.log("Perfil encontrado:", perfil.email);
+
     /*
-     * 2. PROCURA UMA INDICAÇÃO PENDENTE
-     *
-     * Se a pessoa utilizou um cupom antes
-     * de abrir o Mercado Pago, existe uma
-     * linha pendente em indicacoes.
+     * 4. LIBERA O PREMIUM
+     */
+    const {
+      data: perfilAtualizado,
+      error: erroAtualizarPerfil,
+    } = await supabaseAdmin
+      .from("profiles")
+      .update({
+        plano: "premium",
+        planos_restantes: 999999,
+        mercado_pago_id: String(paymentId),
+      })
+      .eq("id", perfil.id)
+      .select(
+        "id, email, plano, planos_restantes, mercado_pago_id"
+      )
+      .single();
+
+    if (erroAtualizarPerfil) {
+      console.error(
+        "ERRO CRÍTICO ao liberar Premium:",
+        erroAtualizarPerfil
+      );
+
+      return NextResponse.json({
+        recebido: true,
+      });
+    }
+
+    if (
+      !perfilAtualizado ||
+      perfilAtualizado.plano !== "premium"
+    ) {
+      console.error(
+        "ERRO CRÍTICO: atualização executada, mas Premium não foi confirmado."
+      );
+
+      return NextResponse.json({
+        recebido: true,
+      });
+    }
+
+    console.log("=== PREMIUM LIBERADO COM SUCESSO ===");
+    console.log({
+      email: perfilAtualizado.email,
+      plano: perfilAtualizado.plano,
+      planos_restantes:
+        perfilAtualizado.planos_restantes,
+      mercado_pago_id:
+        perfilAtualizado.mercado_pago_id,
+    });
+
+    /*
+     * 5. PROCURA INDICAÇÃO PENDENTE
      */
     const {
       data: indicacoesPendentes,
@@ -137,18 +181,21 @@ export async function POST(req: Request) {
 
     if (erroBuscarIndicacao) {
       console.error(
-        "Erro ao buscar indicação pendente:",
+        "Erro ao buscar indicação:",
         erroBuscarIndicacao
       );
 
+      /*
+       * O Premium já foi liberado.
+       * Uma falha na comissão não bloqueia o cliente.
+       */
       return NextResponse.json({
         recebido: true,
       });
     }
 
     /*
-     * Se não usou cupom, não há nada
-     * para confirmar.
+     * Não utilizou cupom.
      */
     if (
       !indicacoesPendentes ||
@@ -164,15 +211,11 @@ export async function POST(req: Request) {
     }
 
     /*
-     * 3. CONFIRMA A INDICAÇÃO
-     *
-     * Atualizamos somente as indicações
-     * ainda pendentes daquele cliente.
+     * 6. CONFIRMA A INDICAÇÃO
      */
-    const idsIndicacoes =
-      indicacoesPendentes.map(
-        (indicacao) => indicacao.id
-      );
+    const idsIndicacoes = indicacoesPendentes.map(
+      (indicacao) => indicacao.id
+    );
 
     const {
       data: indicacoesConfirmadas,
@@ -192,13 +235,17 @@ export async function POST(req: Request) {
         erroConfirmarIndicacao
       );
 
+      /*
+       * Novamente: não retiramos o Premium
+       * por causa de erro na comissão.
+       */
       return NextResponse.json({
         recebido: true,
       });
     }
 
     console.log(
-      "Indicação confirmada com sucesso:",
+      "Indicação confirmada:",
       indicacoesConfirmadas
     );
 
@@ -207,15 +254,10 @@ export async function POST(req: Request) {
     });
   } catch (error) {
     console.error(
-      "Erro no webhook:",
+      "ERRO GERAL NO WEBHOOK:",
       error
     );
 
-    /*
-     * Mantemos resposta 200 para evitar
-     * falhas repetidas do webhook enquanto
-     * analisamos qualquer erro pelos logs.
-     */
     return NextResponse.json({
       recebido: true,
     });
