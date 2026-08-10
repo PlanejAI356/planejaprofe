@@ -97,7 +97,6 @@ const disciplinasPorEtapa: Record<string, string[]> = {
   ],
 };
 
-
 export default function AtividadesPage() {
   const router = useRouter();
 
@@ -105,14 +104,19 @@ export default function AtividadesPage() {
   const [serie, setSerie] = useState("");
   const [disciplina, setDisciplina] = useState("");
   const [pedido, setPedido] = useState("");
-  const [quantidadeQuestoes, setQuantidadeQuestoes] =
-    useState("6");
 
-  const [tipoAtividade, setTipoAtividade] = useState("mista");
+  // Agora é opcional e digitável.
+  const [quantidadeQuestoes, setQuantidadeQuestoes] = useState("");
+
+  // Tipo de atividade deixa de ser obrigatório e não vem pré-selecionado.
+  const [tipoAtividade, setTipoAtividade] = useState("");
+
   const [nivelCacaPalavras, setNivelCacaPalavras] =
     useState("facil");
   const [palavrasCacaPalavras, setPalavrasCacaPalavras] =
     useState("");
+
+  // Autoditado também passa a ter quantidade digitável.
   const [quantidadeAutoditado, setQuantidadeAutoditado] =
     useState("6");
   const [palavrasAutoditado, setPalavrasAutoditado] =
@@ -129,13 +133,32 @@ export default function AtividadesPage() {
     ? disciplinasPorEtapa[etapaEnsino] || []
     : [];
 
+  function limitarNumeroDigitado(
+    valor: string,
+    minimo: number,
+    maximo: number
+  ) {
+    if (valor === "") return "";
+
+    const apenasNumeros = valor.replace(/\D/g, "");
+
+    if (!apenasNumeros) return "";
+
+    const numero = Number(apenasNumeros);
+
+    if (numero < minimo) return String(minimo);
+    if (numero > maximo) return String(maximo);
+
+    return String(numero);
+  }
+
   function limparCampos() {
     setEtapaEnsino("");
     setSerie("");
     setDisciplina("");
     setPedido("");
-    setQuantidadeQuestoes("6");
-    setTipoAtividade("mista");
+    setQuantidadeQuestoes("");
+    setTipoAtividade("");
     setNivelCacaPalavras("facil");
     setPalavrasCacaPalavras("");
     setQuantidadeAutoditado("6");
@@ -154,31 +177,61 @@ export default function AtividadesPage() {
     }
 
     if (!pedido.trim()) {
-      setErro("Escreva o que você deseja criar.");
+      setErro("Escreva o conteúdo ou a atividade que deseja criar.");
       return;
     }
 
-    const totalQuestoes = Number(quantidadeQuestoes);
+    const totalQuestoes =
+      quantidadeQuestoes.trim() === ""
+        ? null
+        : Number(quantidadeQuestoes);
+
+    const totalAutoditado =
+      quantidadeAutoditado.trim() === ""
+        ? null
+        : Number(quantidadeAutoditado);
+
+    /*
+     * A regra abaixo é enviada junto com o pedido para reforçar
+     * que toda atividade deve respeitar a série/turma escolhida.
+     */
+    const pedidoComRegraDaSerie = `
+${pedido.trim()}
+
+REGRA PEDAGÓGICA OBRIGATÓRIA:
+Crie a atividade especificamente para ${serie}, da etapa ${etapaEnsino}, na disciplina ${disciplina}.
+Respeite rigorosamente a idade e o nível escolar da turma.
+Adapte vocabulário, tamanho dos enunciados, complexidade, imagens, comandos, leitura e dificuldade à série informada.
+Não produza questões acima nem abaixo do nível adequado para ${serie}.
+`.trim();
 
     const configuracao = {
       etapaEnsino,
       serie,
       disciplina,
-      pedido: pedido.trim(),
+      pedido: pedidoComRegraDaSerie,
+
+      // Se estiver vazio, a API recebe null e a IA pode decidir.
       quantidadeQuestoes: totalQuestoes,
-      tipoAtividade,
+
+      // Tipo agora pode ser vazio.
+      tipoAtividade: tipoAtividade || null,
+
       nivelCacaPalavras:
         tipoAtividade === "caca_palavras"
           ? nivelCacaPalavras
           : null,
+
       palavrasCacaPalavras:
         tipoAtividade === "caca_palavras"
           ? palavrasCacaPalavras.trim()
           : "",
+
       quantidadeAutoditado:
         tipoAtividade === "autoditado"
-          ? Number(quantidadeAutoditado)
+          ? totalAutoditado
           : null,
+
       palavrasAutoditado:
         tipoAtividade === "autoditado"
           ? palavrasAutoditado.trim()
@@ -289,9 +342,7 @@ export default function AtividadesPage() {
           <div className="flex flex-wrap items-center gap-2">
             <button
               type="button"
-              onClick={() =>
-                router.back()
-              }
+              onClick={() => router.back()}
               className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
               <ArrowLeft size={19} />
@@ -307,9 +358,7 @@ export default function AtividadesPage() {
               }
               className="flex items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
             >
-              <ClipboardList
-                size={19}
-              />
+              <ClipboardList size={19} />
               Minhas atividades
             </button>
 
@@ -328,9 +377,7 @@ export default function AtividadesPage() {
         <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
           <div className="flex items-start gap-4 border-b border-slate-200 pb-6">
             <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-              <MessageSquareText
-                size={29}
-              />
+              <MessageSquareText size={29} />
             </div>
 
             <div>
@@ -339,7 +386,9 @@ export default function AtividadesPage() {
               </h2>
 
               <p className="mt-1 text-sm leading-6 text-slate-600">
-                Escreva como falaria com uma assistente. O PlanejAI criará a folha completa e mostrará a atividade pronta na próxima página.
+                Escreva como falaria com uma assistente. O
+                PlanejAI criará a folha completa e mostrará a
+                atividade pronta na próxima página.
               </p>
             </div>
           </div>
@@ -356,9 +405,7 @@ export default function AtividadesPage() {
               <select
                 value={etapaEnsino}
                 onChange={(event) => {
-                  setEtapaEnsino(
-                    event.target.value
-                  );
+                  setEtapaEnsino(event.target.value);
                   setSerie("");
                   setDisciplina("");
                   setErro("");
@@ -369,16 +416,16 @@ export default function AtividadesPage() {
                   Selecione
                 </option>
 
-                {Object.keys(
-                  seriesPorEtapa
-                ).map((etapa) => (
-                  <option
-                    key={etapa}
-                    value={etapa}
-                  >
-                    {etapa}
-                  </option>
-                ))}
+                {Object.keys(seriesPorEtapa).map(
+                  (etapa) => (
+                    <option
+                      key={etapa}
+                      value={etapa}
+                    >
+                      {etapa}
+                    </option>
+                  )
+                )}
               </select>
             </div>
 
@@ -394,9 +441,7 @@ export default function AtividadesPage() {
                 value={serie}
                 disabled={!etapaEnsino}
                 onChange={(event) => {
-                  setSerie(
-                    event.target.value
-                  );
+                  setSerie(event.target.value);
                   setErro("");
                 }}
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
@@ -430,9 +475,7 @@ export default function AtividadesPage() {
                 value={disciplina}
                 disabled={!etapaEnsino}
                 onChange={(event) => {
-                  setDisciplina(
-                    event.target.value
-                  );
+                  setDisciplina(event.target.value);
                   setErro("");
                 }}
                 className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:bg-slate-100 focus:border-emerald-500"
@@ -456,10 +499,15 @@ export default function AtividadesPage() {
           </div>
 
           <div className="mt-6">
-            <label className="mb-3 block text-lg font-bold text-slate-950">
-              Tipo de atividade
-              <span className="text-red-500"> *</span>
-            </label>
+            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
+              <label className="block text-lg font-bold text-slate-950">
+                Tipo de atividade
+              </label>
+
+              <span className="text-sm text-slate-500">
+                Opcional
+              </span>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {[
@@ -472,12 +520,19 @@ export default function AtividadesPage() {
                 ["multipla_escolha", "☑️", "Múltipla escolha"],
                 ["verdadeiro_falso", "✅", "Verdadeiro ou falso"],
                 ["leitura_escrita", "📖", "Leitura e escrita"],
+                ["ordene", "🔢", "Ordene"],
               ].map(([valor, icone, rotulo]) => (
                 <button
                   key={valor}
                   type="button"
                   onClick={() => {
-                    setTipoAtividade(valor);
+                    /*
+                     * Se clicar novamente no tipo selecionado,
+                     * ele desmarca. Assim o campo permanece opcional.
+                     */
+                    setTipoAtividade((atual) =>
+                      atual === valor ? "" : valor
+                    );
                     setErro("");
                   }}
                   className={`rounded-2xl border px-3 py-4 text-center transition ${
@@ -486,11 +541,20 @@ export default function AtividadesPage() {
                       : "border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/60"
                   }`}
                 >
-                  <div className="mb-2 text-2xl">{icone}</div>
-                  <div className="text-sm font-bold">{rotulo}</div>
+                  <div className="mb-2 text-2xl">
+                    {icone}
+                  </div>
+                  <div className="text-sm font-bold">
+                    {rotulo}
+                  </div>
                 </button>
               ))}
             </div>
+
+            <p className="mt-2 text-sm text-slate-500">
+              Se preferir, não selecione nenhum tipo e descreva
+              livremente a atividade abaixo.
+            </p>
           </div>
 
           {tipoAtividade === "caca_palavras" && (
@@ -499,54 +563,61 @@ export default function AtividadesPage() {
                 Opções do caça-palavras
               </h3>
 
-              <div className="mt-4">
-                <label className="mb-2 block font-semibold text-slate-800">
-                  Nível de dificuldade
-                </label>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Nível de dificuldade
+                  </label>
 
-                <div className="flex flex-wrap gap-3">
-                  {[
-                    ["facil", "Fácil"],
-                    ["medio", "Médio"],
-                    ["dificil", "Difícil"],
-                  ].map(([valor, rotulo]) => (
-                    <button
-                      key={valor}
-                      type="button"
-                      onClick={() => setNivelCacaPalavras(valor)}
-                      className={`rounded-xl border px-5 py-2.5 font-bold transition ${
-                        nivelCacaPalavras === valor
-                          ? "border-emerald-600 bg-emerald-600 text-white"
-                          : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400"
-                      }`}
-                    >
-                      {rotulo}
-                    </button>
-                  ))}
+                  <div className="flex flex-wrap gap-3">
+                    {[
+                      ["facil", "Fácil"],
+                      ["medio", "Médio"],
+                      ["dificil", "Difícil"],
+                    ].map(([valor, rotulo]) => (
+                      <button
+                        key={valor}
+                        type="button"
+                        onClick={() =>
+                          setNivelCacaPalavras(valor)
+                        }
+                        className={`rounded-xl border px-5 py-2.5 font-bold transition ${
+                          nivelCacaPalavras === valor
+                            ? "border-emerald-600 bg-emerald-600 text-white"
+                            : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400"
+                        }`}
+                      >
+                        {rotulo}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="mt-4">
-                <label className="mb-2 block font-semibold text-slate-800">
-                  Palavras que deseja incluir
-                  <span className="ml-2 text-sm font-normal text-slate-500">
-                    (opcional)
-                  </span>
-                </label>
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Palavras que deseja incluir
+                    <span className="ml-2 text-sm font-normal text-slate-500">
+                      (opcional)
+                    </span>
+                  </label>
 
-                <input
-                  type="text"
-                  value={palavrasCacaPalavras}
-                  onChange={(event) =>
-                    setPalavrasCacaPalavras(event.target.value)
-                  }
-                  placeholder="Ex.: Terra, Marte, Júpiter, Saturno, Netuno"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
-                />
+                  <input
+                    type="text"
+                    value={palavrasCacaPalavras}
+                    onChange={(event) =>
+                      setPalavrasCacaPalavras(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Ex.: Terra, Marte, Júpiter, Saturno, Netuno"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                  />
 
-                <p className="mt-2 text-sm text-slate-500">
-                  Deixe em branco para o PlanejAI escolher palavras relacionadas ao conteúdo.
-                </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Deixe em branco para o PlanejAI escolher
+                    palavras relacionadas ao conteúdo e à série.
+                  </p>
+                </div>
               </div>
             </div>
           )}
@@ -557,102 +628,124 @@ export default function AtividadesPage() {
                 Opções do autoditado
               </h3>
 
-              <div className="mt-4">
-                <label className="mb-2 block font-semibold text-slate-800">
-                  Quantidade de palavras/imagens
-                </label>
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Quantidade de palavras/imagens
+                  </label>
 
-                <div className="flex flex-wrap gap-3">
-                  {["4", "6", "8", "10"].map((opcao) => (
-                    <button
-                      key={opcao}
-                      type="button"
-                      onClick={() => setQuantidadeAutoditado(opcao)}
-                      className={`rounded-xl border px-5 py-2.5 font-bold transition ${
-                        quantidadeAutoditado === opcao
-                          ? "border-blue-600 bg-blue-600 text-white"
-                          : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"
-                      }`}
-                    >
-                      {opcao}
-                    </button>
-                  ))}
+                  <input
+                    type="number"
+                    min={1}
+                    max={20}
+                    value={quantidadeAutoditado}
+                    onChange={(event) =>
+                      setQuantidadeAutoditado(
+                        limitarNumeroDigitado(
+                          event.target.value,
+                          1,
+                          20
+                        )
+                      )
+                    }
+                    placeholder="Ex.: 6"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  />
+
+                  <p className="mt-2 text-sm text-slate-500">
+                    Digite quantas palavras/imagens deseja.
+                  </p>
                 </div>
-              </div>
 
-              <div className="mt-4">
-                <label className="mb-2 block font-semibold text-slate-800">
-                  Palavras que deseja trabalhar
-                  <span className="ml-2 text-sm font-normal text-slate-500">
-                    (opcional)
-                  </span>
-                </label>
+                <div>
+                  <label className="mb-2 block font-semibold text-slate-800">
+                    Palavras que deseja trabalhar
+                    <span className="ml-2 text-sm font-normal text-slate-500">
+                      (opcional)
+                    </span>
+                  </label>
 
-                <input
-                  type="text"
-                  value={palavrasAutoditado}
-                  onChange={(event) =>
-                    setPalavrasAutoditado(event.target.value)
-                  }
-                  placeholder="Ex.: bola, banana, bebê, barco"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
-                />
+                  <input
+                    type="text"
+                    value={palavrasAutoditado}
+                    onChange={(event) =>
+                      setPalavrasAutoditado(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Ex.: bola, banana, bebê, barco"
+                    className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                  />
 
-                <p className="mt-2 text-sm text-slate-500">
-                  Deixe em branco para o PlanejAI escolher palavras adequadas ao conteúdo e à turma.
-                </p>
+                  <p className="mt-2 text-sm text-slate-500">
+                    Deixe em branco para o PlanejAI escolher
+                    palavras adequadas ao conteúdo e à turma.
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
-          <div className="mt-6">
-            <label className="mb-2 block text-lg font-bold text-slate-950">
-              Descreva a atividade
-              <span className="text-red-500"> *</span>
-            </label>
-
-            <textarea
-              value={pedido}
-              onChange={(event) => {
-                setPedido(event.target.value);
-                setErro("");
-              }}
-              maxLength={1200}
-              placeholder="Ex.: Trabalhar animais vertebrados com o 3º ano, com atividades simples e adequadas à turma."
-              className="min-h-32 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
-            />
-
-            <p className="mt-1 text-right text-sm text-slate-500">
-              {pedido.length}/1200
-            </p>
-          </div>
-
-          <div className="mt-5">
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <label className="font-semibold text-slate-900">
-                Quantidade de questões
+          <div className="mt-6 grid gap-5 md:grid-cols-[minmax(0,2fr)_minmax(240px,1fr)]">
+            <div>
+              <label className="mb-2 block text-lg font-bold text-slate-950">
+                Descreva a atividade
+                <span className="text-red-500">
+                  {" "}*
+                </span>
               </label>
 
-              <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-bold text-emerald-700">
-                6 é o recomendado
-              </span>
+              <textarea
+                value={pedido}
+                onChange={(event) => {
+                  setPedido(event.target.value);
+                  setErro("");
+                }}
+                maxLength={1200}
+                placeholder="Ex.: Trabalhar animais vertebrados com o 3º ano, com atividades simples e adequadas à turma."
+                className="min-h-36 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              />
+
+              <p className="mt-1 text-right text-sm text-slate-500">
+                {pedido.length}/1200
+              </p>
             </div>
 
-            <div className="mt-3 flex flex-wrap gap-3">
-              {["4", "5", "6", "7", "8", "10"].map((opcao) => (
-                <button
-                  key={opcao}
-                  type="button"
-                  onClick={() => setQuantidadeQuestoes(opcao)}
-                  className={`rounded-xl border px-5 py-3 font-bold transition ${
-                    quantidadeQuestoes === opcao
-                      ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                      : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
-                  }`}
-                >
-                  {opcao}
-                </button>
-              ))}
+            <div>
+              <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+                <label className="text-lg font-bold text-slate-950">
+                  Quantidade de questões
+                </label>
+
+                <span className="text-sm font-normal text-slate-500">
+                  Opcional
+                </span>
+              </div>
+
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={quantidadeQuestoes}
+                onChange={(event) => {
+                  setQuantidadeQuestoes(
+                    limitarNumeroDigitado(
+                      event.target.value,
+                      1,
+                      20
+                    )
+                  );
+                  setErro("");
+                }}
+                placeholder="Ex.: 6"
+                className="w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-lg outline-none transition focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+              />
+
+              <p className="mt-2 text-sm leading-6 text-slate-500">
+                Preencha apenas se a atividade precisar de
+                questões. Para caça-palavras, autoditado ou
+                outras atividades visuais, pode deixar em branco.
+              </p>
             </div>
           </div>
 
@@ -679,9 +772,7 @@ export default function AtividadesPage() {
                 </>
               ) : (
                 <>
-                  <Sparkles
-                    size={21}
-                  />
+                  <Sparkles size={21} />
                   Gerar atividade pronta
                 </>
               )}

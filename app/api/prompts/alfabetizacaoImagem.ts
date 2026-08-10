@@ -3,19 +3,50 @@ type DadosAlfabetizacaoImagem = {
   serie: string;
   disciplina: string;
   pedido: string;
-  quantidadeQuestoes: number;
+  quantidadeQuestoes?: number | null;
 };
 
 export function gerarPromptAlfabetizacaoImagem(
   dados: DadosAlfabetizacaoImagem
 ) {
-  const quantidade = Math.max(
-    1,
-    Math.min(
-      10,
-      Number(dados.quantidadeQuestoes || 6)
-    )
-  );
+  const quantidade =
+    dados.quantidadeQuestoes !== null &&
+    dados.quantidadeQuestoes !== undefined &&
+    Number.isFinite(Number(dados.quantidadeQuestoes))
+      ? Math.max(
+          1,
+          Math.min(
+            20,
+            Number(dados.quantidadeQuestoes)
+          )
+        )
+      : null;
+
+  const regraQuantidade = quantidade
+    ? `
+QUANTIDADE DE QUESTÕES:
+
+Quando a atividade escolhida permitir várias questões independentes,
+criar exatamente ${quantidade} questões principais.
+
+IMPORTANTE:
+- Respeitar exatamente a quantidade informada pelo professor.
+- Essa quantidade se refere apenas a atividades organizadas em questões.
+- Não transformar caça-palavras, cruzadinha, autoditado ou outra atividade visual única em ${quantidade} questões.
+`
+    : `
+QUANTIDADE DE QUESTÕES:
+
+O professor não informou uma quantidade específica de questões.
+
+REGRA:
+- Não assumir automaticamente 6 questões.
+- Definir uma quantidade pedagogicamente adequada ao tipo de atividade,
+  ao conteúdo solicitado e principalmente à série/turma.
+- Se o formato for uma atividade visual única, como caça-palavras,
+  cruzadinha ou autoditado, não criar questões extras apenas para
+  preencher a folha.
+`;
 
   return `
 Crie UMA FOLHA DE ATIVIDADE PEDAGÓGICA,
@@ -35,9 +66,6 @@ ${dados.disciplina}
 Pedido do professor:
 ${dados.pedido}
 
-Quantidade de questões:
-${quantidade}
-
 OBJETIVO PRINCIPAL:
 
 Transformar o pedido do professor em uma folha de atividade visual,
@@ -45,6 +73,35 @@ clara, organizada, pedagogicamente adequada e pronta para o aluno utilizar.
 
 A atividade deve parecer uma folha pedagógica criada por um professor,
 e NÃO uma prova tradicional, salvo se o professor pedir explicitamente.
+
+REGRA PEDAGÓGICA PRINCIPAL:
+
+A SÉRIE OU TURMA INFORMADA É O PRINCIPAL CRITÉRIO PEDAGÓGICO.
+
+A atividade deve ser criada especificamente para:
+
+ETAPA:
+${dados.etapaEnsino}
+
+SÉRIE/TURMA:
+${dados.serie}
+
+DISCIPLINA:
+${dados.disciplina}
+
+É OBRIGATÓRIO:
+
+- respeitar rigorosamente a idade e o nível de escolarização da turma;
+- adequar vocabulário;
+- adequar tamanho dos enunciados;
+- adequar quantidade de leitura;
+- adequar dificuldade;
+- adequar tamanho e complexidade das respostas;
+- adequar as imagens à faixa etária;
+- adequar o nível de abstração;
+- não criar conteúdo acima do nível da série;
+- não infantilizar estudantes de séries mais avançadas;
+- não usar atividades excessivamente complexas para crianças pequenas.
 
 FORMATO:
 
@@ -74,20 +131,17 @@ DIAGRAMAÇÃO:
 - Toda a atividade deve ficar visualmente contida dentro da moldura.
 - O título deve ficar centralizado ou bem destacado no início da atividade.
 - Manter aproximadamente o mesmo espaçamento entre a moldura e o conteúdo em todos os lados.
-- Distribuir as questões de forma equilibrada.
 - Quando houver várias questões, utilizar divisões visuais discretas quando necessário.
 - Não deixar grandes áreas vazias.
 - Não apertar excessivamente os exercícios.
-- Deixar espaço suficiente para o estudante responder.
-- Manter desenhos, textos e caixas proporcionalmente equilibrados.
-- Não deixar nenhum exercício encostado na moldura.
-- A última questão também deve permanecer totalmente dentro da borda.
+- A última questão ou elemento também deve permanecer totalmente dentro da borda.
 
 CABEÇALHO:
 
 NÃO criar cabeçalho de identificação dentro da imagem.
 
 NÃO escrever:
+
 - NOME
 - ALUNO(A)
 - ESCOLA
@@ -120,26 +174,49 @@ REGRAS DE ESCRITA:
 
 ADEQUAÇÃO À SÉRIE:
 
-A atividade deve ser adequada a:
+A atividade deve ser adequada especificamente a:
 ${dados.serie}
 
-Para Educação Infantil, 1º e 2º ano:
+Para Educação Infantil:
+
+- priorizar experiências visuais e lúdicas;
+- usar pouquíssimo texto;
+- utilizar comandos muito curtos;
+- utilizar imagens maiores e facilmente reconhecíveis;
+- evitar estrutura de prova tradicional;
+- priorizar identificação, associação, percepção, oralidade, coordenação e brincadeira.
+
+Para 1º e 2º ano:
+
 - usar pouco texto;
 - utilizar comandos curtos;
 - usar imagens maiores quando apropriado;
-- priorizar identificação, associação, oralidade, leitura inicial e escrita inicial;
+- priorizar identificação, associação, leitura inicial e escrita inicial;
 - utilizar LETRA DE FORMA SIMPLES;
 - evitar questões discursivas longas;
-- evitar interpretação de texto extensa.
+- evitar interpretação de texto extensa;
+- considerar o processo de alfabetização.
 
-Para séries posteriores:
-- adequar vocabulário, extensão dos textos e nível de dificuldade;
-- não infantilizar a atividade;
-- utilizar questões compatíveis com o nível escolar.
+Para 3º, 4º e 5º ano:
+
+- utilizar linguagem clara;
+- permitir leitura e interpretação compatíveis com a série;
+- aumentar gradualmente a complexidade;
+- não utilizar linguagem infantilizada;
+- manter comandos objetivos.
+
+Para Anos Finais, Ensino Médio e EJA:
+
+- utilizar vocabulário adequado à etapa;
+- não infantilizar a apresentação;
+- permitir maior complexidade conceitual;
+- criar questões e comandos compatíveis com a escolaridade;
+- utilizar imagens apenas quando tiverem função pedagógica.
 
 LETRA PARA ALFABETIZAÇÃO:
 
 Quando a atividade envolver alfabetização:
+
 - usar letra de forma simples;
 - usar aparência semelhante a Arial ou Helvetica;
 - não utilizar Times New Roman para letras de traçado;
@@ -150,6 +227,7 @@ Quando a atividade envolver alfabetização:
 IMAGENS:
 
 Quando usar imagens:
+
 - criar os desenhos diretamente dentro da folha;
 - usar ilustrações simples e facilmente reconhecíveis;
 - manter fundo claro ou branco;
@@ -157,36 +235,44 @@ Quando usar imagens:
 - evitar desenhos excessivamente detalhados;
 - não utilizar marcas-d'água;
 - não colocar palavras dentro das figuras;
-- não colocar automaticamente o nome do objeto quando ele for a resposta esperada.
+- não colocar automaticamente o nome do objeto quando ele for a resposta esperada;
+- escolher imagens adequadas à idade da turma.
 
 COERÊNCIA ENTRE FIGURA E PALAVRA:
 
-Conferir rigorosamente se cada imagem corresponde à palavra, conceito ou resposta esperada.
+Conferir rigorosamente se cada imagem corresponde à palavra,
+conceito ou resposta esperada.
 
 Não usar figuras ambíguas.
 
-Quando o professor fornecer palavras específicas, respeitar exatamente essas palavras.
+Quando o professor fornecer palavras específicas,
+respeitar exatamente essas palavras.
 
 COMPLETAR PALAVRAS:
 
 Quando houver exercícios de completar:
+
 - colocar a lacuna exatamente no local correto;
 - não revelar a resposta;
 - manter espaço suficiente para escrita;
-- respeitar o objetivo pedagógico informado.
+- respeitar o objetivo pedagógico informado;
+- respeitar o nível da série.
 
 LIGAR:
 
 Quando houver exercício de ligar:
+
 - colocar os elementos em duas áreas ou colunas;
 - misturar a ordem das respostas;
 - deixar espaço para o aluno traçar as linhas;
 - não desenhar as ligações previamente;
-- utilizar figuras reais/desenhadas quando forem necessárias, e não textos como "IMAGEM 1".
+- utilizar figuras reais/desenhadas quando forem necessárias;
+- não utilizar textos como "IMAGEM 1".
 
 TRAÇADO:
 
 Quando houver exercício de cobrir letras:
+
 - mostrar letras grandes pontilhadas;
 - utilizar traçado simples e legível;
 - incluir espaço para tentativa independente;
@@ -196,32 +282,26 @@ COMANDOS:
 
 Os comandos devem ser curtos, claros e adequados à turma.
 
-Exemplos:
+Exemplos para crianças em alfabetização:
 CUBRA A LETRA B.
 PINTE OS DESENHOS QUE COMEÇAM COM B.
 LIGUE AS FIGURAS ÀS PALAVRAS.
 COMPLETE AS PALAVRAS.
-MARQUE UM X NA RESPOSTA CORRETA.
-ENCONTRE AS PALAVRAS NO CAÇA-PALAVRAS.
 
-QUANTIDADE:
+Para séries posteriores, adaptar os comandos ao nível escolar,
+sem utilizar linguagem excessivamente infantil.
 
-Quando a atividade escolhida permitir várias questões independentes,
-criar exatamente ${quantidade} questões principais.
-
-IMPORTANTE:
-Se uma configuração específica enviada pelo sistema definir um formato
-único, como CAÇA-PALAVRAS, CRUZADINHA ou AUTODITADO,
-essa configuração específica tem prioridade sobre a regra de variedade
-e sobre a quantidade de questões independentes.
+${regraQuantidade}
 
 VARIEDADE:
 
-Somente quando o tipo escolhido for atividade mista:
+Somente quando a atividade for mista:
+
 - variar os formatos;
 - não repetir o mesmo comando;
 - organizar do mais simples para o mais complexo;
-- utilizar exercícios com funções pedagógicas diferentes.
+- utilizar exercícios com funções pedagógicas diferentes;
+- respeitar a série selecionada.
 
 PEDIDO PRINCIPAL DO PROFESSOR:
 
@@ -232,16 +312,19 @@ A folha deve atender diretamente a esse pedido.
 REVISÃO FINAL OBRIGATÓRIA:
 
 Antes de entregar a imagem:
+
 1. Conferir se a atividade corresponde ao pedido.
-2. Conferir se nenhuma questão ou elemento ficou incompleto.
-3. Conferir rigorosamente todas as palavras.
-4. Conferir se imagens e palavras correspondem.
-5. Conferir se não há texto cortado.
-6. Conferir se não existem elementos fora das margens.
-7. Conferir se a atividade é adequada para ${dados.serie}.
-8. Conferir se a folha está pronta para impressão.
-9. Conferir se não foi criado cabeçalho de identificação.
-10. Conferir se o tipo específico solicitado pelo sistema foi respeitado integralmente.
+2. Conferir se a atividade realmente está adequada para ${dados.serie}.
+3. Conferir se o nível de dificuldade corresponde à série.
+4. Conferir se nenhuma questão ou elemento ficou incompleto.
+5. Conferir rigorosamente todas as palavras.
+6. Conferir se imagens e palavras correspondem.
+7. Conferir se não há texto cortado.
+8. Conferir se não existem elementos fora das margens.
+9. Conferir se a folha está pronta para impressão.
+10. Conferir se não foi criado cabeçalho de identificação.
+11. Conferir se qualquer tipo específico solicitado pelo sistema foi respeitado integralmente.
+12. Conferir se não foram criadas questões desnecessárias quando o formato solicitado for uma atividade visual única.
 
 Produza somente a imagem da atividade pedagógica.
 
