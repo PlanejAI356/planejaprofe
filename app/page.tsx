@@ -38,6 +38,7 @@ export default function Home() {
 
       if (data.session) {
         setUsuarioLogado(true);
+
         localStorage.removeItem("testeGratisConcluido");
 
         // O professor entra primeiro no novo painel.
@@ -244,27 +245,35 @@ export default function Home() {
         <TopoProfessor />
       ) : (
         <div className="flex items-center justify-between gap-3 border-b border-slate-200 bg-white px-4 py-2">
+          {/* LOGO / NOME */}
           <div className="flex items-center gap-2">
-            <img
-              src="/logo-planejai.png"
-              alt="PlanejAI"
-              className="h-9 w-9 object-contain"
-            />
-
-            <span className="text-lg font-extrabold text-slate-900">
+            <span className="text-xl font-extrabold text-slate-900">
               Planej<span className="text-green-600">AI</span>
             </span>
           </div>
 
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/login";
-            }}
-            className="shrink-0 rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 hover:bg-blue-50 sm:text-sm"
-          >
-            Já tenho conta
-          </button>
+          {/* BOTÕES EXCLUSIVOS DO TESTE GRÁTIS */}
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/assinatura";
+              }}
+              className="shrink-0 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:scale-[1.02] sm:px-4 sm:text-sm"
+            >
+              ⭐ Assinar Premium
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                window.location.href = "/login";
+              }}
+              className="shrink-0 rounded-lg border border-blue-500 px-3 py-2 text-xs font-semibold text-blue-600 transition hover:bg-blue-50 sm:px-4 sm:text-sm"
+            >
+              Já tenho conta
+            </button>
+          </div>
         </div>
       )}
 

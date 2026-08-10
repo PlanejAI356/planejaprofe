@@ -97,12 +97,6 @@ const disciplinasPorEtapa: Record<string, string[]> = {
   ],
 };
 
-const exemplos = [
-  "Crie uma atividade de alfabetização sobre a letra B, com imagens, letras tracejadas e palavras simples.",
-  "Monte uma atividade de Matemática com problemas de adição para o 2º ano.",
-  "Faça uma cruzadinha sobre animais vertebrados.",
-  "Crie uma revisão sobre o sistema solar com questões variadas.",
-];
 
 export default function AtividadesPage() {
   const router = useRouter();
@@ -113,6 +107,16 @@ export default function AtividadesPage() {
   const [pedido, setPedido] = useState("");
   const [quantidadeQuestoes, setQuantidadeQuestoes] =
     useState("6");
+
+  const [tipoAtividade, setTipoAtividade] = useState("mista");
+  const [nivelCacaPalavras, setNivelCacaPalavras] =
+    useState("facil");
+  const [palavrasCacaPalavras, setPalavrasCacaPalavras] =
+    useState("");
+  const [quantidadeAutoditado, setQuantidadeAutoditado] =
+    useState("6");
+  const [palavrasAutoditado, setPalavrasAutoditado] =
+    useState("");
 
   const [erro, setErro] = useState("");
   const [gerando, setGerando] = useState(false);
@@ -131,11 +135,11 @@ export default function AtividadesPage() {
     setDisciplina("");
     setPedido("");
     setQuantidadeQuestoes("6");
-    setErro("");
-  }
-
-  function usarExemplo(texto: string) {
-    setPedido(texto);
+    setTipoAtividade("mista");
+    setNivelCacaPalavras("facil");
+    setPalavrasCacaPalavras("");
+    setQuantidadeAutoditado("6");
+    setPalavrasAutoditado("");
     setErro("");
   }
 
@@ -162,6 +166,23 @@ export default function AtividadesPage() {
       disciplina,
       pedido: pedido.trim(),
       quantidadeQuestoes: totalQuestoes,
+      tipoAtividade,
+      nivelCacaPalavras:
+        tipoAtividade === "caca_palavras"
+          ? nivelCacaPalavras
+          : null,
+      palavrasCacaPalavras:
+        tipoAtividade === "caca_palavras"
+          ? palavrasCacaPalavras.trim()
+          : "",
+      quantidadeAutoditado:
+        tipoAtividade === "autoditado"
+          ? Number(quantidadeAutoditado)
+          : null,
+      palavrasAutoditado:
+        tipoAtividade === "autoditado"
+          ? palavrasAutoditado.trim()
+          : "",
     };
 
     try {
@@ -435,24 +456,170 @@ export default function AtividadesPage() {
           </div>
 
           <div className="mt-6">
+            <label className="mb-3 block text-lg font-bold text-slate-950">
+              Tipo de atividade
+              <span className="text-red-500"> *</span>
+            </label>
+
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+              {[
+                ["mista", "🧩", "Atividade mista"],
+                ["caca_palavras", "🔎", "Caça-palavras"],
+                ["cruzadinha", "🔲", "Cruzadinha"],
+                ["autoditado", "🖼️", "Autoditado"],
+                ["complete", "✏️", "Complete"],
+                ["ligue", "🔗", "Ligue"],
+                ["multipla_escolha", "☑️", "Múltipla escolha"],
+                ["verdadeiro_falso", "✅", "Verdadeiro ou falso"],
+                ["leitura_escrita", "📖", "Leitura e escrita"],
+              ].map(([valor, icone, rotulo]) => (
+                <button
+                  key={valor}
+                  type="button"
+                  onClick={() => {
+                    setTipoAtividade(valor);
+                    setErro("");
+                  }}
+                  className={`rounded-2xl border px-3 py-4 text-center transition ${
+                    tipoAtividade === valor
+                      ? "border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm ring-2 ring-emerald-100"
+                      : "border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/60"
+                  }`}
+                >
+                  <div className="mb-2 text-2xl">{icone}</div>
+                  <div className="text-sm font-bold">{rotulo}</div>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {tipoAtividade === "caca_palavras" && (
+            <div className="mt-5 rounded-2xl border border-emerald-200 bg-emerald-50/50 p-5">
+              <h3 className="text-base font-bold text-slate-900">
+                Opções do caça-palavras
+              </h3>
+
+              <div className="mt-4">
+                <label className="mb-2 block font-semibold text-slate-800">
+                  Nível de dificuldade
+                </label>
+
+                <div className="flex flex-wrap gap-3">
+                  {[
+                    ["facil", "Fácil"],
+                    ["medio", "Médio"],
+                    ["dificil", "Difícil"],
+                  ].map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => setNivelCacaPalavras(valor)}
+                      className={`rounded-xl border px-5 py-2.5 font-bold transition ${
+                        nivelCacaPalavras === valor
+                          ? "border-emerald-600 bg-emerald-600 text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400"
+                      }`}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-2 block font-semibold text-slate-800">
+                  Palavras que deseja incluir
+                  <span className="ml-2 text-sm font-normal text-slate-500">
+                    (opcional)
+                  </span>
+                </label>
+
+                <input
+                  type="text"
+                  value={palavrasCacaPalavras}
+                  onChange={(event) =>
+                    setPalavrasCacaPalavras(event.target.value)
+                  }
+                  placeholder="Ex.: Terra, Marte, Júpiter, Saturno, Netuno"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500 focus:ring-4 focus:ring-emerald-100"
+                />
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Deixe em branco para o PlanejAI escolher palavras relacionadas ao conteúdo.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {tipoAtividade === "autoditado" && (
+            <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50/50 p-5">
+              <h3 className="text-base font-bold text-slate-900">
+                Opções do autoditado
+              </h3>
+
+              <div className="mt-4">
+                <label className="mb-2 block font-semibold text-slate-800">
+                  Quantidade de palavras/imagens
+                </label>
+
+                <div className="flex flex-wrap gap-3">
+                  {["4", "6", "8", "10"].map((opcao) => (
+                    <button
+                      key={opcao}
+                      type="button"
+                      onClick={() => setQuantidadeAutoditado(opcao)}
+                      className={`rounded-xl border px-5 py-2.5 font-bold transition ${
+                        quantidadeAutoditado === opcao
+                          ? "border-blue-600 bg-blue-600 text-white"
+                          : "border-slate-300 bg-white text-slate-700 hover:border-blue-400"
+                      }`}
+                    >
+                      {opcao}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="mb-2 block font-semibold text-slate-800">
+                  Palavras que deseja trabalhar
+                  <span className="ml-2 text-sm font-normal text-slate-500">
+                    (opcional)
+                  </span>
+                </label>
+
+                <input
+                  type="text"
+                  value={palavrasAutoditado}
+                  onChange={(event) =>
+                    setPalavrasAutoditado(event.target.value)
+                  }
+                  placeholder="Ex.: bola, banana, bebê, barco"
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
+                />
+
+                <p className="mt-2 text-sm text-slate-500">
+                  Deixe em branco para o PlanejAI escolher palavras adequadas ao conteúdo e à turma.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="mt-6">
             <label className="mb-2 block text-lg font-bold text-slate-950">
               Descreva a atividade
-              <span className="text-red-500">
-                {" "}*
-              </span>
+              <span className="text-red-500"> *</span>
             </label>
 
             <textarea
               value={pedido}
               onChange={(event) => {
-                setPedido(
-                  event.target.value
-                );
+                setPedido(event.target.value);
                 setErro("");
               }}
               maxLength={1200}
-              placeholder="Ex.: Crie uma atividade de alfabetização sobre a letra B para o 1º ano, com imagens, letras tracejadas, palavras incompletas e 6 questões."
-              className="min-h-48 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+              placeholder="Ex.: Trabalhar animais vertebrados com o 3º ano, com atividades simples e adequadas à turma."
+              className="min-h-32 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
             />
 
             <p className="mt-1 text-right text-sm text-slate-500">
@@ -472,25 +639,13 @@ export default function AtividadesPage() {
             </div>
 
             <div className="mt-3 flex flex-wrap gap-3">
-              {[
-                "4",
-                "5",
-                "6",
-                "7",
-                "8",
-                "10",
-              ].map((opcao) => (
+              {["4", "5", "6", "7", "8", "10"].map((opcao) => (
                 <button
                   key={opcao}
                   type="button"
-                  onClick={() =>
-                    setQuantidadeQuestoes(
-                      opcao
-                    )
-                  }
+                  onClick={() => setQuantidadeQuestoes(opcao)}
                   className={`rounded-xl border px-5 py-3 font-bold transition ${
-                    quantidadeQuestoes ===
-                    opcao
+                    quantidadeQuestoes === opcao
                       ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
                       : "border-slate-300 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50"
                   }`}
@@ -498,31 +653,6 @@ export default function AtividadesPage() {
                   {opcao}
                 </button>
               ))}
-            </div>
-          </div>
-
-          <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-bold text-slate-800">
-              Exemplos de pedidos
-            </p>
-
-            <div className="mt-3 grid gap-2">
-              {exemplos.map(
-                (exemplo) => (
-                  <button
-                    key={exemplo}
-                    type="button"
-                    onClick={() =>
-                      usarExemplo(
-                        exemplo
-                      )
-                    }
-                    className="rounded-xl border border-slate-200 bg-white px-4 py-3 text-left text-sm leading-5 text-slate-700 transition hover:border-emerald-400 hover:bg-emerald-50"
-                  >
-                    “{exemplo}”
-                  </button>
-                )
-              )}
             </div>
           </div>
 

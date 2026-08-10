@@ -455,6 +455,10 @@ export default function PlanoCompleto({
           }
         );
       }
+
+      // Limpa o campo "Meu estilo" depois de gerar esta parte do plano.
+      setSugestoesMetodologia("");
+      setMostrarSugestoes(false);
     } catch (erro) {
       const mensagem =
         erro instanceof Error

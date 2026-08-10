@@ -18,7 +18,7 @@ export function gerarPromptAlfabetizacaoImagem(
   );
 
   return `
-Crie UMA FOLHA DE ATIVIDADE PEDAGÓGICA DE ALFABETIZAÇÃO,
+Crie UMA FOLHA DE ATIVIDADE PEDAGÓGICA,
 com aparência de material escolar profissional e pronta para impressão.
 
 DADOS:
@@ -41,10 +41,10 @@ ${quantidade}
 OBJETIVO PRINCIPAL:
 
 Transformar o pedido do professor em uma folha de atividade visual,
-bonita, clara, organizada e pronta para o aluno utilizar.
+clara, organizada, pedagogicamente adequada e pronta para o aluno utilizar.
 
 A atividade deve parecer uma folha pedagógica criada por um professor,
-e NÃO uma prova tradicional.
+e NÃO uma prova tradicional, salvo se o professor pedir explicitamente.
 
 FORMATO:
 
@@ -54,65 +54,57 @@ FORMATO:
 - Margens regulares.
 - Não cortar nenhum elemento.
 - Não deixar texto ou desenho ultrapassar as margens.
-- Organizar exatamente ${quantidade} questões principais.
-- Distribuir as questões de forma equilibrada pela folha.
-- Usar quadros ou divisões visuais quando isso melhorar a organização.
+- Aproveitar bem a área útil da página.
+- Usar quadros ou divisões visuais apenas quando ajudarem na organização.
 - Evitar espaços vazios excessivos.
 - Evitar excesso de decoração.
 - Priorizar clareza e legibilidade.
 
-DDIAGRAMAÇÃO:
+DIAGRAMAÇÃO:
 
 - Usar bem toda a área útil da folha.
-- Manter apenas margens normais de impressão.
-- O título da atividade pode começar próximo ao topo da folha.
-- Distribuir as questões uniformemente.
-- Não deixar grandes espaços vazios.
-- Não apertar demais os exercícios.
-- Aproveitar bem a largura e a altura da página.
-- Deixar espaço suficiente para a criança responder.
+- Manter margens adequadas para impressão.
+- O título deve aparecer próximo ao topo.
+- Distribuir os exercícios de forma equilibrada.
+- Não apertar demais os elementos.
+- Deixar espaço suficiente para o aluno responder.
 - Manter desenhos e textos proporcionalmente equilibrados.
 - Não deixar nenhum exercício encostado nas bordas.
+- A atividade deve parecer uma folha pedagógica pronta para impressão.
+- Toda a atividade deve ficar visualmente contida dentro da moldura.
+- O título deve ficar centralizado ou bem destacado no início da atividade.
+- Manter aproximadamente o mesmo espaçamento entre a moldura e o conteúdo em todos os lados.
+- Distribuir as questões de forma equilibrada.
+- Quando houver várias questões, utilizar divisões visuais discretas quando necessário.
+- Não deixar grandes áreas vazias.
+- Não apertar excessivamente os exercícios.
+- Deixar espaço suficiente para o estudante responder.
+- Manter desenhos, textos e caixas proporcionalmente equilibrados.
+- Não deixar nenhum exercício encostado na moldura.
+- A última questão também deve permanecer totalmente dentro da borda.
 
 CABEÇALHO:
 
 NÃO criar cabeçalho de identificação dentro da imagem.
 
 NÃO escrever:
-
 - NOME
 - ALUNO(A)
 - ESCOLA
 - TURMA
 - DATA
-- PROFESSOR
+- PROFESSOR(A)
+- NOTA
 
-Não reservar espaço para cabeçalho.
+Não criar logotipo, brasão ou identificação institucional.
 
-O cabeçalho será acrescentado em outra página pelo sistema PlanejAI.
+O sistema PlanejAI poderá acrescentar um cabeçalho posteriormente.
 
-A imagem deve conter somente o título e a atividade pedagógica.
-
-Não criar:
-
-- linhas para preenchimento;
-- caixas;
-- molduras;
-- logotipos;
-- brasões;
-- textos institucionais;
-- títulos dentro desse espaço.
-
-O título da atividade deve começar somente abaixo da área reservada.
-
-A atividade deve ser diagramada considerando que o PlanejAI poderá inserir um cabeçalho personalizado nessa área.
+A imagem deve começar pelo título da atividade e pelo conteúdo pedagógico.
 
 TÍTULO:
 
-Criar um título curto e claro relacionado ao pedido.
-
-Exemplo:
-ATIVIDADE COM A LETRA B
+Criar um título curto e claro relacionado ao pedido do professor.
 
 REGRAS DE ESCRITA:
 
@@ -126,198 +118,112 @@ REGRAS DE ESCRITA:
 - Não escrever textos borrados ou ilegíveis.
 - Todos os comandos devem estar completos.
 
+ADEQUAÇÃO À SÉRIE:
+
+A atividade deve ser adequada a:
+${dados.serie}
+
+Para Educação Infantil, 1º e 2º ano:
+- usar pouco texto;
+- utilizar comandos curtos;
+- usar imagens maiores quando apropriado;
+- priorizar identificação, associação, oralidade, leitura inicial e escrita inicial;
+- utilizar LETRA DE FORMA SIMPLES;
+- evitar questões discursivas longas;
+- evitar interpretação de texto extensa.
+
+Para séries posteriores:
+- adequar vocabulário, extensão dos textos e nível de dificuldade;
+- não infantilizar a atividade;
+- utilizar questões compatíveis com o nível escolar.
+
 LETRA PARA ALFABETIZAÇÃO:
 
-- Usar LETRA DE FORMA SIMPLES.
-- Usar fonte visual semelhante a Arial ou Helvetica.
-- NÃO usar Times New Roman na letra destinada ao traçado.
-- NÃO usar letra cursiva no traçado, salvo se o professor pedir.
-- Quando houver letra para cobrir, ela deve ser grande e PONTILHADA.
-- A letra pontilhada deve ter formato simples e fácil para a criança copiar.
-- Não transformar a letra pontilhada em uma fonte serifada.
-- Usar preferencialmente letras maiúsculas para ${dados.serie}
-  quando adequado à fase de alfabetização.
-
-QUESTÕES:
-
-Criar exatamente ${quantidade} questões principais.
-
-As questões devem ser variadas.
-
-Quando o pedido envolver uma LETRA DO ALFABETO,
-priorizar combinações como:
-
-1. COBRIR OU TRACEJAR A LETRA.
-2. IDENTIFICAR OU CIRCULAR A LETRA.
-3. PINTAR FIGURAS CUJOS NOMES COMEÇAM COM A LETRA.
-4. LIGAR FIGURAS ÀS PALAVRAS.
-5. COMPLETAR PALAVRAS COM A LETRA.
-6. MARCAR A ALTERNATIVA CORRETA.
-7. LER FRASES CURTAS E LOCALIZAR A LETRA.
-8. FORMAR PALAVRAS OU SÍLABAS SIMPLES.
-
-Não é obrigatório usar todos os formatos.
-Escolher apenas os mais adequados ao pedido e à série.
-
-VARIEDADE:
-
-- Não repetir o mesmo comando em duas questões.
-- Não criar duas questões praticamente iguais.
-- Não fazer toda a folha apenas com múltipla escolha.
-- Não fazer toda a folha apenas com tracejado.
-- Organizar do mais simples para o mais complexo.
-- Cada questão deve ter uma função pedagógica diferente.
+Quando a atividade envolver alfabetização:
+- usar letra de forma simples;
+- usar aparência semelhante a Arial ou Helvetica;
+- não utilizar Times New Roman para letras de traçado;
+- não usar letra cursiva no traçado, salvo se solicitado;
+- quando houver letra para cobrir, utilizar letra grande e pontilhada;
+- utilizar preferencialmente letras maiúsculas quando adequado à fase de alfabetização.
 
 IMAGENS:
 
 Quando usar imagens:
+- criar os desenhos diretamente dentro da folha;
+- usar ilustrações simples e facilmente reconhecíveis;
+- manter fundo claro ou branco;
+- usar contorno nítido;
+- evitar desenhos excessivamente detalhados;
+- não utilizar marcas-d'água;
+- não colocar palavras dentro das figuras;
+- não colocar automaticamente o nome do objeto quando ele for a resposta esperada.
 
-- Criar os desenhos diretamente dentro da folha.
-- Usar ilustrações infantis simples.
-- Fundo claro ou branco.
-- Contorno nítido.
-- Objetos fáceis de reconhecer.
-- Não usar imagens excessivamente detalhadas.
-- Não usar marcas-d'água.
-- Não usar textos dentro dos desenhos.
-- Não colocar o nome do objeto automaticamente,
-  a menos que a própria questão precise mostrar a palavra.
+COERÊNCIA ENTRE FIGURA E PALAVRA:
 
-COERÊNCIA ENTRE LETRA E FIGURA:
+Conferir rigorosamente se cada imagem corresponde à palavra, conceito ou resposta esperada.
 
-Se a atividade for sobre uma letra específica,
-conferir rigorosamente cada palavra.
+Não usar figuras ambíguas.
 
-Exemplo para letra B:
-
-CORRETOS:
-BOLA
-BARCO
-BANANA
-BALEIA
-BONECA
-BISCOITO
-BALDE
-BOI
-BICICLETA
-BORBOLETA
-
-Distratores podem começar com outra letra SOMENTE quando a questão
-pedir que o aluno identifique quais começam com B.
-
-Nunca colocar uma palavra que começa com outra letra
-em uma atividade que diga:
-"Ligue as palavras que começam com B".
+Quando o professor fornecer palavras específicas, respeitar exatamente essas palavras.
 
 COMPLETAR PALAVRAS:
 
-Quando criar questão de completar uma letra:
-
-Usar exemplos como:
-
-_OLA
-_ARCO
-_ANANA
-_ALEIA
-_ALDE
-
-A lacuna deve estar exatamente no local da letra que falta.
-
-Não criar:
-
-B_LA
-
-se o objetivo for completar especificamente a letra inicial B.
+Quando houver exercícios de completar:
+- colocar a lacuna exatamente no local correto;
+- não revelar a resposta;
+- manter espaço suficiente para escrita;
+- respeitar o objetivo pedagógico informado.
 
 LIGAR:
 
-Quando criar questão de ligar:
-
-- Colocar figuras em um lado.
-- Colocar palavras no outro lado.
-- Misturar a ordem das palavras.
-- Deixar espaço visual para o aluno traçar as linhas.
-- Não escrever "IMAGEM 1".
-- Não escrever "FIGURA 2".
-- Mostrar a figura real.
-
-PINTAR OU CIRCULAR:
-
-Quando criar questão como:
-
-"PINTE OS DESENHOS QUE COMEÇAM COM A LETRA B"
-
-usar aproximadamente 4 a 6 figuras.
-
-Misturar:
-
-- figuras corretas;
-- figuras distratoras.
-
-Exemplo:
-
-BOLA
-BALEIA
-CASA
-BANANA
-GATO
-BARCO
-
-Assim a criança realmente precisa identificar.
+Quando houver exercício de ligar:
+- colocar os elementos em duas áreas ou colunas;
+- misturar a ordem das respostas;
+- deixar espaço para o aluno traçar as linhas;
+- não desenhar as ligações previamente;
+- utilizar figuras reais/desenhadas quando forem necessárias, e não textos como "IMAGEM 1".
 
 TRAÇADO:
 
-Quando criar exercício de cobrir letra:
-
-- mostrar uma letra grande pontilhada;
-- mostrar de 4 a 8 letras menores pontilhadas;
-- incluir linhas abaixo para a criança tentar escrever sozinha;
-- não escrever apenas:
-  B B B B B
-  como texto comum.
+Quando houver exercício de cobrir letras:
+- mostrar letras grandes pontilhadas;
+- utilizar traçado simples e legível;
+- incluir espaço para tentativa independente;
+- não representar o traçado apenas como letras normais repetidas.
 
 COMANDOS:
 
-Os comandos devem ser curtos.
+Os comandos devem ser curtos, claros e adequados à turma.
 
-Exemplos adequados:
-
+Exemplos:
 CUBRA A LETRA B.
-
 PINTE OS DESENHOS QUE COMEÇAM COM B.
-
 LIGUE AS FIGURAS ÀS PALAVRAS.
-
-COMPLETE AS PALAVRAS COM B.
-
+COMPLETE AS PALAVRAS.
 MARQUE UM X NA RESPOSTA CORRETA.
+ENCONTRE AS PALAVRAS NO CAÇA-PALAVRAS.
 
-LEIA E CIRCULE A LETRA B.
+QUANTIDADE:
 
-Evitar comandos longos e explicativos.
-
-IDADE E SÉRIE:
-
-A atividade deve ser adequada a:
-
-${dados.serie}
-
-Para Educação Infantil, 1º e 2º ano:
-
-- usar pouco texto;
-- usar imagens maiores;
-- usar comandos simples;
-- priorizar identificação, associação, oralidade,
-  leitura inicial e escrita inicial;
-- não criar questões discursivas longas;
-- não criar interpretação de texto extensa.
-
-Se o professor pedir algo diferente,
-respeitar o pedido desde que seja pedagogicamente adequado.
+Quando a atividade escolhida permitir várias questões independentes,
+criar exatamente ${quantidade} questões principais.
 
 IMPORTANTE:
+Se uma configuração específica enviada pelo sistema definir um formato
+único, como CAÇA-PALAVRAS, CRUZADINHA ou AUTODITADO,
+essa configuração específica tem prioridade sobre a regra de variedade
+e sobre a quantidade de questões independentes.
 
-O pedido principal do professor é:
+VARIEDADE:
+
+Somente quando o tipo escolhido for atividade mista:
+- variar os formatos;
+- não repetir o mesmo comando;
+- organizar do mais simples para o mais complexo;
+- utilizar exercícios com funções pedagógicas diferentes.
+
+PEDIDO PRINCIPAL DO PROFESSOR:
 
 "${dados.pedido}"
 
@@ -326,29 +232,22 @@ A folha deve atender diretamente a esse pedido.
 REVISÃO FINAL OBRIGATÓRIA:
 
 Antes de entregar a imagem:
-
-1. Conferir se existem exatamente ${quantidade} questões.
-2. Conferir se nenhuma questão ficou incompleta.
-3. Conferir se todas as palavras estão corretas.
-4. Conferir se imagens e palavras correspondem corretamente.
-5. Conferir se a letra trabalhada está correta em toda a folha.
-6. Conferir se não há texto cortado.
-7. Conferir se não há elementos fora da página.
-8. Conferir se a letra de traçado é simples e não serifada.
-9. Conferir se a atividade é adequada para ${dados.serie}.
-10. Conferir se a folha está pronta para impressão.
-11. Conferir se o espaço superior reservado para o cabeçalho permanece vazio.
+1. Conferir se a atividade corresponde ao pedido.
+2. Conferir se nenhuma questão ou elemento ficou incompleto.
+3. Conferir rigorosamente todas as palavras.
+4. Conferir se imagens e palavras correspondem.
+5. Conferir se não há texto cortado.
+6. Conferir se não existem elementos fora das margens.
+7. Conferir se a atividade é adequada para ${dados.serie}.
+8. Conferir se a folha está pronta para impressão.
+9. Conferir se não foi criado cabeçalho de identificação.
+10. Conferir se o tipo específico solicitado pelo sistema foi respeitado integralmente.
 
 Produza somente a imagem da atividade pedagógica.
 
 Não escreva explicações fora da folha.
-
 Não criar cabeçalho de identificação.
-
 Não criar rodapé.
-
 Não adicionar logotipo ou marca-d'água.
-
-A folha será finalizada pelo sistema PlanejAI, que poderá inserir um cabeçalho personalizado no espaço reservado no topo.
 `.trim();
 }
