@@ -484,11 +484,11 @@ export default function ParceiroPage() {
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-  {naoParceiro
-    ? "Esta conta não possui uma parceria ativa com o PlanejAI."
-    : erro ||
-      "Não foi possível carregar os dados da parceria."}
-</p>
+              {naoParceiro
+                ? "Esta conta não possui uma parceria ativa com o PlanejAI."
+                : erro ||
+                  "Não foi possível carregar os dados da parceria."}
+            </p>
           </div>
         </section>
       </main>
@@ -615,7 +615,7 @@ export default function ParceiroPage() {
                 <CheckCircle2 size={22} />
               </div>
 
-              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
+              <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-semibold text-emerald-700">
                 Premium
               </span>
             </div>
