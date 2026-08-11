@@ -156,16 +156,16 @@ export async function exportarAtividade(
           }
 
           .atividade img {
-            display: block;
-            width: auto;
-            height: auto;
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
-            object-position: top center;
-            margin: 0 auto;
-            background: #ffffff;
-          }
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+  object-fit: contain;
+  object-position: top center;
+  margin: 0 auto;
+  background: #ffffff;
+}
 
           @media print {
             html,

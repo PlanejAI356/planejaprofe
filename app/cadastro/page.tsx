@@ -9,10 +9,67 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] =
+    useState(false);
+  const [carregando, setCarregando] =
+    useState(false);
 
-  async function criarConta(e: React.FormEvent) {
+  async function registrarIndicacaoCadastro(
+    emailCliente: string
+  ) {
+    const parceiroRef =
+      localStorage
+        .getItem("parceiro_ref")
+        ?.trim()
+        .toUpperCase() || "";
+
+    if (!parceiroRef) {
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        "/api/parcerias/cadastro",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            cupom: parceiroRef,
+            emailCliente,
+          }),
+        }
+      );
+
+      if (!resposta.ok) {
+        const resultado =
+          await resposta
+            .json()
+            .catch(() => null);
+
+        console.error(
+          "Não foi possível registrar a indicação do cadastro:",
+          resultado
+        );
+      }
+    } catch (error) {
+      /*
+       * O cadastro do professor não deve falhar
+       * caso o rastreamento da parceria tenha
+       * algum problema temporário.
+       */
+      console.error(
+        "Erro ao registrar indicação do cadastro:",
+        error
+      );
+    }
+  }
+
+  async function criarConta(
+    e: React.FormEvent
+  ) {
     e.preventDefault();
 
     if (carregando) return;
@@ -20,10 +77,13 @@ export default function CadastroPage() {
     setCarregando(true);
 
     try {
-      const nomeNormalizado = nome.trim();
-      const emailNormalizado = email
-        .trim()
-        .toLowerCase();
+      const nomeNormalizado =
+        nome.trim();
+
+      const emailNormalizado =
+        email
+          .trim()
+          .toLowerCase();
 
       const whatsappNormalizado =
         whatsapp.trim();
@@ -67,7 +127,8 @@ export default function CadastroPage() {
                 "application/json",
             },
             body: JSON.stringify({
-              email: emailNormalizado,
+              email:
+                emailNormalizado,
             }),
           }
         );
@@ -83,16 +144,13 @@ export default function CadastroPage() {
         return;
       }
 
-      /*
-       * Se já existe perfil com esse e-mail,
-       * não cria outra conta.
-       */
       if (dadosVerificacao.existe) {
         alert(
           "Este e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
         );
 
-        window.location.href = "/login";
+        window.location.href =
+          "/login";
         return;
       }
 
@@ -102,16 +160,21 @@ export default function CadastroPage() {
       const {
         data,
         error,
-      } = await supabase.auth.signUp({
-        email: emailNormalizado,
-        password: senhaNormalizada,
-        options: {
-          data: {
-            nome: nomeNormalizado,
-            whatsapp: whatsappNormalizado,
+      } =
+        await supabase.auth.signUp({
+          email:
+            emailNormalizado,
+          password:
+            senhaNormalizada,
+          options: {
+            data: {
+              nome:
+                nomeNormalizado,
+              whatsapp:
+                whatsappNormalizado,
+            },
           },
-        },
-      });
+        });
 
       if (error) {
         console.error(
@@ -119,12 +182,6 @@ export default function CadastroPage() {
           error
         );
 
-        /*
-         * Segunda proteção.
-         * Se o próprio Auth identificar
-         * conflito de cadastro, mostramos
-         * uma mensagem amigável.
-         */
         const mensagemErro =
           error.message.toLowerCase();
 
@@ -160,11 +217,23 @@ export default function CadastroPage() {
         data.user?.id
       );
 
+      /*
+       * 3. SE O PROFESSOR VEIO DE UM LINK
+       * DE PARCEIRO, REGISTRA O CADASTRO.
+       *
+       * Exemplo:
+       * ?ref=AYANNE
+       */
+      await registrarIndicacaoCadastro(
+        emailNormalizado
+      );
+
       alert(
         "Cadastro realizado com sucesso! Agora faça login para acessar o PlanejAI."
       );
 
-      window.location.href = "/login";
+      window.location.href =
+        "/login";
     } catch (error) {
       console.error(
         "Erro inesperado ao criar conta:",
@@ -181,8 +250,8 @@ export default function CadastroPage() {
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-4 py-10">
-      <div className="w-full max-w-md rounded-3xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8">
-        <h1 className="mb-2 text-center text-3xl font-extrabold text-slate-900">
+      <div className="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+        <h1 className="mb-2 text-center text-2xl font-extrabold text-slate-900">
           Criar conta
         </h1>
 
@@ -210,7 +279,9 @@ export default function CadastroPage() {
             placeholder="E-mail"
             value={email}
             onChange={(e) =>
-              setEmail(e.target.value)
+              setEmail(
+                e.target.value
+              )
             }
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
@@ -221,7 +292,9 @@ export default function CadastroPage() {
             placeholder="Telefone / WhatsApp"
             value={whatsapp}
             onChange={(e) =>
-              setWhatsapp(e.target.value)
+              setWhatsapp(
+                e.target.value
+              )
             }
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
@@ -237,7 +310,9 @@ export default function CadastroPage() {
               placeholder="Senha"
               value={senha}
               onChange={(e) =>
-                setSenha(e.target.value)
+                setSenha(
+                  e.target.value
+                )
               }
               className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
               required
@@ -258,7 +333,9 @@ export default function CadastroPage() {
               }
             >
               {mostrarSenha ? (
-                <EyeOff size={20} />
+                <EyeOff
+                  size={20}
+                />
               ) : (
                 <Eye size={20} />
               )}

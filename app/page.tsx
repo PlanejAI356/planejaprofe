@@ -30,6 +30,76 @@ export default function Home() {
   const [datasSelecionadas, setDatasSelecionadas] = useState<DataAula[]>([]);
 
   useEffect(() => {
+    async function registrarIndicacaoParceiro() {
+      const params = new URLSearchParams(
+        window.location.search
+      );
+
+      const refRecebida =
+        params.get("ref")?.trim().toUpperCase() || "";
+
+      if (!refRecebida) {
+        return;
+      }
+
+      localStorage.setItem(
+        "parceiro_ref",
+        refRecebida
+      );
+
+      let visitanteId =
+        localStorage.getItem(
+          "parceiro_visitante_id"
+        );
+
+      if (!visitanteId) {
+        visitanteId = crypto.randomUUID();
+
+        localStorage.setItem(
+          "parceiro_visitante_id",
+          visitanteId
+        );
+      }
+
+      try {
+        const resposta = await fetch(
+          "/api/parcerias/clique",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+            body: JSON.stringify({
+              cupom: refRecebida,
+              visitanteId,
+            }),
+          }
+        );
+
+        if (!resposta.ok) {
+          const resultado =
+            await resposta.json().catch(
+              () => null
+            );
+
+          console.error(
+            "Não foi possível registrar a indicação:",
+            resultado
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao registrar indicação de parceiro:",
+          error
+        );
+      }
+    }
+
+    registrarIndicacaoParceiro();
+  }, []);
+
+  useEffect(() => {
     async function verificarLogin() {
       const { data, error } = await supabase.auth.getSession();
 

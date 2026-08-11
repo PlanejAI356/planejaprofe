@@ -37,6 +37,7 @@ export async function POST(req: Request) {
       status: pagamento.status,
       external_reference: pagamento.external_reference,
       payer_email: pagamento.payer?.email,
+      transaction_amount: pagamento.transaction_amount,
     });
 
     /*
@@ -84,7 +85,9 @@ export async function POST(req: Request) {
       error: erroBuscarPerfil,
     } = await supabaseAdmin
       .from("profiles")
-      .select("id, email, plano, planos_restantes, mercado_pago_id")
+      .select(
+        "id, email, plano, planos_restantes, mercado_pago_id"
+      )
       .eq("email", email)
       .maybeSingle();
 
@@ -156,6 +159,7 @@ export async function POST(req: Request) {
     }
 
     console.log("=== PREMIUM LIBERADO COM SUCESSO ===");
+
     console.log({
       email: perfilAtualizado.email,
       plano: perfilAtualizado.plano,
@@ -166,18 +170,62 @@ export async function POST(req: Request) {
     });
 
     /*
-     * 5. PROCURA INDICAÇÃO PENDENTE
+     * 5. PROCURA SE O PAGAMENTO JÁ FOI
+     * REGISTRADO EM ALGUMA INDICAÇÃO
+     *
+     * Isso evita comissão duplicada caso
+     * o Mercado Pago envie o webhook novamente.
      */
     const {
-      data: indicacoesPendentes,
+      data: pagamentoJaRegistrado,
+      error: erroPagamentoRegistrado,
+    } = await supabaseAdmin
+      .from("indicacoes")
+      .select("id, mercado_pago_id, status")
+      .eq(
+        "mercado_pago_id",
+        String(paymentId)
+      )
+      .maybeSingle();
+
+    if (erroPagamentoRegistrado) {
+      console.error(
+        "Erro ao verificar pagamento já registrado:",
+        erroPagamentoRegistrado
+      );
+    }
+
+    if (pagamentoJaRegistrado) {
+      console.log(
+        "Pagamento já registrado em uma indicação. Comissão não será duplicada."
+      );
+
+      return NextResponse.json({
+        recebido: true,
+      });
+    }
+
+    /*
+     * 6. PROCURA INDICAÇÃO DO CLIENTE
+     *
+     * Aceitamos tanto "cadastrado"
+     * quanto "pendente" para não perder
+     * registros antigos.
+     */
+    const {
+      data: indicacoes,
       error: erroBuscarIndicacao,
     } = await supabaseAdmin
       .from("indicacoes")
       .select(
-        "id, parceiro_id, cupom, valor_assinatura, valor_comissao"
+        "id, parceiro_id, cupom, email_cliente, status"
       )
       .eq("email_cliente", email)
-      .eq("status", "pendente");
+      .in("status", [
+        "cadastrado",
+        "pendente",
+      ])
+      .limit(1);
 
     if (erroBuscarIndicacao) {
       console.error(
@@ -187,7 +235,8 @@ export async function POST(req: Request) {
 
       /*
        * O Premium já foi liberado.
-       * Uma falha na comissão não bloqueia o cliente.
+       * Erro na comissão não bloqueia
+       * o acesso do cliente.
        */
       return NextResponse.json({
         recebido: true,
@@ -195,11 +244,11 @@ export async function POST(req: Request) {
     }
 
     /*
-     * Não utilizou cupom.
+     * Cliente não veio de parceiro.
      */
     if (
-      !indicacoesPendentes ||
-      indicacoesPendentes.length === 0
+      !indicacoes ||
+      indicacoes.length === 0
     ) {
       console.log(
         "Pagamento aprovado sem indicação de parceiro."
@@ -210,44 +259,98 @@ export async function POST(req: Request) {
       });
     }
 
-    /*
-     * 6. CONFIRMA A INDICAÇÃO
-     */
-    const idsIndicacoes = indicacoesPendentes.map(
-      (indicacao) => indicacao.id
+    const indicacao = indicacoes[0];
+
+    console.log(
+      "Indicação encontrada:",
+      indicacao
     );
 
+    /*
+     * 7. CALCULA A COMISSÃO
+     *
+     * Comissão = 30% do valor efetivamente pago.
+     */
+    const valorAssinatura = Number(
+      pagamento.transaction_amount || 0
+    );
+
+    if (valorAssinatura <= 0) {
+      console.error(
+        "Não foi possível identificar o valor da assinatura."
+      );
+
+      return NextResponse.json({
+        recebido: true,
+      });
+    }
+
+    const percentualComissao = 0.3;
+
+    const valorComissao = Number(
+      (
+        valorAssinatura *
+        percentualComissao
+      ).toFixed(2)
+    );
+
+    console.log("Valores da indicação:", {
+      valorAssinatura,
+      percentualComissao,
+      valorComissao,
+    });
+
+    /*
+     * 8. TRANSFORMA O CADASTRO EM PAGAMENTO
+     */
     const {
-      data: indicacoesConfirmadas,
-      error: erroConfirmarIndicacao,
+      data: indicacaoAtualizada,
+      error: erroAtualizarIndicacao,
     } = await supabaseAdmin
       .from("indicacoes")
       .update({
-        status: "confirmada",
+        status: "pago",
+        valor_assinatura: valorAssinatura,
+        valor_comissao: valorComissao,
         mercado_pago_id: String(paymentId),
       })
-      .in("id", idsIndicacoes)
-      .select();
+      .eq("id", indicacao.id)
+      .select(
+        "id, parceiro_id, cupom, email_cliente, status, valor_assinatura, valor_comissao, mercado_pago_id"
+      )
+      .single();
 
-    if (erroConfirmarIndicacao) {
+    if (erroAtualizarIndicacao) {
       console.error(
-        "Erro ao confirmar indicação:",
-        erroConfirmarIndicacao
+        "ERRO ao registrar comissão:",
+        erroAtualizarIndicacao
       );
 
-      /*
-       * Novamente: não retiramos o Premium
-       * por causa de erro na comissão.
-       */
       return NextResponse.json({
         recebido: true,
       });
     }
 
     console.log(
-      "Indicação confirmada:",
-      indicacoesConfirmadas
+      "=== INDICAÇÃO PAGA COM SUCESSO ==="
     );
+
+    console.log({
+      parceiro_id:
+        indicacaoAtualizada.parceiro_id,
+      cupom:
+        indicacaoAtualizada.cupom,
+      cliente:
+        indicacaoAtualizada.email_cliente,
+      status:
+        indicacaoAtualizada.status,
+      valor_assinatura:
+        indicacaoAtualizada.valor_assinatura,
+      valor_comissao:
+        indicacaoAtualizada.valor_comissao,
+      mercado_pago_id:
+        indicacaoAtualizada.mercado_pago_id,
+    });
 
     return NextResponse.json({
       recebido: true,
