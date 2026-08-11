@@ -732,6 +732,65 @@ essa configuração tem prioridade.
 Quando nenhum tipo for escolhido,
 interpretar o pedido livremente e selecionar o formato mais adequado,
 sem assumir automaticamente "atividade mista".
+
+==================================================
+FORMATO FINAL PARA ENCAIXE EM FOLHA A4
+==================================================
+
+A imagem gerada NÃO representa uma folha A4 inteira.
+
+Ela representa SOMENTE O CORPO DA ATIVIDADE que será colocado
+abaixo de um cabeçalho externo criado pelo PlanejAI.
+
+PROPORÇÃO DA ÁREA ÚTIL:
+
+- Considerar que a página final será A4 vertical: 210 mm x 297 mm.
+- O PlanejAI reservará a parte superior para o cabeçalho.
+- A área disponível para esta imagem será aproximadamente:
+  190 mm de largura x 240 mm de altura.
+- Organizar visualmente o conteúdo em proporção aproximada de 19:24.
+- A atividade deve parecer um bloco vertical um pouco mais baixo e mais largo
+  do que uma folha A4 completa.
+- NÃO criar uma folha A4 inteira dentro da imagem.
+
+CABEÇALHO:
+
+- NÃO criar cabeçalho escolar.
+- NÃO criar campos de Escola, Professor(a), Aluno(a), Data, Turma, Série ou Nota.
+- NÃO reservar espaço vazio no topo para cabeçalho.
+- O conteúdo da atividade deve começar próximo ao topo da área útil,
+  respeitando apenas uma margem interna pequena e regular.
+
+APROVEITAMENTO DO ESPAÇO:
+
+- Usar praticamente toda a área disponível.
+- Distribuir as questões de forma equilibrada de cima para baixo.
+- Evitar grandes espaços vazios entre as questões.
+- Não deixar um grande espaço vazio no topo.
+- Não deixar um grande espaço vazio no rodapé.
+- Manter margens internas regulares em todos os lados.
+- Nenhum texto, desenho, grade, linha ou questão pode ultrapassar as margens.
+- Não cortar nenhum elemento.
+- Não apertar o conteúdo a ponto de prejudicar a leitura.
+- Se houver poucas questões, aumentar de forma equilibrada os espaços de resposta
+  e os elementos pedagógicos, sem aumentar exageradamente títulos ou desenhos.
+- Se houver muitas questões, reduzir moderadamente os elementos decorativos
+  e organizar melhor o conteúdo, sem diminuir demais as letras.
+
+IMPRESSÃO:
+
+- Fundo branco.
+- Visual limpo e profissional.
+- Priorizar contraste e legibilidade.
+- A atividade deve continuar adequada para impressão em preto e branco.
+- Evitar fundos coloridos grandes, sombras fortes e decoração que consuma espaço.
+- Não criar moldura externa simulando outra folha dentro da página.
+
+REGRA CRÍTICA:
+
+Toda informação pedagógica importante precisa ficar dentro da área central útil.
+A composição deve ser pensada para posteriormente ser encaixada pelo PlanejAI
+abaixo de um cabeçalho, sem precisar cortar, esticar ou deformar a imagem.
 `;
 
     const resultado =
@@ -740,8 +799,7 @@ sem assumir automaticamente "atividade mista".
         prompt: promptFinal,
         size: "1024x1536",
         quality: "medium",
-        output_format: "jpeg",
-        output_compression: 90,
+        output_format: "png",
       });
 
     const imagemBase64 =
@@ -758,7 +816,7 @@ sem assumir automaticamente "atividade mista".
     }
 
     return NextResponse.json({
-      imagem: `data:image/jpeg;base64,${imagemBase64}`,
+      imagem: `data:image/png;base64,${imagemBase64}`,
       promptFinal,
     });
   } catch (error) {

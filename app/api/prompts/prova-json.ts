@@ -84,22 +84,47 @@ export function gerarPromptProvaJson(body: any) {
 
   const dificuldade =
     body.dificuldade || "Misto";
-    const incluirBncc = Boolean(body.incluirBncc);
 
-const incluirTextoApoio = Boolean(
-  body.incluirTextoApoio
-);
+  const incluirBncc = Boolean(body.incluirBncc);
 
-const regrasBncc = incluirBncc
-  ? `
+  const habilidadeBncc = String(
+    body.habilidadeBncc || ""
+  ).trim();
+
+  const incluirTextoApoio = Boolean(
+    body.incluirTextoApoio
+  );
+
+  const regrasBncc = incluirBncc
+    ? habilidadeBncc
+      ? `
+HABILIDADES DA BNCC:
+
+O professor informou uma ou mais habilidades específicas da BNCC.
+
+HABILIDADE(S) INFORMADA(S) PELO PROFESSOR:
+${habilidadeBncc}
+
+REGRAS OBRIGATÓRIAS:
+- Utilizar obrigatoriamente a habilidade ou as habilidades informadas pelo professor.
+- Não substituir os códigos informados por outros.
+- Não alterar, corrigir ou completar os códigos digitados.
+- Não inventar códigos adicionais.
+- Criar as questões de modo coerente com os conteúdos informados e com a habilidade ou as habilidades fornecidas.
+- Quando houver mais de uma habilidade, considerar todas elas na elaboração da avaliação sempre que forem compatíveis com os conteúdos.
+- No campo "habilidadesBncc" do JSON, retornar exatamente os códigos informados pelo professor, separados em itens do array.
+- Não escrever descrições das habilidades dentro do array "habilidadesBncc"; retornar somente os códigos.
+`
+      : `
 HABILIDADES DA BNCC:
 
 - Antes de elaborar a avaliação, identifique a habilidade da BNCC mais adequada ao conteúdo.
 - Inclua somente o código da habilidade correspondente.
 - Não invente códigos.
 - Quando houver mais de um conteúdo, utilize as habilidades compatíveis.
+- No campo "habilidadesBncc" do JSON, retornar somente os códigos selecionados.
 `
-  : "";
+    : "";
 
 const regrasTextoApoio = incluirTextoApoio
   ? `
@@ -548,6 +573,8 @@ REGRAS DO JSON:
 - Não incluir id nem número da questão; o sistema criará esses dados.
 - Todas as propriedades do modelo devem existir em todas as questões.
 - A propriedade "habilidadesBncc" deve ser um array de códigos da BNCC quando essa opção estiver ativada.
+- Se o professor informou habilidadeBncc, usar exatamente os códigos informados por ele no array "habilidadesBncc".
+- Se o professor marcou BNCC, mas não informou habilidade específica, selecionar somente códigos compatíveis com a série, disciplina e conteúdos.
 - Quando a opção de BNCC não estiver ativada, usar "habilidadesBncc": [].
 - A propriedade "textoApoio" deve conter o texto produzido quando essa opção estiver ativada.
 - Quando a opção de texto de apoio não estiver ativada, usar "textoApoio": "".

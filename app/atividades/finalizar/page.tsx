@@ -456,23 +456,25 @@ export default function FinalizarAtividadePage() {
 
           <div className="bg-slate-100 p-4 sm:p-6">
             <div
-              
-              className="mx-auto w-full max-w-[794px] bg-white px-7 py-6 shadow-md sm:px-8 sm:py-7"
+              className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white px-[4.76%] py-[3.37%] shadow-md"
+              style={{
+                boxSizing: "border-box",
+              }}
             >
               {cabecalho.trim() && (
                 <div
-                  className="cabecalho-preview mb-4 overflow-hidden"
+                  className="cabecalho-preview mb-[2.5%] max-h-[15%] shrink-0 overflow-hidden"
                   dangerouslySetInnerHTML={{
                     __html: cabecalho,
                   }}
                 />
               )}
 
-              <div className="flex w-full justify-center bg-white">
+              <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden bg-white">
                 <img
                   src={imagem}
                   alt="Atividade pedagógica final"
-                  className="block h-auto w-[94%] bg-white object-contain"
+                  className="block h-full w-full bg-white object-contain object-top"
                   style={{
                     filter: "brightness(1.02) contrast(1.01)",
                   }}

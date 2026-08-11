@@ -69,6 +69,7 @@ export async function exportarAtividade(
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
+
         <meta
           name="viewport"
           content="width=device-width, initial-scale=1"
@@ -100,16 +101,15 @@ export async function exportarAtividade(
 
           body {
             display: flex;
-            align-items: center;
-            justify-content: center;
+            align-items: flex-start;
+            justify-content: flex-start;
           }
 
           .pagina {
-            width: 194mm;
-            height: 281mm;
-            border: 1px solid #000000;
+            width: 210mm;
+            height: 297mm;
             background: #ffffff;
-            padding: 5mm;
+            padding: 10mm;
 
             display: flex;
             flex-direction: column;
@@ -119,7 +119,8 @@ export async function exportarAtividade(
           .cabecalho {
             width: 100%;
             flex: 0 0 auto;
-            margin: 0 0 3mm 0;
+            max-height: 38mm;
+            margin: 0 0 4mm 0;
             overflow: hidden;
           }
 
@@ -156,16 +157,16 @@ export async function exportarAtividade(
           }
 
           .atividade img {
-  display: block;
-  width: 100%;
-  height: 100%;
-  min-width: 0;
-  min-height: 0;
-  object-fit: contain;
-  object-position: top center;
-  margin: 0 auto;
-  background: #ffffff;
-}
+            display: block;
+            width: 100%;
+            height: 100%;
+            min-width: 0;
+            min-height: 0;
+            object-fit: contain;
+            object-position: top center;
+            margin: 0 auto;
+            background: #ffffff;
+          }
 
           @media print {
             html,
@@ -205,7 +206,10 @@ export async function exportarAtividade(
 
         <script>
           (function () {
-            const imagem = document.getElementById("atividade-imagem");
+            const imagem =
+              document.getElementById(
+                "atividade-imagem"
+              );
 
             function imprimir() {
               setTimeout(function () {

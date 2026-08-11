@@ -515,11 +515,17 @@ export async function exportarAtividadeWord(
     await obterDimensoesImagem(imagem);
 
   /*
-   * Área útil aproximada abaixo do cabeçalho.
-   * Mantemos a proporção original para a atividade não cortar.
+   * A4 real: 210 x 297 mm.
+   * Margens de aproximadamente 10 mm.
+   *
+   * A largura útil fica perto de 190 mm.
+   * Reservamos espaço para o cabeçalho e usamos o restante
+   * para a imagem da atividade, sempre mantendo a proporção.
+   *
+   * As medidas da transformação do ImageRun são em pixels.
    */
-  const larguraMaxima = 585;
-  const alturaMaxima = 690;
+  const larguraMaxima = 718;
+  const alturaMaxima = 907;
 
   const proporcao = Math.min(
     larguraMaxima / dimensoes.largura,
@@ -527,21 +533,19 @@ export async function exportarAtividadeWord(
     1
   );
 
-  const larguraFinal =
-    Math.max(
-      1,
-      Math.round(
-        dimensoes.largura * proporcao
-      )
-    );
+  const larguraFinal = Math.max(
+    1,
+    Math.round(
+      dimensoes.largura * proporcao
+    )
+  );
 
-  const alturaFinal =
-    Math.max(
-      1,
-      Math.round(
-        dimensoes.altura * proporcao
-      )
-    );
+  const alturaFinal = Math.max(
+    1,
+    Math.round(
+      dimensoes.altura * proporcao
+    )
+  );
 
   const documento = new Document({
     sections: [
@@ -553,108 +557,44 @@ export async function exportarAtividadeWord(
               height: 16838,
             },
             margin: {
-              top: 300,
-              right: 300,
-              bottom: 300,
-              left: 300,
+              top: 567,
+              right: 567,
+              bottom: 567,
+              left: 567,
             },
           },
         },
 
         children: [
-          new Table({
-            width: {
-              size: 100,
-              type: WidthType.PERCENTAGE,
+          tabelaCabecalho,
+
+          new Paragraph({
+            spacing: {
+              before: 80,
+              after: 80,
             },
-            rows: [
-              new TableRow({
-                height: {
-                  value: 15600,
-                  rule: HeightRule.ATLEAST,
+            children: [
+              new TextRun({
+                text: "",
+              }),
+            ],
+          }),
+
+          new Paragraph({
+            alignment:
+              AlignmentType.CENTER,
+            spacing: {
+              before: 0,
+              after: 0,
+            },
+            children: [
+              new ImageRun({
+                data: dadosImagem,
+                type: "png",
+                transformation: {
+                  width: larguraFinal,
+                  height: alturaFinal,
                 },
-                children: [
-                  new TableCell({
-                    verticalAlign:
-                      VerticalAlign.TOP,
-                    margins: {
-                      top: 140,
-                      right: 140,
-                      bottom: 140,
-                      left: 140,
-                    },
-                    borders: {
-                      top: {
-                        style:
-                          BorderStyle.SINGLE,
-                        size: 6,
-                        color: "000000",
-                      },
-                      right: {
-                        style:
-                          BorderStyle.SINGLE,
-                        size: 6,
-                        color: "000000",
-                      },
-                      bottom: {
-                        style:
-                          BorderStyle.SINGLE,
-                        size: 6,
-                        color: "000000",
-                      },
-                      left: {
-                        style:
-                          BorderStyle.SINGLE,
-                        size: 6,
-                        color: "000000",
-                      },
-                    },
-                    children: [
-                      tabelaCabecalho,
-
-                      new Paragraph({
-                        spacing: {
-                          before: 80,
-                          after: 50,
-                        },
-                        border: {
-                          bottom: {
-                            style:
-                              BorderStyle.SINGLE,
-                            size: 5,
-                            color: "000000",
-                          },
-                        },
-                        children: [
-                          new TextRun({
-                            text: "",
-                          }),
-                        ],
-                      }),
-
-                      new Paragraph({
-                        alignment:
-                          AlignmentType.CENTER,
-                        spacing: {
-                          before: 20,
-                          after: 0,
-                        },
-                        children: [
-                          new ImageRun({
-                            data: dadosImagem,
-                            type: "png",
-                            transformation: {
-                              width:
-                                larguraFinal,
-                              height:
-                                alturaFinal,
-                            },
-                          }),
-                        ],
-                      }),
-                    ],
-                  }),
-                ],
               }),
             ],
           }),

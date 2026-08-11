@@ -178,6 +178,7 @@ export default function AvaliacoesPage() {
   ] = useState("2");
 
   const [incluirBncc, setIncluirBncc] = useState(false);
+  const [habilidadeBncc, setHabilidadeBncc] = useState("");
 
   const [
     incluirTextoApoio,
@@ -233,6 +234,10 @@ export default function AvaliacoesPage() {
 
     setIncluirBncc(
       Boolean(configuracao.incluirBncc)
+    );
+
+    setHabilidadeBncc(
+      configuracao.habilidadeBncc || ""
     );
 
     setIncluirTextoApoio(
@@ -346,6 +351,9 @@ export default function AvaliacoesPage() {
             dificuldade,
             valorAvaliacao: "10",
             incluirBncc,
+            habilidadeBncc: incluirBncc
+              ? habilidadeBncc.trim()
+              : "",
             incluirTextoApoio,
 
             quantidadeMultiplaEscolha:
@@ -429,6 +437,9 @@ if (
           quantidadeDiscursivas,
           quantidadeMistas,
           incluirBncc,
+          habilidadeBncc: incluirBncc
+            ? habilidadeBncc.trim()
+            : "",
           incluirTextoApoio,
           totalQuestoes,
         })
@@ -724,6 +735,36 @@ if (
                     Incluir habilidade da BNCC
                   </span>
                 </label>
+
+                {incluirBncc && (
+                  <div className="rounded-xl border-2 border-emerald-200 bg-white px-4 py-3">
+                    <label
+                      htmlFor="habilidade-bncc"
+                      className="mb-2 block text-sm font-bold text-slate-800"
+                    >
+                      Habilidade da BNCC
+                      <span className="ml-2 text-xs font-semibold text-slate-500">
+                        opcional
+                      </span>
+                    </label>
+
+                    <input
+                      id="habilidade-bncc"
+                      type="text"
+                      value={habilidadeBncc}
+                      onChange={(event) =>
+                        setHabilidadeBncc(event.target.value)
+                      }
+                      placeholder="Ex.: EF08CI01 ou EF08CI01, EF08CI02"
+                      className="w-full rounded-xl border-2 border-emerald-300 bg-white px-4 py-3 text-sm font-semibold text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                    />
+
+                    <p className="mt-2 text-xs font-semibold leading-5 text-emerald-800">
+                      Digite uma ou mais habilidades específicas. Se deixar em branco,
+                      o PlanejAI escolherá a habilidade mais adequada.
+                    </p>
+                  </div>
+                )}
 
                 <label className="flex cursor-pointer items-center gap-3 rounded-xl border-2 border-emerald-200 bg-white px-4 py-3 transition hover:border-emerald-500 hover:bg-emerald-100">
                   <input
