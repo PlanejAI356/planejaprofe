@@ -27,7 +27,9 @@ export async function exportarAtividade(
   opcoes: OpcoesExportarAtividade = {}
 ) {
   if (!imagem || !imagem.startsWith("data:image/")) {
-    throw new Error("A imagem da atividade não foi encontrada.");
+    throw new Error(
+      "A imagem da atividade não foi encontrada."
+    );
   }
 
   const tituloArquivo = limparNomeArquivo(
@@ -37,7 +39,8 @@ export async function exportarAtividade(
   const cabecalhoHtml =
     cabecalhoElemento?.innerHTML || "";
 
-  const iframe = document.createElement("iframe");
+  const iframe =
+    document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -47,14 +50,23 @@ export async function exportarAtividade(
   iframe.style.border = "0";
   iframe.style.opacity = "0";
 
-  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute(
+    "aria-hidden",
+    "true"
+  );
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao = iframe.contentWindow;
-  const documentoImpressao = iframe.contentDocument;
+  const janelaImpressao =
+    iframe.contentWindow;
 
-  if (!janelaImpressao || !documentoImpressao) {
+  const documentoImpressao =
+    iframe.contentDocument;
+
+  if (
+    !janelaImpressao ||
+    !documentoImpressao
+  ) {
     iframe.remove();
 
     throw new Error(
@@ -75,7 +87,9 @@ export async function exportarAtividade(
           content="width=device-width, initial-scale=1"
         />
 
-        <title>${escaparHtml(tituloArquivo)}</title>
+        <title>
+          ${escaparHtml(tituloArquivo)}
+        </title>
 
         <style>
           @page {
@@ -91,81 +105,165 @@ export async function exportarAtividade(
           body {
             width: 210mm;
             height: 297mm;
+
             margin: 0 !important;
             padding: 0 !important;
+
             background: #ffffff !important;
+
             overflow: hidden !important;
-            font-family: Arial, Helvetica, sans-serif;
+
+            font-family:
+              Arial,
+              Helvetica,
+              sans-serif;
+
             color: #000000;
           }
 
           body {
             display: flex;
+
             align-items: flex-start;
+
             justify-content: flex-start;
           }
 
+          /*
+           * FOLHA A4 REAL
+           *
+           * 8 mm de margem interna.
+           */
           .pagina {
             width: 210mm;
             height: 297mm;
+
+            padding: 8mm;
+
+            margin: 0;
+
             background: #ffffff;
-            padding: 10mm;
 
             display: flex;
+
             flex-direction: column;
+
             overflow: hidden;
           }
 
+          /*
+           * CABEÇALHO
+           *
+           * Não existe mais altura máxima.
+           * Cada escola pode ter um cabeçalho
+           * de tamanho diferente.
+           */
           .cabecalho {
             width: 100%;
-            flex: 0 0 auto;
-            max-height: 38mm;
-            margin: 0 0 4mm 0;
-            overflow: hidden;
+
+            flex:
+              0 0 auto;
+
+            margin:
+              0 0 3mm 0;
+
+            overflow: visible;
           }
 
           .cabecalho table {
             width: 100% !important;
-            border-collapse: collapse !important;
+
+            border-collapse:
+              collapse !important;
+
             table-layout: fixed;
           }
 
           .cabecalho td,
           .cabecalho th {
-            border: 1px solid #000000;
-            padding: 1.5mm 2mm;
-            vertical-align: middle;
-            overflow-wrap: anywhere;
+            border:
+              1px solid #000000;
+
+            padding:
+              1.2mm 1.8mm;
+
+            vertical-align:
+              middle;
+
+            overflow-wrap:
+              anywhere;
+
+            line-height:
+              1.15;
           }
 
           .cabecalho img {
-            max-width: 28mm !important;
-            max-height: 20mm !important;
-            object-fit: contain;
+            max-width:
+              28mm !important;
+
+            max-height:
+              20mm !important;
+
+            width: auto;
+
+            height: auto;
+
+            object-fit:
+              contain;
           }
 
+          /*
+           * A atividade recebe SOMENTE
+           * o espaço restante da folha.
+           */
           .atividade {
             width: 100%;
-            flex: 1 1 auto;
+
+            flex:
+              1 1 0;
+
             min-height: 0;
 
             display: flex;
-            align-items: flex-start;
-            justify-content: center;
+
+            align-items:
+              flex-start;
+
+            justify-content:
+              center;
+
             overflow: hidden;
-            background: #ffffff;
+
+            background:
+              #ffffff;
           }
 
+          /*
+           * A imagem nunca é cortada
+           * e nunca é deformada.
+           */
           .atividade img {
             display: block;
-            width: 100%;
-            height: 100%;
-            min-width: 0;
-            min-height: 0;
-            object-fit: contain;
-            object-position: top center;
-            margin: 0 auto;
-            background: #ffffff;
+
+            width: auto;
+
+            height: auto;
+
+            max-width: 100%;
+
+            max-height: 100%;
+
+            object-fit:
+              contain;
+
+            object-position:
+              top center;
+
+            margin:
+              0 auto;
+
+            background:
+              #ffffff;
           }
 
           @media print {
@@ -176,8 +274,30 @@ export async function exportarAtividade(
             }
 
             .pagina {
-              break-inside: avoid;
-              page-break-inside: avoid;
+              width: 210mm;
+              height: 297mm;
+
+              break-inside:
+                avoid;
+
+              page-break-inside:
+                avoid;
+            }
+
+            .cabecalho {
+              break-inside:
+                avoid;
+
+              page-break-inside:
+                avoid;
+            }
+
+            .atividade {
+              break-inside:
+                avoid;
+
+              page-break-inside:
+                avoid;
             }
           }
         </style>
@@ -185,6 +305,7 @@ export async function exportarAtividade(
 
       <body>
         <div class="pagina">
+
           ${
             cabecalhoHtml.trim()
               ? `
@@ -202,6 +323,7 @@ export async function exportarAtividade(
               alt="Atividade pedagógica"
             />
           </div>
+
         </div>
 
         <script>
@@ -212,10 +334,13 @@ export async function exportarAtividade(
               );
 
             function imprimir() {
-              setTimeout(function () {
-                window.focus();
-                window.print();
-              }, 250);
+              setTimeout(
+                function () {
+                  window.focus();
+                  window.print();
+                },
+                300
+              );
             }
 
             if (!imagem) {
@@ -228,10 +353,14 @@ export async function exportarAtividade(
               return;
             }
 
-            imagem.onload = imprimir;
-            imagem.onerror = imprimir;
+            imagem.onload =
+              imprimir;
+
+            imagem.onerror =
+              imprimir;
           })();
         <\/script>
+
       </body>
     </html>
   `);
@@ -241,10 +370,15 @@ export async function exportarAtividade(
   janelaImpressao.addEventListener(
     "afterprint",
     () => {
-      setTimeout(() => {
-        iframe.remove();
-      }, 300);
+      setTimeout(
+        () => {
+          iframe.remove();
+        },
+        300
+      );
     },
-    { once: true }
+    {
+      once: true,
+    }
   );
 }
