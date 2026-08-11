@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
+import { usarPlanejamentoGratis } from "@/app/lib/profile";
 
 const seriesPorEtapa: Record<string, string[]> = {
   "Educação Infantil": ["Creche", "Pré I", "Pré II"],
@@ -182,6 +183,14 @@ export default function AtividadesPage() {
 
   async function gerarAtividade() {
     setErro("");
+
+    const permissao = await usarPlanejamentoGratis();
+
+    if (!permissao.permitido) {
+      alert(permissao.mensagem);
+      router.push("/assinatura");
+      return;
+    }
 
     if (!etapaEnsino || !serie || !disciplina) {
       setErro(

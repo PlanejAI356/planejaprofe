@@ -179,6 +179,24 @@ export default function FinalizarAtividadePage() {
     );
   }
 
+  function dataUrlParaUint8Array(dataUrl: string) {
+    const partes = dataUrl.split(",");
+
+    if (partes.length < 2) {
+      throw new Error("Formato da imagem inválido.");
+    }
+
+    const base64 = partes[1];
+    const binario = window.atob(base64);
+    const bytes = new Uint8Array(binario.length);
+
+    for (let i = 0; i < binario.length; i += 1) {
+      bytes[i] = binario.charCodeAt(i);
+    }
+
+    return bytes;
+  }
+
   function baixarPDF() {
     if (!imagem) {
       alert("Nenhuma atividade foi encontrada.");
@@ -197,57 +215,62 @@ export default function FinalizarAtividadePage() {
         ? conteudoCabecalho
         : [conteudoCabecalho];
 
+      /*
+       * A atividade é uma imagem vertical 1024x1536.
+       * Ela precisa caber na MESMA página do cabeçalho.
+       *
+       * Antes, cabeçalho + imagem ficavam dentro de uma tabela.
+       * Uma célula grande não quebra bem entre páginas no pdfMake,
+       * o que podia fazer a atividade desaparecer.
+       *
+       * Agora o conteúdo fica solto na página e a borda é desenhada
+       * no fundo da folha A4.
+       */
       const documento: any = {
         pageSize: "A4",
-        pageMargins: [28, 28, 28, 28],
+        pageMargins: [34, 34, 34, 34],
+
+        background: () => ({
+          canvas: [
+            {
+              type: "rect",
+              x: 24,
+              y: 24,
+              w: 547,
+              h: 794,
+              lineWidth: 1,
+              lineColor: "#000000",
+            },
+          ],
+        }),
+
         defaultStyle: {
           fontSize: 10,
-          lineHeight: 1.1,
+          lineHeight: 1.05,
         },
+
         content: [
+          ...(htmlCabecalho.trim()
+            ? [
+                {
+                  stack: elementosCabecalho,
+                  margin: [8, 5, 8, 8],
+                },
+              ]
+            : []),
+
           {
-            table: {
-              widths: ["*"],
-              body: [
-                [
-                  {
-                    stack: [
-                      ...(htmlCabecalho.trim()
-                        ? [
-                            {
-                              stack: elementosCabecalho,
-                              margin: [0, 0, 0, 8],
-                            },
-                          ]
-                        : []),
-                      {
-                        image: imagem,
-                        fit: [500, 690],
-                        alignment: "center",
-                      },
-                    ],
-                    margin: [8, 8, 8, 8],
-                  },
-                ],
-              ],
-            },
-            layout: {
-              hLineWidth: () => 1,
-              vLineWidth: () => 1,
-              hLineColor: () => "#000000",
-              vLineColor: () => "#000000",
-              paddingLeft: () => 0,
-              paddingRight: () => 0,
-              paddingTop: () => 0,
-              paddingBottom: () => 0,
-            },
+            image: imagem,
+            fit: [455, 660],
+            alignment: "center",
+            margin: [0, 2, 0, 0],
           },
         ],
       };
 
-      pdfMake.createPdf(documento).download(
-        "atividade-planejai.pdf"
-      );
+      pdfMake
+        .createPdf(documento)
+        .download("atividade-planejai.pdf");
     } catch (error) {
       console.error(
         "Erro ao gerar PDF:",
@@ -271,10 +294,13 @@ export default function FinalizarAtividadePage() {
         cabecalhoRef.current?.innerText ||
         cabecalho.replace(/<[^>]*>/g, " ");
 
-      const respostaImagem = await fetch(imagem);
-      const blobImagem = await respostaImagem.blob();
-      const bufferImagem =
-        await blobImagem.arrayBuffer();
+      /*
+       * Converte diretamente o data URL em bytes.
+       * Isso evita depender de fetch(data:image/...), que pode
+       * variar entre navegadores.
+       */
+      const bytesImagem =
+        dataUrlParaUint8Array(imagem);
 
       const paragrafosCabecalho = textoCabecalho
         .split("\n")
@@ -286,15 +312,23 @@ export default function FinalizarAtividadePage() {
               children: [
                 new TextRun({
                   text: linha,
-                  size: 20,
+                  size: 18,
                 }),
               ],
               spacing: {
-                after: 80,
+                after: 45,
               },
             })
         );
 
+      /*
+       * A imagem anterior usava 650 x 975.
+       * Com o cabeçalho, o Word podia empurrar a imagem inteira
+       * para a página seguinte e a primeira página parecia vazia.
+       *
+       * 470 x 705 mantém a proporção 2:3 e deixa espaço para
+       * o cabeçalho na mesma folha A4.
+       */
       const documento = new Document({
         sections: [
           {
@@ -305,13 +339,14 @@ export default function FinalizarAtividadePage() {
                   height: 16838,
                 },
                 margin: {
-                  top: 567,
-                  right: 567,
-                  bottom: 567,
-                  left: 567,
+                  top: 454,
+                  right: 454,
+                  bottom: 454,
+                  left: 454,
                 },
               },
             },
+
             children: [
               ...paragrafosCabecalho,
 
@@ -331,7 +366,7 @@ export default function FinalizarAtividadePage() {
                         },
                       },
                       spacing: {
-                        after: 160,
+                        after: 70,
                       },
                     }),
                   ]
@@ -339,12 +374,16 @@ export default function FinalizarAtividadePage() {
 
               new Paragraph({
                 alignment: "center",
+                spacing: {
+                  before: 0,
+                  after: 0,
+                },
                 children: [
                   new ImageRun({
-                    data: bufferImagem,
+                    data: bytesImagem,
                     transformation: {
-                      width: 650,
-                      height: 975,
+                      width: 470,
+                      height: 705,
                     },
                     type: "jpg",
                   }),

@@ -9,6 +9,7 @@ import PlanoCompleto from "./componentes/PlanoCompleto";
 import Exportacao from "./componentes/Exportacao";
 import TopoProfessor from "./componentes/TopoProfessor";
 import { supabase } from "./lib/supabase";
+import { usarPlanejamentoGratis } from "./lib/profile";
 
 type DataAula = {
   data: string;
@@ -199,7 +200,15 @@ export default function Home() {
     setEtapa("configuracao");
   }
 
-  function iniciarNovoPlanejamento() {
+  async function iniciarNovoPlanejamento() {
+    const permissao = await usarPlanejamentoGratis();
+
+    if (!permissao.permitido) {
+      alert(permissao.mensagem);
+      window.location.href = "/assinatura";
+      return;
+    }
+
     limparPlanoAnterior();
     setEtapa("configuracao");
   }
@@ -301,7 +310,7 @@ export default function Home() {
             <button
               type="button"
               onClick={iniciarNovoPlanejamento}
-              className="group rounded-2xl border border-green-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-green-400 hover:shadow-lg"
+              className="group cursor-pointer rounded-2xl border border-green-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-green-400 hover:shadow-lg"
             >
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-3xl">
                 📚
@@ -324,8 +333,8 @@ export default function Home() {
               type="button"
               onClick={() => {
                 window.location.href = "/avaliacoes";
-              }}
-              className="group rounded-2xl border border-blue-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg"
+              }}className="group cursor-pointer rounded-2xl border border-blue-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg"
+              
             >
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-3xl">
                 📝
@@ -349,7 +358,7 @@ export default function Home() {
               onClick={() => {
                 window.location.href = "/atividades";
               }}
-              className="group rounded-2xl border border-amber-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg"
+              className="group cursor-pointer rounded-2xl border border-amber-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg"
             >
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
                 📄

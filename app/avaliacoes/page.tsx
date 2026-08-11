@@ -17,6 +17,7 @@ import {
   Users,
 } from "lucide-react";
 import TopoAvaliacoes from "./componentes/TopoAvaliacoes";
+import { usarPlanejamentoGratis } from "@/app/lib/profile";
 
 const etapasEnsino = [
   "Ensino Fundamental - Anos Iniciais",
@@ -282,6 +283,14 @@ export default function AvaliacoesPage() {
 
   async function gerarProva() {
     setErro("");
+
+    const permissao = await usarPlanejamentoGratis();
+
+    if (!permissao.permitido) {
+      alert(permissao.mensagem);
+      router.push("/assinatura");
+      return;
+    }
 
     if (
       !etapaEnsino ||

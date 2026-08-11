@@ -36,32 +36,11 @@ export async function usarPlanejamentoGratis() {
     };
   }
 
-  // Usuário gratuito sem liberações restantes
-  if (perfil.planos_restantes <= 0) {
-    return {
-      permitido: false,
-      mensagem:
-        "Seu teste gratuito já foi utilizado. Assine o Plano Premium para continuar.",
-    };
-  }
-
-  // Desconta uma utilização gratuita
-  const { error } = await supabase
-    .from("profiles")
-    .update({
-      planos_restantes: perfil.planos_restantes - 1,
-    })
-    .eq("id", perfil.id);
-
-  if (error) {
-    return {
-      permitido: false,
-      mensagem: "Erro ao atualizar seu acesso gratuito.",
-    };
-  }
-
+  // Usuário cadastrado no plano grátis não possui
+  // novos planejamentos gratuitos.
   return {
-    permitido: true,
-    mensagem: "Planejamento liberado.",
+    permitido: false,
+    mensagem:
+      "Para criar novos planejamentos, assine o Plano Premium.",
   };
 }
