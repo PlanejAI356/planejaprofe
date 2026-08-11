@@ -57,6 +57,7 @@ export default function FinalizarAtividadePage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [baixandoPDF, setBaixandoPDF] = useState(false);
 
   useEffect(() => {
     try {
@@ -197,13 +198,19 @@ export default function FinalizarAtividadePage() {
     return bytes;
   }
 
-  function baixarPDF() {
+  async function baixarPDF() {
     if (!imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
 
+    if (baixandoPDF) {
+      return;
+    }
+
     try {
+      setBaixandoPDF(true);
+
       const htmlCabecalho = obterHtmlCabecalho();
 
       const conteudoCabecalho =
@@ -215,20 +222,9 @@ export default function FinalizarAtividadePage() {
         ? conteudoCabecalho
         : [conteudoCabecalho];
 
-      /*
-       * A atividade é uma imagem vertical 1024x1536.
-       * Ela precisa caber na MESMA página do cabeçalho.
-       *
-       * Antes, cabeçalho + imagem ficavam dentro de uma tabela.
-       * Uma célula grande não quebra bem entre páginas no pdfMake,
-       * o que podia fazer a atividade desaparecer.
-       *
-       * Agora o conteúdo fica solto na página e a borda é desenhada
-       * no fundo da folha A4.
-       */
       const documento: any = {
         pageSize: "A4",
-        pageMargins: [34, 34, 34, 34],
+        pageMargins: [26, 24, 26, 24],
 
         background: () => ({
           canvas: [
@@ -254,23 +250,44 @@ export default function FinalizarAtividadePage() {
             ? [
                 {
                   stack: elementosCabecalho,
-                  margin: [8, 5, 8, 8],
+                  margin: [4, 2, 4, 4],
                 },
               ]
             : []),
 
           {
             image: imagem,
-            fit: [455, 660],
+            fit: [520, 720],
             alignment: "center",
             margin: [0, 2, 0, 0],
           },
         ],
       };
 
-      pdfMake
-        .createPdf(documento)
-        .download("atividade-planejai.pdf");
+      /*
+       * Gera primeiro o PDF em memória como Blob.
+       * Depois o FileSaver dispara o download.
+       * Esse fluxo é mais estável para downloads repetidos
+       * do que chamar .download() diretamente no pdfMake.
+       */
+      const blobPDF = await new Promise<Blob>(
+        (resolve, reject) => {
+          try {
+            const pdf = pdfMake.createPdf(documento) as any;
+
+            pdf.getBlob((blob: Blob) => {
+              resolve(blob);
+            });
+          } catch (error) {
+            reject(error);
+          }
+        }
+      );
+
+      saveAs(
+        blobPDF,
+        `atividade-planejai-${Date.now()}.pdf`
+      );
     } catch (error) {
       console.error(
         "Erro ao gerar PDF:",
@@ -280,6 +297,8 @@ export default function FinalizarAtividadePage() {
       alert(
         "Não foi possível gerar o PDF."
       );
+    } finally {
+      setBaixandoPDF(false);
     }
   }
 
@@ -312,11 +331,11 @@ export default function FinalizarAtividadePage() {
               children: [
                 new TextRun({
                   text: linha,
-                  size: 18,
+                  size: 20,
                 }),
               ],
               spacing: {
-                after: 45,
+                after: 20,
               },
             })
         );
@@ -339,10 +358,10 @@ export default function FinalizarAtividadePage() {
                   height: 16838,
                 },
                 margin: {
-                  top: 454,
-                  right: 454,
-                  bottom: 454,
-                  left: 454,
+                  top: 300,
+                  right: 300,
+                  bottom: 300,
+                  left: 300,
                 },
               },
             },
@@ -366,7 +385,7 @@ export default function FinalizarAtividadePage() {
                         },
                       },
                       spacing: {
-                        after: 70,
+                        after: 30,
                       },
                     }),
                   ]
@@ -382,8 +401,8 @@ export default function FinalizarAtividadePage() {
                   new ImageRun({
                     data: bytesImagem,
                     transformation: {
-                      width: 470,
-                      height: 705,
+                      width: 560,
+                      height: 840,
                     },
                     type: "jpg",
                   }),
@@ -682,10 +701,11 @@ export default function FinalizarAtividadePage() {
             <button
               type="button"
               onClick={baixarPDF}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
+              disabled={baixandoPDF}
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Download size={18} />
-              Baixar PDF
+              {baixandoPDF ? "Gerando PDF..." : "Baixar PDF"}
             </button>
           </div>
         </div>
