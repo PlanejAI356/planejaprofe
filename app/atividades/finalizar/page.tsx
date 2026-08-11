@@ -20,6 +20,8 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+import { exportarAtividade } from "../utils/exportarAtividade";
+import { exportarAtividadeWord } from "../utils/exportarAtividadeWord";
 
 
 type ConfiguracaoAtividadeImagem = {
@@ -33,7 +35,6 @@ type ConfiguracaoAtividadeImagem = {
 export default function FinalizarAtividadePage() {
   const router = useRouter();
   const cabecalhoRef = useRef<HTMLDivElement>(null);
-  const paginaRef = useRef<HTMLDivElement>(null);
 
   const [imagem, setImagem] = useState("");
   const [configuracao, setConfiguracao] =
@@ -44,7 +45,6 @@ export default function FinalizarAtividadePage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
-  const [baixandoPDF, setBaixandoPDF] = useState(false);
 
   useEffect(() => {
     try {
@@ -169,326 +169,48 @@ export default function FinalizarAtividadePage() {
 
 
   async function baixarPDF() {
-    if (!paginaRef.current || !imagem) {
-      alert("Nenhuma atividade foi encontrada.");
-      return;
-    }
-
-    if (baixandoPDF) {
-      return;
-    }
-
-    try {
-      setBaixandoPDF(true);
-
-      const conteudoPagina = paginaRef.current.innerHTML;
-
-      const janelaImpressao = window.open(
-        "",
-        "_blank",
-        "width=900,height=1100"
-      );
-
-      if (!janelaImpressao) {
-        alert(
-          "O navegador bloqueou a janela de impressão. Permita pop-ups para o PlanejAI e tente novamente."
-        );
-        return;
-      }
-
-      janelaImpressao.document.open();
-      janelaImpressao.document.write(`
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-          <head>
-            <meta charset="utf-8" />
-            <title>Atividade PlanejAI</title>
-
-            <style>
-              @page {
-                size: A4 portrait;
-                margin: 0;
-              }
-
-              * {
-                box-sizing: border-box;
-              }
-
-              html,
-              body {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                background: #ffffff;
-                font-family: Arial, Helvetica, sans-serif;
-                color: #000000;
-              }
-
-              .folha {
-                width: 210mm;
-                height: 297mm;
-                margin: 0;
-                padding: 8mm;
-                overflow: hidden;
-                border: 0.4mm solid #b8b8b8;
-                background: #ffffff;
-
-                display: flex;
-                flex-direction: column;
-              }
-
-              .cabecalho-preview {
-                width: 100%;
-                flex: 0 0 auto;
-                margin-bottom: 3mm;
-                overflow: hidden;
-              }
-
-              .cabecalho-preview table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-              }
-
-              .cabecalho-preview td,
-              .cabecalho-preview th {
-                border: 1px solid #000000;
-              }
-
-              .cabecalho-preview img {
-                max-width: 120px;
-                max-height: 80px;
-                object-fit: contain;
-              }
-
-              .folha > img,
-              .folha > div > img {
-                display: block;
-                width: 94%;
-                max-width: 94%;
-                flex: 1 1 auto;
-                min-height: 0;
-                height: auto;
-                object-fit: contain;
-                object-position: top center;
-                margin: 0 auto;
-                background: #ffffff !important;
-                filter: brightness(1.02) contrast(1.01);
-              }
-            </style>
-          </head>
-
-          <body>
-            <div class="folha">
-              ${conteudoPagina}
-            </div>
-
-            <script>
-              window.addEventListener("load", function () {
-                var imagens = Array.from(document.images);
-
-                Promise.all(
-                  imagens.map(function (img) {
-                    if (img.complete) {
-                      return Promise.resolve();
-                    }
-
-                    return new Promise(function (resolve) {
-                      img.onload = resolve;
-                      img.onerror = resolve;
-                    });
-                  })
-                ).then(function () {
-                  setTimeout(function () {
-                    window.focus();
-                    window.print();
-                  }, 300);
-                });
-              });
-
-              window.addEventListener("afterprint", function () {
-                window.close();
-              });
-            <\/script>
-          </body>
-        </html>
-      `);
-      janelaImpressao.document.close();
-    } catch (error) {
-      console.error(
-        "Erro ao preparar PDF:",
-        error
-      );
-
-      alert(
-        "Não foi possível preparar o PDF."
-      );
-    } finally {
-      setBaixandoPDF(false);
-    }
-  }
-
-  function baixarWord() {
     if (!imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
 
     try {
-      const htmlCabecalho = obterHtmlCabecalho();
-
-      /*
-       * O Word será gerado como documento HTML compatível com Word.
-       *
-       * Vantagem:
-       * - o cabeçalho continua EDITÁVEL no Word;
-       * - tabelas e textos do cabeçalho continuam como elementos;
-       * - a atividade permanece como imagem logo abaixo;
-       * - o professor pode alterar escola, professor, data, série etc.
-       */
-      const documentoWord = `
-        <!DOCTYPE html>
-        <html lang="pt-BR">
-          <head>
-            <meta charset="UTF-8" />
-            <meta
-              name="ProgId"
-              content="Word.Document"
-            />
-
-            <meta
-              name="Generator"
-              content="PlanejAI"
-            />
-
-            <style>
-              @page {
-                size: A4 portrait;
-                margin: 0.8cm;
-              }
-
-              * {
-                box-sizing: border-box;
-              }
-
-              html,
-              body {
-                margin: 0;
-                padding: 0;
-                background: #ffffff;
-              }
-
-              body {
-                font-family: Arial, Helvetica, sans-serif;
-                color: #000000;
-              }
-
-              .pagina {
-                width: 100%;
-                background: #ffffff;
-              }
-
-              .cabecalho {
-                width: 100%;
-                margin: 0 0 8px 0;
-              }
-
-              .cabecalho table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-              }
-
-              .cabecalho td,
-              .cabecalho th {
-                border: 1px solid #000000;
-                padding: 2px 4px;
-                vertical-align: middle;
-              }
-
-              .cabecalho img {
-                max-width: 110px;
-                max-height: 75px;
-                object-fit: contain;
-              }
-
-              .separador {
-                width: 100%;
-                border-top: 1px solid #000000;
-                margin: 5px 0 8px 0;
-              }
-
-              .atividade {
-                width: 100%;
-                text-align: center;
-                background: #ffffff;
-              }
-
-              .atividade img {
-                display: block;
-                width: 94%;
-                max-width: 18cm;
-                height: auto;
-                margin: 0 auto;
-                background: #ffffff;
-              }
-            </style>
-          </head>
-
-          <body>
-            <div class="pagina">
-              ${
-                htmlCabecalho.trim()
-                  ? `
-                    <div class="cabecalho">
-                      ${htmlCabecalho}
-                    </div>
-
-                    <div class="separador"></div>
-                  `
-                  : ""
-              }
-
-              <div class="atividade">
-                <img
-                  src="${imagem}"
-                  alt="Atividade pedagógica"
-                />
-              </div>
-            </div>
-          </body>
-        </html>
-      `;
-
-      const blob = new Blob(
-        ["\ufeff", documentoWord],
+      await exportarAtividade(
+        cabecalhoRef.current,
+        imagem,
         {
-          type:
-            "application/msword;charset=utf-8",
+          tituloArquivo: "atividade-planejai",
         }
       );
-
-      const url =
-        URL.createObjectURL(blob);
-
-      const link =
-        document.createElement("a");
-
-      link.href = url;
-      link.download =
-        `atividade-planejai-${Date.now()}.doc`;
-      link.style.display = "none";
-
-      document.body.appendChild(link);
-      link.click();
-
-      setTimeout(() => {
-        link.remove();
-        URL.revokeObjectURL(url);
-      }, 1500);
     } catch (error) {
       console.error(
-        "Erro ao gerar Word:",
+        "Erro ao exportar PDF da atividade:",
+        error
+      );
+
+      alert(
+        "Não foi possível preparar o PDF da atividade."
+      );
+    }
+  }
+
+  async function baixarWord() {
+    if (!imagem) {
+      alert("Nenhuma atividade foi encontrada.");
+      return;
+    }
+
+    try {
+      await exportarAtividadeWord(
+        cabecalhoRef.current,
+        imagem,
+        {
+          tituloArquivo: "atividade-planejai",
+        }
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao gerar Word da atividade:",
         error
       );
 
@@ -734,8 +456,8 @@ export default function FinalizarAtividadePage() {
 
           <div className="bg-slate-100 p-4 sm:p-6">
             <div
-              ref={paginaRef}
-              className="mx-auto w-full max-w-[794px] border border-slate-400 bg-white px-7 py-6 shadow-md sm:px-8 sm:py-7"
+              
+              className="mx-auto w-full max-w-[794px] bg-white px-7 py-6 shadow-md sm:px-8 sm:py-7"
             >
               {cabecalho.trim() && (
                 <div
@@ -772,11 +494,10 @@ export default function FinalizarAtividadePage() {
             <button
               type="button"
               onClick={baixarPDF}
-              disabled={baixandoPDF}
-              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
             >
               <Download size={18} />
-              {baixandoPDF ? "Gerando PDF..." : "Baixar PDF"}
+              Baixar PDF
             </button>
           </div>
         </div>
