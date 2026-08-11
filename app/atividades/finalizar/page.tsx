@@ -21,19 +21,13 @@ import {
 
 import { useRouter } from "next/navigation";
 
-import pdfMake from "pdfmake/build/pdfmake";
-import pdfFonts from "pdfmake/build/vfs_fonts";
-import htmlToPdfmake from "html-to-pdfmake";
 import {
   Document,
   ImageRun,
   Packer,
   Paragraph,
-  TextRun,
 } from "docx";
 import { saveAs } from "file-saver";
-
-(pdfMake as any).vfs = (pdfFonts as any).vfs;
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -180,26 +174,9 @@ export default function FinalizarAtividadePage() {
     );
   }
 
-  function dataUrlParaUint8Array(dataUrl: string) {
-    const partes = dataUrl.split(",");
-
-    if (partes.length < 2) {
-      throw new Error("Formato da imagem inválido.");
-    }
-
-    const base64 = partes[1];
-    const binario = window.atob(base64);
-    const bytes = new Uint8Array(binario.length);
-
-    for (let i = 0; i < binario.length; i += 1) {
-      bytes[i] = binario.charCodeAt(i);
-    }
-
-    return bytes;
-  }
 
   async function baixarPDF() {
-    if (!imagem) {
+    if (!paginaRef.current || !imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
@@ -211,143 +188,318 @@ export default function FinalizarAtividadePage() {
     try {
       setBaixandoPDF(true);
 
-      const htmlCabecalho = obterHtmlCabecalho();
+      const conteudoPagina = paginaRef.current.innerHTML;
 
-      const conteudoCabecalho =
-        htmlCabecalho.trim()
-          ? htmlToPdfmake(htmlCabecalho, { window })
-          : [];
-
-      const elementosCabecalho = Array.isArray(conteudoCabecalho)
-        ? conteudoCabecalho
-        : [conteudoCabecalho];
-
-      const documento: any = {
-        pageSize: "A4",
-        pageMargins: [26, 24, 26, 24],
-
-        background: () => ({
-          canvas: [
-            {
-              type: "rect",
-              x: 24,
-              y: 24,
-              w: 547,
-              h: 794,
-              lineWidth: 1,
-              lineColor: "#000000",
-            },
-          ],
-        }),
-
-        defaultStyle: {
-          fontSize: 10,
-          lineHeight: 1.05,
-        },
-
-        content: [
-          ...(htmlCabecalho.trim()
-            ? [
-                {
-                  stack: elementosCabecalho,
-                  margin: [4, 2, 4, 4],
-                },
-              ]
-            : []),
-
-          {
-            image: imagem,
-            fit: [520, 720],
-            alignment: "center",
-            margin: [0, 2, 0, 0],
-          },
-        ],
-      };
-
-      /*
-       * Gera primeiro o PDF em memória como Blob.
-       * Depois o FileSaver dispara o download.
-       * Esse fluxo é mais estável para downloads repetidos
-       * do que chamar .download() diretamente no pdfMake.
-       */
-      const blobPDF = await new Promise<Blob>(
-        (resolve, reject) => {
-          try {
-            const pdf = pdfMake.createPdf(documento) as any;
-
-            pdf.getBlob((blob: Blob) => {
-              resolve(blob);
-            });
-          } catch (error) {
-            reject(error);
-          }
-        }
+      const janelaImpressao = window.open(
+        "",
+        "_blank",
+        "width=900,height=1100"
       );
 
-      saveAs(
-        blobPDF,
-        `atividade-planejai-${Date.now()}.pdf`
-      );
+      if (!janelaImpressao) {
+        alert(
+          "O navegador bloqueou a janela de impressão. Permita pop-ups para o PlanejAI e tente novamente."
+        );
+        return;
+      }
+
+      janelaImpressao.document.open();
+      janelaImpressao.document.write(`
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+          <head>
+            <meta charset="utf-8" />
+            <title>Atividade PlanejAI</title>
+
+            <style>
+              @page {
+                size: A4;
+                margin: 8mm;
+              }
+
+              * {
+                box-sizing: border-box;
+              }
+
+              html,
+              body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff;
+                font-family: Arial, Helvetica, sans-serif;
+                color: #000000;
+              }
+
+              .folha {
+                width: 100%;
+                margin: 0 auto;
+                border: 1px solid #000000;
+                padding: 7mm;
+                background: #ffffff;
+              }
+
+              .cabecalho-preview {
+                width: 100%;
+                margin-bottom: 4mm;
+                overflow: hidden;
+              }
+
+              .cabecalho-preview table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+              }
+
+              .cabecalho-preview td,
+              .cabecalho-preview th {
+                border: 1px solid #000000;
+              }
+
+              .cabecalho-preview img {
+                max-width: 120px;
+                max-height: 80px;
+                object-fit: contain;
+              }
+
+              .folha > img {
+                display: block;
+                width: 100%;
+                height: auto;
+                object-fit: contain;
+                margin: 0 auto;
+              }
+            </style>
+          </head>
+
+          <body>
+            <div class="folha">
+              ${conteudoPagina}
+            </div>
+
+            <script>
+              window.addEventListener("load", function () {
+                var imagens = Array.from(document.images);
+
+                Promise.all(
+                  imagens.map(function (img) {
+                    if (img.complete) {
+                      return Promise.resolve();
+                    }
+
+                    return new Promise(function (resolve) {
+                      img.onload = resolve;
+                      img.onerror = resolve;
+                    });
+                  })
+                ).then(function () {
+                  setTimeout(function () {
+                    window.focus();
+                    window.print();
+                  }, 300);
+                });
+              });
+
+              window.addEventListener("afterprint", function () {
+                window.close();
+              });
+            <\/script>
+          </body>
+        </html>
+      `);
+      janelaImpressao.document.close();
     } catch (error) {
       console.error(
-        "Erro ao gerar PDF:",
+        "Erro ao preparar PDF:",
         error
       );
 
       alert(
-        "Não foi possível gerar o PDF."
+        "Não foi possível preparar o PDF."
       );
     } finally {
       setBaixandoPDF(false);
     }
   }
 
+  async function capturarPaginaComoPng() {
+    if (!paginaRef.current) {
+      throw new Error("A folha da atividade não foi encontrada.");
+    }
+
+    const largura = 794;
+    const escala = 2;
+    const conteudoPagina = paginaRef.current.innerHTML;
+
+    const svg = `
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="${largura * escala}"
+        height="${1123 * escala}"
+        viewBox="0 0 ${largura} 1123"
+      >
+        <foreignObject
+          x="0"
+          y="0"
+          width="794"
+          height="1123"
+        >
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            style="
+              width:794px;
+              min-height:1123px;
+              box-sizing:border-box;
+              border:1px solid #000;
+              padding:24px;
+              background:#fff;
+              color:#000;
+              font-family:Arial, Helvetica, sans-serif;
+            "
+          >
+            <style>
+              * {
+                box-sizing: border-box;
+              }
+
+              .cabecalho-preview {
+                width: 100%;
+                margin-bottom: 16px;
+                overflow: hidden;
+              }
+
+              .cabecalho-preview table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+              }
+
+              .cabecalho-preview td,
+              .cabecalho-preview th {
+                border: 1px solid #000;
+              }
+
+              .cabecalho-preview img {
+                max-width: 120px;
+                max-height: 80px;
+                object-fit: contain;
+              }
+
+              img {
+                display: block;
+                max-width: 100%;
+                height: auto;
+              }
+
+              div > img:last-child {
+                width: 100%;
+                object-fit: contain;
+              }
+            </style>
+
+            ${conteudoPagina}
+          </div>
+        </foreignObject>
+      </svg>
+    `;
+
+    const blobSvg = new Blob(
+      [svg],
+      {
+        type: "image/svg+xml;charset=utf-8",
+      }
+    );
+
+    const urlSvg = URL.createObjectURL(blobSvg);
+
+    try {
+      const imagemSvg = await new Promise<HTMLImageElement>(
+        (resolve, reject) => {
+          const img = new Image();
+
+          img.onload = () => resolve(img);
+          img.onerror = () =>
+            reject(
+              new Error(
+                "Não foi possível montar a imagem da folha."
+              )
+            );
+
+          img.src = urlSvg;
+        }
+      );
+
+      const canvas = document.createElement("canvas");
+      canvas.width = largura * escala;
+      canvas.height = 1123 * escala;
+
+      const contexto = canvas.getContext("2d");
+
+      if (!contexto) {
+        throw new Error(
+          "Não foi possível preparar a folha para o Word."
+        );
+      }
+
+      contexto.fillStyle = "#ffffff";
+      contexto.fillRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      contexto.drawImage(
+        imagemSvg,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+      );
+
+      const blobPng = await new Promise<Blob>(
+        (resolve, reject) => {
+          canvas.toBlob(
+            (blob) => {
+              if (!blob) {
+                reject(
+                  new Error(
+                    "Não foi possível criar a imagem da folha."
+                  )
+                );
+                return;
+              }
+
+              resolve(blob);
+            },
+            "image/png",
+            1
+          );
+        }
+      );
+
+      return new Uint8Array(
+        await blobPng.arrayBuffer()
+      );
+    } finally {
+      URL.revokeObjectURL(urlSvg);
+    }
+  }
+
   async function baixarWord() {
-    if (!imagem) {
+    if (!paginaRef.current || !imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
 
     try {
-      const textoCabecalho =
-        cabecalhoRef.current?.innerText ||
-        cabecalho.replace(/<[^>]*>/g, " ");
-
       /*
-       * Converte diretamente o data URL em bytes.
-       * Isso evita depender de fetch(data:image/...), que pode
-       * variar entre navegadores.
-       */
-      const bytesImagem =
-        dataUrlParaUint8Array(imagem);
-
-      const paragrafosCabecalho = textoCabecalho
-        .split("\n")
-        .map((linha) => linha.trim())
-        .filter(Boolean)
-        .map(
-          (linha) =>
-            new Paragraph({
-              children: [
-                new TextRun({
-                  text: linha,
-                  size: 20,
-                }),
-              ],
-              spacing: {
-                after: 20,
-              },
-            })
-        );
-
-      /*
-       * A imagem anterior usava 650 x 975.
-       * Com o cabeçalho, o Word podia empurrar a imagem inteira
-       * para a página seguinte e a primeira página parecia vazia.
+       * O Word recebe a folha completa como uma única imagem:
+       * cabeçalho + borda + atividade.
        *
-       * 470 x 705 mantém a proporção 2:3 e deixa espaço para
-       * o cabeçalho na mesma folha A4.
+       * Assim o arquivo fica visualmente igual à prévia da tela
+       * e não perde formatação do cabeçalho.
        */
+      const bytesPagina =
+        await capturarPaginaComoPng();
+
       const documento = new Document({
         sections: [
           {
@@ -358,39 +510,15 @@ export default function FinalizarAtividadePage() {
                   height: 16838,
                 },
                 margin: {
-                  top: 300,
-                  right: 300,
-                  bottom: 300,
-                  left: 300,
+                  top: 200,
+                  right: 200,
+                  bottom: 200,
+                  left: 200,
                 },
               },
             },
 
             children: [
-              ...paragrafosCabecalho,
-
-              ...(paragrafosCabecalho.length
-                ? [
-                    new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: "",
-                        }),
-                      ],
-                      border: {
-                        bottom: {
-                          color: "000000",
-                          size: 4,
-                          style: "single",
-                        },
-                      },
-                      spacing: {
-                        after: 30,
-                      },
-                    }),
-                  ]
-                : []),
-
               new Paragraph({
                 alignment: "center",
                 spacing: {
@@ -399,12 +527,12 @@ export default function FinalizarAtividadePage() {
                 },
                 children: [
                   new ImageRun({
-                    data: bytesImagem,
+                    data: bytesPagina,
                     transformation: {
-                      width: 560,
-                      height: 840,
+                      width: 760,
+                      height: 1074,
                     },
-                    type: "jpg",
+                    type: "png",
                   }),
                 ],
               }),
@@ -418,7 +546,7 @@ export default function FinalizarAtividadePage() {
 
       saveAs(
         arquivo,
-        "atividade-planejai.docx"
+        `atividade-planejai-${Date.now()}.docx`
       );
     } catch (error) {
       console.error(
