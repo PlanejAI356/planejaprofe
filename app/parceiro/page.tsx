@@ -484,9 +484,11 @@ export default function ParceiroPage() {
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-slate-500">
-              {erro ||
-                "Esta conta não possui uma parceria ativa com o PlanejAI."}
-            </p>
+  {naoParceiro
+    ? "Esta conta não possui uma parceria ativa com o PlanejAI."
+    : erro ||
+      "Não foi possível carregar os dados da parceria."}
+</p>
           </div>
         </section>
       </main>

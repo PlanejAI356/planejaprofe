@@ -71,14 +71,14 @@ export async function GET(req: NextRequest) {
 
     // A pessoa tem conta no PlanejAI, mas não é parceira
     if (!parceiro) {
-      return NextResponse.json(
-        {
-          erro: "Esta conta não possui uma parceria ativa.",
-          naoParceiro: true,
-        },
-        { status: 403 }
-      );
-    }
+  return NextResponse.json(
+    {
+      erro: "Esta conta não possui uma parceria ativa com o PlanejAI.",
+      naoParceiro: true,
+    },
+    { status: 403 }
+  );
+}
 
     if (parceiro.ativo === false) {
       return NextResponse.json(
