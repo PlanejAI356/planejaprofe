@@ -21,14 +21,6 @@ import {
 
 import { useRouter } from "next/navigation";
 
-import {
-  Document,
-  ImageRun,
-  Packer,
-  Paragraph,
-} from "docx";
-import { saveAs } from "file-saver";
-import html2canvas from "html2canvas";
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -238,9 +230,9 @@ export default function FinalizarAtividadePage() {
                 width: 210mm;
                 height: 297mm;
                 margin: 0;
-                padding: 7mm;
+                padding: 8mm;
                 overflow: hidden;
-                border: 1px solid #000000;
+                border: 0.4mm solid #b8b8b8;
                 background: #ffffff;
 
                 display: flex;
@@ -270,15 +262,19 @@ export default function FinalizarAtividadePage() {
                 object-fit: contain;
               }
 
-              .folha > img {
+              .folha > img,
+              .folha > div > img {
                 display: block;
-                width: 100%;
+                width: 94%;
+                max-width: 94%;
                 flex: 1 1 auto;
                 min-height: 0;
-                height: 100%;
+                height: auto;
                 object-fit: contain;
                 object-position: top center;
                 margin: 0 auto;
+                background: #ffffff !important;
+                filter: brightness(1.02) contrast(1.01);
               }
             </style>
           </head>
@@ -333,122 +329,163 @@ export default function FinalizarAtividadePage() {
     }
   }
 
-  async function capturarPaginaComoPng() {
-    if (!paginaRef.current) {
-      throw new Error("A folha da atividade não foi encontrada.");
-    }
-
-    const elemento = paginaRef.current;
-
-    /*
-     * html2canvas captura a própria folha que o professor está vendo,
-     * incluindo cabeçalho, tabela, logo, borda e imagem da atividade.
-     * É mais estável do que montar SVG com foreignObject.
-     */
-    const canvas = await html2canvas(elemento, {
-      backgroundColor: "#ffffff",
-      scale: 2,
-      useCORS: true,
-      allowTaint: false,
-      logging: false,
-      imageTimeout: 15000,
-      scrollX: 0,
-      scrollY: -window.scrollY,
-      windowWidth: document.documentElement.clientWidth,
-      windowHeight: document.documentElement.clientHeight,
-    });
-
-    const blobPng = await new Promise<Blob>(
-      (resolve, reject) => {
-        canvas.toBlob(
-          (blob) => {
-            if (!blob) {
-              reject(
-                new Error(
-                  "Não foi possível criar a imagem da folha."
-                )
-              );
-              return;
-            }
-
-            resolve(blob);
-          },
-          "image/png",
-          1
-        );
-      }
-    );
-
-    return new Uint8Array(
-      await blobPng.arrayBuffer()
-    );
-  }
-
-  async function baixarWord() {
-    if (!paginaRef.current || !imagem) {
+  function baixarWord() {
+    if (!imagem) {
       alert("Nenhuma atividade foi encontrada.");
       return;
     }
 
     try {
+      const htmlCabecalho = obterHtmlCabecalho();
+
       /*
-       * O Word recebe a folha completa como uma única imagem:
-       * cabeçalho + borda + atividade.
+       * O Word será gerado como documento HTML compatível com Word.
        *
-       * Assim o arquivo fica visualmente igual à prévia da tela
-       * e não perde formatação do cabeçalho.
+       * Vantagem:
+       * - o cabeçalho continua EDITÁVEL no Word;
+       * - tabelas e textos do cabeçalho continuam como elementos;
+       * - a atividade permanece como imagem logo abaixo;
+       * - o professor pode alterar escola, professor, data, série etc.
        */
-      const bytesPagina =
-        await capturarPaginaComoPng();
+      const documentoWord = `
+        <!DOCTYPE html>
+        <html lang="pt-BR">
+          <head>
+            <meta charset="UTF-8" />
+            <meta
+              name="ProgId"
+              content="Word.Document"
+            />
 
-      const documento = new Document({
-        sections: [
-          {
-            properties: {
-              page: {
-                size: {
-                  width: 11906,
-                  height: 16838,
-                },
-                margin: {
-                  top: 200,
-                  right: 200,
-                  bottom: 200,
-                  left: 200,
-                },
-              },
-            },
+            <meta
+              name="Generator"
+              content="PlanejAI"
+            />
 
-            children: [
-              new Paragraph({
-                alignment: "center",
-                spacing: {
-                  before: 0,
-                  after: 0,
-                },
-                children: [
-                  new ImageRun({
-                    data: bytesPagina,
-                    transformation: {
-                      width: 735,
-                      height: 1040,
-                    },
-                    type: "png",
-                  }),
-                ],
-              }),
-            ],
-          },
-        ],
-      });
+            <style>
+              @page {
+                size: A4 portrait;
+                margin: 0.8cm;
+              }
 
-      const arquivo =
-        await Packer.toBlob(documento);
+              * {
+                box-sizing: border-box;
+              }
 
-      saveAs(
-        arquivo,
-        `atividade-planejai-${Date.now()}.docx`
+              html,
+              body {
+                margin: 0;
+                padding: 0;
+                background: #ffffff;
+              }
+
+              body {
+                font-family: Arial, Helvetica, sans-serif;
+                color: #000000;
+              }
+
+              .pagina {
+                width: 100%;
+                background: #ffffff;
+              }
+
+              .cabecalho {
+                width: 100%;
+                margin: 0 0 8px 0;
+              }
+
+              .cabecalho table {
+                width: 100% !important;
+                border-collapse: collapse !important;
+              }
+
+              .cabecalho td,
+              .cabecalho th {
+                border: 1px solid #000000;
+                padding: 2px 4px;
+                vertical-align: middle;
+              }
+
+              .cabecalho img {
+                max-width: 110px;
+                max-height: 75px;
+                object-fit: contain;
+              }
+
+              .separador {
+                width: 100%;
+                border-top: 1px solid #000000;
+                margin: 5px 0 8px 0;
+              }
+
+              .atividade {
+                width: 100%;
+                text-align: center;
+                background: #ffffff;
+              }
+
+              .atividade img {
+                display: block;
+                width: 94%;
+                max-width: 18cm;
+                height: auto;
+                margin: 0 auto;
+                background: #ffffff;
+              }
+            </style>
+          </head>
+
+          <body>
+            <div class="pagina">
+              ${
+                htmlCabecalho.trim()
+                  ? `
+                    <div class="cabecalho">
+                      ${htmlCabecalho}
+                    </div>
+
+                    <div class="separador"></div>
+                  `
+                  : ""
+              }
+
+              <div class="atividade">
+                <img
+                  src="${imagem}"
+                  alt="Atividade pedagógica"
+                />
+              </div>
+            </div>
+          </body>
+        </html>
+      `;
+
+      const blob = new Blob(
+        ["\ufeff", documentoWord],
+        {
+          type:
+            "application/msword;charset=utf-8",
+        }
       );
+
+      const url =
+        URL.createObjectURL(blob);
+
+      const link =
+        document.createElement("a");
+
+      link.href = url;
+      link.download =
+        `atividade-planejai-${Date.now()}.doc`;
+      link.style.display = "none";
+
+      document.body.appendChild(link);
+      link.click();
+
+      setTimeout(() => {
+        link.remove();
+        URL.revokeObjectURL(url);
+      }, 1500);
     } catch (error) {
       console.error(
         "Erro ao gerar Word:",
@@ -698,7 +735,7 @@ export default function FinalizarAtividadePage() {
           <div className="bg-slate-100 p-4 sm:p-6">
             <div
               ref={paginaRef}
-              className="mx-auto w-full max-w-[794px] border border-black bg-white p-5 shadow-md sm:p-6"
+              className="mx-auto w-full max-w-[794px] border border-slate-400 bg-white px-7 py-6 shadow-md sm:px-8 sm:py-7"
             >
               {cabecalho.trim() && (
                 <div
@@ -709,11 +746,16 @@ export default function FinalizarAtividadePage() {
                 />
               )}
 
-              <img
-                src={imagem}
-                alt="Atividade pedagógica final"
-                className="block h-auto w-full object-contain"
-              />
+              <div className="flex w-full justify-center bg-white">
+                <img
+                  src={imagem}
+                  alt="Atividade pedagógica final"
+                  className="block h-auto w-[94%] bg-white object-contain"
+                  style={{
+                    filter: "brightness(1.02) contrast(1.01)",
+                  }}
+                />
+              </div>
             </div>
           </div>
 
