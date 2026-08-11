@@ -28,6 +28,7 @@ import {
   Paragraph,
 } from "docx";
 import { saveAs } from "file-saver";
+import html2canvas from "html2canvas";
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -213,8 +214,8 @@ export default function FinalizarAtividadePage() {
 
             <style>
               @page {
-                size: A4;
-                margin: 8mm;
+                size: A4 portrait;
+                margin: 0;
               }
 
               * {
@@ -223,24 +224,33 @@ export default function FinalizarAtividadePage() {
 
               html,
               body {
+                width: 210mm;
+                height: 297mm;
                 margin: 0;
                 padding: 0;
+                overflow: hidden;
                 background: #ffffff;
                 font-family: Arial, Helvetica, sans-serif;
                 color: #000000;
               }
 
               .folha {
-                width: 100%;
-                margin: 0 auto;
-                border: 1px solid #000000;
+                width: 210mm;
+                height: 297mm;
+                margin: 0;
                 padding: 7mm;
+                overflow: hidden;
+                border: 1px solid #000000;
                 background: #ffffff;
+
+                display: flex;
+                flex-direction: column;
               }
 
               .cabecalho-preview {
                 width: 100%;
-                margin-bottom: 4mm;
+                flex: 0 0 auto;
+                margin-bottom: 3mm;
                 overflow: hidden;
               }
 
@@ -263,8 +273,11 @@ export default function FinalizarAtividadePage() {
               .folha > img {
                 display: block;
                 width: 100%;
-                height: auto;
+                flex: 1 1 auto;
+                min-height: 0;
+                height: 100%;
                 object-fit: contain;
+                object-position: top center;
                 margin: 0 auto;
               }
             </style>
@@ -325,162 +338,50 @@ export default function FinalizarAtividadePage() {
       throw new Error("A folha da atividade não foi encontrada.");
     }
 
-    const largura = 794;
-    const escala = 2;
-    const conteudoPagina = paginaRef.current.innerHTML;
+    const elemento = paginaRef.current;
 
-    const svg = `
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="${largura * escala}"
-        height="${1123 * escala}"
-        viewBox="0 0 ${largura} 1123"
-      >
-        <foreignObject
-          x="0"
-          y="0"
-          width="794"
-          height="1123"
-        >
-          <div
-            xmlns="http://www.w3.org/1999/xhtml"
-            style="
-              width:794px;
-              min-height:1123px;
-              box-sizing:border-box;
-              border:1px solid #000;
-              padding:24px;
-              background:#fff;
-              color:#000;
-              font-family:Arial, Helvetica, sans-serif;
-            "
-          >
-            <style>
-              * {
-                box-sizing: border-box;
-              }
+    /*
+     * html2canvas captura a própria folha que o professor está vendo,
+     * incluindo cabeçalho, tabela, logo, borda e imagem da atividade.
+     * É mais estável do que montar SVG com foreignObject.
+     */
+    const canvas = await html2canvas(elemento, {
+      backgroundColor: "#ffffff",
+      scale: 2,
+      useCORS: true,
+      allowTaint: false,
+      logging: false,
+      imageTimeout: 15000,
+      scrollX: 0,
+      scrollY: -window.scrollY,
+      windowWidth: document.documentElement.clientWidth,
+      windowHeight: document.documentElement.clientHeight,
+    });
 
-              .cabecalho-preview {
-                width: 100%;
-                margin-bottom: 16px;
-                overflow: hidden;
-              }
+    const blobPng = await new Promise<Blob>(
+      (resolve, reject) => {
+        canvas.toBlob(
+          (blob) => {
+            if (!blob) {
+              reject(
+                new Error(
+                  "Não foi possível criar a imagem da folha."
+                )
+              );
+              return;
+            }
 
-              .cabecalho-preview table {
-                width: 100% !important;
-                border-collapse: collapse !important;
-              }
-
-              .cabecalho-preview td,
-              .cabecalho-preview th {
-                border: 1px solid #000;
-              }
-
-              .cabecalho-preview img {
-                max-width: 120px;
-                max-height: 80px;
-                object-fit: contain;
-              }
-
-              img {
-                display: block;
-                max-width: 100%;
-                height: auto;
-              }
-
-              div > img:last-child {
-                width: 100%;
-                object-fit: contain;
-              }
-            </style>
-
-            ${conteudoPagina}
-          </div>
-        </foreignObject>
-      </svg>
-    `;
-
-    const blobSvg = new Blob(
-      [svg],
-      {
-        type: "image/svg+xml;charset=utf-8",
+            resolve(blob);
+          },
+          "image/png",
+          1
+        );
       }
     );
 
-    const urlSvg = URL.createObjectURL(blobSvg);
-
-    try {
-      const imagemSvg = await new Promise<HTMLImageElement>(
-        (resolve, reject) => {
-          const img = new Image();
-
-          img.onload = () => resolve(img);
-          img.onerror = () =>
-            reject(
-              new Error(
-                "Não foi possível montar a imagem da folha."
-              )
-            );
-
-          img.src = urlSvg;
-        }
-      );
-
-      const canvas = document.createElement("canvas");
-      canvas.width = largura * escala;
-      canvas.height = 1123 * escala;
-
-      const contexto = canvas.getContext("2d");
-
-      if (!contexto) {
-        throw new Error(
-          "Não foi possível preparar a folha para o Word."
-        );
-      }
-
-      contexto.fillStyle = "#ffffff";
-      contexto.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      contexto.drawImage(
-        imagemSvg,
-        0,
-        0,
-        canvas.width,
-        canvas.height
-      );
-
-      const blobPng = await new Promise<Blob>(
-        (resolve, reject) => {
-          canvas.toBlob(
-            (blob) => {
-              if (!blob) {
-                reject(
-                  new Error(
-                    "Não foi possível criar a imagem da folha."
-                  )
-                );
-                return;
-              }
-
-              resolve(blob);
-            },
-            "image/png",
-            1
-          );
-        }
-      );
-
-      return new Uint8Array(
-        await blobPng.arrayBuffer()
-      );
-    } finally {
-      URL.revokeObjectURL(urlSvg);
-    }
+    return new Uint8Array(
+      await blobPng.arrayBuffer()
+    );
   }
 
   async function baixarWord() {
@@ -529,8 +430,8 @@ export default function FinalizarAtividadePage() {
                   new ImageRun({
                     data: bytesPagina,
                     transformation: {
-                      width: 760,
-                      height: 1074,
+                      width: 735,
+                      height: 1040,
                     },
                     type: "png",
                   }),
