@@ -8,8 +8,7 @@ type CorpoCadastroParceiro = {
 
 export async function POST(req: Request) {
   try {
-    const body =
-      (await req.json()) as CorpoCadastroParceiro;
+    const body = (await req.json()) as CorpoCadastroParceiro;
 
     const cupom =
       body.cupom?.trim().toUpperCase() || "";
@@ -70,10 +69,6 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * Evita registrar o mesmo cadastro
-     * mais de uma vez para a mesma parceira.
-     */
     const {
       data: indicacaoExistente,
       error: erroBuscaIndicacao,
@@ -108,19 +103,29 @@ export async function POST(req: Request) {
       });
     }
 
+    const valorAssinatura = 29.9;
+
+    const percentualComissao =
+      Number(parceiro.comissao_percentual || 0);
+
+    const valorComissao = Number(
+      (
+        valorAssinatura *
+        (percentualComissao / 100)
+      ).toFixed(2)
+    );
+
     const {
       error: erroIndicacao,
     } = await supabaseAdmin
       .from("indicacoes")
       .insert({
-        parceiro_id:
-          parceiro.id,
-        email_cliente:
-          emailCliente,
-        cupom:
-          parceiro.cupom,
-        status:
-          "cadastrado",
+        parceiro_id: parceiro.id,
+        email_cliente: emailCliente,
+        cupom: parceiro.cupom,
+        valor_assinatura: valorAssinatura,
+        valor_comissao: valorComissao,
+        status: "cadastrado",
       });
 
     if (erroIndicacao) {
@@ -143,12 +148,11 @@ export async function POST(req: Request) {
     return NextResponse.json({
       registrado: true,
       parceiro: {
-        nome:
-          parceiro.nome,
-        cupom:
-          parceiro.cupom,
+        nome: parceiro.nome,
+        cupom: parceiro.cupom,
         comissaoPercentual:
           parceiro.comissao_percentual,
+        valorComissao,
       },
     });
   } catch (error) {
