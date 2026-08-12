@@ -1,3 +1,5 @@
+"use client";
+
 import {
   AlignmentType,
   BorderStyle,
@@ -10,14 +12,23 @@ import {
   TableCell,
   TableRow,
   TextRun,
+  UnderlineType,
   VerticalAlign,
   WidthType,
 } from "docx";
+
 import { saveAs } from "file-saver";
 
-type OpcoesExportarAtividadeWord = {
+type OpcoesExportacaoWord = {
   tituloArquivo?: string;
+  duasColunas?: boolean;
 };
+
+type TipoImagemWord =
+  | "png"
+  | "jpg"
+  | "gif"
+  | "bmp";
 
 function limparNomeArquivo(nome: string) {
   const nomeLimpo = nome
@@ -27,572 +38,707 @@ function limparNomeArquivo(nome: string) {
     .replace(/\s+/g, " ")
     .trim();
 
-  return nomeLimpo || "atividade";
+  return nomeLimpo || "avaliacao";
 }
 
-function dataUrlParaUint8Array(dataUrl: string) {
-  const partes = dataUrl.split(",");
+function obterAlinhamento(
+  elemento: HTMLElement
+) {
+  const alinhamento =
+    elemento.style.textAlign;
 
-  if (partes.length < 2) {
-    throw new Error("Imagem da atividade inválida.");
+  if (alinhamento === "center") {
+    return AlignmentType.CENTER;
   }
 
-  const base64 = partes[1];
-  const binario = atob(base64);
-  const bytes = new Uint8Array(binario.length);
-
-  for (let indice = 0; indice < binario.length; indice += 1) {
-    bytes[indice] = binario.charCodeAt(indice);
+  if (alinhamento === "right") {
+    return AlignmentType.RIGHT;
   }
 
-  return bytes;
+  if (alinhamento === "justify") {
+    return AlignmentType.JUSTIFIED;
+  }
+
+  return AlignmentType.LEFT;
 }
 
-async function obterDimensoesImagem(dataUrl: string) {
+function obterTipoImagem(
+  contentType: string,
+  endereco: string
+): TipoImagemWord {
+  const tipo = contentType.toLowerCase();
+  const url = endereco.toLowerCase();
+
+  if (
+    tipo.includes("jpeg") ||
+    tipo.includes("jpg") ||
+    url.includes(".jpg") ||
+    url.includes(".jpeg")
+  ) {
+    return "jpg";
+  }
+
+  if (
+    tipo.includes("gif") ||
+    url.includes(".gif")
+  ) {
+    return "gif";
+  }
+
+  if (
+    tipo.includes("bmp") ||
+    url.includes(".bmp")
+  ) {
+    return "bmp";
+  }
+
+  return "png";
+}
+
+async function carregarDimensoesImagem(
+  origem: string
+) {
   return new Promise<{
     largura: number;
     altura: number;
-  }>((resolve, reject) => {
+  }>((resolve) => {
     const imagem = new Image();
 
     imagem.onload = () => {
       resolve({
         largura:
-          imagem.naturalWidth || imagem.width,
+          imagem.naturalWidth || 400,
         altura:
-          imagem.naturalHeight || imagem.height,
+          imagem.naturalHeight || 260,
       });
     };
 
     imagem.onerror = () => {
-      reject(
-        new Error(
-          "Não foi possível carregar a imagem da atividade."
-        )
-      );
+      resolve({
+        largura: 400,
+        altura: 260,
+      });
     };
 
-    imagem.src = dataUrl;
+    imagem.src = origem;
   });
 }
 
-function textoCelula(
-  texto: string,
-  opcoes: {
-    negrito?: boolean;
-    centralizado?: boolean;
-    tamanho?: number;
-  } = {}
+function ajustarDimensoesImagem(
+  larguraOriginal: number,
+  alturaOriginal: number,
+  duasColunas: boolean
 ) {
-  return new Paragraph({
-    alignment: opcoes.centralizado
-      ? AlignmentType.CENTER
-      : AlignmentType.LEFT,
-    spacing: {
-      before: 0,
-      after: 0,
-    },
-    children: [
-      new TextRun({
-        text: texto,
-        bold: opcoes.negrito,
-        size: opcoes.tamanho ?? 18,
-        font: "Arial",
-      }),
-    ],
-  });
-}
+  const larguraMaxima = duasColunas
+    ? 225
+    : 420;
 
-function criarBordasCelula() {
-  return {
-    top: {
-      style: BorderStyle.SINGLE,
-      size: 4,
-      color: "000000",
-    },
-    bottom: {
-      style: BorderStyle.SINGLE,
-      size: 4,
-      color: "000000",
-    },
-    left: {
-      style: BorderStyle.SINGLE,
-      size: 4,
-      color: "000000",
-    },
-    right: {
-      style: BorderStyle.SINGLE,
-      size: 4,
-      color: "000000",
-    },
-  };
-}
-
-function criarCelula(
-  texto: string,
-  largura: number,
-  opcoes: {
-    negrito?: boolean;
-    centralizado?: boolean;
-    columnSpan?: number;
-  } = {}
-) {
-  return new TableCell({
-    width: {
-      size: largura,
-      type: WidthType.DXA,
-    },
-    columnSpan: opcoes.columnSpan,
-    verticalAlign: VerticalAlign.CENTER,
-    margins: {
-      top: 60,
-      bottom: 60,
-      left: 80,
-      right: 80,
-    },
-    borders: criarBordasCelula(),
-    children: [
-      textoCelula(texto, {
-        negrito: opcoes.negrito,
-        centralizado: opcoes.centralizado,
-      }),
-    ],
-  });
-}
-
-function extrairTexto(
-  elemento: HTMLElement | null,
-  rotulo: string
-) {
-  if (!elemento) return "";
-
-  const textoCompleto =
-    elemento.innerText.replace(/\r/g, "");
-
-  const linhas = textoCompleto
-    .split("\n")
-    .map((linha) => linha.trim())
-    .filter(Boolean);
-
-  const rotuloNormalizado =
-    rotulo.toLowerCase();
-
-  const linha = linhas.find((item) =>
-    item.toLowerCase().startsWith(
-      rotuloNormalizado
-    )
-  );
-
-  if (!linha) return "";
-
-  const indice = linha.indexOf(":");
-
-  if (indice < 0) return "";
-
-  return linha.slice(indice + 1).trim();
-}
-
-function encontrarImagemLogo(
-  cabecalhoElemento: HTMLElement | null
-) {
-  if (!cabecalhoElemento) return "";
-
-  const imagem =
-    cabecalhoElemento.querySelector("img");
-
-  return imagem?.src || "";
-}
-
-async function criarCelulaLogo(
-  cabecalhoElemento: HTMLElement | null
-) {
-  const srcLogo =
-    encontrarImagemLogo(cabecalhoElemento);
-
-  if (!srcLogo) {
-    return new TableCell({
-      rowSpan: 4,
-      width: {
-        size: 1700,
-        type: WidthType.DXA,
-      },
-      verticalAlign: VerticalAlign.CENTER,
-      borders: criarBordasCelula(),
-      children: [
-        textoCelula("", {
-          centralizado: true,
-        }),
-      ],
-    });
-  }
-
-  try {
-    let dadosLogo: Uint8Array;
-
-    if (srcLogo.startsWith("data:image/")) {
-      dadosLogo =
-        dataUrlParaUint8Array(srcLogo);
-    } else {
-      const resposta =
-        await fetch(srcLogo);
-
-      if (!resposta.ok) {
-        throw new Error(
-          "Não foi possível carregar o logo."
-        );
-      }
-
-      dadosLogo = new Uint8Array(
-        await resposta.arrayBuffer()
-      );
-    }
-
-    return new TableCell({
-      rowSpan: 4,
-      width: {
-        size: 1700,
-        type: WidthType.DXA,
-      },
-      verticalAlign: VerticalAlign.CENTER,
-      borders: criarBordasCelula(),
-      children: [
-        new Paragraph({
-          alignment: AlignmentType.CENTER,
-          spacing: {
-            before: 0,
-            after: 0,
-          },
-          children: [
-            new ImageRun({
-              data: dadosLogo,
-              type: "png",
-              transformation: {
-                width: 88,
-                height: 68,
-              },
-            }),
-          ],
-        }),
-      ],
-    });
-  } catch {
-    return new TableCell({
-      rowSpan: 4,
-      width: {
-        size: 1700,
-        type: WidthType.DXA,
-      },
-      verticalAlign: VerticalAlign.CENTER,
-      borders: criarBordasCelula(),
-      children: [
-        textoCelula("", {
-          centralizado: true,
-        }),
-      ],
-    });
-  }
-}
-
-async function criarTabelaCabecalho(
-  cabecalhoElemento: HTMLElement | null
-) {
-  const nomeEscola =
-    cabecalhoElemento
-      ?.querySelector("table")
-      ?.innerText
-      .split("\n")
-      .map((linha) => linha.trim())
-      .find(
-        (linha) =>
-          linha &&
-          !linha.includes(":") &&
-          linha.toLowerCase() !== "data" &&
-          linha.toLowerCase() !== "nota"
-      ) || "";
-
-  const componente =
-    extrairTexto(
-      cabecalhoElemento,
-      "Componente Curricular"
-    );
-
-  const professor =
-    extrairTexto(
-      cabecalhoElemento,
-      "Professor(a)"
-    );
-
-  const turno =
-    extrairTexto(
-      cabecalhoElemento,
-      "Turno"
-    );
-
-  const serie =
-    extrairTexto(
-      cabecalhoElemento,
-      "Série"
-    );
-
-  const objetos =
-    extrairTexto(
-      cabecalhoElemento,
-      "Objeto(s) de Conhecimento"
-    );
-
-  const aluno =
-    extrairTexto(
-      cabecalhoElemento,
-      "Aluno(a)"
-    );
-
-  const celulaLogo =
-    await criarCelulaLogo(
-      cabecalhoElemento
-    );
-
-  const larguraTotal = 10300;
-  const larguraLogo = 1700;
-  const larguraMeio1 = 3400;
-  const larguraMeio2 = 3000;
-  const larguraFinal = 2200;
-
-  return new Table({
-    width: {
-      size: larguraTotal,
-      type: WidthType.DXA,
-    },
-    columnWidths: [
-      larguraLogo,
-      larguraMeio1,
-      larguraMeio2,
-      larguraFinal,
-    ],
-    rows: [
-      new TableRow({
-        children: [
-          celulaLogo,
-          new TableCell({
-            columnSpan: 3,
-            verticalAlign:
-              VerticalAlign.CENTER,
-            borders: criarBordasCelula(),
-            margins: {
-              top: 50,
-              bottom: 50,
-              left: 80,
-              right: 80,
-            },
-            children: [
-              textoCelula(
-                nomeEscola,
-                {
-                  negrito: true,
-                  centralizado: true,
-                  tamanho: 20,
-                }
-              ),
-            ],
-          }),
-        ],
-      }),
-
-      new TableRow({
-        children: [
-          criarCelula(
-            `Componente Curricular: ${componente}`,
-            larguraMeio1,
-            {
-              negrito: true,
-            }
-          ),
-          criarCelula(
-            `Professor(a): ${professor}`,
-            larguraMeio2,
-            {
-              negrito: true,
-            }
-          ),
-          criarCelula(
-            "DATA\n____/____/______",
-            larguraFinal,
-            {
-              centralizado: true,
-            }
-          ),
-        ],
-      }),
-
-      new TableRow({
-        children: [
-          criarCelula(
-            `Turno: ${turno}`,
-            larguraMeio1,
-            {
-              negrito: true,
-            }
-          ),
-          criarCelula(
-            `Série: ${serie}`,
-            larguraMeio2,
-            {
-              negrito: true,
-            }
-          ),
-          criarCelula(
-            "NOTA",
-            larguraFinal,
-            {
-              centralizado: true,
-              negrito: true,
-            }
-          ),
-        ],
-      }),
-
-      new TableRow({
-        children: [
-          criarCelula(
-            `Objeto(s) de Conhecimento: ${objetos}`,
-            larguraMeio1 + larguraMeio2,
-            {
-              negrito: true,
-              columnSpan: 2,
-            }
-          ),
-          criarCelula(
-            "",
-            larguraFinal
-          ),
-        ],
-      }),
-
-      new TableRow({
-        children: [
-          criarCelula(
-            `Aluno(a): ${aluno}`,
-            larguraTotal,
-            {
-              negrito: true,
-              columnSpan: 4,
-            }
-          ),
-        ],
-      }),
-    ],
-  });
-}
-
-export async function exportarAtividadeWord(
-  cabecalhoElemento: HTMLElement | null,
-  imagem: string,
-  opcoes: OpcoesExportarAtividadeWord = {}
-) {
-  if (!imagem || !imagem.startsWith("data:image/")) {
-    throw new Error(
-      "A imagem da atividade não foi encontrada."
-    );
-  }
-
-  const tituloArquivo =
-    limparNomeArquivo(
-      opcoes.tituloArquivo || "atividade"
-    );
-
-  const tabelaCabecalho =
-    await criarTabelaCabecalho(
-      cabecalhoElemento
-    );
-
-  const dadosImagem =
-    dataUrlParaUint8Array(imagem);
-
-  const dimensoes =
-    await obterDimensoesImagem(imagem);
-
-  /*
-   * A4: 210 x 297 mm.
-   * Margens de aproximadamente 8 mm para aproveitar melhor a página.
-   *
-   * A imagem é limitada para garantir que cabeçalho + atividade
-   * permaneçam na MESMA folha no Word.
-   */
-  const larguraMaxima = 690;
-  const alturaMaxima = 810;
+  const alturaMaxima = duasColunas
+    ? 190
+    : 280;
 
   const proporcao = Math.min(
-    larguraMaxima / dimensoes.largura,
-    alturaMaxima / dimensoes.altura,
+    larguraMaxima / larguraOriginal,
+    alturaMaxima / alturaOriginal,
     1
   );
 
-  const larguraFinal = Math.max(
-    1,
-    Math.round(
-      dimensoes.largura * proporcao
+  return {
+    width: Math.max(
+      1,
+      Math.round(larguraOriginal * proporcao)
+    ),
+    height: Math.max(
+      1,
+      Math.round(alturaOriginal * proporcao)
+    ),
+  };
+}
+
+async function criarParagrafoImagem(
+  imagem: HTMLImageElement,
+  duasColunas: boolean
+) {
+  const origem =
+    imagem.currentSrc || imagem.src;
+
+  if (!origem) {
+    return null;
+  }
+
+  try {
+    const resposta = await fetch(origem);
+
+    if (!resposta.ok) {
+      return null;
+    }
+
+    const blob = await resposta.blob();
+    const dados = new Uint8Array(
+      await blob.arrayBuffer()
+    );
+
+    const dimensoesOriginais =
+      await carregarDimensoesImagem(origem);
+
+    const dimensoes =
+      ajustarDimensoesImagem(
+        dimensoesOriginais.largura,
+        dimensoesOriginais.altura,
+        duasColunas
+      );
+
+    const tipo = obterTipoImagem(
+      blob.type,
+      origem
+    );
+
+    return new Paragraph({
+      alignment: AlignmentType.CENTER,
+      spacing: {
+        before: 40,
+        after: 80,
+      },
+      children: [
+        new ImageRun({
+          data: dados,
+          type: tipo,
+          transformation: dimensoes,
+        }),
+      ],
+    });
+  } catch (error) {
+    console.error(
+      "Não foi possível inserir uma imagem no Word:",
+      error
+    );
+
+    return null;
+  }
+}
+
+function criarRunsDoNo(
+  no: Node,
+  formatoHerdado: {
+    bold?: boolean;
+    italics?: boolean;
+    underline?: boolean;
+  } = {}
+): TextRun[] {
+  if (no.nodeType === Node.TEXT_NODE) {
+    const texto =
+      no.textContent?.replace(/\u00a0/g, " ") ||
+      "";
+
+    if (!texto) {
+      return [];
+    }
+
+    return [
+      new TextRun({
+        text: texto,
+        bold: formatoHerdado.bold,
+        italics: formatoHerdado.italics,
+        underline: formatoHerdado.underline
+          ? {
+              type: UnderlineType.SINGLE,
+            }
+          : undefined,
+        size: 22,
+        font: "Arial",
+      }),
+    ];
+  }
+
+  if (!(no instanceof HTMLElement)) {
+    return [];
+  }
+
+  if (no.tagName === "BR") {
+    return [
+      new TextRun({
+        break: 1,
+      }),
+    ];
+  }
+
+  const formatoAtual = {
+    bold:
+      formatoHerdado.bold ||
+      no.tagName === "B" ||
+      no.tagName === "STRONG" ||
+      no.style.fontWeight === "700" ||
+      no.style.fontWeight === "bold",
+    italics:
+      formatoHerdado.italics ||
+      no.tagName === "I" ||
+      no.tagName === "EM" ||
+      no.style.fontStyle === "italic",
+    underline:
+      formatoHerdado.underline ||
+      no.tagName === "U" ||
+      no.style.textDecoration.includes(
+        "underline"
+      ),
+  };
+
+  return Array.from(no.childNodes).flatMap(
+    (filho) =>
+      criarRunsDoNo(
+        filho,
+        formatoAtual
+      )
+  );
+}
+
+function elementoEhLinhaResposta(
+  elemento: HTMLElement
+) {
+  return (
+    elemento.style.borderBottom.includes(
+      "solid"
+    ) ||
+    elemento.getAttribute("style")?.includes(
+      "border-bottom"
     )
+  );
+}
+
+function criarParagrafoTexto(
+  elemento: HTMLElement,
+  opcoes: {
+    titulo?: boolean;
+    espacamentoDepois?: number;
+  } = {}
+) {
+  const runs =
+    criarRunsDoNo(elemento);
+
+  const ehLinhaResposta =
+    elementoEhLinhaResposta(elemento);
+
+  if (ehLinhaResposta) {
+    return new Paragraph({
+      spacing: {
+        before: 20,
+        after: 20,
+      },
+      border: {
+        bottom: {
+          color: "475569",
+          size: 6,
+          style: BorderStyle.SINGLE,
+        },
+      },
+      children: [
+        new TextRun({
+          text: " ",
+          size: 22,
+          font: "Arial",
+        }),
+      ],
+    });
+  }
+
+  return new Paragraph({
+    alignment: opcoes.titulo
+      ? AlignmentType.CENTER
+      : obterAlinhamento(elemento),
+    keepNext: opcoes.titulo || undefined,
+    spacing: {
+      before: opcoes.titulo ? 80 : 0,
+      after:
+        opcoes.espacamentoDepois ??
+        (opcoes.titulo ? 160 : 40),
+      line: 276,
+    },
+    children:
+      runs.length > 0
+        ? runs.map((run, indice) => {
+            if (
+              opcoes.titulo &&
+              run instanceof TextRun
+            ) {
+              return new TextRun({
+                text:
+                  elemento.innerText.trim(),
+                bold: true,
+                size: 30,
+                font: "Arial",
+              });
+            }
+
+            return run;
+          })
+        : [
+            new TextRun({
+              text: " ",
+              size: 22,
+              font: "Arial",
+            }),
+          ],
+  });
+}
+
+async function converterElementoEmBlocos(
+  elemento: HTMLElement,
+  duasColunas: boolean,
+  titulo = false
+): Promise<
+  Array<Paragraph | Table>
+> {
+  const blocos: Array<
+    Paragraph | Table
+  > = [];
+
+  const filhosElementos =
+    Array.from(elemento.children);
+
+  if (filhosElementos.length === 0) {
+    blocos.push(
+      criarParagrafoTexto(elemento, {
+        titulo,
+      })
+    );
+
+    return blocos;
+  }
+
+  for (
+    let indice = 0;
+    indice < filhosElementos.length;
+    indice += 1
+  ) {
+    const filho =
+      filhosElementos[indice] as HTMLElement;
+
+    if (filho.tagName === "IMG") {
+      const paragrafoImagem =
+        await criarParagrafoImagem(
+          filho as HTMLImageElement,
+          duasColunas
+        );
+
+      if (paragrafoImagem) {
+        blocos.push(paragrafoImagem);
+      }
+
+      continue;
+    }
+
+    const imagensDiretas =
+      Array.from(
+        filho.querySelectorAll(":scope > img")
+      ) as HTMLImageElement[];
+
+    if (
+      filho.tagName === "P" ||
+      filho.tagName === "DIV" ||
+      filho.tagName === "SPAN"
+    ) {
+      const possuiSomenteImagem =
+        imagensDiretas.length > 0 &&
+        !filho.innerText.trim();
+
+      if (!possuiSomenteImagem) {
+        blocos.push(
+          criarParagrafoTexto(filho, {
+            titulo:
+              titulo && indice === 0,
+            espacamentoDepois:
+              indice ===
+              filhosElementos.length - 1
+                ? 120
+                : 40,
+          })
+        );
+      }
+
+      for (const imagem of imagensDiretas) {
+        const paragrafoImagem =
+          await criarParagrafoImagem(
+            imagem,
+            duasColunas
+          );
+
+        if (paragrafoImagem) {
+          blocos.push(paragrafoImagem);
+        }
+      }
+
+      const subBlocos =
+        Array.from(
+          filho.children
+        ).filter(
+          (item) =>
+            item.tagName !== "IMG"
+        ) as HTMLElement[];
+
+      for (const subBloco of subBlocos) {
+        if (
+          subBloco.tagName === "P" ||
+          subBloco.tagName === "DIV"
+        ) {
+          blocos.push(
+            criarParagrafoTexto(
+              subBloco,
+              {
+                espacamentoDepois: 40,
+              }
+            )
+          );
+        }
+      }
+
+      continue;
+    }
+
+    blocos.push(
+      criarParagrafoTexto(filho, {
+        espacamentoDepois:
+          indice ===
+          filhosElementos.length - 1
+            ? 120
+            : 40,
+      })
+    );
+  }
+
+  return blocos;
+}
+
+function limparDocumentoClonado(
+  elemento: HTMLElement
+) {
+  elemento
+    .querySelectorAll(
+      [
+        "button",
+        "[data-nao-exportar]",
+        ".nao-exportar",
+      ].join(",")
+    )
+    .forEach((item) => item.remove());
+
+  elemento
+    .querySelectorAll<HTMLElement>(
+      "[contenteditable='true']"
+    )
+    .forEach((item) => {
+      item.removeAttribute(
+        "contenteditable"
+      );
+    });
+}
+
+async function criarCabecalhoWord(
+  cabecalhoElemento:
+    | HTMLElement
+    | null,
+  duasColunas: boolean
+) {
+  const cabecalhoClonado =
+    cabecalhoElemento?.cloneNode(
+      true
+    ) as HTMLElement | undefined;
+
+  if (cabecalhoClonado) {
+    limparDocumentoClonado(
+      cabecalhoClonado
+    );
+    cabecalhoClonado.removeAttribute(
+      "data-placeholder"
+    );
+  }
+
+  const conteudoCabecalho =
+    cabecalhoClonado &&
+    (
+      cabecalhoClonado.innerText.trim() ||
+      cabecalhoClonado.querySelector("img")
+    )
+      ? await converterElementoEmBlocos(
+          cabecalhoClonado,
+          duasColunas
+        )
+      : [
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: " ",
+                size: 22,
+                font: "Arial",
+              }),
+            ],
+          }),
+        ];
+
+  return new Table({
+    width: {
+      size: 100,
+      type: WidthType.PERCENTAGE,
+    },
+    rows: [
+      new TableRow({
+        height: {
+          value: 900,
+          rule: HeightRule.ATLEAST,
+        },
+        children: [
+          new TableCell({
+            verticalAlign:
+              VerticalAlign.CENTER,
+            margins: {
+              top: 100,
+              right: 120,
+              bottom: 100,
+              left: 120,
+            },
+            borders: {
+              top: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "64748B",
+              },
+              right: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "64748B",
+              },
+              bottom: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "64748B",
+              },
+              left: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "64748B",
+              },
+            },
+            children: conteudoCabecalho,
+          }),
+        ],
+      }),
+    ],
+  });
+}
+
+export async function exportarAvaliacaoWord(
+  cabecalhoElemento:
+    | HTMLElement
+    | null,
+  avaliacaoElemento: HTMLElement,
+  opcoes: OpcoesExportacaoWord = {}
+) {
+  const tituloArquivo =
+    limparNomeArquivo(
+      opcoes.tituloArquivo ||
+        "avaliacao"
+    );
+
+  const duasColunas =
+    Boolean(opcoes.duasColunas);
+
+  const avaliacaoClonada =
+    avaliacaoElemento.cloneNode(
+      true
+    ) as HTMLElement;
+
+  limparDocumentoClonado(
+    avaliacaoClonada
   );
 
-  const alturaFinal = Math.max(
-    1,
-    Math.round(
-      dimensoes.altura * proporcao
-    )
-  );
+  const cabecalhoWord =
+    await criarCabecalhoWord(
+      cabecalhoElemento,
+      duasColunas
+    );
+
+  const filhosAvaliacao =
+    Array.from(
+      avaliacaoClonada.children
+    ) as HTMLElement[];
+
+  const conteudoWord: Array<
+    Paragraph | Table
+  > = [];
+
+  for (
+    let indice = 0;
+    indice < filhosAvaliacao.length;
+    indice += 1
+  ) {
+    const filho =
+      filhosAvaliacao[indice];
+
+    const blocos =
+      await converterElementoEmBlocos(
+        filho,
+        duasColunas,
+        indice === 0
+      );
+
+    conteudoWord.push(...blocos);
+  }
+
+  if (conteudoWord.length === 0) {
+    conteudoWord.push(
+      criarParagrafoTexto(
+        avaliacaoClonada,
+        {
+          titulo: true,
+        }
+      )
+    );
+  }
 
   const documento = new Document({
     sections: [
       {
         properties: {
           page: {
-            size: {
-              width: 11906,
-              height: 16838,
-            },
             margin: {
-              top: 454,
-              right: 454,
-              bottom: 454,
-              left: 454,
+              top: 560,
+              right: 560,
+              bottom: 560,
+              left: 560,
             },
           },
+          column: duasColunas
+            ? {
+                count: 2,
+                space: 360,
+                separate: true,
+              }
+            : {
+                count: 1,
+              },
         },
-
         children: [
-          tabelaCabecalho,
+          cabecalhoWord,
 
           new Paragraph({
             spacing: {
-              before: 30,
-              after: 30,
+              before: 80,
+              after: 80,
+            },
+            border: {
+              bottom: {
+                color: "CBD5E1",
+                size: 6,
+                style:
+                  BorderStyle.SINGLE,
+              },
             },
             children: [
               new TextRun({
-                text: "",
+                text: " ",
               }),
             ],
           }),
 
-          new Paragraph({
-            alignment:
-              AlignmentType.CENTER,
-            spacing: {
-              before: 0,
-              after: 0,
-              line: 240,
-            },
-            keepNext: false,
-            children: [
-              new ImageRun({
-                data: dadosImagem,
-                type: "png",
-                transformation: {
-                  width: larguraFinal,
-                  height: alturaFinal,
-                },
-              }),
-            ],
-          }),
+          ...conteudoWord,
         ],
       },
     ],
