@@ -9,56 +9,57 @@ export default function CadastroPage() {
   const [email, setEmail] = useState("");
   const [whatsapp, setWhatsapp] = useState("");
   const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] =
-    useState(false);
-  const [carregando, setCarregando] =
-    useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [carregando, setCarregando] = useState(false);
 
-  async function registrarIndicacaoCadastro(
-    emailCliente: string
-  ) {
-    const parceiroRef =
+  function obterParceiroRef() {
+    if (typeof window === "undefined") {
+      return "";
+    }
+
+    return (
       localStorage
         .getItem("parceiro_ref")
         ?.trim()
-        .toUpperCase() || "";
+        .toUpperCase() || ""
+    );
+  }
 
+  async function registrarIndicacaoCadastro(
+    emailCliente: string,
+    parceiroRef: string
+  ) {
     if (!parceiroRef) {
       return;
     }
 
     try {
-      const resposta = await fetch(
-        "/api/parcerias/cadastro",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            cupom: parceiroRef,
-            emailCliente,
-          }),
-        }
-      );
+      const resposta = await fetch("/api/parcerias/cadastro", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          cupom: parceiroRef,
+          emailCliente,
+        }),
+      });
+
+      const resultado = await resposta.json().catch(() => null);
 
       if (!resposta.ok) {
-        const resultado =
-          await resposta
-            .json()
-            .catch(() => null);
-
         console.error(
           "Não foi possível registrar a indicação do cadastro:",
           resultado
         );
+        return;
       }
+
+      console.log("Indicação registrada:", resultado);
     } catch (error) {
       /*
-       * O cadastro do professor não deve falhar
-       * caso o rastreamento da parceria tenha
-       * algum problema temporário.
+       * O cadastro do professor não deve falhar caso o
+       * rastreamento da parceria tenha algum problema temporário.
        */
       console.error(
         "Erro ao registrar indicação do cadastro:",
@@ -67,29 +68,52 @@ export default function CadastroPage() {
     }
   }
 
-  async function criarConta(
-    e: React.FormEvent
+  async function salvarCupomNoPerfil(
+    userId: string,
+    parceiroRef: string
   ) {
+    if (!userId || !parceiroRef) {
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          cupom_origem: parceiroRef,
+        })
+        .eq("id", userId)
+        .is("cupom_origem", null);
+
+      if (error) {
+        console.error(
+          "Não foi possível salvar o cupom de origem no perfil:",
+          error
+        );
+      }
+    } catch (error) {
+      console.error(
+        "Erro ao salvar o cupom de origem no perfil:",
+        error
+      );
+    }
+  }
+
+  async function criarConta(e: React.FormEvent) {
     e.preventDefault();
 
-    if (carregando) return;
+    if (carregando) {
+      return;
+    }
 
     setCarregando(true);
 
     try {
-      const nomeNormalizado =
-        nome.trim();
-
-      const emailNormalizado =
-        email
-          .trim()
-          .toLowerCase();
-
-      const whatsappNormalizado =
-        whatsapp.trim();
-
-      const senhaNormalizada =
-        senha.trim();
+      const nomeNormalizado = nome.trim();
+      const emailNormalizado = email.trim().toLowerCase();
+      const whatsappNormalizado = whatsapp.trim();
+      const senhaNormalizada = senha.trim();
+      const parceiroRef = obterParceiroRef();
 
       if (!nomeNormalizado) {
         alert("Informe seu nome.");
@@ -102,9 +126,7 @@ export default function CadastroPage() {
       }
 
       if (!whatsappNormalizado) {
-        alert(
-          "Informe seu telefone ou WhatsApp."
-        );
+        alert("Informe seu telefone ou WhatsApp.");
         return;
       }
 
@@ -117,24 +139,21 @@ export default function CadastroPage() {
        * 1. VERIFICA SE O E-MAIL
        * JÁ POSSUI PERFIL NO PLANEJAI
        */
-      const respostaVerificacao =
-        await fetch(
-          "/api/verificar-email",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type":
-                "application/json",
-            },
-            body: JSON.stringify({
-              email:
-                emailNormalizado,
-            }),
-          }
-        );
+      const respostaVerificacao = await fetch(
+        "/api/verificar-email",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            email: emailNormalizado,
+          }),
+        }
+      );
 
       const dadosVerificacao =
-        await respostaVerificacao.json();
+        await respostaVerificacao.json().catch(() => null);
 
       if (!respostaVerificacao.ok) {
         alert(
@@ -144,96 +163,101 @@ export default function CadastroPage() {
         return;
       }
 
-      if (dadosVerificacao.existe) {
+      if (dadosVerificacao?.existe) {
         alert(
           "Este e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
         );
 
-        window.location.href =
-          "/login";
+        window.location.href = "/login";
         return;
       }
 
       /*
        * 2. CRIA A CONTA NO SUPABASE AUTH
+       *
+       * O cupom também vai para os metadados do usuário.
+       * Assim a origem fica preservada em mais de um lugar.
        */
-      const {
-        data,
-        error,
-      } =
-        await supabase.auth.signUp({
-          email:
-            emailNormalizado,
-          password:
-            senhaNormalizada,
-          options: {
-            data: {
-              nome:
-                nomeNormalizado,
-              whatsapp:
-                whatsappNormalizado,
-            },
+      const { data, error } = await supabase.auth.signUp({
+        email: emailNormalizado,
+        password: senhaNormalizada,
+        options: {
+          data: {
+            nome: nomeNormalizado,
+            whatsapp: whatsappNormalizado,
+            ...(parceiroRef
+              ? {
+                  cupom_origem: parceiroRef,
+                }
+              : {}),
           },
-        });
+        },
+      });
 
       if (error) {
-        console.error(
-          "Erro no cadastro:",
-          error
-        );
+        console.error("Erro no cadastro:", error);
 
-        const mensagemErro =
-          error.message.toLowerCase();
+        const mensagemErro = error.message.toLowerCase();
 
         if (
-          mensagemErro.includes(
-            "already registered"
-          ) ||
-          mensagemErro.includes(
-            "already exists"
-          ) ||
-          mensagemErro.includes(
-            "user already"
-          )
+          mensagemErro.includes("already registered") ||
+          mensagemErro.includes("already exists") ||
+          mensagemErro.includes("user already")
         ) {
           alert(
             "Este e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
           );
 
-          window.location.href =
-            "/login";
+          window.location.href = "/login";
           return;
         }
 
-        alert(
-          "Erro ao criar conta: " +
-            error.message
-        );
+        alert("Erro ao criar conta: " + error.message);
         return;
       }
 
-      console.log(
-        "Cadastro criado:",
-        data.user?.id
-      );
+      if (!data.user?.id) {
+        console.error(
+          "Cadastro retornou sem identificador de usuário."
+        );
+
+        alert(
+          "A conta foi criada, mas não foi possível concluir todas as informações do cadastro."
+        );
+
+        window.location.href = "/login";
+        return;
+      }
+
+      console.log("Cadastro criado:", data.user.id);
 
       /*
-       * 3. SE O PROFESSOR VEIO DE UM LINK
-       * DE PARCEIRO, REGISTRA O CADASTRO.
+       * 3. SE HOUVER PARCEIRO, TENTA SALVAR TAMBÉM
+       * NA COLUNA profiles.cupom_origem.
        *
-       * Exemplo:
-       * ?ref=AYANNE
+       * A condição .is(..., null) evita sobrescrever uma
+       * origem já existente.
        */
-      await registrarIndicacaoCadastro(
-        emailNormalizado
-      );
+      if (parceiroRef) {
+        await salvarCupomNoPerfil(
+          data.user.id,
+          parceiroRef
+        );
+
+        /*
+         * 4. REGISTRA O CADASTRO NA TABELA indicacoes.
+         */
+        await registrarIndicacaoCadastro(
+          emailNormalizado,
+          parceiroRef
+        );
+      }
 
       alert(
         "Cadastro realizado com sucesso! Agora faça login para acessar o PlanejAI."
       );
 
-      window.location.href =
-        "/login";
+      window.location.href = "/login";
     } catch (error) {
       console.error(
         "Erro inesperado ao criar conta:",
@@ -279,9 +303,7 @@ export default function CadastroPage() {
             placeholder="E-mail"
             value={email}
             onChange={(e) =>
-              setEmail(
-                e.target.value
-              )
+              setEmail(e.target.value)
             }
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
@@ -292,9 +314,7 @@ export default function CadastroPage() {
             placeholder="Telefone / WhatsApp"
             value={whatsapp}
             onChange={(e) =>
-              setWhatsapp(
-                e.target.value
-              )
+              setWhatsapp(e.target.value)
             }
             className="w-full rounded-xl border border-slate-200 px-4 py-3 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
@@ -310,9 +330,7 @@ export default function CadastroPage() {
               placeholder="Senha"
               value={senha}
               onChange={(e) =>
-                setSenha(
-                  e.target.value
-                )
+                setSenha(e.target.value)
               }
               className="w-full rounded-xl border border-slate-200 px-4 py-3 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
               required
@@ -321,9 +339,7 @@ export default function CadastroPage() {
             <button
               type="button"
               onClick={() =>
-                setMostrarSenha(
-                  !mostrarSenha
-                )
+                setMostrarSenha(!mostrarSenha)
               }
               className="absolute right-3 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
               aria-label={
@@ -333,9 +349,7 @@ export default function CadastroPage() {
               }
             >
               {mostrarSenha ? (
-                <EyeOff
-                  size={20}
-                />
+                <EyeOff size={20} />
               ) : (
                 <Eye size={20} />
               )}
