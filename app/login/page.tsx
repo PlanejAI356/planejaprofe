@@ -10,36 +10,125 @@ export default function LoginPage() {
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
 
-  async function entrar(e: React.FormEvent) {
-    e.preventDefault();
-    setCarregando(true);
-
-    const { error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: senha.trim(),
+  async function sincronizarPerfil(accessToken: string) {
+    const resposta = await fetch("/api/perfil/sincronizar", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
     });
 
-    setCarregando(false);
+    const resultado = await resposta.json().catch(() => null);
 
-    if (error) {
-      alert(error.message);
+    if (!resposta.ok) {
+      throw new Error(
+        resultado?.erro ||
+          "Não foi possível verificar os dados da sua conta."
+      );
+    }
+
+    return resultado;
+  }
+
+  async function entrar(e: React.FormEvent) {
+    e.preventDefault();
+
+    if (carregando) return;
+
+    const emailNormalizado = email.trim().toLowerCase();
+    const senhaNormalizada = senha.trim();
+
+    if (!emailNormalizado) {
+      alert("Informe seu e-mail.");
       return;
     }
 
-    window.location.href = "/";
+    if (!senhaNormalizada) {
+      alert("Informe sua senha.");
+      return;
+    }
+
+    setCarregando(true);
+
+    try {
+      const { data, error } =
+        await supabase.auth.signInWithPassword({
+          email: emailNormalizado,
+          password: senhaNormalizada,
+        });
+
+      if (error) {
+        console.error("Erro no login:", error);
+
+        const mensagem = error.message.toLowerCase();
+
+        if (
+          mensagem.includes("invalid login credentials") ||
+          mensagem.includes("invalid credentials")
+        ) {
+          alert("E-mail ou senha incorretos.");
+          return;
+        }
+
+        if (mensagem.includes("email not confirmed")) {
+          alert(
+            "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada."
+          );
+          return;
+        }
+
+        alert(
+          "Não foi possível entrar na sua conta. Tente novamente."
+        );
+        return;
+      }
+
+      const accessToken = data.session?.access_token;
+
+      if (!data.user || !accessToken) {
+        console.error(
+          "Login concluído sem usuário ou sessão válida."
+        );
+
+        alert(
+          "Não foi possível concluir o acesso à sua conta. Tente novamente."
+        );
+        return;
+      }
+
+      await sincronizarPerfil(accessToken);
+
+      window.location.href = "/";
+    } catch (error) {
+      console.error(
+        "Erro ao verificar o perfil após o login:",
+        error
+      );
+
+      await supabase.auth.signOut().catch(() => undefined);
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível verificar sua conta. Tente novamente."
+      );
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-100 via-white to-green-100 flex items-center justify-center p-4">
-      <div className="absolute -top-32 -left-32 w-96 h-96 rounded-full bg-blue-200/40 blur-3xl" />
-      <div className="absolute -bottom-32 -right-32 w-96 h-96 rounded-full bg-green-200/50 blur-3xl" />
+    <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-100 via-white to-green-100 p-4">
+      <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl" />
+      <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-green-200/50 blur-3xl" />
 
-      <div className="relative bg-white rounded-3xl shadow-2xl border-2 border-green-200 p-8 sm:p-10 w-full max-w-md">
-        <h1 className="text-4xl font-extrabold tracking-wide text-center text-slate-900 mb-2">
+      <div className="relative w-full max-w-md rounded-3xl border-2 border-green-200 bg-white p-8 shadow-2xl sm:p-10">
+        <h1 className="mb-2 text-center text-4xl font-extrabold tracking-wide text-slate-900">
           ENTRAR
         </h1>
 
-        <p className="text-center text-slate-500 mb-8">
+        <p className="mb-8 text-center text-slate-500">
           Acesse sua conta do PlanejAI.
         </p>
 
@@ -49,7 +138,8 @@ export default function LoginPage() {
             placeholder="E-mail"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            className="w-full border border-slate-300 rounded-xl px-4 py-4 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+            autoComplete="email"
+            className="w-full rounded-xl border border-slate-300 px-4 py-4 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
           />
 
@@ -59,24 +149,33 @@ export default function LoginPage() {
               placeholder="Senha"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              className="w-full border border-slate-300 rounded-xl px-4 py-4 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+              autoComplete="current-password"
+              className="w-full rounded-xl border border-slate-300 px-4 py-4 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
               required
             />
 
             <button
               type="button"
-              onClick={() => setMostrarSenha(!mostrarSenha)}
-              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 hover:text-green-600"
-              aria-label={mostrarSenha ? "Ocultar senha" : "Mostrar senha"}
+              onClick={() =>
+                setMostrarSenha((valorAtual) => !valorAtual)
+              }
+              className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-green-600"
+              aria-label={
+                mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+              }
             >
-              {mostrarSenha ? <EyeOff size={20} /> : <Eye size={20} />}
+              {mostrarSenha ? (
+                <EyeOff size={20} />
+              ) : (
+                <Eye size={20} />
+              )}
             </button>
           </div>
 
           <div className="text-right">
             <a
               href="/recuperar-senha"
-              className="text-sm text-blue-600 hover:text-green-600 font-semibold"
+              className="text-sm font-semibold text-blue-600 hover:text-green-600"
             >
               Esqueceu sua senha?
             </a>
@@ -85,9 +184,11 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={carregando}
-            className="w-full bg-gradient-to-r from-blue-600 to-green-600 text-white py-4 rounded-xl text-lg font-bold transition hover:scale-[1.01] hover:shadow-lg disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full cursor-pointer rounded-xl bg-gradient-to-r from-blue-600 to-green-600 py-4 text-lg font-bold text-white transition hover:scale-[1.01] hover:shadow-lg disabled:cursor-not-allowed disabled:opacity-60"
           >
-            {carregando ? "Entrando..." : "Entrar"}
+            {carregando
+              ? "Verificando sua conta..."
+              : "Entrar"}
           </button>
         </form>
       </div>
