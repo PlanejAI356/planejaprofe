@@ -265,9 +265,9 @@ export default function ResultadoAtividadePage() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        {configuracao && (
-          <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-            <p className="text-sm text-slate-600">
+        <div className="nao-imprimir mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          {configuracao ? (
+            <p className="px-1 text-sm text-slate-600">
               <strong>
                 {configuracao.serie ||
                   "Turma"}
@@ -281,25 +281,25 @@ export default function ResultadoAtividadePage() {
                 ? ` • ${configuracao.quantidadeQuestoes} itens`
                 : ""}
             </p>
-          </div>
-        )}
+          ) : (
+            <div />
+          )}
 
-        {possuiGabarito && (
-          <div className="nao-imprimir mb-5">
-            <div className="mx-auto flex w-fit rounded-2xl border border-slate-200 bg-white p-1.5 shadow-sm">
+          {possuiGabarito && (
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 type="button"
                 onClick={() =>
                   selecionarVersao("aluno")
                 }
-                className={`flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 font-bold transition ${
+                className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
                   versaoSelecionada ===
                   "aluno"
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
+                    : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <UserRound size={19} />
+                <UserRound size={18} />
                 Versão do aluno
               </button>
 
@@ -310,24 +310,19 @@ export default function ResultadoAtividadePage() {
                     "professor"
                   )
                 }
-                className={`flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 font-bold transition ${
+                className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
                   versaoSelecionada ===
                   "professor"
                     ? "bg-violet-600 text-white shadow-sm"
-                    : "bg-white text-slate-600 hover:bg-slate-50"
+                    : "border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
                 }`}
               >
-                <GraduationCap size={19} />
-                Gabarito do professor
+                <GraduationCap size={18} />
+                Cópia do professor
               </button>
             </div>
-
-            <p className="mt-2 text-center text-sm text-slate-500">
-              As duas versões utilizam a
-              mesma cruzadinha.
-            </p>
-          </div>
-        )}
+          )}
+        </div>
 
         <div className="folha-imagem mx-auto w-full max-w-[794px] overflow-hidden bg-white shadow-xl">
           <img
@@ -335,7 +330,7 @@ export default function ResultadoAtividadePage() {
             alt={
               versaoSelecionada ===
               "professor"
-                ? "Gabarito da atividade gerada pelo PlanejAI"
+                ? "Cópia do professor com gabarito da atividade gerada pelo PlanejAI"
                 : "Atividade pedagógica gerada pelo PlanejAI"
             }
             className="imagem-atividade block h-auto w-full object-contain"
@@ -354,7 +349,7 @@ export default function ResultadoAtividadePage() {
             >
               {versaoSelecionada ===
               "professor"
-                ? "Visualizando: gabarito do professor"
+                ? "Visualizando: cópia do professor"
                 : "Visualizando: versão do aluno"}
             </span>
           </div>
@@ -380,7 +375,7 @@ export default function ResultadoAtividadePage() {
             <Download size={19} />
             {versaoSelecionada ===
             "professor"
-              ? "Baixar gabarito"
+              ? "Baixar cópia do professor"
               : "Baixar atividade"}
           </button>
 

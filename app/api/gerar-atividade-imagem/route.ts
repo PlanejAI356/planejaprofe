@@ -490,12 +490,18 @@ function renderizarCruzadinhaSvg(
   const altura = 1320;
   const linhas = grade.length;
   const colunas = Math.max(...grade.map((linha) => linha.length));
-  const inicioY = 128;
-  const larguraMaxGrade = 900;
-  const alturaMaxGrade = 660;
+  // A cruzadinha deve ser o elemento principal da folha.
+  // Usamos mais largura e células maiores, sem alterar os cruzamentos.
+  const inicioY = 118;
+  const larguraMaxGrade = 940;
+  const alturaMaxGrade = 720;
   const tamanhoCelula = Math.max(
-    24,
-    Math.min(48, Math.floor(larguraMaxGrade / colunas), Math.floor(alturaMaxGrade / linhas))
+    34,
+    Math.min(
+      62,
+      Math.floor(larguraMaxGrade / colunas),
+      Math.floor(alturaMaxGrade / linhas)
+    )
   );
   const larguraGrade = colunas * tamanhoCelula;
   const alturaGrade = linhas * tamanhoCelula;
@@ -522,7 +528,7 @@ function renderizarCruzadinhaSvg(
 
       if (numero) {
         celulasSvg.push(
-          `<text x="${x + 4}" y="${y + 11}" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#111827">${numero}</text>`
+          `<text x="${x + 4}" y="${y + 11}" font-family="Arial, sans-serif" font-size="${Math.max(10, Math.floor(tamanhoCelula * 0.22))}" font-weight="700" fill="#111827">${numero}</text>`
         );
       }
 
@@ -541,7 +547,7 @@ function renderizarCruzadinhaSvg(
     .filter((item) => item.direcao === "V")
     .sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
-  const pistasY = inicioY + alturaGrade + 44;
+  const pistasY = inicioY + alturaGrade + 34;
   const colunaEsquerdaX = 64;
   const colunaDireitaX = 536;
   const larguraTexto = 430;
