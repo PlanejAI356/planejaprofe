@@ -491,14 +491,15 @@ function renderizarCruzadinhaSvg(
   const linhas = grade.length;
   const colunas = Math.max(...grade.map((linha) => linha.length));
   // A cruzadinha deve ser o elemento principal da folha.
-  // Usamos mais largura e células maiores, sem alterar os cruzamentos.
-  const inicioY = 118;
-  const larguraMaxGrade = 940;
-  const alturaMaxGrade = 720;
+  // A grade usa quase toda a largura útil e cresce o máximo possível
+  // sem ultrapassar a área reservada para as pistas.
+  const inicioY = 108;
+  const larguraMaxGrade = 980;
+  const alturaMaxGrade = 780;
   const tamanhoCelula = Math.max(
-    34,
+    46,
     Math.min(
-      62,
+      76,
       Math.floor(larguraMaxGrade / colunas),
       Math.floor(alturaMaxGrade / linhas)
     )
@@ -547,7 +548,7 @@ function renderizarCruzadinhaSvg(
     .filter((item) => item.direcao === "V")
     .sort((a, b) => (a.numero || 0) - (b.numero || 0));
 
-  const pistasY = inicioY + alturaGrade + 34;
+  const pistasY = inicioY + alturaGrade + 28;
   const colunaEsquerdaX = 64;
   const colunaDireitaX = 536;
   const larguraTexto = 430;
@@ -567,9 +568,9 @@ function renderizarCruzadinhaSvg(
       const linhasTexto = quebrarTexto(`${item.numero}. ${item.pista}${resposta}`, 56);
       for (const linhaTexto of linhasTexto) {
         partes.push(
-          `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="15" fill="#1f2937">${escaparXml(linhaTexto)}</text>`
+          `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="17" fill="#1f2937">${escaparXml(linhaTexto)}</text>`
         );
-        y += 20;
+        y += 23;
       }
       y += 8;
     }
@@ -577,9 +578,9 @@ function renderizarCruzadinhaSvg(
     return partes.join("\n");
   }
 
-  const titulo = mostrarRespostas ? "CRUZADINHA — GABARITO DO PROFESSOR" : "CRUZADINHA";
+  const titulo = mostrarRespostas ? "CRUZADINHA — CÓPIA DO PROFESSOR" : "CRUZADINHA";
   const comando = mostrarRespostas
-    ? "Confira abaixo a mesma grade da atividade do estudante, agora preenchida."
+    ? "Mesma cruzadinha da versão do aluno, com todas as respostas preenchidas."
     : "Leia as pistas e complete a cruzadinha. As palavras se cruzam pelas letras em comum.";
 
   return `
