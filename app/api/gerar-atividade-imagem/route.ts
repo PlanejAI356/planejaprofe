@@ -402,22 +402,31 @@ function montarGradeCompleta(itens: ItemCruzadinha[]) {
 }
 
 function numerarCruzadinha(posicionadas: PalavraPosicionada[]) {
-  const inicios = new Map<string, number>();
   const ordenadas = [...posicionadas].sort(
-    (a, b) => a.linha - b.linha || a.coluna - b.coluna
+    (a, b) =>
+      a.linha - b.linha ||
+      a.coluna - b.coluna ||
+      a.direcao.localeCompare(b.direcao)
   );
 
   let numero = 1;
+
   for (const palavra of ordenadas) {
-    const chave = `${palavra.linha}:${palavra.coluna}`;
-    if (!inicios.has(chave)) {
-      inicios.set(chave, numero++);
-    }
-    palavra.numero = inicios.get(chave);
+    palavra.numero = numero++;
+  }
+
+  const mapa = new Map<string, number>();
+  for (const palavra of ordenadas) {
+    mapa.set(
+      `${palavra.linha}:${palavra.coluna}:${palavra.direcao}`,
+      palavra.numero || 0
+    );
   }
 
   for (const palavra of posicionadas) {
-    palavra.numero = inicios.get(`${palavra.linha}:${palavra.coluna}`);
+    palavra.numero = mapa.get(
+      `${palavra.linha}:${palavra.coluna}:${palavra.direcao}`
+    );
   }
 }
 
@@ -447,9 +456,31 @@ function recortarGrade(
 
 function validarGrade(
   grade: GradeCruzadinha,
-  posicionadas: PalavraPosicionada[]
+  posicionadas: PalavraPosicionada[],
+  quantidadeEsperada?: number | null
 ) {
   if (!posicionadas.length) return false;
+
+  if (
+    quantidadeEsperada !== null &&
+    quantidadeEsperada !== undefined &&
+    posicionadas.length !== quantidadeEsperada
+  ) {
+    return false;
+  }
+
+  const numeros = posicionadas.map((item) => item.numero);
+  if (
+    numeros.some((numero) => !numero) ||
+    new Set(numeros).size !== posicionadas.length
+  ) {
+    return false;
+  }
+
+  const pistas = posicionadas.map((item) => item.pista.trim().toLowerCase());
+  if (new Set(pistas).size !== posicionadas.length) {
+    return false;
+  }
 
   for (const palavra of posicionadas) {
     const dl = palavra.direcao === "V" ? 1 : 0;
@@ -458,6 +489,7 @@ function validarGrade(
     for (let i = 0; i < palavra.palavraGrade.length; i++) {
       const l = palavra.linha + dl * i;
       const c = palavra.coluna + dc * i;
+
       if (grade[l]?.[c]?.letra !== palavra.palavraGrade[i]) {
         return false;
       }
@@ -468,6 +500,7 @@ function validarGrade(
     const participaDeCruzamento = posicionadas.every((palavra) => {
       const dl = palavra.direcao === "V" ? 1 : 0;
       const dc = palavra.direcao === "H" ? 1 : 0;
+
       return Array.from({ length: palavra.palavraGrade.length }).some((_, i) => {
         const l = palavra.linha + dl * i;
         const c = palavra.coluna + dc * i;
@@ -508,9 +541,12 @@ function renderizarCruzadinhaSvg(
   const alturaGrade = linhas * tamanhoCelula;
   const inicioX = Math.floor((largura - larguraGrade) / 2);
 
-  const mapaNumeros = new Map<string, number>();
+  const mapaNumeros = new Map<string, number[]>();
   for (const palavra of posicionadas) {
-    mapaNumeros.set(`${palavra.linha}:${palavra.coluna}`, palavra.numero || 0);
+    const chave = `${palavra.linha}:${palavra.coluna}`;
+    const atuais = mapaNumeros.get(chave) || [];
+    atuais.push(palavra.numero || 0);
+    mapaNumeros.set(chave, atuais);
   }
 
   const celulasSvg: string[] = [];
@@ -521,15 +557,15 @@ function renderizarCruzadinhaSvg(
 
       const x = inicioX + c * tamanhoCelula;
       const y = inicioY + l * tamanhoCelula;
-      const numero = mapaNumeros.get(`${l}:${c}`);
+      const numeros = mapaNumeros.get(`${l}:${c}`) || [];
 
       celulasSvg.push(
         `<rect x="${x}" y="${y}" width="${tamanhoCelula}" height="${tamanhoCelula}" fill="white" stroke="#111827" stroke-width="1.4"/>`
       );
 
-      if (numero) {
+      if (numeros.length) {
         celulasSvg.push(
-          `<text x="${x + 4}" y="${y + 11}" font-family="Arial, sans-serif" font-size="${Math.max(10, Math.floor(tamanhoCelula * 0.22))}" font-weight="700" fill="#111827">${numero}</text>`
+          `<text x="${x + 4}" y="${y + 12}" font-family="Arial, sans-serif" font-size="${Math.max(9, Math.floor(tamanhoCelula * 0.18))}" font-weight="700" fill="#111827">${numeros.join("/")}</text>`
         );
       }
 
@@ -706,7 +742,16 @@ REGRAS OBRIGATÓRIAS:
     throw new Error("A cruzadinha precisa de pelo menos duas palavras válidas.");
   }
 
-  return itens.slice(0, Math.min(quantidade, 20));
+  const limite = Math.min(quantidade, 20);
+  const selecionados = itens.slice(0, limite);
+
+  if (selecionados.length !== limite) {
+    throw new Error(
+      `A inteligência artificial retornou ${selecionados.length} palavras válidas, mas eram necessárias ${limite}.`
+    );
+  }
+
+  return selecionados;
 }
 
 async function gerarCruzadinhaDeterministica(args: {
@@ -727,8 +772,32 @@ async function gerarCruzadinhaDeterministica(args: {
       numerarCruzadinha(montada.posicionadas);
       const recortada = recortarGrade(montada.grade, montada.posicionadas);
 
-      if (!validarGrade(recortada.grade, recortada.posicionadas)) {
-        throw new Error("A validação interna da cruzadinha falhou. Tente gerar novamente.");
+      const quantidadeEsperada =
+        args.quantidadeQuestoes ??
+        (args.palavrasCruzadinha
+          ? extrairPalavrasInformadas(args.palavrasCruzadinha).length
+          : itens.length);
+
+      if (
+        recortada.posicionadas.length !== quantidadeEsperada ||
+        !validarGrade(
+          recortada.grade,
+          recortada.posicionadas,
+          quantidadeEsperada
+        )
+      ) {
+        if (!args.palavrasCruzadinha) {
+          itens = await criarItensCruzadinha({
+            ...args,
+            pedido: `${args.pedido}
+A cruzadinha anterior não passou na validação. Gere exatamente ${quantidadeEsperada} palavras diferentes, com muitas letras em comum entre si, para que TODAS possam ser cruzadas.`,
+          });
+          continue;
+        }
+
+        throw new Error(
+          `Não foi possível montar uma cruzadinha válida com exatamente ${quantidadeEsperada} palavras. Tente informar palavras com mais letras em comum.`
+        );
       }
 
       const svgAluno = renderizarCruzadinhaSvg(
