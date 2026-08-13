@@ -45,16 +45,42 @@ export default function FinalizarAtividadePage() {
   const [erro, setErro] = useState("");
   const [mensagem, setMensagem] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [versaoSelecionada, setVersaoSelecionada] =
+    useState<"aluno" | "professor">("aluno");
 
   useEffect(() => {
     try {
+      const imagemSelecionada =
+        localStorage.getItem(
+          "atividadeImagemSelecionada"
+        );
+
+      const imagemAluno =
+        localStorage.getItem(
+          "atividadeImagem"
+        );
+
       const imagemSalva =
-        localStorage.getItem("atividadeImagem");
+        imagemSelecionada &&
+        imagemSelecionada.startsWith("data:image/")
+          ? imagemSelecionada
+          : imagemAluno;
 
       const configuracaoSalva =
         localStorage.getItem(
           "configuracaoAtividadeImagem"
         );
+
+      const versaoSalva =
+        localStorage.getItem(
+          "atividadeVersaoSelecionada"
+        );
+
+      setVersaoSelecionada(
+        versaoSalva === "professor"
+          ? "professor"
+          : "aluno"
+      );
 
       const cabecalhoSalvoLocal =
         localStorage.getItem("cabecalhoAtividade") ||
@@ -179,7 +205,10 @@ export default function FinalizarAtividadePage() {
         cabecalhoRef.current,
         imagem,
         {
-          tituloArquivo: "atividade-planejai",
+          tituloArquivo:
+            versaoSelecionada === "professor"
+              ? "atividade-planejai-gabarito"
+              : "atividade-planejai",
         }
       );
     } catch (error) {
@@ -205,7 +234,10 @@ export default function FinalizarAtividadePage() {
         cabecalhoRef.current,
         imagem,
         {
-          tituloArquivo: "atividade-planejai",
+          tituloArquivo:
+            versaoSelecionada === "professor"
+              ? "atividade-planejai-gabarito"
+              : "atividade-planejai",
         }
       );
     } catch (error) {

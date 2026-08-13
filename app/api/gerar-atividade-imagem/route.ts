@@ -31,6 +31,743 @@ type CorpoRequisicao = {
   palavrasAutoditado?: string;
 };
 
+
+type ItemCruzadinha = {
+  palavra: string;
+  pista: string;
+};
+
+type DirecaoCruzadinha = "H" | "V";
+
+type PalavraPosicionada = ItemCruzadinha & {
+  palavraGrade: string;
+  linha: number;
+  coluna: number;
+  direcao: DirecaoCruzadinha;
+  numero?: number;
+};
+
+type CelulaCruzadinha = {
+  letra: string;
+  palavras: number[];
+};
+
+type GradeCruzadinha = Array<Array<CelulaCruzadinha | null>>;
+
+function removerAcentos(valor: string) {
+  return valor.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+}
+
+function normalizarPalavraGrade(valor: string) {
+  return removerAcentos(valor)
+    .toUpperCase()
+    .replace(/[^A-Z0-9]/g, "");
+}
+
+function limparPalavraExibicao(valor: string) {
+  return valor
+    .trim()
+    .replace(/\s+/g, " ")
+    .replace(/^[\-–—,.;:!?]+|[\-–—,.;:!?]+$/g, "");
+}
+
+function escaparXml(valor: string) {
+  return valor
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&apos;");
+}
+
+function quebrarTexto(valor: string, maximo = 58) {
+  const palavras = valor.trim().split(/\s+/).filter(Boolean);
+  const linhas: string[] = [];
+  let atual = "";
+
+  for (const palavra of palavras) {
+    const candidato = atual ? `${atual} ${palavra}` : palavra;
+    if (candidato.length <= maximo) {
+      atual = candidato;
+    } else {
+      if (atual) linhas.push(atual);
+      atual = palavra;
+    }
+  }
+
+  if (atual) linhas.push(atual);
+  return linhas.length ? linhas : [""];
+}
+
+function extrairPalavrasInformadas(valor: string) {
+  return valor
+    .split(/[\n,;|]+/)
+    .map(limparPalavraExibicao)
+    .filter(Boolean);
+}
+
+function deduplicarItens(itens: ItemCruzadinha[]) {
+  const vistos = new Set<string>();
+  const resultado: ItemCruzadinha[] = [];
+
+  for (const item of itens) {
+    const palavra = limparPalavraExibicao(String(item.palavra || ""));
+    const pista = String(item.pista || "").trim();
+    const chave = normalizarPalavraGrade(palavra);
+
+    if (!chave || chave.length < 2 || !pista || vistos.has(chave)) {
+      continue;
+    }
+
+    vistos.add(chave);
+    resultado.push({ palavra, pista });
+  }
+
+  return resultado;
+}
+
+function dentro(linha: number, coluna: number, tamanho: number) {
+  return linha >= 0 && coluna >= 0 && linha < tamanho && coluna < tamanho;
+}
+
+function criarGradeVazia(tamanho: number): GradeCruzadinha {
+  return Array.from({ length: tamanho }, () =>
+    Array.from({ length: tamanho }, () => null)
+  );
+}
+
+function podePosicionar(
+  grade: GradeCruzadinha,
+  palavra: string,
+  linha: number,
+  coluna: number,
+  direcao: DirecaoCruzadinha
+) {
+  const tamanho = grade.length;
+  const dl = direcao === "V" ? 1 : 0;
+  const dc = direcao === "H" ? 1 : 0;
+  const fimLinha = linha + dl * (palavra.length - 1);
+  const fimColuna = coluna + dc * (palavra.length - 1);
+
+  if (!dentro(linha, coluna, tamanho) || !dentro(fimLinha, fimColuna, tamanho)) {
+    return null;
+  }
+
+  const antesLinha = linha - dl;
+  const antesColuna = coluna - dc;
+  const depoisLinha = fimLinha + dl;
+  const depoisColuna = fimColuna + dc;
+
+  if (
+    dentro(antesLinha, antesColuna, tamanho) &&
+    grade[antesLinha][antesColuna]
+  ) {
+    return null;
+  }
+
+  if (
+    dentro(depoisLinha, depoisColuna, tamanho) &&
+    grade[depoisLinha][depoisColuna]
+  ) {
+    return null;
+  }
+
+  let cruzamentos = 0;
+
+  for (let i = 0; i < palavra.length; i++) {
+    const l = linha + dl * i;
+    const c = coluna + dc * i;
+    const celula = grade[l][c];
+
+    if (celula) {
+      if (celula.letra !== palavra[i]) return null;
+      cruzamentos++;
+      continue;
+    }
+
+    if (direcao === "H") {
+      if (
+        (dentro(l - 1, c, tamanho) && grade[l - 1][c]) ||
+        (dentro(l + 1, c, tamanho) && grade[l + 1][c])
+      ) {
+        return null;
+      }
+    } else {
+      if (
+        (dentro(l, c - 1, tamanho) && grade[l][c - 1]) ||
+        (dentro(l, c + 1, tamanho) && grade[l][c + 1])
+      ) {
+        return null;
+      }
+    }
+  }
+
+  return { cruzamentos };
+}
+
+function colocarPalavra(
+  grade: GradeCruzadinha,
+  palavra: string,
+  linha: number,
+  coluna: number,
+  direcao: DirecaoCruzadinha,
+  indicePalavra: number
+) {
+  const dl = direcao === "V" ? 1 : 0;
+  const dc = direcao === "H" ? 1 : 0;
+
+  for (let i = 0; i < palavra.length; i++) {
+    const l = linha + dl * i;
+    const c = coluna + dc * i;
+    const existente = grade[l][c];
+
+    if (existente) {
+      existente.palavras.push(indicePalavra);
+    } else {
+      grade[l][c] = {
+        letra: palavra[i],
+        palavras: [indicePalavra],
+      };
+    }
+  }
+}
+
+function limitesDaGrade(grade: GradeCruzadinha) {
+  let minLinha = grade.length;
+  let maxLinha = -1;
+  let minColuna = grade.length;
+  let maxColuna = -1;
+
+  for (let l = 0; l < grade.length; l++) {
+    for (let c = 0; c < grade.length; c++) {
+      if (!grade[l][c]) continue;
+      minLinha = Math.min(minLinha, l);
+      maxLinha = Math.max(maxLinha, l);
+      minColuna = Math.min(minColuna, c);
+      maxColuna = Math.max(maxColuna, c);
+    }
+  }
+
+  if (maxLinha < 0) {
+    return { minLinha: 0, maxLinha: 0, minColuna: 0, maxColuna: 0 };
+  }
+
+  return { minLinha, maxLinha, minColuna, maxColuna };
+}
+
+function areaAposPosicionamento(
+  grade: GradeCruzadinha,
+  palavra: string,
+  linha: number,
+  coluna: number,
+  direcao: DirecaoCruzadinha
+) {
+  const atual = limitesDaGrade(grade);
+  const dl = direcao === "V" ? 1 : 0;
+  const dc = direcao === "H" ? 1 : 0;
+  const fimLinha = linha + dl * (palavra.length - 1);
+  const fimColuna = coluna + dc * (palavra.length - 1);
+
+  const minLinha = Math.min(atual.minLinha, linha, fimLinha);
+  const maxLinha = Math.max(atual.maxLinha, linha, fimLinha);
+  const minColuna = Math.min(atual.minColuna, coluna, fimColuna);
+  const maxColuna = Math.max(atual.maxColuna, coluna, fimColuna);
+
+  return (maxLinha - minLinha + 1) * (maxColuna - minColuna + 1);
+}
+
+function tentarMontarGrade(itens: ItemCruzadinha[], tamanho: number) {
+  const preparados = itens
+    .map((item) => ({ ...item, palavraGrade: normalizarPalavraGrade(item.palavra) }))
+    .filter((item) => item.palavraGrade.length >= 2 && item.palavraGrade.length <= tamanho - 2)
+    .sort((a, b) => b.palavraGrade.length - a.palavraGrade.length);
+
+  if (!preparados.length) return null;
+
+  const grade = criarGradeVazia(tamanho);
+  const posicionadas: PalavraPosicionada[] = [];
+  const primeira = preparados[0];
+  const primeiraLinha = Math.floor(tamanho / 2);
+  const primeiraColuna = Math.max(1, Math.floor((tamanho - primeira.palavraGrade.length) / 2));
+
+  colocarPalavra(
+    grade,
+    primeira.palavraGrade,
+    primeiraLinha,
+    primeiraColuna,
+    "H",
+    0
+  );
+
+  posicionadas.push({
+    ...primeira,
+    linha: primeiraLinha,
+    coluna: primeiraColuna,
+    direcao: "H",
+  });
+
+  for (let indice = 1; indice < preparados.length; indice++) {
+    const item = preparados[indice];
+    let melhor:
+      | {
+          linha: number;
+          coluna: number;
+          direcao: DirecaoCruzadinha;
+          cruzamentos: number;
+          area: number;
+        }
+      | undefined;
+
+    for (let i = 0; i < item.palavraGrade.length; i++) {
+      const letra = item.palavraGrade[i];
+
+      for (let l = 0; l < tamanho; l++) {
+        for (let c = 0; c < tamanho; c++) {
+          const celula = grade[l][c];
+          if (!celula || celula.letra !== letra) continue;
+
+          for (const direcao of ["H", "V"] as DirecaoCruzadinha[]) {
+            const linha = direcao === "V" ? l - i : l;
+            const coluna = direcao === "H" ? c - i : c;
+            const validacao = podePosicionar(
+              grade,
+              item.palavraGrade,
+              linha,
+              coluna,
+              direcao
+            );
+
+            if (!validacao || validacao.cruzamentos < 1) continue;
+
+            const area = areaAposPosicionamento(
+              grade,
+              item.palavraGrade,
+              linha,
+              coluna,
+              direcao
+            );
+
+            if (
+              !melhor ||
+              validacao.cruzamentos > melhor.cruzamentos ||
+              (validacao.cruzamentos === melhor.cruzamentos && area < melhor.area)
+            ) {
+              melhor = {
+                linha,
+                coluna,
+                direcao,
+                cruzamentos: validacao.cruzamentos,
+                area,
+              };
+            }
+          }
+        }
+      }
+    }
+
+    if (!melhor) {
+      continue;
+    }
+
+    const indicePosicionada = posicionadas.length;
+    colocarPalavra(
+      grade,
+      item.palavraGrade,
+      melhor.linha,
+      melhor.coluna,
+      melhor.direcao,
+      indicePosicionada
+    );
+
+    posicionadas.push({
+      ...item,
+      linha: melhor.linha,
+      coluna: melhor.coluna,
+      direcao: melhor.direcao,
+    });
+  }
+
+  return { grade, posicionadas };
+}
+
+function montarGradeCompleta(itens: ItemCruzadinha[]) {
+  for (const tamanho of [17, 19, 21, 23, 25]) {
+    const resultado = tentarMontarGrade(itens, tamanho);
+    if (resultado && resultado.posicionadas.length === itens.length) {
+      return resultado;
+    }
+  }
+
+  return null;
+}
+
+function numerarCruzadinha(posicionadas: PalavraPosicionada[]) {
+  const inicios = new Map<string, number>();
+  const ordenadas = [...posicionadas].sort(
+    (a, b) => a.linha - b.linha || a.coluna - b.coluna
+  );
+
+  let numero = 1;
+  for (const palavra of ordenadas) {
+    const chave = `${palavra.linha}:${palavra.coluna}`;
+    if (!inicios.has(chave)) {
+      inicios.set(chave, numero++);
+    }
+    palavra.numero = inicios.get(chave);
+  }
+
+  for (const palavra of posicionadas) {
+    palavra.numero = inicios.get(`${palavra.linha}:${palavra.coluna}`);
+  }
+}
+
+function recortarGrade(
+  grade: GradeCruzadinha,
+  posicionadas: PalavraPosicionada[]
+) {
+  const limites = limitesDaGrade(grade);
+  const margem = 1;
+  const minLinha = Math.max(0, limites.minLinha - margem);
+  const maxLinha = Math.min(grade.length - 1, limites.maxLinha + margem);
+  const minColuna = Math.max(0, limites.minColuna - margem);
+  const maxColuna = Math.min(grade.length - 1, limites.maxColuna + margem);
+
+  const gradeRecortada = grade
+    .slice(minLinha, maxLinha + 1)
+    .map((linha) => linha.slice(minColuna, maxColuna + 1));
+
+  const palavrasAjustadas = posicionadas.map((palavra) => ({
+    ...palavra,
+    linha: palavra.linha - minLinha,
+    coluna: palavra.coluna - minColuna,
+  }));
+
+  return { grade: gradeRecortada, posicionadas: palavrasAjustadas };
+}
+
+function validarGrade(
+  grade: GradeCruzadinha,
+  posicionadas: PalavraPosicionada[]
+) {
+  if (!posicionadas.length) return false;
+
+  for (const palavra of posicionadas) {
+    const dl = palavra.direcao === "V" ? 1 : 0;
+    const dc = palavra.direcao === "H" ? 1 : 0;
+
+    for (let i = 0; i < palavra.palavraGrade.length; i++) {
+      const l = palavra.linha + dl * i;
+      const c = palavra.coluna + dc * i;
+      if (grade[l]?.[c]?.letra !== palavra.palavraGrade[i]) {
+        return false;
+      }
+    }
+  }
+
+  if (posicionadas.length > 1) {
+    const participaDeCruzamento = posicionadas.every((palavra) => {
+      const dl = palavra.direcao === "V" ? 1 : 0;
+      const dc = palavra.direcao === "H" ? 1 : 0;
+      return Array.from({ length: palavra.palavraGrade.length }).some((_, i) => {
+        const l = palavra.linha + dl * i;
+        const c = palavra.coluna + dc * i;
+        return (grade[l]?.[c]?.palavras.length || 0) > 1;
+      });
+    });
+
+    if (!participaDeCruzamento) return false;
+  }
+
+  return true;
+}
+
+function renderizarCruzadinhaSvg(
+  grade: GradeCruzadinha,
+  posicionadas: PalavraPosicionada[],
+  mostrarRespostas: boolean
+) {
+  const largura = 1024;
+  const altura = 1320;
+  const linhas = grade.length;
+  const colunas = Math.max(...grade.map((linha) => linha.length));
+  const inicioY = 128;
+  const larguraMaxGrade = 900;
+  const alturaMaxGrade = 660;
+  const tamanhoCelula = Math.max(
+    24,
+    Math.min(48, Math.floor(larguraMaxGrade / colunas), Math.floor(alturaMaxGrade / linhas))
+  );
+  const larguraGrade = colunas * tamanhoCelula;
+  const alturaGrade = linhas * tamanhoCelula;
+  const inicioX = Math.floor((largura - larguraGrade) / 2);
+
+  const mapaNumeros = new Map<string, number>();
+  for (const palavra of posicionadas) {
+    mapaNumeros.set(`${palavra.linha}:${palavra.coluna}`, palavra.numero || 0);
+  }
+
+  const celulasSvg: string[] = [];
+  for (let l = 0; l < linhas; l++) {
+    for (let c = 0; c < colunas; c++) {
+      const celula = grade[l]?.[c];
+      if (!celula) continue;
+
+      const x = inicioX + c * tamanhoCelula;
+      const y = inicioY + l * tamanhoCelula;
+      const numero = mapaNumeros.get(`${l}:${c}`);
+
+      celulasSvg.push(
+        `<rect x="${x}" y="${y}" width="${tamanhoCelula}" height="${tamanhoCelula}" fill="white" stroke="#111827" stroke-width="1.4"/>`
+      );
+
+      if (numero) {
+        celulasSvg.push(
+          `<text x="${x + 4}" y="${y + 11}" font-family="Arial, sans-serif" font-size="9" font-weight="700" fill="#111827">${numero}</text>`
+        );
+      }
+
+      if (mostrarRespostas) {
+        celulasSvg.push(
+          `<text x="${x + tamanhoCelula / 2}" y="${y + tamanhoCelula * 0.68}" text-anchor="middle" font-family="Arial, sans-serif" font-size="${Math.max(15, Math.floor(tamanhoCelula * 0.52))}" font-weight="700" fill="#111827">${escaparXml(celula.letra)}</text>`
+        );
+      }
+    }
+  }
+
+  const horizontais = posicionadas
+    .filter((item) => item.direcao === "H")
+    .sort((a, b) => (a.numero || 0) - (b.numero || 0));
+  const verticais = posicionadas
+    .filter((item) => item.direcao === "V")
+    .sort((a, b) => (a.numero || 0) - (b.numero || 0));
+
+  const pistasY = inicioY + alturaGrade + 44;
+  const colunaEsquerdaX = 64;
+  const colunaDireitaX = 536;
+  const larguraTexto = 430;
+
+  function blocoPistas(
+    titulo: string,
+    itens: PalavraPosicionada[],
+    x: number
+  ) {
+    const partes: string[] = [
+      `<text x="${x}" y="${pistasY}" font-family="Arial, sans-serif" font-size="21" font-weight="700" fill="#111827">${titulo}</text>`,
+    ];
+    let y = pistasY + 30;
+
+    for (const item of itens) {
+      const resposta = mostrarRespostas ? ` — ${item.palavra.toUpperCase()}` : "";
+      const linhasTexto = quebrarTexto(`${item.numero}. ${item.pista}${resposta}`, 56);
+      for (const linhaTexto of linhasTexto) {
+        partes.push(
+          `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="15" fill="#1f2937">${escaparXml(linhaTexto)}</text>`
+        );
+        y += 20;
+      }
+      y += 8;
+    }
+
+    return partes.join("\n");
+  }
+
+  const titulo = mostrarRespostas ? "CRUZADINHA — GABARITO DO PROFESSOR" : "CRUZADINHA";
+  const comando = mostrarRespostas
+    ? "Confira abaixo a mesma grade da atividade do estudante, agora preenchida."
+    : "Leia as pistas e complete a cruzadinha. As palavras se cruzam pelas letras em comum.";
+
+  return `
+<svg xmlns="http://www.w3.org/2000/svg" width="${largura}" height="${altura}" viewBox="0 0 ${largura} ${altura}">
+  <rect width="100%" height="100%" fill="white"/>
+  <text x="512" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">${escaparXml(titulo)}</text>
+  <text x="512" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#374151">${escaparXml(comando)}</text>
+  ${celulasSvg.join("\n")}
+  ${blocoPistas("HORIZONTAIS", horizontais, colunaEsquerdaX)}
+  ${blocoPistas("VERTICAIS", verticais, colunaDireitaX)}
+  <text x="${largura - 64}" y="${altura - 28}" text-anchor="end" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">PlanejAI</text>
+</svg>`.trim();
+}
+
+function svgParaDataUrl(svg: string) {
+  return `data:image/svg+xml;base64,${Buffer.from(svg, "utf8").toString("base64")}`;
+}
+
+async function criarItensCruzadinha({
+  etapaEnsino,
+  serie,
+  disciplina,
+  pedido,
+  quantidadeQuestoes,
+  tipoPistaCruzadinha,
+  palavrasCruzadinha,
+}: {
+  etapaEnsino: string;
+  serie: string;
+  disciplina: string;
+  pedido: string;
+  quantidadeQuestoes: number | null;
+  tipoPistaCruzadinha: string;
+  palavrasCruzadinha: string;
+}) {
+  const informadas = extrairPalavrasInformadas(palavrasCruzadinha);
+  const quantidade = Math.max(
+    informadas.length || 0,
+    quantidadeQuestoes ?? (informadas.length || 10)
+  );
+
+  const palavrasObrigatorias = informadas.length
+    ? `PALAVRAS OBRIGATÓRIAS:\n${informadas.map((p) => `- ${p}`).join("\n")}`
+    : "O professor não informou palavras obrigatórias. Escolha palavras diretamente relacionadas ao conteúdo.";
+
+  const resposta = await openai.chat.completions.create({
+    model: "gpt-4.1-mini",
+    temperature: 0.2,
+    response_format: { type: "json_object" },
+    messages: [
+      {
+        role: "system",
+        content:
+          "Você cria dados para cruzadinhas escolares em português do Brasil. Responda somente JSON válido.",
+      },
+      {
+        role: "user",
+        content: `
+Crie os dados de UMA cruzadinha escolar.
+
+Etapa: ${etapaEnsino}
+Série/turma: ${serie}
+Disciplina: ${disciplina}
+Pedido do professor: ${pedido}
+Formato das pistas: ${tipoPistaCruzadinha}
+Quantidade desejada: ${quantidade}
+
+${palavrasObrigatorias}
+
+REGRAS OBRIGATÓRIAS:
+- Retorne exatamente um objeto JSON no formato: {"itens":[{"palavra":"...","pista":"..."}]}.
+- Cada item deve ter UMA palavra-resposta e UMA pista.
+- Preferir palavras únicas, sem espaços, com 3 a 14 caracteres de grade.
+- Usar ortografia correta do português do Brasil.
+- Evitar respostas repetidas ou quase iguais.
+- As pistas devem ser objetivas, não ambíguas e adequadas a ${serie}.
+- Se houver palavras obrigatórias, manter todas exatamente como informadas e criar pista para cada uma.
+- Se faltar quantidade para chegar a ${quantidade}, completar com palavras do mesmo conteúdo.
+- Não colocar a resposta dentro da pista.
+- Não numerar as pistas; o código fará a numeração.
+`.trim(),
+      },
+    ],
+  });
+
+  const conteudo = resposta.choices[0]?.message?.content || "";
+  let parsed: { itens?: ItemCruzadinha[] };
+
+  try {
+    parsed = JSON.parse(conteudo) as { itens?: ItemCruzadinha[] };
+  } catch {
+    throw new Error("Não foi possível organizar as palavras e pistas da cruzadinha.");
+  }
+
+  let itens = deduplicarItens(Array.isArray(parsed.itens) ? parsed.itens : []);
+
+  if (informadas.length) {
+    const mapa = new Map(
+      itens.map((item) => [normalizarPalavraGrade(item.palavra), item])
+    );
+
+    const obrigatoriasComPista: ItemCruzadinha[] = [];
+    for (const palavra of informadas) {
+      const chave = normalizarPalavraGrade(palavra);
+      const correspondente = mapa.get(chave);
+      if (!correspondente) {
+        throw new Error(`Não foi possível criar uma pista segura para a palavra "${palavra}".`);
+      }
+      obrigatoriasComPista.push({
+        palavra,
+        pista: correspondente.pista,
+      });
+    }
+
+    const extras = itens.filter(
+      (item) => !informadas.some((p) => normalizarPalavraGrade(p) === normalizarPalavraGrade(item.palavra))
+    );
+
+    itens = deduplicarItens([...obrigatoriasComPista, ...extras]);
+  }
+
+  if (itens.length < 2) {
+    throw new Error("A cruzadinha precisa de pelo menos duas palavras válidas.");
+  }
+
+  return itens.slice(0, Math.min(quantidade, 20));
+}
+
+async function gerarCruzadinhaDeterministica(args: {
+  etapaEnsino: string;
+  serie: string;
+  disciplina: string;
+  pedido: string;
+  quantidadeQuestoes: number | null;
+  tipoPistaCruzadinha: string;
+  palavrasCruzadinha: string;
+}) {
+  let itens = await criarItensCruzadinha(args);
+
+  for (let tentativa = 0; tentativa < 3; tentativa++) {
+    const montada = montarGradeCompleta(itens);
+
+    if (montada) {
+      numerarCruzadinha(montada.posicionadas);
+      const recortada = recortarGrade(montada.grade, montada.posicionadas);
+
+      if (!validarGrade(recortada.grade, recortada.posicionadas)) {
+        throw new Error("A validação interna da cruzadinha falhou. Tente gerar novamente.");
+      }
+
+      const svgAluno = renderizarCruzadinhaSvg(
+        recortada.grade,
+        recortada.posicionadas,
+        false
+      );
+      const svgProfessor = renderizarCruzadinhaSvg(
+        recortada.grade,
+        recortada.posicionadas,
+        true
+      );
+
+      return {
+        imagem: svgParaDataUrl(svgAluno),
+        imagemProfessor: svgParaDataUrl(svgProfessor),
+        cruzadinha: {
+          palavras: recortada.posicionadas.map((item) => ({
+            numero: item.numero,
+            palavra: item.palavra,
+            pista: item.pista,
+            direcao: item.direcao,
+            linha: item.linha,
+            coluna: item.coluna,
+            quantidadeLetras: item.palavraGrade.length,
+          })),
+        },
+      };
+    }
+
+    // Se todas as palavras não couberem, pede um novo conjunto com melhor capacidade de cruzamento.
+    if (!args.palavrasCruzadinha) {
+      itens = await criarItensCruzadinha({
+        ...args,
+        pedido: `${args.pedido}\nEscolha palavras com letras em comum entre si para facilitar cruzamentos reais.`,
+      });
+    } else {
+      break;
+    }
+  }
+
+  throw new Error(
+    "Não foi possível montar uma cruzadinha em que todas as palavras se cruzem corretamente. Tente usar palavras com mais letras em comum."
+  );
+}
+
 export async function POST(request: Request) {
   try {
     const body =
@@ -163,6 +900,30 @@ export async function POST(request: Request) {
         },
         { status: 400 }
       );
+    }
+
+
+    /*
+     * CRUZADINHA: fluxo especial e determinístico.
+     * A IA cria apenas palavras/pistas em JSON.
+     * A grade, os cruzamentos, a numeração e o gabarito são montados pelo código.
+     */
+    if (tipoAtividade === "cruzadinha") {
+      const cruzadinha = await gerarCruzadinhaDeterministica({
+        etapaEnsino,
+        serie,
+        disciplina,
+        pedido,
+        quantidadeQuestoes,
+        tipoPistaCruzadinha,
+        palavrasCruzadinha,
+      });
+
+      return NextResponse.json({
+        ...cruzadinha,
+        promptFinal:
+          "Cruzadinha gerada por fluxo determinístico: palavras e pistas em JSON + grade validada pelo código.",
+      });
     }
 
     /*
