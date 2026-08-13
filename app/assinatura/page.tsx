@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";ssss
+import { useState } from "react";
 
 import {
   BadgeCheck,
