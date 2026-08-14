@@ -39,8 +39,7 @@ export async function exportarAtividade(
   const cabecalhoHtml =
     cabecalhoElemento?.innerHTML || "";
 
-  const iframe =
-    document.createElement("iframe");
+  const iframe = document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -50,23 +49,14 @@ export async function exportarAtividade(
   iframe.style.border = "0";
   iframe.style.opacity = "0";
 
-  iframe.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  iframe.setAttribute("aria-hidden", "true");
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao =
-    iframe.contentWindow;
+  const janelaImpressao = iframe.contentWindow;
+  const documentoImpressao = iframe.contentDocument;
 
-  const documentoImpressao =
-    iframe.contentDocument;
-
-  if (
-    !janelaImpressao ||
-    !documentoImpressao
-  ) {
+  if (!janelaImpressao || !documentoImpressao) {
     iframe.remove();
 
     throw new Error(
@@ -87,9 +77,7 @@ export async function exportarAtividade(
           content="width=device-width, initial-scale=1"
         />
 
-        <title>
-          ${escaparHtml(tituloArquivo)}
-        </title>
+        <title>${escaparHtml(tituloArquivo)}</title>
 
         <style>
           @page {
@@ -105,67 +93,87 @@ export async function exportarAtividade(
           body {
             width: 210mm;
             height: 297mm;
-
             margin: 0 !important;
             padding: 0 !important;
-
             background: #ffffff !important;
-
             overflow: hidden !important;
-
-            font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
-
+            font-family: Arial, Helvetica, sans-serif;
             color: #000000;
           }
 
           body {
             display: flex;
-
             align-items: flex-start;
-
             justify-content: flex-start;
           }
 
           /*
-           * FOLHA A4 REAL
+           * FOLHA A4
            *
-           * 8 mm de margem interna.
+           * A borda envolve CABEÇALHO + ATIVIDADE,
+           * como uma única folha.
            */
           .pagina {
+            position: relative;
+
             width: 210mm;
             height: 297mm;
 
-            padding: 8mm;
-
             margin: 0;
+            padding: 5mm;
 
             background: #ffffff;
 
             display: flex;
-
             flex-direction: column;
 
             overflow: hidden;
+
+            border: 1.2px solid #000000;
+          }
+
+          /*
+           * Segunda linha da borda.
+           * Dá o acabamento parecido com a referência.
+           */
+          .pagina::before {
+            content: "";
+
+            position: absolute;
+            inset: 2mm;
+
+            border: 0.8px solid #000000;
+
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          .conteudo-pagina {
+            position: relative;
+            z-index: 1;
+
+            width: 100%;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
           }
 
           /*
            * CABEÇALHO
            *
-           * Não existe mais altura máxima.
-           * Cada escola pode ter um cabeçalho
-           * de tamanho diferente.
+           * Mantém o cabeçalho real do professor.
+           * Ele ocupa a MESMA largura útil da atividade.
            */
           .cabecalho {
             width: 100%;
 
-            flex:
-              0 0 auto;
+            flex: 0 0 auto;
 
-            margin:
-              0 0 3mm 0;
+            margin: 0;
+            padding: 0;
 
             overflow: visible;
           }
@@ -173,97 +181,82 @@ export async function exportarAtividade(
           .cabecalho table {
             width: 100% !important;
 
-            border-collapse:
-              collapse !important;
-
+            border-collapse: collapse !important;
             table-layout: fixed;
           }
 
           .cabecalho td,
           .cabecalho th {
-            border:
-              1px solid #000000;
+            border: 1px solid #000000;
 
-            padding:
-              1.2mm 1.8mm;
+            padding: 1mm 1.4mm;
 
-            vertical-align:
-              middle;
+            vertical-align: middle;
 
-            overflow-wrap:
-              anywhere;
+            overflow-wrap: anywhere;
 
-            line-height:
-              1.15;
+            line-height: 1.08;
           }
 
           .cabecalho img {
-            max-width:
-              28mm !important;
+            display: block;
 
-            max-height:
-              20mm !important;
+            max-width: 27mm !important;
+            max-height: 19mm !important;
 
             width: auto;
-
             height: auto;
 
-            object-fit:
-              contain;
+            object-fit: contain;
+
+            margin: 0 auto;
           }
 
           /*
-           * A atividade recebe SOMENTE
-           * o espaço restante da folha.
+           * ATIVIDADE
+           *
+           * Começa logo abaixo do cabeçalho e usa
+           * exatamente a mesma largura interna.
            */
           .atividade {
             width: 100%;
 
-            flex:
-              1 1 0;
-
+            flex: 1 1 0;
             min-height: 0;
 
+            margin-top: 1.5mm;
+
             display: flex;
-
-            align-items:
-              flex-start;
-
-            justify-content:
-              center;
+            align-items: flex-start;
+            justify-content: center;
 
             overflow: hidden;
 
-            background:
-              #ffffff;
+            background: #ffffff;
           }
 
           /*
-           * A imagem nunca é cortada
-           * e nunca é deformada.
+           * A imagem não é deformada.
+           *
+           * Primeiro tentamos ocupar toda a largura.
+           * Se a altura ficar maior que o espaço restante,
+           * o JavaScript reduz proporcionalmente.
            */
           .atividade img {
             display: block;
 
             width: auto;
-
             height: auto;
 
             max-width: 100%;
-
             max-height: 100%;
 
-            object-fit:
-              contain;
+            object-fit: contain;
+            object-position: top center;
 
-            object-position:
-              top center;
+            margin: 0 auto;
 
-            margin:
-              0 auto;
-
-            background:
-              #ffffff;
+            background: #ffffff;
           }
 
           @media print {
@@ -277,27 +270,14 @@ export async function exportarAtividade(
               width: 210mm;
               height: 297mm;
 
-              break-inside:
-                avoid;
-
-              page-break-inside:
-                avoid;
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
 
-            .cabecalho {
-              break-inside:
-                avoid;
-
-              page-break-inside:
-                avoid;
-            }
-
+            .cabecalho,
             .atividade {
-              break-inside:
-                avoid;
-
-              page-break-inside:
-                avoid;
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
           }
         </style>
@@ -305,33 +285,118 @@ export async function exportarAtividade(
 
       <body>
         <div class="pagina">
+          <div class="conteudo-pagina">
 
-          ${
-            cabecalhoHtml.trim()
-              ? `
-                <div class="cabecalho">
-                  ${cabecalhoHtml}
-                </div>
-              `
-              : ""
-          }
+            ${
+              cabecalhoHtml.trim()
+                ? `
+                  <div class="cabecalho">
+                    ${cabecalhoHtml}
+                  </div>
+                `
+                : ""
+            }
 
-          <div class="atividade">
-            <img
-              id="atividade-imagem"
-              src="${imagem}"
-              alt="Atividade pedagógica"
-            />
+            <div class="atividade">
+              <img
+                id="atividade-imagem"
+                src="${imagem}"
+                alt="Atividade pedagógica"
+              />
+            </div>
+
           </div>
-
         </div>
 
         <script>
           (function () {
-            const imagem =
-              document.getElementById(
-                "atividade-imagem"
+            const imagem = document.getElementById(
+              "atividade-imagem"
+            );
+
+            const atividade =
+              document.querySelector(".atividade");
+
+            /*
+             * ENCAIXE AUTOMÁTICO DA ATIVIDADE
+             *
+             * Não recortamos margens brancas da imagem.
+             * O navegador mede o espaço REAL disponível
+             * depois que o cabeçalho foi renderizado.
+             *
+             * A imagem é ampliada o máximo possível,
+             * mantendo a proporção original e sem cortar.
+             */
+            function ajustarImagem() {
+              if (!imagem || !atividade) {
+                return;
+              }
+
+              const larguraDisponivel =
+                atividade.clientWidth;
+
+              const alturaDisponivel =
+                atividade.clientHeight;
+
+              const larguraOriginal =
+                imagem.naturalWidth;
+
+              const alturaOriginal =
+                imagem.naturalHeight;
+
+              if (
+                larguraDisponivel <= 0 ||
+                alturaDisponivel <= 0 ||
+                larguraOriginal <= 0 ||
+                alturaOriginal <= 0
+              ) {
+                return;
+              }
+
+              /*
+               * Calcula duas escalas:
+               * - quanto caberia pela largura;
+               * - quanto caberia pela altura.
+               *
+               * Usa a menor para garantir que a imagem
+               * inteira permaneça dentro da área útil.
+               */
+              const escalaLargura =
+                larguraDisponivel / larguraOriginal;
+
+              const escalaAltura =
+                alturaDisponivel / alturaOriginal;
+
+              const escala = Math.min(
+                escalaLargura,
+                escalaAltura
               );
+
+              const larguraFinal =
+                Math.floor(
+                  larguraOriginal * escala
+                );
+
+              const alturaFinal =
+                Math.floor(
+                  alturaOriginal * escala
+                );
+
+              imagem.style.width =
+                larguraFinal + "px";
+
+              imagem.style.height =
+                alturaFinal + "px";
+
+              imagem.style.maxWidth = "100%";
+              imagem.style.maxHeight = "100%";
+
+              imagem.style.objectFit = "contain";
+              imagem.style.objectPosition =
+                "top center";
+
+              imagem.style.margin = "0 auto";
+            }
 
             function imprimir() {
               setTimeout(
@@ -339,8 +404,47 @@ export async function exportarAtividade(
                   window.focus();
                   window.print();
                 },
-                300
+                350
               );
+            }
+
+            function prepararEImprimir() {
+              /*
+               * Espera o navegador terminar de calcular
+               * a altura real do cabeçalho e da área
+               * restante antes de dimensionar a imagem.
+               */
+              requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                  ajustarImagem();
+                  imprimir();
+                });
+              });
+            }
+
+            if (!imagem) {
+                imprimir();
+                return;
+              }
+
+              const recortada =
+                recortarMargensBrancas(imagem);
+
+              if (!recortada) {
+                ajustarImagem();
+                imprimir();
+                return;
+              }
+
+              /*
+               * Troca pela versão recortada.
+               */
+              imagem.onload = function () {
+                ajustarImagem();
+                imprimir();
+              };
+
+              imagem.src = recortada;
             }
 
             if (!imagem) {
@@ -349,12 +453,12 @@ export async function exportarAtividade(
             }
 
             if (imagem.complete) {
-              imprimir();
+              prepararEImprimir();
               return;
             }
 
             imagem.onload =
-              imprimir;
+              prepararEImprimir;
 
             imagem.onerror =
               imprimir;
