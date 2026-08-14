@@ -676,22 +676,24 @@ export default function FinalizarAtividadePage() {
                 />
               )}
 
-              <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden bg-white">
-                <img
-                  src={imagem}
-                  alt={
-                    versaoSelecionada ===
-                    "professor"
-                      ? "Atividade pedagógica com gabarito"
-                      : "Atividade pedagógica final"
-                  }
-                  className="block h-full w-full bg-white object-contain object-top"
-                  style={{
-                    filter:
-                      "brightness(1.02) contrast(1.01)",
-                  }}
-                />
-              </div>
+              <div className="flex min-h-0 flex-1 overflow-hidden border border-black bg-white p-[1.5%]">
+  <img
+    src={imagem}
+    alt={
+      versaoSelecionada ===
+      "professor"
+        ? "Atividade pedagógica com gabarito"
+        : "Atividade pedagógica final"
+    }
+    className="block h-full w-full bg-white object-contain object-top"
+    style={{
+      filter:
+        "brightness(1.02) contrast(1.01)",
+      transform: "scale(1.08)",
+      transformOrigin: "top center",
+    }}
+  />
+</div>
             </div>
           </div>
 
