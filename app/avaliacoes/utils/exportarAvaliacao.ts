@@ -1,6 +1,16 @@
-type OpcoesExportarAtividade = {
+type OpcoesExportacao = {
   tituloArquivo?: string;
 };
+
+function copiarEstilosDaPagina() {
+  return Array.from(
+    document.querySelectorAll(
+      'link[rel="stylesheet"], style'
+    )
+  )
+    .map((elemento) => elemento.outerHTML)
+    .join("\n");
+}
 
 function limparNomeArquivo(nome: string) {
   const nomeLimpo = nome
@@ -10,7 +20,7 @@ function limparNomeArquivo(nome: string) {
     .replace(/\s+/g, " ")
     .trim();
 
-  return nomeLimpo || "atividade";
+  return nomeLimpo || "avaliacao";
 }
 
 function escaparHtml(texto: string) {
@@ -21,25 +31,112 @@ function escaparHtml(texto: string) {
     .replace(/"/g, "&quot;");
 }
 
-export async function exportarAtividade(
-  cabecalhoElemento: HTMLElement | null,
-  imagem: string,
-  opcoes: OpcoesExportarAtividade = {}
+function prepararDocumentoClonado(
+  documentoClonado: HTMLElement
 ) {
-  if (!imagem || !imagem.startsWith("data:image/")) {
-    throw new Error(
-      "A imagem da atividade não foi encontrada."
+  documentoClonado.removeAttribute("id");
+
+  documentoClonado
+    .querySelectorAll(
+      [
+        "button",
+        "[data-nao-exportar]",
+        ".nao-exportar",
+      ].join(",")
+    )
+    .forEach((item) => item.remove());
+
+  const cabecalho =
+    documentoClonado.querySelector<HTMLElement>(
+      "[data-placeholder]"
+    );
+
+  if (cabecalho) {
+    cabecalho.classList.add(
+      "cabecalho-avaliacao-exportacao"
+    );
+
+    cabecalho.removeAttribute(
+      "data-placeholder"
+    );
+
+    cabecalho.removeAttribute(
+      "contenteditable"
+    );
+
+    if (!cabecalho.innerText.trim()) {
+      cabecalho.innerHTML = "";
+    }
+  }
+
+  const editaveis = Array.from(
+    documentoClonado.querySelectorAll<HTMLElement>(
+      "[contenteditable='true']"
+    )
+  );
+
+  const conteudoAvaliacao =
+    editaveis.find(
+      (item) => item !== cabecalho
+    ) || null;
+
+  if (conteudoAvaliacao) {
+    conteudoAvaliacao.classList.add(
+      "conteudo-avaliacao-exportacao"
     );
   }
 
+  documentoClonado
+    .querySelectorAll<HTMLElement>(
+      "[contenteditable='true']"
+    )
+    .forEach((item) => {
+      item.removeAttribute(
+        "contenteditable"
+      );
+    });
+
+  documentoClonado
+    .querySelectorAll<HTMLParagraphElement>(
+      "p"
+    )
+    .forEach((paragrafo) => {
+      const texto = paragrafo.innerText
+        .replace(/\s+/g, " ")
+        .trim()
+        .toLowerCase();
+
+      const ehMensagemCabecalho =
+        texto.includes(
+          "copie o cabeçalho usado pela escola"
+        ) ||
+        texto.includes(
+          "cabeçalho salvo. ele aparecerá"
+        );
+
+      if (ehMensagemCabecalho) {
+        const bloco =
+          paragrafo.parentElement;
+
+        if (bloco) {
+          bloco.remove();
+        } else {
+          paragrafo.remove();
+        }
+      }
+    });
+}
+
+export async function exportarAvaliacao(
+  elemento: HTMLElement,
+  opcoes: OpcoesExportacao = {}
+) {
   const tituloArquivo = limparNomeArquivo(
-    opcoes.tituloArquivo || "atividade"
+    opcoes.tituloArquivo || "avaliacao"
   );
 
-  const cabecalhoHtml =
-    cabecalhoElemento?.innerHTML || "";
-
-  const iframe = document.createElement("iframe");
+  const iframe =
+    document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -49,25 +146,45 @@ export async function exportarAtividade(
   iframe.style.border = "0";
   iframe.style.opacity = "0";
 
-  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute(
+    "aria-hidden",
+    "true"
+  );
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao = iframe.contentWindow;
-  const documentoImpressao = iframe.contentDocument;
+  const janelaImpressao =
+    iframe.contentWindow;
 
-  if (!janelaImpressao || !documentoImpressao) {
+  const documentoImpressao =
+    iframe.contentDocument;
+
+  if (
+    !janelaImpressao ||
+    !documentoImpressao
+  ) {
     iframe.remove();
 
     throw new Error(
-      "Não foi possível preparar a atividade para exportação."
+      "Não foi possível preparar a avaliação para exportação."
     );
   }
+
+  const estilosPagina =
+    copiarEstilosDaPagina();
+
+  const documentoClonado =
+    elemento.cloneNode(true) as HTMLElement;
+
+  prepararDocumentoClonado(
+    documentoClonado
+  );
 
   documentoImpressao.open();
 
   documentoImpressao.write(`
     <!DOCTYPE html>
+
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
@@ -77,12 +194,16 @@ export async function exportarAtividade(
           content="width=device-width, initial-scale=1"
         />
 
-        <title>${escaparHtml(tituloArquivo)}</title>
+        <title>${escaparHtml(
+          tituloArquivo
+        )}</title>
+
+        ${estilosPagina}
 
         <style>
           @page {
             size: A4 portrait;
-            margin: 0;
+            margin: 7mm;
           }
 
           * {
@@ -91,380 +212,200 @@ export async function exportarAtividade(
 
           html,
           body {
-            width: 210mm;
-            height: 297mm;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
-            overflow: hidden !important;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #000000;
+            color: #000000 !important;
+            font-family:
+              Arial,
+              Helvetica,
+              sans-serif;
           }
 
           body {
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-          }
-
-          /*
-           * FOLHA A4
-           *
-           * A borda envolve CABEÇALHO + ATIVIDADE,
-           * como uma única folha.
-           */
-          .pagina {
-            position: relative;
-
-            width: 210mm;
-            height: 297mm;
-
-            margin: 0;
-            padding: 5mm;
-
-            background: #ffffff;
-
-            display: flex;
-            flex-direction: column;
-
-            overflow: hidden;
-
-            border: 1.2px solid #000000;
-          }
-
-          /*
-           * Segunda linha da borda.
-           * Dá o acabamento parecido com a referência.
-           */
-          .pagina::before {
-            content: "";
-
-            position: absolute;
-            inset: 2mm;
-
-            border: 0.8px solid #000000;
-
-            pointer-events: none;
-            z-index: 0;
-          }
-
-          .conteudo-pagina {
-            position: relative;
-            z-index: 1;
-
             width: 100%;
-            height: 100%;
-
-            display: flex;
-            flex-direction: column;
-
-            min-height: 0;
           }
 
-          /*
-           * CABEÇALHO
-           *
-           * Mantém o cabeçalho real do professor.
-           * Ele ocupa a MESMA largura útil da atividade.
-           */
-          .cabecalho {
+          .documento-exportacao {
             width: 100%;
-
-            flex: 0 0 auto;
-
+            max-width: 100%;
             margin: 0;
             padding: 0;
-
-            overflow: visible;
+            background: #ffffff;
           }
 
-          .cabecalho table {
+          .documento-exportacao,
+          .documento-exportacao * {
+            box-shadow: none !important;
+          }
+
+          .cabecalho-avaliacao-exportacao {
             width: 100% !important;
+            max-width: 100% !important;
+
+            margin: 0 0 5mm 0 !important;
+
+            page-break-inside: avoid;
+            break-inside: avoid;
+
+            overflow: visible !important;
+          }
+
+          .cabecalho-avaliacao-exportacao table {
+            width: 100% !important;
+            max-width: 100% !important;
 
             border-collapse: collapse !important;
             table-layout: fixed;
           }
 
-          .cabecalho td,
-          .cabecalho th {
+          .cabecalho-avaliacao-exportacao td,
+          .cabecalho-avaliacao-exportacao th {
             border: 1px solid #000000;
 
-            padding: 1mm 1.4mm;
+            padding: 1.5mm 2mm;
 
             vertical-align: middle;
 
             overflow-wrap: anywhere;
 
-            line-height: 1.08;
+            line-height: 1.2;
           }
 
-          .cabecalho img {
-            display: block;
+          .cabecalho-avaliacao-exportacao img {
+            max-width: 30mm !important;
+            max-height: 22mm !important;
 
-            max-width: 27mm !important;
-            max-height: 19mm !important;
-
-            width: auto;
-            height: auto;
+            width: auto !important;
+            height: auto !important;
 
             object-fit: contain;
-
-            margin: 0 auto;
           }
 
-          /*
-           * ATIVIDADE
-           *
-           * Começa logo abaixo do cabeçalho e usa
-           * exatamente a mesma largura interna.
-           */
-          .atividade {
-            width: 100%;
+          .conteudo-avaliacao-exportacao {
+            width: 100% !important;
+            max-width: 100% !important;
 
-            flex: 1 1 0;
-            min-height: 0;
+            margin: 0 !important;
+            padding: 0 !important;
 
-            margin-top: 1.5mm;
+            color: #000000 !important;
 
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
-
-            overflow: hidden;
-
-            background: #ffffff;
+            overflow: visible !important;
           }
 
-          /*
-           * A imagem não é deformada.
-           *
-           * Primeiro tentamos ocupar toda a largura.
-           * Se a altura ficar maior que o espaço restante,
-           * o JavaScript reduz proporcionalmente.
-           */
-          .atividade img {
-            display: block;
-
-            width: auto;
-            height: auto;
-
-            max-width: 100%;
-            max-height: 100%;
+          .conteudo-avaliacao-exportacao img {
+            max-width: 100% !important;
+            height: auto !important;
 
             object-fit: contain;
-            object-position: top center;
+          }
 
-            margin: 0 auto;
+          .conteudo-avaliacao-exportacao p {
+            orphans: 3;
+            widows: 3;
+          }
 
-            background: #ffffff;
+          .conteudo-avaliacao-exportacao table {
+            max-width: 100% !important;
+            page-break-inside: avoid;
+            break-inside: avoid;
+          }
+
+          button,
+          [data-nao-exportar],
+          .nao-exportar {
+            display: none !important;
           }
 
           @media print {
             html,
             body {
-              width: 210mm;
-              height: 297mm;
+              width: auto !important;
+              height: auto !important;
+
+              overflow: visible !important;
             }
 
-            .pagina {
-              width: 210mm;
-              height: 297mm;
+            .documento-exportacao {
+              width: 100% !important;
+              max-width: 100% !important;
 
-              break-inside: avoid;
-              page-break-inside: avoid;
+              overflow: visible !important;
             }
 
-            .cabecalho,
-            .atividade {
-              break-inside: avoid;
+            .cabecalho-avaliacao-exportacao {
               page-break-inside: avoid;
+              break-inside: avoid;
+            }
+
+            .conteudo-avaliacao-exportacao {
+              overflow: visible !important;
             }
           }
         </style>
       </head>
 
       <body>
-        <div class="pagina">
-          <div class="conteudo-pagina">
-
-            ${
-              cabecalhoHtml.trim()
-                ? `
-                  <div class="cabecalho">
-                    ${cabecalhoHtml}
-                  </div>
-                `
-                : ""
-            }
-
-            <div class="atividade">
-              <img
-                id="atividade-imagem"
-                src="${imagem}"
-                alt="Atividade pedagógica"
-              />
-            </div>
-
-          </div>
+        <div class="documento-exportacao">
+          ${documentoClonado.outerHTML}
         </div>
 
         <script>
           (function () {
-            const imagem = document.getElementById(
-              "atividade-imagem"
-            );
-
-            const atividade =
-              document.querySelector(".atividade");
-
-            /*
-             * ENCAIXE AUTOMÁTICO DA ATIVIDADE
-             *
-             * Não recortamos margens brancas da imagem.
-             * O navegador mede o espaço REAL disponível
-             * depois que o cabeçalho foi renderizado.
-             *
-             * A imagem é ampliada o máximo possível,
-             * mantendo a proporção original e sem cortar.
-             */
-            function ajustarImagem() {
-              if (!imagem || !atividade) {
-                return;
-              }
-
-              const larguraDisponivel =
-                atividade.clientWidth;
-
-              const alturaDisponivel =
-                atividade.clientHeight;
-
-              const larguraOriginal =
-                imagem.naturalWidth;
-
-              const alturaOriginal =
-                imagem.naturalHeight;
-
-              if (
-                larguraDisponivel <= 0 ||
-                alturaDisponivel <= 0 ||
-                larguraOriginal <= 0 ||
-                alturaOriginal <= 0
-              ) {
-                return;
-              }
-
-              /*
-               * Calcula duas escalas:
-               * - quanto caberia pela largura;
-               * - quanto caberia pela altura.
-               *
-               * Usa a menor para garantir que a imagem
-               * inteira permaneça dentro da área útil.
-               */
-              const escalaLargura =
-                larguraDisponivel / larguraOriginal;
-
-              const escalaAltura =
-                alturaDisponivel / alturaOriginal;
-
-              const escala = Math.min(
-                escalaLargura,
-                escalaAltura
-              );
-
-              const larguraFinal =
-                Math.floor(
-                  larguraOriginal * escala
-                );
-
-              const alturaFinal =
-                Math.floor(
-                  alturaOriginal * escala
-                );
-
-              imagem.style.width =
-                larguraFinal + "px";
-
-              imagem.style.height =
-                alturaFinal + "px";
-
-              imagem.style.maxWidth = "100%";
-              imagem.style.maxHeight = "100%";
-
-              imagem.style.objectFit = "contain";
-              imagem.style.objectPosition =
-                "top center";
-
-              imagem.style.margin = "0 auto";
-            }
-
             function imprimir() {
-              setTimeout(
-                function () {
-                  window.focus();
-                  window.print();
-                },
-                350
+              setTimeout(function () {
+                window.focus();
+                window.print();
+              }, 500);
+            }
+
+            const imagens =
+              Array.from(
+                document.images || []
               );
-            }
 
-            function prepararEImprimir() {
-              /*
-               * Espera o navegador terminar de calcular
-               * a altura real do cabeçalho e da área
-               * restante antes de dimensionar a imagem.
-               */
-              requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                  ajustarImagem();
-                  imprimir();
-                });
-              });
-            }
-
-            if (!imagem) {
-                imprimir();
-                return;
-              }
-
-              const recortada =
-                recortarMargensBrancas(imagem);
-
-              if (!recortada) {
-                ajustarImagem();
-                imprimir();
-                return;
-              }
-
-              /*
-               * Troca pela versão recortada.
-               */
-              imagem.onload = function () {
-                ajustarImagem();
-                imprimir();
-              };
-
-              imagem.src = recortada;
-            }
-
-            if (!imagem) {
+            if (imagens.length === 0) {
               imprimir();
               return;
             }
 
-            if (imagem.complete) {
-              prepararEImprimir();
-              return;
+            let carregadas = 0;
+
+            function finalizarImagem() {
+              carregadas += 1;
+
+              if (
+                carregadas >= imagens.length
+              ) {
+                imprimir();
+              }
             }
 
-            imagem.onload =
-              prepararEImprimir;
+            imagens.forEach(function (imagem) {
+              if (imagem.complete) {
+                finalizarImagem();
+                return;
+              }
 
-            imagem.onerror =
-              imprimir;
+              imagem.addEventListener(
+                "load",
+                finalizarImagem,
+                {
+                  once: true,
+                }
+              );
+
+              imagem.addEventListener(
+                "error",
+                finalizarImagem,
+                {
+                  once: true,
+                }
+              );
+            });
           })();
         <\/script>
-
       </body>
     </html>
   `);
@@ -474,12 +415,9 @@ export async function exportarAtividade(
   janelaImpressao.addEventListener(
     "afterprint",
     () => {
-      setTimeout(
-        () => {
-          iframe.remove();
-        },
-        300
-      );
+      setTimeout(() => {
+        iframe.remove();
+      }, 300);
     },
     {
       once: true,
