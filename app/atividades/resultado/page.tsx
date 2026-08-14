@@ -6,16 +6,16 @@ import {
 } from "react";
 
 import {
+  AlertCircle,
   ArrowLeft,
   Download,
+  FilePenLine,
+  GraduationCap,
   Printer,
   RefreshCw,
-  FilePenLine,
-  UserRound,
-  GraduationCap,
   Sparkles,
+  UserRound,
   X,
-  AlertCircle,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -36,8 +36,10 @@ type VersaoAtividade =
 export default function ResultadoAtividadePage() {
   const router = useRouter();
 
-  const [imagemAluno, setImagemAluno] =
-    useState("");
+  const [
+    imagemAluno,
+    setImagemAluno,
+  ] = useState("");
 
   const [
     imagemProfessor,
@@ -68,24 +70,20 @@ export default function ResultadoAtividadePage() {
     setCarregando,
   ] = useState(true);
 
-  /*
-   * NOVO:
-   * controla a janela de correção.
-   */
   const [
     mostrarCorrecao,
     setMostrarCorrecao,
   ] = useState(false);
 
-  /*
-   * NOVO:
-   * texto escrito pelo professor
-   * explicando somente o erro.
-   */
   const [
     descricaoErro,
     setDescricaoErro,
   ] = useState("");
+
+  const [
+    corrigindo,
+    setCorrigindo,
+  ] = useState(false);
 
   const imagemAtual =
     versaoSelecionada ===
@@ -147,11 +145,20 @@ export default function ResultadoAtividadePage() {
       }
 
       if (configuracaoSalva) {
-        setConfiguracao(
-          JSON.parse(
-            configuracaoSalva
-          )
-        );
+        try {
+          setConfiguracao(
+            JSON.parse(
+              configuracaoSalva
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar configuração:",
+            error
+          );
+
+          setConfiguracao(null);
+        }
       }
     } catch (error) {
       console.error(
@@ -183,7 +190,9 @@ export default function ResultadoAtividadePage() {
   }
 
   function baixarImagem() {
-    if (!imagemAtual) return;
+    if (!imagemAtual) {
+      return;
+    }
 
     const link =
       document.createElement("a");
@@ -201,11 +210,14 @@ export default function ResultadoAtividadePage() {
     );
 
     link.click();
+
     link.remove();
   }
 
   function imprimirSomenteImagem() {
-    if (!imagemAtual) return;
+    if (!imagemAtual) {
+      return;
+    }
 
     window.print();
   }
@@ -220,19 +232,11 @@ export default function ResultadoAtividadePage() {
     }
 
     try {
-      /*
-       * Guarda apenas qual versão
-       * estava sendo visualizada.
-       */
       localStorage.setItem(
         "atividadeVersaoSelecionada",
         versaoSelecionada
       );
 
-      /*
-       * Remove uma possível cópia
-       * antiga e pesada.
-       */
       localStorage.removeItem(
         "atividadeImagemSelecionada"
       );
@@ -252,34 +256,27 @@ export default function ResultadoAtividadePage() {
     }
   }
 
-  /*
-   * NOVO:
-   * abre a janela para o professor
-   * informar o erro encontrado.
-   */
   function abrirCorrecao() {
     setDescricaoErro("");
-    setMostrarCorrecao(true);
+
+    setMostrarCorrecao(
+      true
+    );
   }
 
-  /*
-   * NOVO:
-   * fecha o modal sem alterar
-   * a atividade.
-   */
   function fecharCorrecao() {
-    setMostrarCorrecao(false);
+    if (corrigindo) {
+      return;
+    }
+
+    setMostrarCorrecao(
+      false
+    );
+
     setDescricaoErro("");
   }
 
-  /*
-   * Esta função será ligada à IA
-   * no próximo passo.
-   *
-   * Por enquanto NÃO fazemos fetch
-   * para uma rota inexistente.
-   */
-  function solicitarCorrecao() {
+  async function solicitarCorrecao() {
     const instrucao =
       descricaoErro.trim();
 
@@ -291,25 +288,108 @@ export default function ResultadoAtividadePage() {
       return;
     }
 
-    /*
-     * IMPORTANTE:
-     *
-     * Aqui entraremos com a chamada
-     * para a rota de correção da IA.
-     *
-     * Ela receberá:
-     *
-     * - imagemAtual
-     * - instrucao
-     * - versaoSelecionada
-     *
-     * E deverá alterar SOMENTE
-     * o erro indicado.
-     */
+    if (!imagemAtual) {
+      alert(
+        "Não foi possível localizar a atividade."
+      );
 
-    alert(
-      "A área para informar a correção está pronta. Agora falta conectarmos este botão à IA."
-    );
+      return;
+    }
+
+    try {
+      setCorrigindo(true);
+
+      const resposta =
+        await fetch(
+          "/api/gerar-atividade-imagem/corrigir",
+          {
+            method: "POST",
+
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify({
+                imagem:
+                  imagemAtual,
+
+                correcao:
+                  instrucao,
+              }),
+          }
+        );
+
+      const dados =
+        await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível corrigir a atividade."
+        );
+      }
+
+      if (
+        !dados.imagem ||
+        !String(
+          dados.imagem
+        ).startsWith(
+          "data:image/"
+        )
+      ) {
+        throw new Error(
+          "A inteligência artificial não retornou uma imagem corrigida."
+        );
+      }
+
+      if (
+        versaoSelecionada ===
+        "professor"
+      ) {
+        setImagemProfessor(
+          dados.imagem
+        );
+
+        localStorage.setItem(
+          "atividadeImagemProfessor",
+          dados.imagem
+        );
+      } else {
+        setImagemAluno(
+          dados.imagem
+        );
+
+        localStorage.setItem(
+          "atividadeImagem",
+          dados.imagem
+        );
+      }
+
+      setMostrarCorrecao(
+        false
+      );
+
+      setDescricaoErro("");
+
+      alert(
+        "Correção concluída. Confira a atividade para confirmar se o erro foi corrigido corretamente."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao corrigir atividade:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível corrigir a atividade."
+      );
+    } finally {
+      setCorrigindo(false);
+    }
   }
 
   if (carregando) {
@@ -322,7 +402,10 @@ export default function ResultadoAtividadePage() {
     );
   }
 
-  if (erro || !imagemAluno) {
+  if (
+    erro ||
+    !imagemAluno
+  ) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
         <div className="w-full max-w-lg rounded-2xl border border-red-200 bg-white p-6 text-center shadow-sm">
@@ -405,7 +488,10 @@ export default function ResultadoAtividadePage() {
             }
             className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
           >
-            <ArrowLeft size={19} />
+            <ArrowLeft
+              size={19}
+            />
+
             Voltar
           </button>
         </div>
@@ -413,12 +499,10 @@ export default function ResultadoAtividadePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
 
-        {/* FAIXA SUPERIOR */}
         <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-            {/* INFORMAÇÕES */}
             {configuracao ? (
               <p className="px-1 text-sm text-slate-600">
                 <strong>
@@ -438,15 +522,19 @@ export default function ResultadoAtividadePage() {
               <div />
             )}
 
-            {/* NOVOS BOTÕES */}
             <div className="flex flex-wrap items-center gap-2">
 
               <button
                 type="button"
-                onClick={abrirCorrecao}
+                onClick={
+                  abrirCorrecao
+                }
                 className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
               >
-                <Sparkles size={18} />
+                <Sparkles
+                  size={18}
+                />
+
                 Corrigir erro com IA
               </button>
 
@@ -462,13 +550,13 @@ export default function ResultadoAtividadePage() {
                 <RefreshCw
                   size={18}
                 />
+
                 Refazer atividade
               </button>
 
             </div>
           </div>
 
-          {/* ALUNO / PROFESSOR */}
           {possuiGabarito && (
             <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
 
@@ -489,6 +577,7 @@ export default function ResultadoAtividadePage() {
                 <UserRound
                   size={18}
                 />
+
                 Versão do aluno
               </button>
 
@@ -509,6 +598,7 @@ export default function ResultadoAtividadePage() {
                 <GraduationCap
                   size={18}
                 />
+
                 Cópia do professor
               </button>
 
@@ -516,7 +606,6 @@ export default function ResultadoAtividadePage() {
           )}
         </div>
 
-        {/* IMAGEM */}
         <div className="folha-imagem mx-auto w-full max-w-[794px] overflow-hidden bg-white shadow-xl">
           <img
             src={imagemAtual}
@@ -548,15 +637,18 @@ export default function ResultadoAtividadePage() {
           </div>
         )}
 
-        {/* BOTÕES DE SAÍDA */}
         <div className="nao-imprimir mt-6 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
 
           <button
             type="button"
-            onClick={baixarImagem}
+            onClick={
+              baixarImagem
+            }
             className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
           >
-            <Download size={19} />
+            <Download
+              size={19}
+            />
 
             {versaoSelecionada ===
             "professor"
@@ -571,7 +663,9 @@ export default function ResultadoAtividadePage() {
             }
             className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
           >
-            <Printer size={19} />
+            <Printer
+              size={19}
+            />
 
             {versaoSelecionada ===
             "professor"
@@ -589,19 +683,18 @@ export default function ResultadoAtividadePage() {
             <FilePenLine
               size={19}
             />
+
             Adicionar cabeçalho
           </button>
 
         </div>
       </section>
 
-      {/* MODAL CORRIGIR ERRO */}
       {mostrarCorrecao && (
         <div className="nao-imprimir fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
 
           <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
 
-            {/* CABEÇALHO MODAL */}
             <div className="flex items-start justify-between border-b border-slate-200 p-5">
 
               <div className="flex items-start gap-3">
@@ -618,9 +711,8 @@ export default function ResultadoAtividadePage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Informe somente o
-                    erro que você encontrou
-                    na atividade.
+                    Informe somente o erro
+                    que você encontrou na atividade.
                   </p>
                 </div>
 
@@ -631,15 +723,19 @@ export default function ResultadoAtividadePage() {
                 onClick={
                   fecharCorrecao
                 }
-                className="cursor-pointer rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+                disabled={
+                  corrigindo
+                }
+                className="cursor-pointer rounded-lg p-2 text-slate-500 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
                 aria-label="Fechar"
               >
-                <X size={20} />
+                <X
+                  size={20}
+                />
               </button>
 
             </div>
 
-            {/* CONTEÚDO */}
             <div className="p-5">
 
               <div className="mb-4 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
@@ -656,8 +752,7 @@ export default function ResultadoAtividadePage() {
                   <strong>
                     {" "}
                     não alterar nenhuma
-                    outra parte da
-                    atividade.
+                    outra parte da atividade.
                   </strong>
                 </p>
 
@@ -672,24 +767,33 @@ export default function ResultadoAtividadePage() {
 
               <textarea
                 id="descricao-correcao"
-                value={descricaoErro}
+                value={
+                  descricaoErro
+                }
+                disabled={
+                  corrigindo
+                }
                 maxLength={500}
-                onChange={(evento) =>
+                onChange={(
+                  evento
+                ) =>
                   setDescricaoErro(
                     evento.target.value
                   )
                 }
                 placeholder='Ex.: Na primeira questão está escrito "CACHORO". Corrija para "CACHORRO".'
-                className="mt-2 min-h-[140px] w-full resize-none rounded-xl border border-slate-300 p-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+                className="mt-2 min-h-[140px] w-full resize-none rounded-xl border border-slate-300 p-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100 disabled:bg-slate-100"
               />
 
               <div className="mt-1 text-right text-xs text-slate-400">
-                {descricaoErro.length}/500
+                {
+                  descricaoErro.length
+                }
+                /500
               </div>
 
             </div>
 
-            {/* BOTÕES MODAL */}
             <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 p-5 sm:flex-row sm:justify-end">
 
               <button
@@ -697,7 +801,10 @@ export default function ResultadoAtividadePage() {
                 onClick={
                   fecharCorrecao
                 }
-                className="cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+                disabled={
+                  corrigindo
+                }
+                className="cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Cancelar
               </button>
@@ -708,14 +815,29 @@ export default function ResultadoAtividadePage() {
                   solicitarCorrecao
                 }
                 disabled={
-                  !descricaoErro.trim()
+                  !descricaoErro.trim() ||
+                  corrigindo
                 }
                 className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
               >
-                <Sparkles
-                  size={18}
-                />
-                Corrigir somente este erro
+                {corrigindo ? (
+                  <>
+                    <RefreshCw
+                      size={18}
+                      className="animate-spin"
+                    />
+
+                    Corrigindo...
+                  </>
+                ) : (
+                  <>
+                    <Sparkles
+                      size={18}
+                    />
+
+                    Corrigir somente este erro
+                  </>
+                )}
               </button>
 
             </div>
