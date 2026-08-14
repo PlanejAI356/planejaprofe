@@ -26,37 +26,67 @@ export async function exportarAtividade(
   imagem: string,
   opcoes: OpcoesExportarAtividade = {}
 ) {
-  if (!imagem || !imagem.startsWith("data:image/")) {
+  if (
+    !imagem ||
+    !imagem.startsWith("data:image/")
+  ) {
     throw new Error(
       "A imagem da atividade não foi encontrada."
     );
   }
 
-  const tituloArquivo = limparNomeArquivo(
-    opcoes.tituloArquivo || "atividade"
-  );
+  const tituloArquivo =
+    limparNomeArquivo(
+      opcoes.tituloArquivo ||
+        "atividade-planejai"
+    );
 
+  /*
+   * IMPORTANTE:
+   *
+   * Não reconstruímos o cabeçalho.
+   * Pegamos exatamente o HTML que está
+   * aparecendo no editor da página.
+   */
   const cabecalhoHtml =
     cabecalhoElemento?.innerHTML || "";
 
-  const iframe = document.createElement("iframe");
+  const iframe =
+    document.createElement("iframe");
 
+  /*
+   * Não usar width/height = 0.
+   *
+   * Precisamos que o navegador consiga
+   * calcular corretamente a altura real
+   * do cabeçalho e o espaço restante.
+   */
   iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
+  iframe.style.left = "-10000px";
+  iframe.style.top = "0";
+  iframe.style.width = "794px";
+  iframe.style.height = "1123px";
   iframe.style.border = "0";
   iframe.style.opacity = "0";
+  iframe.style.pointerEvents = "none";
 
-  iframe.setAttribute("aria-hidden", "true");
+  iframe.setAttribute(
+    "aria-hidden",
+    "true"
+  );
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao = iframe.contentWindow;
-  const documentoImpressao = iframe.contentDocument;
+  const janelaImpressao =
+    iframe.contentWindow;
 
-  if (!janelaImpressao || !documentoImpressao) {
+  const documentoImpressao =
+    iframe.contentDocument;
+
+  if (
+    !janelaImpressao ||
+    !documentoImpressao
+  ) {
     iframe.remove();
 
     throw new Error(
@@ -67,422 +97,470 @@ export async function exportarAtividade(
   documentoImpressao.open();
 
   documentoImpressao.write(`
-    <!DOCTYPE html>
-    <html lang="pt-BR">
-      <head>
-        <meta charset="UTF-8" />
+<!DOCTYPE html>
 
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1"
-        />
+<html lang="pt-BR">
 
-        <title>${escaparHtml(tituloArquivo)}</title>
+<head>
 
-        <style>
-          @page {
-            size: A4 portrait;
-            margin: 0;
-          }
+<meta charset="UTF-8" />
 
-          * {
-            box-sizing: border-box;
-          }
+<meta
+  name="viewport"
+  content="width=device-width, initial-scale=1"
+/>
 
-          html,
-          body {
-            width: 210mm;
-            height: 297mm;
-            margin: 0 !important;
-            padding: 0 !important;
-            background: #ffffff !important;
-            overflow: hidden !important;
-            font-family: Arial, Helvetica, sans-serif;
-            color: #000000;
-          }
+<title>${escaparHtml(
+    tituloArquivo
+  )}</title>
 
-          body {
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-          }
+<style>
 
-          /*
-           * FOLHA A4
-           *
-           * A borda envolve CABEÇALHO + ATIVIDADE,
-           * como uma única folha.
-           */
-          .pagina {
-            position: relative;
+@page {
+  size: A4 portrait;
+  margin: 0;
+}
 
-            width: 210mm;
-            height: 297mm;
+* {
+  box-sizing: border-box;
+}
 
-            margin: 0;
-            padding: 5mm;
+html,
+body {
+  width: 210mm;
+  height: 297mm;
 
-            background: #ffffff;
+  margin: 0 !important;
+  padding: 0 !important;
 
-            display: flex;
-            flex-direction: column;
+  background: #ffffff !important;
 
-            overflow: hidden;
+  overflow: hidden !important;
 
-            border: 1.2px solid #000000;
-          }
+  font-family:
+    Arial,
+    Helvetica,
+    sans-serif;
 
-          /*
-           * Segunda linha da borda.
-           * Dá o acabamento parecido com a referência.
-           */
-          .pagina::before {
-            content: "";
+  color: #000000;
+}
 
-            position: absolute;
-            inset: 2mm;
+/*
+ * FOLHA A4
+ *
+ * O documento inteiro permanece
+ * rigorosamente dentro de uma página.
+ */
+.pagina {
+  width: 210mm;
+  height: 297mm;
 
-            border: 0.8px solid #000000;
+  margin: 0;
+  padding: 8mm;
 
-            pointer-events: none;
-            z-index: 0;
-          }
+  background: #ffffff;
 
-          .conteudo-pagina {
-            position: relative;
-            z-index: 1;
+  display: flex;
+  flex-direction: column;
 
-            width: 100%;
-            height: 100%;
+  overflow: hidden;
+}
 
-            display: flex;
-            flex-direction: column;
+/*
+ * CABEÇALHO
+ *
+ * Mantemos exatamente o HTML que
+ * veio da tela.
+ *
+ * Apenas normalizamos medidas para
+ * que ele caiba corretamente no A4.
+ */
+.cabecalho {
+  width: 100%;
 
-            min-height: 0;
-          }
+  flex: 0 0 auto;
 
-          /*
-           * CABEÇALHO
-           *
-           * Mantém o cabeçalho real do professor.
-           * Ele ocupa a MESMA largura útil da atividade.
-           */
-          .cabecalho {
-            width: 100%;
+  margin: 0 0 2mm 0;
+  padding: 0;
 
-            flex: 0 0 auto;
+  overflow: visible;
 
-            margin: 0;
-            padding: 0;
+  background: #ffffff;
+}
 
-            overflow: visible;
-          }
+.cabecalho table {
+  width: 100% !important;
 
-          .cabecalho table {
-            width: 100% !important;
+  max-width: 100% !important;
 
-            border-collapse: collapse !important;
-            table-layout: fixed;
-          }
+  border-collapse: collapse !important;
 
-          .cabecalho td,
-          .cabecalho th {
-            border: 1px solid #000000;
+  table-layout: fixed;
+}
 
-            padding: 1mm 1.4mm;
+.cabecalho td,
+.cabecalho th {
+  border: 1px solid #000000;
 
-            vertical-align: middle;
+  padding: 1mm 1.3mm;
 
-            overflow-wrap: anywhere;
+  vertical-align: middle;
 
-            line-height: 1.08;
-          }
+  overflow-wrap: anywhere;
+  word-break: normal;
 
-          .cabecalho img {
-            display: block;
+  line-height: 1.08;
+}
 
-            max-width: 27mm !important;
-            max-height: 19mm !important;
+.cabecalho p {
+  margin-top: 0;
+  margin-bottom: 1mm;
+}
 
-            width: auto;
-            height: auto;
+.cabecalho img {
+  max-width: 28mm !important;
+  max-height: 20mm !important;
 
-            object-fit: contain;
+  width: auto !important;
+  height: auto !important;
 
-            margin: 0 auto;
-          }
+  object-fit: contain;
 
-          /*
-           * ATIVIDADE
-           *
-           * Começa logo abaixo do cabeçalho e usa
-           * exatamente a mesma largura interna.
-           */
-          .atividade {
-            width: 100%;
+  display: block;
+}
 
-            flex: 1 1 0;
-            min-height: 0;
+/*
+ * ÁREA DA ATIVIDADE
+ *
+ * Usa TODO o espaço restante depois
+ * que o cabeçalho é renderizado.
+ *
+ * A borda fica ao redor da atividade,
+ * criando o acabamento profissional.
+ */
+.atividade {
+  width: 100%;
 
-            margin-top: 1.5mm;
+  flex: 1 1 0;
 
-            display: flex;
-            align-items: flex-start;
-            justify-content: center;
+  min-height: 0;
 
-            overflow: hidden;
+  border: 1px solid #222222;
 
-            background: #ffffff;
-          }
+  padding: 1.5mm;
 
-          /*
-           * A imagem não é deformada.
-           *
-           * Primeiro tentamos ocupar toda a largura.
-           * Se a altura ficar maior que o espaço restante,
-           * o JavaScript reduz proporcionalmente.
-           */
-          .atividade img {
-            display: block;
+  display: flex;
 
-            width: auto;
-            height: auto;
+  align-items: flex-start;
+  justify-content: center;
 
-            max-width: 100%;
-            max-height: 100%;
+  overflow: hidden;
 
-            object-fit: contain;
-            object-position: top center;
+  background: #ffffff;
+}
 
-            margin: 0 auto;
+/*
+ * A imagem nunca é deformada.
+ */
+.atividade img {
+  display: block;
 
-            background: #ffffff;
-          }
+  width: auto;
+  height: auto;
 
-          @media print {
-            html,
-            body {
-              width: 210mm;
-              height: 297mm;
-            }
+  max-width: 100%;
+  max-height: 100%;
 
-            .pagina {
-              width: 210mm;
-              height: 297mm;
+  object-fit: contain;
+  object-position: top center;
 
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
+  margin: 0 auto;
 
-            .cabecalho,
-            .atividade {
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-          }
-        </style>
-      </head>
+  background: #ffffff;
+}
 
-      <body>
-        <div class="pagina">
-          <div class="conteudo-pagina">
+@media print {
 
-            ${
-              cabecalhoHtml.trim()
-                ? `
-                  <div class="cabecalho">
-                    ${cabecalhoHtml}
-                  </div>
-                `
-                : ""
-            }
+  html,
+  body {
+    width: 210mm !important;
+    height: 297mm !important;
+  }
 
-            <div class="atividade">
-              <img
-                id="atividade-imagem"
-                src="${imagem}"
-                alt="Atividade pedagógica"
-              />
-            </div>
+  .pagina {
+    width: 210mm !important;
+    height: 297mm !important;
 
-          </div>
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
+  .cabecalho,
+  .atividade {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+}
+
+</style>
+
+</head>
+
+<body>
+
+<div class="pagina">
+
+  ${
+    cabecalhoHtml.trim()
+      ? `
+        <div class="cabecalho">
+          ${cabecalhoHtml}
         </div>
+      `
+      : ""
+  }
 
-        <script>
-          (function () {
-            const imagem = document.getElementById(
-              "atividade-imagem"
+  <div class="atividade">
+
+    <img
+      id="atividade-imagem"
+      src="${imagem}"
+      alt="Atividade pedagógica"
+    />
+
+  </div>
+
+</div>
+
+<script>
+
+(function () {
+
+  const imagem =
+    document.getElementById(
+      "atividade-imagem"
+    );
+
+  const atividade =
+    document.querySelector(
+      ".atividade"
+    );
+
+  let imprimindo = false;
+
+  /*
+   * Mede o espaço REAL que sobrou
+   * depois do cabeçalho.
+   *
+   * Depois aumenta a imagem o máximo
+   * possível sem:
+   *
+   * - cortar;
+   * - deformar;
+   * - passar da borda;
+   * - passar para outra página.
+   */
+  function ajustarImagem() {
+
+    if (
+      !imagem ||
+      !atividade
+    ) {
+      return;
+    }
+
+    const estilo =
+      window.getComputedStyle(
+        atividade
+      );
+
+    const paddingHorizontal =
+      parseFloat(
+        estilo.paddingLeft || "0"
+      ) +
+      parseFloat(
+        estilo.paddingRight || "0"
+      );
+
+    const paddingVertical =
+      parseFloat(
+        estilo.paddingTop || "0"
+      ) +
+      parseFloat(
+        estilo.paddingBottom || "0"
+      );
+
+    const larguraDisponivel =
+      atividade.clientWidth -
+      paddingHorizontal;
+
+    const alturaDisponivel =
+      atividade.clientHeight -
+      paddingVertical;
+
+    const larguraOriginal =
+      imagem.naturalWidth;
+
+    const alturaOriginal =
+      imagem.naturalHeight;
+
+    if (
+      larguraDisponivel <= 0 ||
+      alturaDisponivel <= 0 ||
+      larguraOriginal <= 0 ||
+      alturaOriginal <= 0
+    ) {
+      return;
+    }
+
+    const escalaPelaLargura =
+      larguraDisponivel /
+      larguraOriginal;
+
+    const escalaPelaAltura =
+      alturaDisponivel /
+      alturaOriginal;
+
+    /*
+     * Usamos a menor escala.
+     *
+     * Assim a atividade inteira
+     * permanece dentro do quadro.
+     *
+     * Permitimos ampliar imagens
+     * menores para aproveitar melhor
+     * a folha.
+     */
+    const escala =
+      Math.min(
+        escalaPelaLargura,
+        escalaPelaAltura
+      );
+
+    const larguraFinal =
+      Math.floor(
+        larguraOriginal * escala
+      );
+
+    const alturaFinal =
+      Math.floor(
+        alturaOriginal * escala
+      );
+
+    imagem.style.width =
+      larguraFinal + "px";
+
+    imagem.style.height =
+      alturaFinal + "px";
+
+    imagem.style.maxWidth =
+      "100%";
+
+    imagem.style.maxHeight =
+      "100%";
+
+    imagem.style.objectFit =
+      "contain";
+
+    imagem.style.objectPosition =
+      "top center";
+
+    imagem.style.margin =
+      "0 auto";
+  }
+
+  function imprimir() {
+
+    if (imprimindo) {
+      return;
+    }
+
+    imprimindo = true;
+
+    ajustarImagem();
+
+    requestAnimationFrame(
+      function () {
+
+        requestAnimationFrame(
+          function () {
+
+            ajustarImagem();
+
+            setTimeout(
+              function () {
+
+                window.focus();
+                window.print();
+
+              },
+              150
             );
 
-            const atividade =
-              document.querySelector(".atividade");
+          }
+        );
 
-            /*
-             * ENCAIXE AUTOMÁTICO DA ATIVIDADE
-             *
-             * Não recortamos margens brancas da imagem.
-             * O navegador mede o espaço REAL disponível
-             * depois que o cabeçalho foi renderizado.
-             *
-             * A imagem é ampliada o máximo possível,
-             * mantendo a proporção original e sem cortar.
-             */
-            function ajustarImagem() {
-              if (!imagem || !atividade) {
-                return;
-              }
+      }
+    );
+  }
 
-              const larguraDisponivel =
-                atividade.clientWidth;
+  if (!imagem) {
+    imprimir();
+    return;
+  }
 
-              const alturaDisponivel =
-                atividade.clientHeight;
+  if (
+    imagem.complete &&
+    imagem.naturalWidth > 0
+  ) {
+    imprimir();
+    return;
+  }
 
-              const larguraOriginal =
-                imagem.naturalWidth;
+  imagem.onload = imprimir;
 
-              const alturaOriginal =
-                imagem.naturalHeight;
+  imagem.onerror =
+    function () {
+      window.focus();
+      window.print();
+    };
 
-              if (
-                larguraDisponivel <= 0 ||
-                alturaDisponivel <= 0 ||
-                larguraOriginal <= 0 ||
-                alturaOriginal <= 0
-              ) {
-                return;
-              }
+})();
 
-              /*
-               * Calcula duas escalas:
-               * - quanto caberia pela largura;
-               * - quanto caberia pela altura.
-               *
-               * Usa a menor para garantir que a imagem
-               * inteira permaneça dentro da área útil.
-               */
-              const escalaLargura =
-                larguraDisponivel / larguraOriginal;
+<\/script>
 
-              const escalaAltura =
-                alturaDisponivel / alturaOriginal;
+</body>
 
-              const escala = Math.min(
-                escalaLargura,
-                escalaAltura
-              );
-
-              const larguraFinal =
-                Math.floor(
-                  larguraOriginal * escala
-                );
-
-              const alturaFinal =
-                Math.floor(
-                  alturaOriginal * escala
-                );
-
-              imagem.style.width =
-                larguraFinal + "px";
-
-              imagem.style.height =
-                alturaFinal + "px";
-
-              imagem.style.maxWidth = "100%";
-              imagem.style.maxHeight = "100%";
-
-              imagem.style.objectFit = "contain";
-              imagem.style.objectPosition =
-                "top center";
-
-              imagem.style.margin = "0 auto";
-            }
-
-            function imprimir() {
-              setTimeout(
-                function () {
-                  window.focus();
-                  window.print();
-                },
-                350
-              );
-            }
-
-            function prepararEImprimir() {
-              /*
-               * Espera o navegador terminar de calcular
-               * a altura real do cabeçalho e da área
-               * restante antes de dimensionar a imagem.
-               */
-              requestAnimationFrame(function () {
-                requestAnimationFrame(function () {
-                  ajustarImagem();
-                  imprimir();
-                });
-              });
-            }
-
-            if (!imagem) {
-                imprimir();
-                return;
-              }
-
-              const recortada =
-                recortarMargensBrancas(imagem);
-
-              if (!recortada) {
-                ajustarImagem();
-                imprimir();
-                return;
-              }
-
-              /*
-               * Troca pela versão recortada.
-               */
-              imagem.onload = function () {
-                ajustarImagem();
-                imprimir();
-              };
-
-              imagem.src = recortada;
-            }
-
-            if (!imagem) {
-              imprimir();
-              return;
-            }
-
-            if (imagem.complete) {
-              prepararEImprimir();
-              return;
-            }
-
-            imagem.onload =
-              prepararEImprimir;
-
-            imagem.onerror =
-              imprimir;
-          })();
-        <\/script>
-
-      </body>
-    </html>
+</html>
   `);
 
   documentoImpressao.close();
 
+  const removerIframe = () => {
+    setTimeout(() => {
+      iframe.remove();
+    }, 500);
+  };
+
   janelaImpressao.addEventListener(
     "afterprint",
-    () => {
-      setTimeout(
-        () => {
-          iframe.remove();
-        },
-        300
-      );
-    },
+    removerIframe,
     {
       once: true,
     }
   );
+
+  /*
+   * Segurança:
+   * caso algum navegador não dispare
+   * afterprint, o iframe não fica
+   * preso indefinidamente na página.
+   */
+  setTimeout(() => {
+    if (
+      document.body.contains(iframe)
+    ) {
+      iframe.remove();
+    }
+  }, 120000);
 }

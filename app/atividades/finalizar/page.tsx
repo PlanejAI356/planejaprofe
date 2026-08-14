@@ -20,9 +20,9 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+
 import { exportarAtividade } from "../utils/exportarAtividade";
 import { exportarAtividadeWord } from "../utils/exportarAtividadeWord";
-
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -34,80 +34,166 @@ type ConfiguracaoAtividadeImagem = {
 
 export default function FinalizarAtividadePage() {
   const router = useRouter();
-  const cabecalhoRef = useRef<HTMLDivElement>(null);
 
-  const [imagem, setImagem] = useState("");
+  const cabecalhoRef =
+    useRef<HTMLDivElement>(null);
+
+  const [imagem, setImagem] =
+    useState("");
+
   const [configuracao, setConfiguracao] =
-    useState<ConfiguracaoAtividadeImagem | null>(null);
-  const [cabecalho, setCabecalho] = useState("");
-  const [cabecalhoSalvo, setCabecalhoSalvo] =
-    useState(false);
-  const [erro, setErro] = useState("");
-  const [mensagem, setMensagem] = useState("");
-  const [carregando, setCarregando] = useState(true);
-  const [versaoSelecionada, setVersaoSelecionada] =
-    useState<"aluno" | "professor">("aluno");
+    useState<ConfiguracaoAtividadeImagem | null>(
+      null
+    );
+
+  const [cabecalho, setCabecalho] =
+    useState("");
+
+  const [
+    cabecalhoSalvo,
+    setCabecalhoSalvo,
+  ] = useState(false);
+
+  const [erro, setErro] =
+    useState("");
+
+  const [mensagem, setMensagem] =
+    useState("");
+
+  const [carregando, setCarregando] =
+    useState(true);
+
+  const [
+    versaoSelecionada,
+    setVersaoSelecionada,
+  ] = useState<"aluno" | "professor">(
+    "aluno"
+  );
 
   useEffect(() => {
     try {
-      const imagemSelecionada =
-        localStorage.getItem(
-          "atividadeImagemSelecionada"
-        );
-
+      /*
+       * A imagem original do aluno já está
+       * salva no localStorage.
+       */
       const imagemAluno =
         localStorage.getItem(
           "atividadeImagem"
         );
 
-      const imagemSalva =
-        imagemSelecionada &&
-        imagemSelecionada.startsWith("data:image/")
-          ? imagemSelecionada
-          : imagemAluno;
+      /*
+       * Quando existe gabarito, a cópia
+       * do professor fica salva aqui.
+       */
+      const imagemProfessor =
+        localStorage.getItem(
+          "atividadeImagemProfessor"
+        );
 
       const configuracaoSalva =
         localStorage.getItem(
           "configuracaoAtividadeImagem"
         );
 
+      /*
+       * Descobre qual versão estava sendo
+       * visualizada antes de clicar em
+       * "Adicionar cabeçalho".
+       */
       const versaoSalva =
         localStorage.getItem(
           "atividadeVersaoSelecionada"
         );
 
-      setVersaoSelecionada(
+      const versaoAtual:
+        | "aluno"
+        | "professor" =
         versaoSalva === "professor"
           ? "professor"
-          : "aluno"
+          : "aluno";
+
+      setVersaoSelecionada(
+        versaoAtual
       );
 
+      /*
+       * Escolhe a imagem correta.
+       *
+       * Professor:
+       * usa a imagem com gabarito.
+       *
+       * Aluno:
+       * usa a atividade normal.
+       *
+       * Se por algum motivo não existir
+       * imagem do professor, volta para
+       * a imagem do aluno.
+       */
+      const imagemSalva =
+        versaoAtual === "professor" &&
+        imagemProfessor?.startsWith(
+          "data:image/"
+        )
+          ? imagemProfessor
+          : imagemAluno;
+
+      /*
+       * Recupera o cabeçalho salvo.
+       *
+       * Mantemos também cabecalhoAvaliacao
+       * como alternativa para não perder
+       * cabeçalhos antigos que já tenham
+       * sido salvos.
+       */
       const cabecalhoSalvoLocal =
-        localStorage.getItem("cabecalhoAtividade") ||
-        localStorage.getItem("cabecalhoAvaliacao") ||
+        localStorage.getItem(
+          "cabecalhoAtividade"
+        ) ||
+        localStorage.getItem(
+          "cabecalhoAvaliacao"
+        ) ||
         "";
 
       if (
         !imagemSalva ||
-        !imagemSalva.startsWith("data:image/")
+        !imagemSalva.startsWith(
+          "data:image/"
+        )
       ) {
         setErro(
           "Não encontrei a atividade gerada. Volte e gere uma nova atividade."
         );
+
         return;
       }
 
       setImagem(imagemSalva);
 
       if (configuracaoSalva) {
-        setConfiguracao(
-          JSON.parse(configuracaoSalva)
-        );
+        try {
+          setConfiguracao(
+            JSON.parse(
+              configuracaoSalva
+            )
+          );
+        } catch (error) {
+          console.error(
+            "Erro ao carregar configuração da atividade:",
+            error
+          );
+
+          setConfiguracao(null);
+        }
       }
 
-      setCabecalho(cabecalhoSalvoLocal);
+      setCabecalho(
+        cabecalhoSalvoLocal
+      );
+
       setCabecalhoSalvo(
-        Boolean(cabecalhoSalvoLocal.trim())
+        Boolean(
+          cabecalhoSalvoLocal.trim()
+        )
       );
     } catch (error) {
       console.error(
@@ -124,7 +210,9 @@ export default function FinalizarAtividadePage() {
   }, []);
 
   const resumo = useMemo(() => {
-    if (!configuracao) return "";
+    if (!configuracao) {
+      return "";
+    }
 
     return [
       configuracao.serie,
@@ -150,53 +238,88 @@ export default function FinalizarAtividadePage() {
     cabecalhoRef.current?.focus();
 
     const html =
-      cabecalhoRef.current?.innerHTML || "";
+      cabecalhoRef.current
+        ?.innerHTML || "";
 
     setCabecalho(html);
+
     setCabecalhoSalvo(false);
+
+    setMensagem("");
   }
 
   function salvarCabecalho() {
     const novoCabecalho =
-      cabecalhoRef.current?.innerHTML || "";
+      cabecalhoRef.current
+        ?.innerHTML || "";
 
     const somenteTexto =
-      cabecalhoRef.current?.innerText.trim() || "";
+      cabecalhoRef.current
+        ?.innerText.trim() || "";
 
-    if (!somenteTexto) {
-      localStorage.removeItem("cabecalhoAtividade");
+    /*
+     * Permite salvar cabeçalhos que
+     * contenham apenas imagem/logo.
+     */
+    const possuiImagem =
+      Boolean(
+        cabecalhoRef.current?.querySelector(
+          "img"
+        )
+      );
+
+    if (
+      !somenteTexto &&
+      !possuiImagem
+    ) {
+      localStorage.removeItem(
+        "cabecalhoAtividade"
+      );
 
       setCabecalho("");
+
       setCabecalhoSalvo(false);
-      setMensagem("Cabeçalho removido.");
+
+      setMensagem(
+        "Cabeçalho removido."
+      );
+
       return;
     }
 
-    localStorage.setItem(
-      "cabecalhoAtividade",
-      novoCabecalho
-    );
+    try {
+      localStorage.setItem(
+        "cabecalhoAtividade",
+        novoCabecalho
+      );
 
-    setCabecalho(novoCabecalho);
-    setCabecalhoSalvo(true);
+      setCabecalho(
+        novoCabecalho
+      );
 
-    setMensagem(
-      "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
-    );
+      setCabecalhoSalvo(true);
+
+      setMensagem(
+        "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao salvar cabeçalho:",
+        error
+      );
+
+      setMensagem(
+        "Não foi possível salvar o cabeçalho."
+      );
+    }
   }
-
-  function obterHtmlCabecalho() {
-    return (
-      cabecalhoRef.current?.innerHTML ||
-      cabecalho ||
-      ""
-    );
-  }
-
 
   async function baixarPDF() {
     if (!imagem) {
-      alert("Nenhuma atividade foi encontrada.");
+      alert(
+        "Nenhuma atividade foi encontrada."
+      );
+
       return;
     }
 
@@ -206,7 +329,8 @@ export default function FinalizarAtividadePage() {
         imagem,
         {
           tituloArquivo:
-            versaoSelecionada === "professor"
+            versaoSelecionada ===
+            "professor"
               ? "atividade-planejai-gabarito"
               : "atividade-planejai",
         }
@@ -225,7 +349,10 @@ export default function FinalizarAtividadePage() {
 
   async function baixarWord() {
     if (!imagem) {
-      alert("Nenhuma atividade foi encontrada.");
+      alert(
+        "Nenhuma atividade foi encontrada."
+      );
+
       return;
     }
 
@@ -235,7 +362,8 @@ export default function FinalizarAtividadePage() {
         imagem,
         {
           tituloArquivo:
-            versaoSelecionada === "professor"
+            versaoSelecionada ===
+            "professor"
               ? "atividade-planejai-gabarito"
               : "atividade-planejai",
         }
@@ -274,7 +402,9 @@ export default function FinalizarAtividadePage() {
           <button
             type="button"
             onClick={() =>
-              router.push("/atividades")
+              router.push(
+                "/atividades"
+              )
             }
             className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
           >
@@ -309,9 +439,22 @@ export default function FinalizarAtividadePage() {
         }
 
         .cabecalho-editor:empty::before {
-          content: attr(data-placeholder);
+          content: attr(
+            data-placeholder
+          );
           color: #94a3b8;
           pointer-events: none;
+        }
+
+        .cabecalho-editor p,
+        .cabecalho-preview p {
+          margin-top: 0;
+          margin-bottom: 4px;
+        }
+
+        .cabecalho-preview {
+          width: 100%;
+          box-sizing: border-box;
         }
       `}</style>
 
@@ -323,7 +466,8 @@ export default function FinalizarAtividadePage() {
             </h1>
 
             <p className="text-sm text-slate-700">
-              Edite o cabeçalho e baixe a atividade em Word ou PDF.
+              Edite o cabeçalho e baixe
+              a atividade em Word ou PDF.
             </p>
           </div>
 
@@ -337,6 +481,7 @@ export default function FinalizarAtividadePage() {
             className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
           >
             <ArrowLeft size={19} />
+
             Voltar para a atividade
           </button>
         </div>
@@ -356,7 +501,10 @@ export default function FinalizarAtividadePage() {
             </h2>
 
             <p className="mt-1 text-sm text-slate-500">
-              Copie o cabeçalho usado pela escola e cole na área abaixo. Você pode editar antes de baixar.
+              Copie o cabeçalho usado
+              pela escola e cole na área
+              abaixo. Você pode editar
+              antes de baixar.
             </p>
 
             <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
@@ -364,7 +512,9 @@ export default function FinalizarAtividadePage() {
                 type="button"
                 title="Negrito"
                 onClick={() =>
-                  executarComando("bold")
+                  executarComando(
+                    "bold"
+                  )
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
@@ -375,7 +525,9 @@ export default function FinalizarAtividadePage() {
                 type="button"
                 title="Itálico"
                 onClick={() =>
-                  executarComando("italic")
+                  executarComando(
+                    "italic"
+                  )
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
@@ -386,11 +538,15 @@ export default function FinalizarAtividadePage() {
                 type="button"
                 title="Sublinhado"
                 onClick={() =>
-                  executarComando("underline")
+                  executarComando(
+                    "underline"
+                  )
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
-                <Underline size={18} />
+                <Underline
+                  size={18}
+                />
               </button>
 
               <div className="mx-1 h-7 w-px bg-slate-300" />
@@ -405,7 +561,9 @@ export default function FinalizarAtividadePage() {
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
-                <AlignLeft size={18} />
+                <AlignLeft
+                  size={18}
+                />
               </button>
 
               <button
@@ -418,7 +576,9 @@ export default function FinalizarAtividadePage() {
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
-                <AlignCenter size={18} />
+                <AlignCenter
+                  size={18}
+                />
               </button>
 
               <button
@@ -431,30 +591,39 @@ export default function FinalizarAtividadePage() {
                 }
                 className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
               >
-                <AlignRight size={18} />
+                <AlignRight
+                  size={18}
+                />
               </button>
             </div>
 
             <div
-  ref={cabecalhoRef}
-  contentEditable
-  suppressContentEditableWarning
-  data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-  onInput={() => {
-    setCabecalhoSalvo(false);
-    setMensagem("");
-  }}
-  onBlur={() => {
-    const htmlAtual =
-      cabecalhoRef.current?.innerHTML || "";
+              ref={cabecalhoRef}
+              contentEditable
+              suppressContentEditableWarning
+              data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
+              onInput={() => {
+                setCabecalhoSalvo(
+                  false
+                );
 
-    setCabecalho(htmlAtual);
-  }}
-  className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-  dangerouslySetInnerHTML={{
-    __html: cabecalho,
-  }}
-/>
+                setMensagem("");
+              }}
+              onBlur={() => {
+                const htmlAtual =
+                  cabecalhoRef
+                    .current
+                    ?.innerHTML || "";
+
+                setCabecalho(
+                  htmlAtual
+                );
+              }}
+              className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+              dangerouslySetInnerHTML={{
+                __html: cabecalho,
+              }}
+            />
 
             <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
               <p
@@ -471,10 +640,13 @@ export default function FinalizarAtividadePage() {
 
               <button
                 type="button"
-                onClick={salvarCabecalho}
+                onClick={
+                  salvarCabecalho
+                }
                 className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-50"
               >
                 <Save size={16} />
+
                 Salvar cabeçalho
               </button>
             </div>
@@ -490,14 +662,16 @@ export default function FinalizarAtividadePage() {
             <div
               className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white px-[4.76%] py-[3.37%] shadow-md"
               style={{
-                boxSizing: "border-box",
+                boxSizing:
+                  "border-box",
               }}
             >
               {cabecalho.trim() && (
                 <div
                   className="cabecalho-preview mb-[2.5%] max-h-[15%] shrink-0 overflow-hidden"
                   dangerouslySetInnerHTML={{
-                    __html: cabecalho,
+                    __html:
+                      cabecalho,
                   }}
                 />
               )}
@@ -505,10 +679,16 @@ export default function FinalizarAtividadePage() {
               <div className="flex min-h-0 flex-1 items-start justify-center overflow-hidden bg-white">
                 <img
                   src={imagem}
-                  alt="Atividade pedagógica final"
+                  alt={
+                    versaoSelecionada ===
+                    "professor"
+                      ? "Atividade pedagógica com gabarito"
+                      : "Atividade pedagógica final"
+                  }
                   className="block h-full w-full bg-white object-contain object-top"
                   style={{
-                    filter: "brightness(1.02) contrast(1.01)",
+                    filter:
+                      "brightness(1.02) contrast(1.01)",
                   }}
                 />
               </div>
@@ -522,6 +702,7 @@ export default function FinalizarAtividadePage() {
               className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
             >
               <Download size={18} />
+
               Baixar Word
             </button>
 
@@ -531,6 +712,7 @@ export default function FinalizarAtividadePage() {
               className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-800"
             >
               <Download size={18} />
+
               Baixar PDF
             </button>
           </div>

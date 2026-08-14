@@ -1,6 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
+
 import {
   ArrowLeft,
   Download,
@@ -9,7 +13,11 @@ import {
   FilePenLine,
   UserRound,
   GraduationCap,
+  Sparkles,
+  X,
+  AlertCircle,
 } from "lucide-react";
+
 import { useRouter } from "next/navigation";
 
 type ConfiguracaoAtividadeImagem = {
@@ -21,41 +29,84 @@ type ConfiguracaoAtividadeImagem = {
   tipoAtividade?: string | null;
 };
 
-type VersaoAtividade = "aluno" | "professor";
+type VersaoAtividade =
+  | "aluno"
+  | "professor";
 
 export default function ResultadoAtividadePage() {
   const router = useRouter();
 
-  const [imagemAluno, setImagemAluno] = useState("");
-  const [imagemProfessor, setImagemProfessor] =
+  const [imagemAluno, setImagemAluno] =
     useState("");
 
-  const [versaoSelecionada, setVersaoSelecionada] =
-    useState<VersaoAtividade>("aluno");
+  const [
+    imagemProfessor,
+    setImagemProfessor,
+  ] = useState("");
 
-  const [configuracao, setConfiguracao] =
+  const [
+    versaoSelecionada,
+    setVersaoSelecionada,
+  ] =
+    useState<VersaoAtividade>(
+      "aluno"
+    );
+
+  const [
+    configuracao,
+    setConfiguracao,
+  ] =
     useState<ConfiguracaoAtividadeImagem | null>(
       null
     );
 
-  const [erro, setErro] = useState("");
-  const [carregando, setCarregando] =
-    useState(true);
+  const [erro, setErro] =
+    useState("");
+
+  const [
+    carregando,
+    setCarregando,
+  ] = useState(true);
+
+  /*
+   * NOVO:
+   * controla a janela de correção.
+   */
+  const [
+    mostrarCorrecao,
+    setMostrarCorrecao,
+  ] = useState(false);
+
+  /*
+   * NOVO:
+   * texto escrito pelo professor
+   * explicando somente o erro.
+   */
+  const [
+    descricaoErro,
+    setDescricaoErro,
+  ] = useState("");
 
   const imagemAtual =
-    versaoSelecionada === "professor" &&
+    versaoSelecionada ===
+      "professor" &&
     imagemProfessor
       ? imagemProfessor
       : imagemAluno;
 
   const possuiGabarito =
-    typeof imagemProfessor === "string" &&
-    imagemProfessor.startsWith("data:image/");
+    typeof imagemProfessor ===
+      "string" &&
+    imagemProfessor.startsWith(
+      "data:image/"
+    );
 
   useEffect(() => {
     try {
       const imagemAlunoSalva =
-        localStorage.getItem("atividadeImagem");
+        localStorage.getItem(
+          "atividadeImagem"
+        );
 
       const imagemProfessorSalva =
         localStorage.getItem(
@@ -76,10 +127,13 @@ export default function ResultadoAtividadePage() {
         setErro(
           "Não encontrei a imagem da atividade. Volte e gere uma nova atividade."
         );
+
         return;
       }
 
-      setImagemAluno(imagemAlunoSalva);
+      setImagemAluno(
+        imagemAlunoSalva
+      );
 
       if (
         imagemProfessorSalva &&
@@ -94,7 +148,9 @@ export default function ResultadoAtividadePage() {
 
       if (configuracaoSalva) {
         setConfiguracao(
-          JSON.parse(configuracaoSalva)
+          JSON.parse(
+            configuracaoSalva
+          )
         );
       }
     } catch (error) {
@@ -121,7 +177,9 @@ export default function ResultadoAtividadePage() {
       return;
     }
 
-    setVersaoSelecionada(versao);
+    setVersaoSelecionada(
+      versao
+    );
   }
 
   function baixarImagem() {
@@ -133,11 +191,15 @@ export default function ResultadoAtividadePage() {
     link.href = imagemAtual;
 
     link.download =
-      versaoSelecionada === "professor"
+      versaoSelecionada ===
+      "professor"
         ? "atividade-planejai-gabarito.png"
         : "atividade-planejai-aluno.png";
 
-    document.body.appendChild(link);
+    document.body.appendChild(
+      link
+    );
+
     link.click();
     link.remove();
   }
@@ -149,24 +211,105 @@ export default function ResultadoAtividadePage() {
   }
 
   function adicionarCabecalho() {
-    if (!imagemAtual) return;
+    if (!imagemAtual) {
+      alert(
+        "Não foi possível localizar a atividade."
+      );
+
+      return;
+    }
+
+    try {
+      /*
+       * Guarda apenas qual versão
+       * estava sendo visualizada.
+       */
+      localStorage.setItem(
+        "atividadeVersaoSelecionada",
+        versaoSelecionada
+      );
+
+      /*
+       * Remove uma possível cópia
+       * antiga e pesada.
+       */
+      localStorage.removeItem(
+        "atividadeImagemSelecionada"
+      );
+
+      router.push(
+        "/atividades/finalizar"
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao abrir finalização da atividade:",
+        error
+      );
+
+      alert(
+        "Não foi possível abrir a página de cabeçalho."
+      );
+    }
+  }
+
+  /*
+   * NOVO:
+   * abre a janela para o professor
+   * informar o erro encontrado.
+   */
+  function abrirCorrecao() {
+    setDescricaoErro("");
+    setMostrarCorrecao(true);
+  }
+
+  /*
+   * NOVO:
+   * fecha o modal sem alterar
+   * a atividade.
+   */
+  function fecharCorrecao() {
+    setMostrarCorrecao(false);
+    setDescricaoErro("");
+  }
+
+  /*
+   * Esta função será ligada à IA
+   * no próximo passo.
+   *
+   * Por enquanto NÃO fazemos fetch
+   * para uma rota inexistente.
+   */
+  function solicitarCorrecao() {
+    const instrucao =
+      descricaoErro.trim();
+
+    if (!instrucao) {
+      alert(
+        "Descreva o erro que você encontrou na atividade."
+      );
+
+      return;
+    }
 
     /*
-     * Guarda temporariamente qual versão
-     * o professor escolheu antes de ir
-     * para a página de finalização.
+     * IMPORTANTE:
+     *
+     * Aqui entraremos com a chamada
+     * para a rota de correção da IA.
+     *
+     * Ela receberá:
+     *
+     * - imagemAtual
+     * - instrucao
+     * - versaoSelecionada
+     *
+     * E deverá alterar SOMENTE
+     * o erro indicado.
      */
-    localStorage.setItem(
-      "atividadeImagemSelecionada",
-      imagemAtual
-    );
 
-    localStorage.setItem(
-      "atividadeVersaoSelecionada",
-      versaoSelecionada
+    alert(
+      "A área para informar a correção está pronta. Agora falta conectarmos este botão à IA."
     );
-
-    router.push("/atividades/finalizar");
   }
 
   if (carregando) {
@@ -191,7 +334,9 @@ export default function ResultadoAtividadePage() {
           <button
             type="button"
             onClick={() =>
-              router.push("/atividades")
+              router.push(
+                "/atividades"
+              )
             }
             className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 font-bold text-white"
           >
@@ -246,15 +391,17 @@ export default function ResultadoAtividadePage() {
             </h1>
 
             <p className="text-sm text-slate-700">
-              Confira a atividade antes de
-              adicionar o cabeçalho.
+              Confira a atividade antes
+              de adicionar o cabeçalho.
             </p>
           </div>
 
           <button
             type="button"
             onClick={() =>
-              router.push("/atividades")
+              router.push(
+                "/atividades"
+              )
             }
             className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
           >
@@ -265,32 +412,72 @@ export default function ResultadoAtividadePage() {
       </header>
 
       <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <div className="nao-imprimir mb-4 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          {configuracao ? (
-            <p className="px-1 text-sm text-slate-600">
-              <strong>
-                {configuracao.serie ||
-                  "Turma"}
-              </strong>
 
-              {configuracao.disciplina
-                ? ` • ${configuracao.disciplina}`
-                : ""}
+        {/* FAIXA SUPERIOR */}
+        <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
 
-              {configuracao.quantidadeQuestoes
-                ? ` • ${configuracao.quantidadeQuestoes} itens`
-                : ""}
-            </p>
-          ) : (
-            <div />
-          )}
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
-          {possuiGabarito && (
+            {/* INFORMAÇÕES */}
+            {configuracao ? (
+              <p className="px-1 text-sm text-slate-600">
+                <strong>
+                  {configuracao.serie ||
+                    "Turma"}
+                </strong>
+
+                {configuracao.disciplina
+                  ? ` • ${configuracao.disciplina}`
+                  : ""}
+
+                {configuracao.quantidadeQuestoes
+                  ? ` • ${configuracao.quantidadeQuestoes} itens`
+                  : ""}
+              </p>
+            ) : (
+              <div />
+            )}
+
+            {/* NOVOS BOTÕES */}
             <div className="flex flex-wrap items-center gap-2">
+
+              <button
+                type="button"
+                onClick={abrirCorrecao}
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+              >
+                <Sparkles size={18} />
+                Corrigir erro com IA
+              </button>
+
               <button
                 type="button"
                 onClick={() =>
-                  selecionarVersao("aluno")
+                  router.push(
+                    "/atividades"
+                  )
+                }
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                <RefreshCw
+                  size={18}
+                />
+                Refazer atividade
+              </button>
+
+            </div>
+          </div>
+
+          {/* ALUNO / PROFESSOR */}
+          {possuiGabarito && (
+            <div className="mt-3 flex flex-wrap items-center justify-end gap-2 border-t border-slate-100 pt-3">
+
+              <button
+                type="button"
+                onClick={() =>
+                  selecionarVersao(
+                    "aluno"
+                  )
                 }
                 className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
                   versaoSelecionada ===
@@ -299,7 +486,9 @@ export default function ResultadoAtividadePage() {
                     : "border border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
                 }`}
               >
-                <UserRound size={18} />
+                <UserRound
+                  size={18}
+                />
                 Versão do aluno
               </button>
 
@@ -317,13 +506,17 @@ export default function ResultadoAtividadePage() {
                     : "border border-violet-200 bg-violet-50 text-violet-700 hover:bg-violet-100"
                 }`}
               >
-                <GraduationCap size={18} />
+                <GraduationCap
+                  size={18}
+                />
                 Cópia do professor
               </button>
+
             </div>
           )}
         </div>
 
+        {/* IMAGEM */}
         <div className="folha-imagem mx-auto w-full max-w-[794px] overflow-hidden bg-white shadow-xl">
           <img
             src={imagemAtual}
@@ -355,17 +548,8 @@ export default function ResultadoAtividadePage() {
           </div>
         )}
 
+        {/* BOTÕES DE SAÍDA */}
         <div className="nao-imprimir mt-6 flex flex-col justify-center gap-3 sm:flex-row sm:flex-wrap">
-          <button
-            type="button"
-            onClick={() =>
-              router.push("/atividades")
-            }
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-6 py-3 font-bold text-slate-700"
-          >
-            <RefreshCw size={19} />
-            Refazer atividade
-          </button>
 
           <button
             type="button"
@@ -373,6 +557,7 @@ export default function ResultadoAtividadePage() {
             className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
           >
             <Download size={19} />
+
             {versaoSelecionada ===
             "professor"
               ? "Baixar cópia do professor"
@@ -387,6 +572,7 @@ export default function ResultadoAtividadePage() {
             className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
           >
             <Printer size={19} />
+
             {versaoSelecionada ===
             "professor"
               ? "Imprimir gabarito"
@@ -395,14 +581,147 @@ export default function ResultadoAtividadePage() {
 
           <button
             type="button"
-            onClick={adicionarCabecalho}
+            onClick={
+              adicionarCabecalho
+            }
             className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-bold text-white"
           >
-            <FilePenLine size={19} />
+            <FilePenLine
+              size={19}
+            />
             Adicionar cabeçalho
           </button>
+
         </div>
       </section>
+
+      {/* MODAL CORRIGIR ERRO */}
+      {mostrarCorrecao && (
+        <div className="nao-imprimir fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+
+          <div className="w-full max-w-xl overflow-hidden rounded-2xl bg-white shadow-2xl">
+
+            {/* CABEÇALHO MODAL */}
+            <div className="flex items-start justify-between border-b border-slate-200 p-5">
+
+              <div className="flex items-start gap-3">
+
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+                  <Sparkles
+                    size={22}
+                  />
+                </div>
+
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900">
+                    Corrigir erro com IA
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Informe somente o
+                    erro que você encontrou
+                    na atividade.
+                  </p>
+                </div>
+
+              </div>
+
+              <button
+                type="button"
+                onClick={
+                  fecharCorrecao
+                }
+                className="cursor-pointer rounded-lg p-2 text-slate-500 transition hover:bg-slate-100"
+                aria-label="Fechar"
+              >
+                <X size={20} />
+              </button>
+
+            </div>
+
+            {/* CONTEÚDO */}
+            <div className="p-5">
+
+              <div className="mb-4 flex gap-3 rounded-xl border border-amber-200 bg-amber-50 p-4">
+
+                <AlertCircle
+                  size={21}
+                  className="mt-0.5 shrink-0 text-amber-600"
+                />
+
+                <p className="text-sm leading-6 text-amber-900">
+                  Descreva exatamente o
+                  que deve ser corrigido.
+                  A IA será orientada a
+                  <strong>
+                    {" "}
+                    não alterar nenhuma
+                    outra parte da
+                    atividade.
+                  </strong>
+                </p>
+
+              </div>
+
+              <label
+                htmlFor="descricao-correcao"
+                className="text-sm font-bold text-slate-800"
+              >
+                Qual erro você encontrou?
+              </label>
+
+              <textarea
+                id="descricao-correcao"
+                value={descricaoErro}
+                maxLength={500}
+                onChange={(evento) =>
+                  setDescricaoErro(
+                    evento.target.value
+                  )
+                }
+                placeholder='Ex.: Na primeira questão está escrito "CACHORO". Corrija para "CACHORRO".'
+                className="mt-2 min-h-[140px] w-full resize-none rounded-xl border border-slate-300 p-4 text-sm leading-6 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+              />
+
+              <div className="mt-1 text-right text-xs text-slate-400">
+                {descricaoErro.length}/500
+              </div>
+
+            </div>
+
+            {/* BOTÕES MODAL */}
+            <div className="flex flex-col-reverse gap-3 border-t border-slate-200 bg-slate-50 p-5 sm:flex-row sm:justify-end">
+
+              <button
+                type="button"
+                onClick={
+                  fecharCorrecao
+                }
+                className="cursor-pointer rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-bold text-slate-700 transition hover:bg-slate-100"
+              >
+                Cancelar
+              </button>
+
+              <button
+                type="button"
+                onClick={
+                  solicitarCorrecao
+                }
+                disabled={
+                  !descricaoErro.trim()
+                }
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-slate-300"
+              >
+                <Sparkles
+                  size={18}
+                />
+                Corrigir somente este erro
+              </button>
+
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
