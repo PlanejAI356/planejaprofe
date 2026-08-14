@@ -1328,7 +1328,7 @@ REVISÃO OBRIGATÓRIA DA CRUZADINHA:
      * COMPLETE
      */
     if (tipoAtividade === "complete") {
-      regrasTipoAtividade = `
+  regrasTipoAtividade = `
 TIPO DE ATIVIDADE OBRIGATÓRIO: COMPLETE.
 
 REGRAS:
@@ -1337,8 +1337,33 @@ REGRAS:
 - Deixar espaços adequados para o estudante escrever.
 - Não mostrar as respostas.
 - Adequar rigorosamente a dificuldade à série ${serie}.
+
+REGRAS OBRIGATÓRIAS PARA PALAVRAS COM LETRAS FALTANDO:
+
+- Antes de criar cada item, definir mentalmente a PALAVRA COMPLETA E CORRETA.
+- Depois, retirar somente a letra ou sílaba que o aluno deverá completar.
+- A parte visível da palavra precisa continuar correta e na ordem certa.
+- Nunca remover letras extras.
+- Nunca trocar letras.
+- Nunca inventar palavras.
+- Nunca apresentar uma palavra incompleta de forma que pareça erro ortográfico.
+
+EXEMPLOS CORRETOS:
+
+BALEIA → _ALEIA
+BRINQUEDO → _RINQUEDO
+BOLA → _OLA
+BOCA → _OCA
+
+IMPORTANTE:
+
+- O espaço vazio representa exatamente a parte que o aluno deve escrever.
+- Se a atividade pedir completar com a letra B, retirar somente a letra B.
+- Conferir cada palavra completa antes de remover a letra.
+- Conferir novamente cada palavra depois de montar a atividade.
+- A imagem deve corresponder corretamente à palavra.
 `;
-    }
+}
 
     /*
      * LIGUE
@@ -1583,9 +1608,13 @@ PROPORÇÃO DA ÁREA ÚTIL:
 
 - Considerar que a página final será A4 vertical: 210 mm x 297 mm.
 - O PlanejAI reservará a parte superior para o cabeçalho.
-- A área disponível para esta imagem será aproximadamente:
-  190 mm de largura x 240 mm de altura.
-- Organizar visualmente o conteúdo em proporção aproximada de 19:24.
+- A imagem final será vertical.
+- Aproveitar praticamente toda a largura disponível.
+- Não criar grandes margens laterais.
+- Não centralizar a atividade dentro de uma área estreita.
+- O conteúdo deve começar próximo à margem esquerda e terminar próximo à margem direita.
+- Manter apenas uma margem interna pequena e regular.
+- A composição deve ser pensada para preencher visualmente a largura da imagem vertical gerada.
 - A atividade deve parecer um bloco vertical um pouco mais baixo e mais largo
   do que uma folha A4 completa.
 - NÃO criar uma folha A4 inteira dentro da imagem.
@@ -1634,7 +1663,7 @@ abaixo de um cabeçalho, sem precisar cortar, esticar ou deformar a imagem.
       await openai.images.generate({
         model: "gpt-image-2",
         prompt: promptFinal,
-        size: "1024x1536",
+        size: "1536x1024",
         quality: "medium",
         output_format: "png",
       });
