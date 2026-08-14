@@ -1,16 +1,6 @@
-type OpcoesExportacao = {
+type OpcoesExportarAtividade = {
   tituloArquivo?: string;
 };
-
-function copiarEstilosDaPagina() {
-  return Array.from(
-    document.querySelectorAll(
-      'link[rel="stylesheet"], style'
-    )
-  )
-    .map((elemento) => elemento.outerHTML)
-    .join("\n");
-}
 
 function limparNomeArquivo(nome: string) {
   const nomeLimpo = nome
@@ -20,7 +10,7 @@ function limparNomeArquivo(nome: string) {
     .replace(/\s+/g, " ")
     .trim();
 
-  return nomeLimpo || "avaliacao";
+  return nomeLimpo || "atividade";
 }
 
 function escaparHtml(texto: string) {
@@ -31,112 +21,25 @@ function escaparHtml(texto: string) {
     .replace(/"/g, "&quot;");
 }
 
-function prepararDocumentoClonado(
-  documentoClonado: HTMLElement
+export async function exportarAtividade(
+  cabecalhoElemento: HTMLElement | null,
+  imagem: string,
+  opcoes: OpcoesExportarAtividade = {}
 ) {
-  documentoClonado.removeAttribute("id");
-
-  documentoClonado
-    .querySelectorAll(
-      [
-        "button",
-        "[data-nao-exportar]",
-        ".nao-exportar",
-      ].join(",")
-    )
-    .forEach((item) => item.remove());
-
-  const cabecalho =
-    documentoClonado.querySelector<HTMLElement>(
-      "[data-placeholder]"
-    );
-
-  if (cabecalho) {
-    cabecalho.classList.add(
-      "cabecalho-avaliacao-exportacao"
-    );
-
-    cabecalho.removeAttribute(
-      "data-placeholder"
-    );
-
-    cabecalho.removeAttribute(
-      "contenteditable"
-    );
-
-    if (!cabecalho.innerText.trim()) {
-      cabecalho.innerHTML = "";
-    }
-  }
-
-  const editaveis = Array.from(
-    documentoClonado.querySelectorAll<HTMLElement>(
-      "[contenteditable='true']"
-    )
-  );
-
-  const conteudoAvaliacao =
-    editaveis.find(
-      (item) => item !== cabecalho
-    ) || null;
-
-  if (conteudoAvaliacao) {
-    conteudoAvaliacao.classList.add(
-      "conteudo-avaliacao-exportacao"
+  if (!imagem || !imagem.startsWith("data:image/")) {
+    throw new Error(
+      "A imagem da atividade não foi encontrada."
     );
   }
 
-  documentoClonado
-    .querySelectorAll<HTMLElement>(
-      "[contenteditable='true']"
-    )
-    .forEach((item) => {
-      item.removeAttribute(
-        "contenteditable"
-      );
-    });
-
-  documentoClonado
-    .querySelectorAll<HTMLParagraphElement>(
-      "p"
-    )
-    .forEach((paragrafo) => {
-      const texto = paragrafo.innerText
-        .replace(/\s+/g, " ")
-        .trim()
-        .toLowerCase();
-
-      const ehMensagemCabecalho =
-        texto.includes(
-          "copie o cabeçalho usado pela escola"
-        ) ||
-        texto.includes(
-          "cabeçalho salvo. ele aparecerá"
-        );
-
-      if (ehMensagemCabecalho) {
-        const bloco =
-          paragrafo.parentElement;
-
-        if (bloco) {
-          bloco.remove();
-        } else {
-          paragrafo.remove();
-        }
-      }
-    });
-}
-
-export async function exportarAvaliacao(
-  elemento: HTMLElement,
-  opcoes: OpcoesExportacao = {}
-) {
   const tituloArquivo = limparNomeArquivo(
-    opcoes.tituloArquivo || "avaliacao"
+    opcoes.tituloArquivo || "atividade"
   );
 
-  const iframe =
-    document.createElement("iframe");
+  const cabecalhoHtml =
+    cabecalhoElemento?.innerHTML || "";
+
+  const iframe = document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.right = "0";
@@ -146,45 +49,25 @@ export async function exportarAvaliacao(
   iframe.style.border = "0";
   iframe.style.opacity = "0";
 
-  iframe.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  iframe.setAttribute("aria-hidden", "true");
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao =
-    iframe.contentWindow;
+  const janelaImpressao = iframe.contentWindow;
+  const documentoImpressao = iframe.contentDocument;
 
-  const documentoImpressao =
-    iframe.contentDocument;
-
-  if (
-    !janelaImpressao ||
-    !documentoImpressao
-  ) {
+  if (!janelaImpressao || !documentoImpressao) {
     iframe.remove();
 
     throw new Error(
-      "Não foi possível preparar a avaliação para exportação."
+      "Não foi possível preparar a atividade para exportação."
     );
   }
-
-  const estilosPagina =
-    copiarEstilosDaPagina();
-
-  const documentoClonado =
-    elemento.cloneNode(true) as HTMLElement;
-
-  prepararDocumentoClonado(
-    documentoClonado
-  );
 
   documentoImpressao.open();
 
   documentoImpressao.write(`
     <!DOCTYPE html>
-
     <html lang="pt-BR">
       <head>
         <meta charset="UTF-8" />
@@ -194,16 +77,12 @@ export async function exportarAvaliacao(
           content="width=device-width, initial-scale=1"
         />
 
-        <title>${escaparHtml(
-          tituloArquivo
-        )}</title>
-
-        ${estilosPagina}
+        <title>${escaparHtml(tituloArquivo)}</title>
 
         <style>
           @page {
             size: A4 portrait;
-            margin: 7mm;
+            margin: 0;
           }
 
           * {
@@ -212,225 +91,398 @@ export async function exportarAvaliacao(
 
           html,
           body {
+            width: 210mm;
+            height: 297mm;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
+            overflow: hidden !important;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000000;
           }
 
           body {
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+          }
+
+          /*
+           * FOLHA A4
+           *
+           * A borda envolve CABEÇALHO + ATIVIDADE,
+           * como uma única folha.
+           */
+          .pagina {
+            position: relative;
+
+            width: 210mm;
+            height: 297mm;
+
+            margin: 0;
+            padding: 5mm;
+
+            background: #ffffff;
+
+            display: flex;
+            flex-direction: column;
+
+            overflow: hidden;
+
+            border: 1.2px solid #000000;
+          }
+
+          /*
+           * Segunda linha da borda.
+           * Dá o acabamento parecido com a referência.
+           */
+          .pagina::before {
+            content: "";
+
+            position: absolute;
+            inset: 2mm;
+
+            border: 0.8px solid #000000;
+
+            pointer-events: none;
+            z-index: 0;
+          }
+
+          .conteudo-pagina {
+            position: relative;
+            z-index: 1;
+
             width: 100%;
-            color: #000000;
-            font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
-            font-size: 10.5pt;
-            line-height: 1.24;
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
+            height: 100%;
+
+            display: flex;
+            flex-direction: column;
+
+            min-height: 0;
           }
 
-          #documento-exportacao {
+          /*
+           * CABEÇALHO
+           *
+           * Mantém o cabeçalho real do professor.
+           * Ele ocupa a MESMA largura útil da atividade.
+           */
+          .cabecalho {
+            width: 100%;
+
+            flex: 0 0 auto;
+
+            margin: 0;
+            padding: 0;
+
+            overflow: visible;
+          }
+
+          .cabecalho table {
             width: 100% !important;
-            max-width: none !important;
-            min-height: auto !important;
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            border-radius: 0 !important;
-            box-shadow: none !important;
-            overflow: visible !important;
-            background: #ffffff !important;
+
+            border-collapse: collapse !important;
+            table-layout: fixed;
           }
 
-          .cabecalho-avaliacao-exportacao {
-            display: block !important;
-            width: 100% !important;
-            min-height: 78px !important;
-            margin: 0 0 7px !important;
-            padding: 6px 8px !important;
-            border: 1px solid #64748b !important;
-            border-radius: 3px !important;
-            background: #ffffff !important;
-            text-align: center !important;
-            overflow: hidden !important;
-            box-shadow: none !important;
+          .cabecalho td,
+          .cabecalho th {
+            border: 1px solid #000000;
+
+            padding: 1mm 1.4mm;
+
+            vertical-align: middle;
+
+            overflow-wrap: anywhere;
+
+            line-height: 1.08;
           }
 
-          .conteudo-avaliacao-exportacao {
-            min-height: auto !important;
-            font-size: 10.5pt !important;
-            line-height: 1.24 !important;
-            color: #000000 !important;
+          .cabecalho img {
+            display: block;
+
+            max-width: 27mm !important;
+            max-height: 19mm !important;
+
+            width: auto;
+            height: auto;
+
+            object-fit: contain;
+
+            margin: 0 auto;
           }
 
-          .conteudo-avaliacao-exportacao > div {
-            margin-top: 0 !important;
-            margin-bottom: 6px !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
+          /*
+           * ATIVIDADE
+           *
+           * Começa logo abaixo do cabeçalho e usa
+           * exatamente a mesma largura interna.
+           */
+          .atividade {
+            width: 100%;
+
+            flex: 1 1 0;
+            min-height: 0;
+
+            margin-top: 1.5mm;
+
+            display: flex;
+            align-items: flex-start;
+            justify-content: center;
+
+            overflow: hidden;
+
+            background: #ffffff;
           }
 
-          .conteudo-avaliacao-exportacao > div:first-child {
-            margin: 4px 0 8px !important;
-            text-align: center !important;
-            font-size: 14pt !important;
-            line-height: 1.15 !important;
-            font-weight: 700 !important;
-          }
+          /*
+           * A imagem não é deformada.
+           *
+           * Primeiro tentamos ocupar toda a largura.
+           * Se a altura ficar maior que o espaço restante,
+           * o JavaScript reduz proporcionalmente.
+           */
+          .atividade img {
+            display: block;
 
-          .conteudo-avaliacao-exportacao p {
-            margin-top: 0 !important;
-            margin-bottom: 2px !important;
-            line-height: 1.24 !important;
-          }
+            width: auto;
+            height: auto;
 
-          .conteudo-avaliacao-exportacao strong {
-            font-weight: 700 !important;
-          }
+            max-width: 100%;
+            max-height: 100%;
 
-          .conteudo-avaliacao-exportacao img {
-            display: block !important;
-            width: auto !important;
-            max-width: 290px !important;
-            max-height: 230px !important;
-            height: auto !important;
-            margin: 3px auto 4px !important;
-            object-fit: contain !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
+            object-fit: contain;
+            object-position: top center;
 
-          .conteudo-avaliacao-exportacao.columns-2 {
-            column-gap: 14px !important;
-            column-rule: 1px solid #cbd5e1 !important;
-          }
+            margin: 0 auto;
 
-          .conteudo-avaliacao-exportacao.columns-2 img {
-            max-width: 210px !important;
-            max-height: 190px !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="height:28px"] {
-            height: 20px !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="margin-bottom:20px"] {
-            margin-bottom: 6px !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="margin:16px 0"] {
-            margin: 3px 0 4px !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="margin:8px 0"] {
-            margin: 3px 0 !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="padding:8px"] {
-            padding: 5px !important;
-          }
-
-          .conteudo-avaliacao-exportacao div[style*="gap:24px"] {
-            gap: 12px !important;
-          }
-
-          #documento-exportacao button,
-          #documento-exportacao .nao-exportar,
-          #documento-exportacao [data-nao-exportar] {
-            display: none !important;
-          }
-
-          .questao-avaliacao,
-          [data-questao-avaliacao] {
-            margin-bottom: 6px !important;
-            break-inside: avoid;
-            page-break-inside: avoid;
-          }
-
-          textarea,
-          input {
-            border: 0 !important;
-            outline: 0 !important;
-            box-shadow: none !important;
-            background: transparent !important;
+            background: #ffffff;
           }
 
           @media print {
             html,
             body {
-              width: 100% !important;
-              background: #ffffff !important;
+              width: 210mm;
+              height: 297mm;
             }
 
-            #documento-exportacao {
-              display: block !important;
+            .pagina {
+              width: 210mm;
+              height: 297mm;
+
+              break-inside: avoid;
+              page-break-inside: avoid;
+            }
+
+            .cabecalho,
+            .atividade {
+              break-inside: avoid;
+              page-break-inside: avoid;
             }
           }
         </style>
       </head>
 
       <body>
-        <main id="documento-exportacao">
-          ${documentoClonado.outerHTML}
-        </main>
+        <div class="pagina">
+          <div class="conteudo-pagina">
+
+            ${
+              cabecalhoHtml.trim()
+                ? `
+                  <div class="cabecalho">
+                    ${cabecalhoHtml}
+                  </div>
+                `
+                : ""
+            }
+
+            <div class="atividade">
+              <img
+                id="atividade-imagem"
+                src="${imagem}"
+                alt="Atividade pedagógica"
+              />
+            </div>
+
+          </div>
+        </div>
+
+        <script>
+          (function () {
+            const imagem = document.getElementById(
+              "atividade-imagem"
+            );
+
+            const atividade =
+              document.querySelector(".atividade");
+
+            /*
+             * ENCAIXE AUTOMÁTICO DA ATIVIDADE
+             *
+             * Não recortamos margens brancas da imagem.
+             * O navegador mede o espaço REAL disponível
+             * depois que o cabeçalho foi renderizado.
+             *
+             * A imagem é ampliada o máximo possível,
+             * mantendo a proporção original e sem cortar.
+             */
+            function ajustarImagem() {
+              if (!imagem || !atividade) {
+                return;
+              }
+
+              const larguraDisponivel =
+                atividade.clientWidth;
+
+              const alturaDisponivel =
+                atividade.clientHeight;
+
+              const larguraOriginal =
+                imagem.naturalWidth;
+
+              const alturaOriginal =
+                imagem.naturalHeight;
+
+              if (
+                larguraDisponivel <= 0 ||
+                alturaDisponivel <= 0 ||
+                larguraOriginal <= 0 ||
+                alturaOriginal <= 0
+              ) {
+                return;
+              }
+
+              /*
+               * Calcula duas escalas:
+               * - quanto caberia pela largura;
+               * - quanto caberia pela altura.
+               *
+               * Usa a menor para garantir que a imagem
+               * inteira permaneça dentro da área útil.
+               */
+              const escalaLargura =
+                larguraDisponivel / larguraOriginal;
+
+              const escalaAltura =
+                alturaDisponivel / alturaOriginal;
+
+              const escala = Math.min(
+                escalaLargura,
+                escalaAltura
+              );
+
+              const larguraFinal =
+                Math.floor(
+                  larguraOriginal * escala
+                );
+
+              const alturaFinal =
+                Math.floor(
+                  alturaOriginal * escala
+                );
+
+              imagem.style.width =
+                larguraFinal + "px";
+
+              imagem.style.height =
+                alturaFinal + "px";
+
+              imagem.style.maxWidth = "100%";
+              imagem.style.maxHeight = "100%";
+
+              imagem.style.objectFit = "contain";
+              imagem.style.objectPosition =
+                "top center";
+
+              imagem.style.margin = "0 auto";
+            }
+
+            function imprimir() {
+              setTimeout(
+                function () {
+                  window.focus();
+                  window.print();
+                },
+                350
+              );
+            }
+
+            function prepararEImprimir() {
+              /*
+               * Espera o navegador terminar de calcular
+               * a altura real do cabeçalho e da área
+               * restante antes de dimensionar a imagem.
+               */
+              requestAnimationFrame(function () {
+                requestAnimationFrame(function () {
+                  ajustarImagem();
+                  imprimir();
+                });
+              });
+            }
+
+            if (!imagem) {
+                imprimir();
+                return;
+              }
+
+              const recortada =
+                recortarMargensBrancas(imagem);
+
+              if (!recortada) {
+                ajustarImagem();
+                imprimir();
+                return;
+              }
+
+              /*
+               * Troca pela versão recortada.
+               */
+              imagem.onload = function () {
+                ajustarImagem();
+                imprimir();
+              };
+
+              imagem.src = recortada;
+            }
+
+            if (!imagem) {
+              imprimir();
+              return;
+            }
+
+            if (imagem.complete) {
+              prepararEImprimir();
+              return;
+            }
+
+            imagem.onload =
+              prepararEImprimir;
+
+            imagem.onerror =
+              imprimir;
+          })();
+        <\/script>
+
       </body>
     </html>
   `);
 
   documentoImpressao.close();
 
-  await new Promise<void>((resolve) => {
-    const imagens = Array.from(
-      documentoImpressao.images
-    );
-
-    if (imagens.length === 0) {
-      resolve();
-      return;
-    }
-
-    let imagensFinalizadas = 0;
-
-    function finalizarImagem() {
-      imagensFinalizadas += 1;
-
-      if (
-        imagensFinalizadas ===
-        imagens.length
-      ) {
-        resolve();
-      }
-    }
-
-    imagens.forEach((imagem) => {
-      if (imagem.complete) {
-        finalizarImagem();
-        return;
-      }
-
-      imagem.addEventListener(
-        "load",
-        finalizarImagem,
-        { once: true }
+  janelaImpressao.addEventListener(
+    "afterprint",
+    () => {
+      setTimeout(
+        () => {
+          iframe.remove();
+        },
+        300
       );
-
-      imagem.addEventListener(
-        "error",
-        finalizarImagem,
-        { once: true }
-      );
-    });
-  });
-
-  await new Promise<void>((resolve) => {
-    setTimeout(resolve, 500);
-  });
-
-  janelaImpressao.focus();
-  janelaImpressao.print();
-
-  setTimeout(() => {
-    iframe.remove();
-  }, 1500);
+    },
+    {
+      once: true,
+    }
+  );
 }
