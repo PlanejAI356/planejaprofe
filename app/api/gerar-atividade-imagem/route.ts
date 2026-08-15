@@ -1663,7 +1663,7 @@ abaixo de um cabeçalho, sem precisar cortar, esticar ou deformar a imagem.
       await openai.images.generate({
         model: "gpt-image-2",
         prompt: promptFinal,
-        size: "1536x1024",
+        size: "1024x1232",
         quality: "medium",
         output_format: "png",
       });
