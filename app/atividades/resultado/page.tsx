@@ -85,6 +85,11 @@ export default function ResultadoAtividadePage() {
     setCorrigindo,
   ] = useState(false);
 
+  const [
+  mostrarSucessoCorrecao,
+  setMostrarSucessoCorrecao,
+] = useState(false);
+
   const imagemAtual =
     versaoSelecionada ===
       "professor" &&
@@ -373,9 +378,7 @@ export default function ResultadoAtividadePage() {
 
       setDescricaoErro("");
 
-      alert(
-        "Correção concluída. Confira a atividade para confirmar se o erro foi corrigido corretamente."
-      );
+      setMostrarSucessoCorrecao(true);
     } catch (error) {
       console.error(
         "Erro ao corrigir atividade:",
@@ -844,6 +847,38 @@ export default function ResultadoAtividadePage() {
           </div>
         </div>
       )}
+
+      {mostrarSucessoCorrecao && (
+        <div className="nao-imprimir fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4">
+          <div className="w-full max-w-md rounded-3xl bg-white p-7 text-center shadow-2xl sm:p-8">
+
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-full bg-emerald-100 text-emerald-700">
+              <Sparkles size={38} />
+            </div>
+
+            <h2 className="mt-5 text-2xl font-extrabold text-slate-900">
+              Correção concluída!
+            </h2>
+
+            <p className="mx-auto mt-3 max-w-sm text-base leading-7 text-slate-600">
+              Confira a atividade para confirmar se o erro foi corrigido corretamente.
+            </p>
+
+            <div className="my-6 h-px w-full bg-slate-200" />
+
+            <button
+              type="button"
+              onClick={() =>
+                setMostrarSucessoCorrecao(false)
+              }
+              className="w-full cursor-pointer rounded-xl bg-emerald-600 px-6 py-3.5 text-base font-extrabold text-white transition hover:bg-emerald-700"
+            >
+              OK
+            </button>
+
+          </div>
+        </div>
+            )}
     </main>
   );
 }
