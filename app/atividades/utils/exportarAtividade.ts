@@ -42,11 +42,9 @@ export async function exportarAtividade(
     );
 
   /*
-   * IMPORTANTE:
-   *
    * Não reconstruímos o cabeçalho.
-   * Pegamos exatamente o HTML que está
-   * aparecendo no editor da página.
+   * Usamos exatamente o HTML que está
+   * aparecendo na tela de finalização.
    */
   const cabecalhoHtml =
     cabecalhoElemento?.innerHTML || "";
@@ -55,11 +53,9 @@ export async function exportarAtividade(
     document.createElement("iframe");
 
   /*
-   * Não usar width/height = 0.
-   *
-   * Precisamos que o navegador consiga
-   * calcular corretamente a altura real
-   * do cabeçalho e o espaço restante.
+   * Mantemos um iframe com tamanho real
+   * para o navegador conseguir medir
+   * cabeçalho e área restante.
    */
   iframe.style.position = "fixed";
   iframe.style.left = "-10000px";
@@ -148,8 +144,8 @@ body {
 /*
  * FOLHA A4
  *
- * O documento inteiro permanece
- * rigorosamente dentro de uma página.
+ * A área cinza da tela NÃO vai para o PDF.
+ * A folha exportada permanece branca.
  */
 .pagina {
   width: 210mm;
@@ -158,7 +154,30 @@ body {
   margin: 0;
   padding: 8mm;
 
-  background: #ffffff;
+  background: #ffffff !important;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+}
+
+/*
+ * BORDA ÚNICA
+ *
+ * Esta é a mesma lógica aplicada na tela:
+ * cabeçalho + atividade ficam DENTRO
+ * da mesma borda.
+ */
+.conteudo-folha {
+  width: 100%;
+  height: 100%;
+
+  min-height: 0;
+
+  border: 1px solid #000000;
+
+  background: #ffffff !important;
 
   display: flex;
   flex-direction: column;
@@ -169,28 +188,24 @@ body {
 /*
  * CABEÇALHO
  *
- * Mantemos exatamente o HTML que
- * veio da tela.
- *
- * Apenas normalizamos medidas para
- * que ele caiba corretamente no A4.
+ * Fica dentro da borda externa.
+ * Não reconstruímos o cabeçalho.
  */
 .cabecalho {
   width: 100%;
 
   flex: 0 0 auto;
 
-  margin: 0 0 2mm 0;
-  padding: 0;
+  margin: 0;
+  padding: 3mm 3mm 0 3mm;
 
   overflow: visible;
 
-  background: #ffffff;
+  background: #ffffff !important;
 }
 
 .cabecalho table {
   width: 100% !important;
-
   max-width: 100% !important;
 
   border-collapse: collapse !important;
@@ -232,11 +247,9 @@ body {
 /*
  * ÁREA DA ATIVIDADE
  *
- * Usa TODO o espaço restante depois
- * que o cabeçalho é renderizado.
- *
- * A borda fica ao redor da atividade,
- * criando o acabamento profissional.
+ * Não possui outra borda externa.
+ * A borda que vale é a borda única
+ * de .conteudo-folha.
  */
 .atividade {
   width: 100%;
@@ -245,9 +258,7 @@ body {
 
   min-height: 0;
 
-  border: 1px solid #222222;
-
-  padding: 1.5mm;
+  padding: 3mm;
 
   display: flex;
 
@@ -256,25 +267,36 @@ body {
 
   overflow: hidden;
 
-  background: #ffffff;
+  background: #ffffff !important;
 }
 
 /*
- * A imagem nunca é deformada.
+ * Mantém a atividade no maior tamanho
+ * possível sem cortar nem deformar.
  */
 .atividade img {
   display: block;
+
   width: auto;
   height: auto;
+
   max-width: 100%;
   max-height: 100%;
+
   object-fit: contain;
   object-position: top center;
-  margin: 0 auto;
-  background: #ffffff;
 
-  /* deixa o fundo da atividade mais branco no PDF */
-  filter: brightness(1.08) contrast(1.06);
+  margin: 0 auto;
+
+  background: #ffffff !important;
+
+  /*
+   * Mesma correção visual usada
+   * na tela de finalização.
+   */
+  filter:
+    brightness(1.02)
+    contrast(1.01);
 }
 
 @media print {
@@ -283,16 +305,21 @@ body {
   body {
     width: 210mm !important;
     height: 297mm !important;
+
+    background: #ffffff !important;
   }
 
   .pagina {
     width: 210mm !important;
     height: 297mm !important;
 
+    background: #ffffff !important;
+
     break-inside: avoid !important;
     page-break-inside: avoid !important;
   }
 
+  .conteudo-folha,
   .cabecalho,
   .atividade {
     break-inside: avoid !important;
@@ -308,23 +335,27 @@ body {
 
 <div class="pagina">
 
-  ${
-    cabecalhoHtml.trim()
-      ? `
-        <div class="cabecalho">
-          ${cabecalhoHtml}
-        </div>
-      `
-      : ""
-  }
+  <div class="conteudo-folha">
 
-  <div class="atividade">
+    ${
+      cabecalhoHtml.trim()
+        ? `
+          <div class="cabecalho">
+            ${cabecalhoHtml}
+          </div>
+        `
+        : ""
+    }
 
-    <img
-      id="atividade-imagem"
-      src="${imagem}"
-      alt="Atividade pedagógica"
-    />
+    <div class="atividade">
+
+      <img
+        id="atividade-imagem"
+        src="${imagem}"
+        alt="Atividade pedagógica"
+      />
+
+    </div>
 
   </div>
 
@@ -347,16 +378,8 @@ body {
   let imprimindo = false;
 
   /*
-   * Mede o espaço REAL que sobrou
-   * depois do cabeçalho.
-   *
-   * Depois aumenta a imagem o máximo
-   * possível sem:
-   *
-   * - cortar;
-   * - deformar;
-   * - passar da borda;
-   * - passar para outra página.
+   * Mede o espaço REAL que restou
+   * dentro da borda depois do cabeçalho.
    */
   function ajustarImagem() {
 
@@ -411,38 +434,30 @@ body {
       return;
     }
 
-    const escalaPelaLargura =
-      larguraDisponivel /
-      larguraOriginal;
-
-    const escalaPelaAltura =
-      alturaDisponivel /
-      alturaOriginal;
-
     /*
-     * Usamos a menor escala.
-     *
-     * Assim a atividade inteira
-     * permanece dentro do quadro.
-     *
-     * Permitimos ampliar imagens
-     * menores para aproveitar melhor
-     * a folha.
+     * Usa a menor escala:
+     * a atividade entra inteira
+     * dentro do espaço disponível.
      */
     const escala =
       Math.min(
-        escalaPelaLargura,
-        escalaPelaAltura
+        larguraDisponivel /
+          larguraOriginal,
+
+        alturaDisponivel /
+          alturaOriginal
       );
 
     const larguraFinal =
       Math.floor(
-        larguraOriginal * escala
+        larguraOriginal *
+        escala
       );
 
     const alturaFinal =
       Math.floor(
-        alturaOriginal * escala
+        alturaOriginal *
+        escala
       );
 
     imagem.style.width =
@@ -515,7 +530,8 @@ body {
     return;
   }
 
-  imagem.onload = imprimir;
+  imagem.onload =
+    imprimir;
 
   imagem.onerror =
     function () {
@@ -550,9 +566,8 @@ body {
 
   /*
    * Segurança:
-   * caso algum navegador não dispare
-   * afterprint, o iframe não fica
-   * preso indefinidamente na página.
+   * se afterprint não disparar,
+   * remove o iframe depois.
    */
   setTimeout(() => {
     if (

@@ -605,8 +605,7 @@ export async function exportarAtividadeWord(
    * margem externa ~ 8 mm
    * cabeçalho no topo
    * atividade abaixo
-   * borda externa
-   * borda em volta da atividade
+   * uma única borda envolvendo cabeçalho + atividade
    * imagem inteira
    * sem cortar
    * sem deformar
@@ -746,7 +745,7 @@ export async function exportarAtividadeWord(
    */
   const espacoEntre =
     cabecalhoRun
-      ? 6
+      ? 4
       : 0;
 
   /*
@@ -819,54 +818,24 @@ export async function exportarAtividadeWord(
     });
 
   /*
-   * Área da atividade com borda própria.
+   * A atividade NÃO recebe uma borda própria.
    *
-   * A borda não altera nem estica
-   * a imagem.
+   * Cabeçalho + atividade ficam dentro
+   * da mesma borda externa da folha,
+   * igual à tela de finalização e ao PDF.
    */
-  const tabelaAtividade =
-    new Table({
-      width: {
-        size: 100,
-        type:
-          WidthType.PERCENTAGE,
+  const paragrafoAtividade =
+    new Paragraph({
+      alignment:
+        AlignmentType.CENTER,
+
+      spacing: {
+        before: 0,
+        after: 0,
       },
 
-      rows: [
-        new TableRow({
-          children: [
-            new TableCell({
-              verticalAlign:
-                VerticalAlign.TOP,
-
-              borders:
-                criarBordasPretas(5),
-
-              margins: {
-                top: 50,
-                bottom: 50,
-                left: 50,
-                right: 50,
-              },
-
-              children: [
-                new Paragraph({
-                  alignment:
-                    AlignmentType.CENTER,
-
-                  spacing: {
-                    before: 0,
-                    after: 0,
-                  },
-
-                  children: [
-                    atividadeRun,
-                  ],
-                }),
-              ],
-            }),
-          ],
-        }),
+      children: [
+        atividadeRun,
       ],
     });
 
@@ -909,7 +878,7 @@ export async function exportarAtividadeWord(
   }
 
   conteudoFolha.push(
-    tabelaAtividade
+    paragrafoAtividade
   );
 
   /*
@@ -944,10 +913,10 @@ export async function exportarAtividadeWord(
                 criarBordasPretas(6),
 
               margins: {
-                top: 100,
-                bottom: 100,
-                left: 100,
-                right: 100,
+                top: 80,
+                bottom: 80,
+                left: 80,
+                right: 80,
               },
 
               children:
