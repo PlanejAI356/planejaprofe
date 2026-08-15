@@ -9,6 +9,7 @@ import {
   Table,
   TableCell,
   TableRow,
+  TextRun,
   VerticalAlign,
   WidthType,
 } from "docx";
@@ -53,22 +54,6 @@ function dataUrlParaUint8Array(dataUrl: string) {
   return bytes;
 }
 
-async function blobParaDataUrl(blob: Blob) {
-  return await new Promise<string>((resolve, reject) => {
-    const leitor = new FileReader();
-
-    leitor.onload = () => {
-      resolve(String(leitor.result || ""));
-    };
-
-    leitor.onerror = () => {
-      reject(new Error("Não foi possível ler a imagem."));
-    };
-
-    leitor.readAsDataURL(blob);
-  });
-}
-
 async function origemImagemParaDataUrl(src: string) {
   if (!src) {
     return "";
@@ -82,48 +67,65 @@ async function origemImagemParaDataUrl(src: string) {
     const resposta = await fetch(src);
 
     if (!resposta.ok) {
-      throw new Error("Não foi possível carregar uma imagem do cabeçalho.");
+      return "";
     }
 
     const blob = await resposta.blob();
-    return await blobParaDataUrl(blob);
-  } catch (error) {
-    console.warn(
-      "Não foi possível incorporar uma imagem do cabeçalho:",
-      error
-    );
 
+    return await new Promise<string>(
+      (resolve, reject) => {
+        const leitor = new FileReader();
+
+        leitor.onload = () =>
+          resolve(
+            String(
+              leitor.result || ""
+            )
+          );
+
+        leitor.onerror = () =>
+          reject(
+            new Error(
+              "Não foi possível ler a logo."
+            )
+          );
+
+        leitor.readAsDataURL(blob);
+      }
+    );
+  } catch {
     return "";
   }
 }
 
-async function carregarImagem(src: string) {
-  return await new Promise<HTMLImageElement>((resolve, reject) => {
-    const imagem = new Image();
+async function carregarImagem(
+  src: string
+) {
+  return await new Promise<HTMLImageElement>(
+    (resolve, reject) => {
+      const imagem = new Image();
 
-    imagem.onload = () => resolve(imagem);
+      imagem.onload = () =>
+        resolve(imagem);
 
-    imagem.onerror = () => {
-      reject(new Error("Não foi possível carregar a imagem."));
-    };
+      imagem.onerror = () =>
+        reject(
+          new Error(
+            "Não foi possível carregar a imagem."
+          )
+        );
 
-    imagem.src = src;
-  });
+      imagem.src = src;
+    }
+  );
 }
 
-/*
- * Converte PNG/JPG/WEBP/SVG etc. para PNG.
- *
- * O Word passa a receber sempre PNG.
- * Isso evita falha quando a atividade for SVG
- * ou quando o formato original não for aceito
- * pelo ImageRun do DOCX.
- */
 async function normalizarImagemParaPng(
   origem: string,
   fundoBranco = true
 ) {
-  const imagem = await carregarImagem(origem);
+  const imagem =
+    await carregarImagem(origem);
 
   const largura =
     imagem.naturalWidth ||
@@ -196,95 +198,16 @@ async function obterDimensoesImagem(
 }
 
 /*
- * Copia os estilos calculados do cabeçalho
- * para o clone. Assim não reconstruímos
- * a tabela do cabeçalho no Word.
- */
-function copiarEstilos(
-  origem: Element,
-  destino: Element
-) {
-  const estilos =
-    window.getComputedStyle(origem);
-
-  const destinoHtml =
-    destino as HTMLElement;
-
-  for (
-    let indice = 0;
-    indice < estilos.length;
-    indice += 1
-  ) {
-    const propriedade =
-      estilos.item(indice);
-
-    if (!propriedade) {
-      continue;
-    }
-
-    try {
-      destinoHtml.style.setProperty(
-        propriedade,
-        estilos.getPropertyValue(
-          propriedade
-        ),
-        estilos.getPropertyPriority(
-          propriedade
-        )
-      );
-    } catch {
-      // Ignora propriedades que o clone não aceita.
-    }
-  }
-
-  const filhosOrigem =
-    Array.from(origem.children);
-
-  const filhosDestino =
-    Array.from(destino.children);
-
-  filhosOrigem.forEach(
-    (filho, indice) => {
-      const cloneFilho =
-        filhosDestino[indice];
-
-      if (!cloneFilho) {
-        return;
-      }
-
-      copiarEstilos(
-        filho,
-        cloneFilho
-      );
-    }
-  );
-}
-
-/*
- * Cria um PNG do cabeçalho REAL que está
- * na tela.
+ * O cabeçalho do Word é NATIVO:
+ * tabela + textos editáveis.
  *
- * Não recriamos os campos.
- * Não trocamos fonte.
- * Não alteramos tabela.
- * Não mudamos logo.
+ * Somente a LOGO continua sendo imagem,
+ * porque a logo é naturalmente uma imagem.
  */
-async function criarImagemCabecalho(
+function textoVisivel(
   elemento: HTMLElement | null
 ) {
   if (!elemento) {
-    return "";
-  }
-
-  const possuiConteudo =
-    Boolean(
-      elemento.innerText.trim()
-    ) ||
-    Boolean(
-      elemento.querySelector("img")
-    );
-
-  if (!possuiConteudo) {
     return "";
   }
 
@@ -293,248 +216,571 @@ async function criarImagemCabecalho(
       true
     ) as HTMLElement;
 
-  copiarEstilos(
-    elemento,
-    clone
-  );
-
-  clone.removeAttribute(
-    "contenteditable"
-  );
-
-  clone.removeAttribute(
-    "data-placeholder"
-  );
-
-  clone.style.outline = "none";
-  clone.style.boxShadow = "none";
-  clone.style.overflow = "visible";
-  clone.style.margin = "0";
-  clone.style.background = "#ffffff";
-
-  /*
-   * Toda imagem do cabeçalho é incorporada
-   * no SVG como data URL.
-   *
-   * Se uma imagem externa não puder ser
-   * carregada, ela é removida do clone em vez
-   * de derrubar a exportação inteira.
-   */
-  const imagensOriginais =
+  const originais =
     Array.from(
-      elemento.querySelectorAll("img")
-    );
+      elemento.querySelectorAll(
+        "input, textarea"
+      )
+    ) as (
+      | HTMLInputElement
+      | HTMLTextAreaElement
+    )[];
 
-  const imagensClone =
+  const clones =
     Array.from(
-      clone.querySelectorAll("img")
-    );
+      clone.querySelectorAll(
+        "input, textarea"
+      )
+    ) as (
+      | HTMLInputElement
+      | HTMLTextAreaElement
+    )[];
 
-  for (
-    let indice = 0;
-    indice < imagensClone.length;
-    indice += 1
-  ) {
-    const original =
-      imagensOriginais[indice];
+  clones.forEach(
+    (campo, indice) => {
+      const valor =
+        originais[indice]?.value ||
+        "";
 
-    const imagemClone =
-      imagensClone[indice];
+      campo.replaceWith(
+        document.createTextNode(
+          valor
+        )
+      );
+    }
+  );
 
-    if (!original || !imagemClone) {
+  return (
+    clone.innerText ||
+    clone.textContent ||
+    ""
+  )
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function obterValorAposRotulo(
+  elemento: HTMLElement | null,
+  rotulo: string
+) {
+  if (!elemento) {
+    return "";
+  }
+
+  const candidatos =
+    Array.from(
+      elemento.querySelectorAll(
+        "td, th, div, label"
+      )
+    ) as HTMLElement[];
+
+  const alvo =
+    rotulo
+      .toLocaleLowerCase(
+        "pt-BR"
+      )
+      .replace(/\s+/g, " ")
+      .trim();
+
+  for (const candidato of candidatos) {
+    const texto =
+      textoVisivel(
+        candidato
+      );
+
+    const normalizado =
+      texto
+        .toLocaleLowerCase(
+          "pt-BR"
+        )
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (
+      !normalizado.startsWith(
+        alvo
+      )
+    ) {
       continue;
     }
 
-    const dataUrl =
-      await origemImagemParaDataUrl(
-        original.src
-      );
+    const campo =
+      candidato.querySelector(
+        "input, textarea"
+      ) as
+        | HTMLInputElement
+        | HTMLTextAreaElement
+        | null;
 
-    if (dataUrl) {
-      imagemClone.setAttribute(
-        "src",
-        dataUrl
-      );
-    } else {
-      /*
-       * Evita canvas contaminado por CORS.
-       * O restante do cabeçalho continua.
-       */
-      imagemClone.removeAttribute(
-        "src"
-      );
+    if (campo?.value?.trim()) {
+      return campo.value.trim();
+    }
+
+    const separador =
+      texto.indexOf(":");
+
+    if (separador >= 0) {
+      return texto
+        .slice(
+          separador + 1
+        )
+        .trim();
     }
   }
 
-  /*
-   * Usa a largura real que o professor
-   * está vendo.
-   */
-  const largura =
-    Math.max(
-      Math.round(
-        elemento
-          .getBoundingClientRect()
-          .width
-      ),
-      650
+  return "";
+}
+
+function criarParagrafoCabecalho(
+  rotulo: string,
+  valor = "",
+  centralizado = false,
+  negritoRotulo = true
+) {
+  return new Paragraph({
+    alignment:
+      centralizado
+        ? AlignmentType.CENTER
+        : AlignmentType.LEFT,
+
+    spacing: {
+      before: 0,
+      after: 0,
+    },
+
+    children: [
+      new TextRun({
+        text: rotulo,
+        bold: negritoRotulo,
+        size: 18,
+      }),
+
+      ...(valor
+        ? [
+            new TextRun({
+              text: valor,
+              size: 18,
+            }),
+          ]
+        : []),
+    ],
+  });
+}
+
+async function criarCabecalhoWord(
+  elemento: HTMLElement | null
+): Promise<Table | null> {
+  if (!elemento) {
+    return null;
+  }
+
+  const componente =
+    obterValorAposRotulo(
+      elemento,
+      "Componente Curricular:"
     );
 
-  const medidor =
-    document.createElement("div");
+  const professor =
+    obterValorAposRotulo(
+      elemento,
+      "Professor(a):"
+    );
 
-  medidor.style.position = "fixed";
-  medidor.style.left = "-10000px";
-  medidor.style.top = "0";
-  medidor.style.width =
-    `${largura}px`;
-  medidor.style.background =
-    "#ffffff";
-  medidor.style.zIndex = "-1";
-  medidor.style.pointerEvents =
-    "none";
+  const turno =
+    obterValorAposRotulo(
+      elemento,
+      "Turno:"
+    );
 
-  medidor.appendChild(clone);
-  document.body.appendChild(
-    medidor
-  );
+  const serie =
+    obterValorAposRotulo(
+      elemento,
+      "Série:"
+    );
 
-  try {
-    const altura =
-      Math.max(
-        Math.ceil(
-          clone
-            .getBoundingClientRect()
-            .height
-        ),
-        1
-      );
+  const objeto =
+    obterValorAposRotulo(
+      elemento,
+      "Objeto(s) de Conhecimento:"
+    );
 
-    const serializer =
-      new XMLSerializer();
+  const aluno =
+    obterValorAposRotulo(
+      elemento,
+      "Aluno(a):"
+    );
 
-    const html =
-      serializer.serializeToString(
-        clone
-      );
+  const data =
+    obterValorAposRotulo(
+      elemento,
+      "DATA"
+    );
 
-    /*
-     * Escala 2:
-     * cabeçalho mais nítido no Word.
-     */
-    const escala = 2;
+  const nota =
+    obterValorAposRotulo(
+      elemento,
+      "NOTA"
+    );
 
-    const larguraCanvas =
-      largura * escala;
+  const textoCompleto =
+    textoVisivel(
+      elemento
+    );
 
-    const alturaCanvas =
-      altura * escala;
+  const titulo =
+    (
+      textoCompleto.match(
+        /ESCOLA\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ0-9\s.-]+?(?=Componente|Professor|Turno|Série|Objeto|Aluno|DATA|NOTA)/i
+      )?.[0] ||
+      "ESCOLA MUNICIPAL AQUILES DE LISBOA"
+    )
+      .replace(/\s+/g, " ")
+      .trim();
 
-    const svg = `
-      <svg
-        xmlns="http://www.w3.org/2000/svg"
-        width="${larguraCanvas}"
-        height="${alturaCanvas}"
-        viewBox="0 0 ${largura} ${altura}"
-      >
-        <foreignObject
-          x="0"
-          y="0"
-          width="${largura}"
-          height="${altura}"
-        >
-          <div
-            xmlns="http://www.w3.org/1999/xhtml"
-            style="
-              width:${largura}px;
-              height:${altura}px;
-              background:#ffffff;
-              margin:0;
-              padding:0;
-              overflow:visible;
-            "
-          >
-            ${html}
-          </div>
-        </foreignObject>
-      </svg>
-    `;
+  let logoRun:
+    | ImageRun
+    | null = null;
 
-    const blobSvg =
-      new Blob(
-        [svg],
-        {
-          type:
-            "image/svg+xml;charset=utf-8",
-        }
-      );
+  const logo =
+    elemento.querySelector(
+      "img"
+    ) as HTMLImageElement | null;
 
-    const url =
-      URL.createObjectURL(
-        blobSvg
-      );
-
+  if (logo?.src) {
     try {
-      const imagemSvg =
-        await carregarImagem(url);
-
-      const canvas =
-        document.createElement(
-          "canvas"
+      const dataUrl =
+        await origemImagemParaDataUrl(
+          logo.src
         );
 
-      canvas.width =
-        larguraCanvas;
+      if (dataUrl) {
+        const png =
+          await normalizarImagemParaPng(
+            dataUrl,
+            true
+          );
 
-      canvas.height =
-        alturaCanvas;
+        const dimensoes =
+          await obterDimensoesImagem(
+            png
+          );
 
-      const contexto =
-        canvas.getContext(
-          "2d"
-        );
+        const escala =
+          Math.min(
+            85 /
+              dimensoes.largura,
+            70 /
+              dimensoes.altura
+          );
 
-      if (!contexto) {
-        throw new Error(
-          "Não foi possível preparar o cabeçalho."
-        );
+        logoRun =
+          new ImageRun({
+            data:
+              dataUrlParaUint8Array(
+                png
+              ),
+            type: "png",
+            transformation: {
+              width:
+                Math.max(
+                  1,
+                  Math.floor(
+                    dimensoes.largura *
+                      escala
+                  )
+                ),
+              height:
+                Math.max(
+                  1,
+                  Math.floor(
+                    dimensoes.altura *
+                      escala
+                  )
+                ),
+            },
+          });
       }
-
-      contexto.fillStyle =
-        "#ffffff";
-
-      contexto.fillRect(
-        0,
-        0,
-        larguraCanvas,
-        alturaCanvas
-      );
-
-      contexto.scale(
-        escala,
-        escala
-      );
-
-      contexto.drawImage(
-        imagemSvg,
-        0,
-        0,
-        largura,
-        altura
-      );
-
-      return canvas.toDataURL(
-        "image/png",
-        1
-      );
-    } finally {
-      URL.revokeObjectURL(
-        url
-      );
+    } catch {
+      /*
+       * Se a logo falhar, o cabeçalho
+       * continua sendo exportado.
+       */
     }
-  } finally {
-    medidor.remove();
   }
+
+  const bordas =
+    criarBordasPretas(4);
+
+  const semBordas = {
+    top: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    bottom: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    left: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    right: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    insideHorizontal: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    insideVertical: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+  };
+
+  const tabelaCentro =
+    new Table({
+      width: {
+        size: 100,
+        type:
+          WidthType.PERCENTAGE,
+      },
+
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: bordas,
+              children: [
+                new Paragraph({
+                  alignment:
+                    AlignmentType.CENTER,
+                  spacing: {
+                    before: 0,
+                    after: 0,
+                  },
+                  children: [
+                    new TextRun({
+                      text: titulo,
+                      bold: true,
+                      size: 18,
+                    }),
+                  ],
+                }),
+              ],
+            }),
+          ],
+        }),
+
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Componente Curricular: ",
+                  componente
+                ),
+              ],
+            }),
+            new TableCell({
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Professor(a): ",
+                  professor
+                ),
+              ],
+            }),
+          ],
+        }),
+
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Turno: ",
+                  turno
+                ),
+              ],
+            }),
+            new TableCell({
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Série: ",
+                  serie
+                ),
+              ],
+            }),
+          ],
+        }),
+
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Objeto(s) de Conhecimento: ",
+                  objeto
+                ),
+              ],
+            }),
+          ],
+        }),
+
+        new TableRow({
+          children: [
+            new TableCell({
+              columnSpan: 2,
+              borders: bordas,
+              children: [
+                criarParagrafoCabecalho(
+                  "Aluno(a): ",
+                  aluno
+                ),
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
+
+  const tabelaDireita =
+    new Table({
+      width: {
+        size: 100,
+        type:
+          WidthType.PERCENTAGE,
+      },
+
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: bordas,
+              verticalAlign:
+                VerticalAlign.CENTER,
+              children: [
+                criarParagrafoCabecalho(
+                  "DATA",
+                  "",
+                  true,
+                  false
+                ),
+                criarParagrafoCabecalho(
+                  data ||
+                    "____/____/2025",
+                  "",
+                  true,
+                  false
+                ),
+              ],
+            }),
+          ],
+        }),
+
+        new TableRow({
+          children: [
+            new TableCell({
+              borders: bordas,
+              verticalAlign:
+                VerticalAlign.CENTER,
+              children: [
+                criarParagrafoCabecalho(
+                  "NOTA",
+                  "",
+                  true,
+                  true
+                ),
+                criarParagrafoCabecalho(
+                  nota || "______",
+                  "",
+                  true,
+                  false
+                ),
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
+
+  return new Table({
+    width: {
+      size: 100,
+      type:
+        WidthType.PERCENTAGE,
+    },
+
+    borders: semBordas,
+
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            width: {
+              size: 18,
+              type:
+                WidthType.PERCENTAGE,
+            },
+            borders: semBordas,
+            verticalAlign:
+              VerticalAlign.CENTER,
+            children: [
+              new Paragraph({
+                alignment:
+                  AlignmentType.CENTER,
+                spacing: {
+                  before: 0,
+                  after: 0,
+                },
+                children:
+                  logoRun
+                    ? [logoRun]
+                    : [],
+              }),
+            ],
+          }),
+
+          new TableCell({
+            width: {
+              size: 67,
+              type:
+                WidthType.PERCENTAGE,
+            },
+            borders: semBordas,
+            children: [
+              tabelaCentro,
+            ],
+          }),
+
+          new TableCell({
+            width: {
+              size: 15,
+              type:
+                WidthType.PERCENTAGE,
+            },
+            borders: semBordas,
+            children: [
+              tabelaDireita,
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
 }
 
 function criarBordasPretas(
@@ -646,105 +892,26 @@ export async function exportarAtividadeWord(
     );
 
   /*
-   * Cabeçalho real da tela.
+   * Cabeçalho NATIVO do Word:
+   * tabela e textos editáveis.
    */
-  let imagemCabecalho = "";
-
-  try {
-    imagemCabecalho =
-      await criarImagemCabecalho(
-        cabecalhoElemento
-      );
-  } catch (error) {
-    /*
-     * A atividade não deixa de exportar
-     * por um erro isolado de captura.
-     *
-     * O erro real fica no console para
-     * diagnóstico.
-     */
-    console.error(
-      "Erro ao capturar cabeçalho para Word:",
-      error
+  const cabecalhoWord =
+    await criarCabecalhoWord(
+      cabecalhoElemento
     );
-
-    throw new Error(
-      "Não foi possível preparar o cabeçalho para o Word."
-    );
-  }
-
-  let cabecalhoRun:
-    | ImageRun
-    | null = null;
-
-  let alturaCabecalhoWord = 0;
-
-  if (imagemCabecalho) {
-    /*
-     * Garante PNG mesmo no cabeçalho.
-     */
-    imagemCabecalho =
-      await normalizarImagemParaPng(
-        imagemCabecalho,
-        true
-      );
-
-    const dimensoesCabecalho =
-      await obterDimensoesImagem(
-        imagemCabecalho
-      );
-
-    /*
-     * Cabeçalho usa a largura útil
-     * praticamente inteira.
-     */
-    const escalaCabecalho =
-      Math.min(
-        larguraUtil /
-          dimensoesCabecalho.largura,
-        1
-      );
-
-    const larguraCabecalho =
-      Math.max(
-        1,
-        Math.floor(
-          dimensoesCabecalho.largura *
-            escalaCabecalho
-        )
-      );
-
-    alturaCabecalhoWord =
-      Math.max(
-        1,
-        Math.floor(
-          dimensoesCabecalho.altura *
-            escalaCabecalho
-        )
-      );
-
-    cabecalhoRun =
-      new ImageRun({
-        data:
-          dataUrlParaUint8Array(
-            imagemCabecalho
-          ),
-        type: "png",
-        transformation: {
-          width:
-            larguraCabecalho,
-          height:
-            alturaCabecalhoWord,
-        },
-      });
-  }
 
   /*
-   * Pouco espaço entre cabeçalho
-   * e atividade.
+   * Reserva aproximada do cabeçalho.
+   * A imagem da atividade continua
+   * sendo encaixada proporcionalmente.
    */
+  const alturaCabecalhoWord =
+    cabecalhoWord
+      ? 145
+      : 0;
+
   const espacoEntre =
-    cabecalhoRun
+    cabecalhoWord
       ? 4
       : 0;
 
@@ -848,21 +1015,9 @@ export async function exportarAtividadeWord(
     | Table
   )[] = [];
 
-  if (cabecalhoRun) {
+  if (cabecalhoWord) {
     conteudoFolha.push(
-      new Paragraph({
-        alignment:
-          AlignmentType.CENTER,
-
-        spacing: {
-          before: 0,
-          after: 0,
-        },
-
-        children: [
-          cabecalhoRun,
-        ],
-      })
+      cabecalhoWord
     );
 
     conteudoFolha.push(
@@ -871,7 +1026,6 @@ export async function exportarAtividadeWord(
           before: 0,
           after: 20,
         },
-
         children: [],
       })
     );
