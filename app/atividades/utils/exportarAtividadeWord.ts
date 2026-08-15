@@ -1067,7 +1067,9 @@ export async function exportarAtividadeWord(
                 criarBordasPretas(6),
 
               margins: {
-                top: 80,
+                // Abaixa um pouco o cabeçalho dentro da borda.
+                // Mantém exatamente o mesmo tamanho das letras.
+                top: 160,
                 bottom: 80,
                 left: 80,
                 right: 80,
