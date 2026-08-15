@@ -264,19 +264,17 @@ body {
  */
 .atividade img {
   display: block;
-
   width: auto;
   height: auto;
-
   max-width: 100%;
   max-height: 100%;
-
   object-fit: contain;
   object-position: top center;
-
   margin: 0 auto;
-
   background: #ffffff;
+
+  /* deixa o fundo da atividade mais branco no PDF */
+  filter: brightness(1.08) contrast(1.06);
 }
 
 @media print {

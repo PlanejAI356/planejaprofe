@@ -2,6 +2,7 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
+  HeightRule,
   ImageRun,
   Packer,
   Paragraph,
@@ -34,178 +35,177 @@ function limparNomeArquivo(nome: string) {
   return nomeLimpo || "atividade";
 }
 
-function dataUrlParaUint8Array(
-  dataUrl: string
-) {
+function dataUrlParaUint8Array(dataUrl: string) {
   const partes = dataUrl.split(",");
 
   if (partes.length < 2) {
-    throw new Error(
-      "Imagem inválida."
-    );
+    throw new Error("Imagem inválida.");
   }
 
   const base64 = partes[1];
+  const binario = atob(base64);
+  const bytes = new Uint8Array(binario.length);
 
-  const binario =
-    atob(base64);
-
-  const bytes =
-    new Uint8Array(
-      binario.length
-    );
-
-  for (
-    let indice = 0;
-    indice < binario.length;
-    indice += 1
-  ) {
-    bytes[indice] =
-      binario.charCodeAt(
-        indice
-      );
+  for (let indice = 0; indice < binario.length; indice += 1) {
+    bytes[indice] = binario.charCodeAt(indice);
   }
 
   return bytes;
 }
 
-function obterTipoImagem(
-  dataUrl: string
-): "png" | "jpg" | "gif" | "bmp" {
-  if (
-    dataUrl.startsWith(
-      "data:image/jpeg"
-    ) ||
-    dataUrl.startsWith(
-      "data:image/jpg"
-    )
-  ) {
-    return "jpg";
-  }
+async function blobParaDataUrl(blob: Blob) {
+  return await new Promise<string>((resolve, reject) => {
+    const leitor = new FileReader();
 
-  if (
-    dataUrl.startsWith(
-      "data:image/gif"
-    )
-  ) {
-    return "gif";
-  }
+    leitor.onload = () => {
+      resolve(String(leitor.result || ""));
+    };
 
-  if (
-    dataUrl.startsWith(
-      "data:image/bmp"
-    )
-  ) {
-    return "bmp";
-  }
+    leitor.onerror = () => {
+      reject(new Error("Não foi possível ler a imagem."));
+    };
 
-  return "png";
+    leitor.readAsDataURL(blob);
+  });
 }
 
-async function obterDimensoesImagem(
-  dataUrl: string
-) {
-  return new Promise<DimensoesImagem>(
-    (resolve, reject) => {
-      const imagem = new Image();
+async function origemImagemParaDataUrl(src: string) {
+  if (!src) {
+    return "";
+  }
 
-      imagem.onload = () => {
-        resolve({
-          largura:
-            imagem.naturalWidth ||
-            imagem.width,
-
-          altura:
-            imagem.naturalHeight ||
-            imagem.height,
-        });
-      };
-
-      imagem.onerror = () => {
-        reject(
-          new Error(
-            "Não foi possível carregar a imagem."
-          )
-        );
-      };
-
-      imagem.src = dataUrl;
-    }
-  );
-}
-
-/*
- * Converte uma imagem externa para
- * data URL.
- *
- * Isso ajuda principalmente quando
- * o cabeçalho possui logo.
- */
-async function imagemParaDataUrl(
-  src: string
-) {
-  if (
-    src.startsWith(
-      "data:image/"
-    )
-  ) {
+  if (src.startsWith("data:image/")) {
     return src;
   }
 
   try {
-    const resposta =
-      await fetch(src);
+    const resposta = await fetch(src);
 
     if (!resposta.ok) {
-      return src;
+      throw new Error("Não foi possível carregar uma imagem do cabeçalho.");
     }
 
-    const blob =
-      await resposta.blob();
-
-    return await new Promise<string>(
-      (resolve, reject) => {
-        const leitor =
-          new FileReader();
-
-        leitor.onload = () => {
-          resolve(
-            String(
-              leitor.result ||
-                src
-            )
-          );
-        };
-
-        leitor.onerror =
-          reject;
-
-        leitor.readAsDataURL(
-          blob
-        );
-      }
+    const blob = await resposta.blob();
+    return await blobParaDataUrl(blob);
+  } catch (error) {
+    console.warn(
+      "Não foi possível incorporar uma imagem do cabeçalho:",
+      error
     );
-  } catch {
-    return src;
+
+    return "";
   }
 }
 
+async function carregarImagem(src: string) {
+  return await new Promise<HTMLImageElement>((resolve, reject) => {
+    const imagem = new Image();
+
+    imagem.onload = () => resolve(imagem);
+
+    imagem.onerror = () => {
+      reject(new Error("Não foi possível carregar a imagem."));
+    };
+
+    imagem.src = src;
+  });
+}
+
 /*
- * Copia os estilos calculados de um
- * elemento para o clone.
+ * Converte PNG/JPG/WEBP/SVG etc. para PNG.
  *
- * Isso é importante para manter o
- * cabeçalho visualmente igual ao que
- * aparece na página.
+ * O Word passa a receber sempre PNG.
+ * Isso evita falha quando a atividade for SVG
+ * ou quando o formato original não for aceito
+ * pelo ImageRun do DOCX.
+ */
+async function normalizarImagemParaPng(
+  origem: string,
+  fundoBranco = true
+) {
+  const imagem = await carregarImagem(origem);
+
+  const largura =
+    imagem.naturalWidth ||
+    imagem.width;
+
+  const altura =
+    imagem.naturalHeight ||
+    imagem.height;
+
+  if (!largura || !altura) {
+    throw new Error(
+      "A imagem não possui dimensões válidas."
+    );
+  }
+
+  const canvas =
+    document.createElement("canvas");
+
+  canvas.width = largura;
+  canvas.height = altura;
+
+  const contexto =
+    canvas.getContext("2d");
+
+  if (!contexto) {
+    throw new Error(
+      "Não foi possível preparar a imagem para o Word."
+    );
+  }
+
+  if (fundoBranco) {
+    contexto.fillStyle = "#ffffff";
+    contexto.fillRect(
+      0,
+      0,
+      largura,
+      altura
+    );
+  }
+
+  contexto.drawImage(
+    imagem,
+    0,
+    0,
+    largura,
+    altura
+  );
+
+  return canvas.toDataURL(
+    "image/png",
+    1
+  );
+}
+
+async function obterDimensoesImagem(
+  dataUrl: string
+): Promise<DimensoesImagem> {
+  const imagem =
+    await carregarImagem(dataUrl);
+
+  return {
+    largura:
+      imagem.naturalWidth ||
+      imagem.width,
+
+    altura:
+      imagem.naturalHeight ||
+      imagem.height,
+  };
+}
+
+/*
+ * Copia os estilos calculados do cabeçalho
+ * para o clone. Assim não reconstruímos
+ * a tabela do cabeçalho no Word.
  */
 function copiarEstilos(
   origem: Element,
   destino: Element
 ) {
   const estilos =
-    window.getComputedStyle(
-      origem
-    );
+    window.getComputedStyle(origem);
 
   const destinoHtml =
     destino as HTMLElement;
@@ -233,20 +233,15 @@ function copiarEstilos(
         )
       );
     } catch {
-      // Alguns estilos não podem
-      // ser copiados. Ignoramos.
+      // Ignora propriedades que o clone não aceita.
     }
   }
 
   const filhosOrigem =
-    Array.from(
-      origem.children
-    );
+    Array.from(origem.children);
 
   const filhosDestino =
-    Array.from(
-      destino.children
-    );
+    Array.from(destino.children);
 
   filhosOrigem.forEach(
     (filho, indice) => {
@@ -266,13 +261,16 @@ function copiarEstilos(
 }
 
 /*
- * Cria uma imagem PNG do cabeçalho
- * exatamente como ele aparece na tela.
+ * Cria um PNG do cabeçalho REAL que está
+ * na tela.
+ *
+ * Não recriamos os campos.
+ * Não trocamos fonte.
+ * Não alteramos tabela.
+ * Não mudamos logo.
  */
 async function criarImagemCabecalho(
-  elemento:
-    | HTMLElement
-    | null
+  elemento: HTMLElement | null
 ) {
   if (!elemento) {
     return "";
@@ -283,9 +281,7 @@ async function criarImagemCabecalho(
       elemento.innerText.trim()
     ) ||
     Boolean(
-      elemento.querySelector(
-        "img"
-      )
+      elemento.querySelector("img")
     );
 
   if (!possuiConteudo) {
@@ -302,10 +298,6 @@ async function criarImagemCabecalho(
     clone
   );
 
-  /*
-   * Remove características do editor
-   * que não devem aparecer no Word.
-   */
   clone.removeAttribute(
     "contenteditable"
   );
@@ -314,40 +306,33 @@ async function criarImagemCabecalho(
     "data-placeholder"
   );
 
-  clone.style.outline =
-    "none";
-
-  clone.style.boxShadow =
-    "none";
-
-  clone.style.overflow =
-    "visible";
-
-  clone.style.margin =
-    "0";
+  clone.style.outline = "none";
+  clone.style.boxShadow = "none";
+  clone.style.overflow = "visible";
+  clone.style.margin = "0";
+  clone.style.background = "#ffffff";
 
   /*
-   * Converte os logos/imagens para
-   * data URL sempre que possível.
+   * Toda imagem do cabeçalho é incorporada
+   * no SVG como data URL.
+   *
+   * Se uma imagem externa não puder ser
+   * carregada, ela é removida do clone em vez
+   * de derrubar a exportação inteira.
    */
   const imagensOriginais =
     Array.from(
-      elemento.querySelectorAll(
-        "img"
-      )
+      elemento.querySelectorAll("img")
     );
 
   const imagensClone =
     Array.from(
-      clone.querySelectorAll(
-        "img"
-      )
+      clone.querySelectorAll("img")
     );
 
   for (
     let indice = 0;
-    indice <
-    imagensClone.length;
+    indice < imagensClone.length;
     indice += 1
   ) {
     const original =
@@ -356,254 +341,232 @@ async function criarImagemCabecalho(
     const imagemClone =
       imagensClone[indice];
 
-    if (
-      !original ||
-      !imagemClone
-    ) {
+    if (!original || !imagemClone) {
       continue;
     }
 
-    const novaSrc =
-      await imagemParaDataUrl(
+    const dataUrl =
+      await origemImagemParaDataUrl(
         original.src
       );
 
-    imagemClone.setAttribute(
-      "src",
-      novaSrc
-    );
+    if (dataUrl) {
+      imagemClone.setAttribute(
+        "src",
+        dataUrl
+      );
+    } else {
+      /*
+       * Evita canvas contaminado por CORS.
+       * O restante do cabeçalho continua.
+       */
+      imagemClone.removeAttribute(
+        "src"
+      );
+    }
   }
 
   /*
-   * Largura real do cabeçalho na tela.
-   *
-   * Há uma largura mínima para evitar
-   * problemas quando o elemento estiver
-   * temporariamente pequeno.
+   * Usa a largura real que o professor
+   * está vendo.
    */
   const largura =
     Math.max(
       Math.round(
-        elemento.getBoundingClientRect()
+        elemento
+          .getBoundingClientRect()
           .width
       ),
       650
     );
 
-  /*
-   * Para medir corretamente a altura,
-   * colocamos temporariamente o clone
-   * fora da tela.
-   */
   const medidor =
-    document.createElement(
-      "div"
-    );
+    document.createElement("div");
 
-  medidor.style.position =
-    "fixed";
-
-  medidor.style.left =
-    "-10000px";
-
+  medidor.style.position = "fixed";
+  medidor.style.left = "-10000px";
   medidor.style.top = "0";
-
   medidor.style.width =
     `${largura}px`;
-
   medidor.style.background =
     "#ffffff";
-
-  medidor.style.zIndex =
-    "-1";
-
+  medidor.style.zIndex = "-1";
   medidor.style.pointerEvents =
     "none";
 
-  medidor.appendChild(
-    clone
-  );
-
+  medidor.appendChild(clone);
   document.body.appendChild(
     medidor
   );
 
-  const altura =
-    Math.max(
-      Math.ceil(
-        clone.getBoundingClientRect()
-          .height
-      ),
-      1
-    );
-
-  /*
-   * Usamos escala 2 para gerar uma
-   * imagem mais nítida no Word.
-   */
-  const escala = 2;
-
-  const larguraCanvas =
-    largura * escala;
-
-  const alturaCanvas =
-    altura * escala;
-
-  const serializer =
-    new XMLSerializer();
-
-  const html =
-    serializer.serializeToString(
-      clone
-    );
-
-  const svg = `
-    <svg
-      xmlns="http://www.w3.org/2000/svg"
-      width="${larguraCanvas}"
-      height="${alturaCanvas}"
-      viewBox="0 0 ${largura} ${altura}"
-    >
-      <foreignObject
-        width="100%"
-        height="100%"
-      >
-        <div
-          xmlns="http://www.w3.org/1999/xhtml"
-          style="
-            width:${largura}px;
-            height:${altura}px;
-            background:#ffffff;
-            margin:0;
-            padding:0;
-          "
-        >
-          ${html}
-        </div>
-      </foreignObject>
-    </svg>
-  `;
-
-  medidor.remove();
-
-  const blobSvg =
-    new Blob(
-      [svg],
-      {
-        type:
-          "image/svg+xml;charset=utf-8",
-      }
-    );
-
-  const url =
-    URL.createObjectURL(
-      blobSvg
-    );
-
   try {
-    const imagem =
-      new Image();
+    const altura =
+      Math.max(
+        Math.ceil(
+          clone
+            .getBoundingClientRect()
+            .height
+        ),
+        1
+      );
 
-    await new Promise<void>(
-      (resolve, reject) => {
-        imagem.onload = () =>
-          resolve();
+    const serializer =
+      new XMLSerializer();
 
-        imagem.onerror = () =>
-          reject(
-            new Error(
-              "Não foi possível preparar o cabeçalho para o Word."
-            )
-          );
+    const html =
+      serializer.serializeToString(
+        clone
+      );
 
-        imagem.src = url;
+    /*
+     * Escala 2:
+     * cabeçalho mais nítido no Word.
+     */
+    const escala = 2;
+
+    const larguraCanvas =
+      largura * escala;
+
+    const alturaCanvas =
+      altura * escala;
+
+    const svg = `
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        width="${larguraCanvas}"
+        height="${alturaCanvas}"
+        viewBox="0 0 ${largura} ${altura}"
+      >
+        <foreignObject
+          x="0"
+          y="0"
+          width="${largura}"
+          height="${altura}"
+        >
+          <div
+            xmlns="http://www.w3.org/1999/xhtml"
+            style="
+              width:${largura}px;
+              height:${altura}px;
+              background:#ffffff;
+              margin:0;
+              padding:0;
+              overflow:visible;
+            "
+          >
+            ${html}
+          </div>
+        </foreignObject>
+      </svg>
+    `;
+
+    const blobSvg =
+      new Blob(
+        [svg],
+        {
+          type:
+            "image/svg+xml;charset=utf-8",
+        }
+      );
+
+    const url =
+      URL.createObjectURL(
+        blobSvg
+      );
+
+    try {
+      const imagemSvg =
+        await carregarImagem(url);
+
+      const canvas =
+        document.createElement(
+          "canvas"
+        );
+
+      canvas.width =
+        larguraCanvas;
+
+      canvas.height =
+        alturaCanvas;
+
+      const contexto =
+        canvas.getContext(
+          "2d"
+        );
+
+      if (!contexto) {
+        throw new Error(
+          "Não foi possível preparar o cabeçalho."
+        );
       }
-    );
 
-    const canvas =
-      document.createElement(
-        "canvas"
+      contexto.fillStyle =
+        "#ffffff";
+
+      contexto.fillRect(
+        0,
+        0,
+        larguraCanvas,
+        alturaCanvas
       );
 
-    canvas.width =
-      larguraCanvas;
-
-    canvas.height =
-      alturaCanvas;
-
-    const contexto =
-      canvas.getContext(
-        "2d"
+      contexto.scale(
+        escala,
+        escala
       );
 
-    if (!contexto) {
-      throw new Error(
-        "Não foi possível preparar o cabeçalho."
+      contexto.drawImage(
+        imagemSvg,
+        0,
+        0,
+        largura,
+        altura
+      );
+
+      return canvas.toDataURL(
+        "image/png",
+        1
+      );
+    } finally {
+      URL.revokeObjectURL(
+        url
       );
     }
-
-    contexto.fillStyle =
-      "#ffffff";
-
-    contexto.fillRect(
-      0,
-      0,
-      larguraCanvas,
-      alturaCanvas
-    );
-
-    contexto.scale(
-      escala,
-      escala
-    );
-
-    contexto.drawImage(
-      imagem,
-      0,
-      0,
-      largura,
-      altura
-    );
-
-    return canvas.toDataURL(
-      "image/png",
-      1
-    );
   } finally {
-    URL.revokeObjectURL(
-      url
-    );
+    medidor.remove();
   }
 }
 
-function criarBordasAtividade() {
+function criarBordasPretas(
+  tamanho = 5
+) {
   return {
     top: {
       style:
         BorderStyle.SINGLE,
-      size: 5,
-      color: "222222",
+      size: tamanho,
+      color: "000000",
     },
 
     bottom: {
       style:
         BorderStyle.SINGLE,
-      size: 5,
-      color: "222222",
+      size: tamanho,
+      color: "000000",
     },
 
     left: {
       style:
         BorderStyle.SINGLE,
-      size: 5,
-      color: "222222",
+      size: tamanho,
+      color: "000000",
     },
 
     right: {
       style:
         BorderStyle.SINGLE,
-      size: 5,
-      color: "222222",
+      size: tamanho,
+      color: "000000",
     },
   };
 }
@@ -634,21 +597,27 @@ export async function exportarAtividadeWord(
     );
 
   /*
-   * A4:
+   * ==================================================
+   * MESMAS REGRAS DA TELA/PDF
+   * ==================================================
    *
-   * 210 x 297 mm.
-   *
-   * Mantemos margens de cerca de 8 mm,
-   * iguais à proposta usada no PDF.
+   * A4 vertical
+   * margem externa ~ 8 mm
+   * cabeçalho no topo
+   * atividade abaixo
+   * borda externa
+   * borda em volta da atividade
+   * imagem inteira
+   * sem cortar
+   * sem deformar
+   * maior tamanho possível
    */
-  const larguraPaginaPx =
-    794;
 
-  const alturaPaginaPx =
-    1123;
+  const larguraPaginaPx = 794;
+  const alturaPaginaPx = 1123;
 
   /*
-   * Aproximadamente 8 mm em 96 DPI.
+   * Aproximadamente 8 mm a 96 DPI.
    */
   const margemPx = 30;
 
@@ -661,30 +630,76 @@ export async function exportarAtividadeWord(
     margemPx * 2;
 
   /*
-   * CABEÇALHO
+   * Primeiro normalizamos a atividade
+   * para PNG.
    *
-   * Não reconstruímos os campos.
-   * Capturamos o cabeçalho real.
+   * Isso também resolve Word com SVG.
    */
-  const imagemCabecalho =
-    await criarImagemCabecalho(
-      cabecalhoElemento
+  const atividadePng =
+    await normalizarImagemParaPng(
+      imagem,
+      true
     );
 
-  let alturaCabecalhoWord =
-    0;
+  const dimensoesAtividade =
+    await obterDimensoesImagem(
+      atividadePng
+    );
+
+  /*
+   * Cabeçalho real da tela.
+   */
+  let imagemCabecalho = "";
+
+  try {
+    imagemCabecalho =
+      await criarImagemCabecalho(
+        cabecalhoElemento
+      );
+  } catch (error) {
+    /*
+     * A atividade não deixa de exportar
+     * por um erro isolado de captura.
+     *
+     * O erro real fica no console para
+     * diagnóstico.
+     */
+    console.error(
+      "Erro ao capturar cabeçalho para Word:",
+      error
+    );
+
+    throw new Error(
+      "Não foi possível preparar o cabeçalho para o Word."
+    );
+  }
 
   let cabecalhoRun:
     | ImageRun
     | null = null;
 
+  let alturaCabecalhoWord = 0;
+
   if (imagemCabecalho) {
+    /*
+     * Garante PNG mesmo no cabeçalho.
+     */
+    imagemCabecalho =
+      await normalizarImagemParaPng(
+        imagemCabecalho,
+        true
+      );
+
     const dimensoesCabecalho =
       await obterDimensoesImagem(
         imagemCabecalho
       );
 
-    const proporcaoCabecalho =
+    /*
+     * Cabeçalho usa a largura útil
+     * praticamente inteira.
+     */
+    const escalaCabecalho =
       Math.min(
         larguraUtil /
           dimensoesCabecalho.largura,
@@ -692,15 +707,21 @@ export async function exportarAtividadeWord(
       );
 
     const larguraCabecalho =
-      Math.round(
-        dimensoesCabecalho.largura *
-          proporcaoCabecalho
+      Math.max(
+        1,
+        Math.floor(
+          dimensoesCabecalho.largura *
+            escalaCabecalho
+        )
       );
 
     alturaCabecalhoWord =
-      Math.round(
-        dimensoesCabecalho.altura *
-          proporcaoCabecalho
+      Math.max(
+        1,
+        Math.floor(
+          dimensoesCabecalho.altura *
+            escalaCabecalho
+        )
       );
 
     cabecalhoRun =
@@ -709,13 +730,10 @@ export async function exportarAtividadeWord(
           dataUrlParaUint8Array(
             imagemCabecalho
           ),
-
         type: "png",
-
         transformation: {
           width:
             larguraCabecalho,
-
           height:
             alturaCabecalhoWord,
         },
@@ -723,48 +741,40 @@ export async function exportarAtividadeWord(
   }
 
   /*
-   * Pequeno espaço entre cabeçalho
+   * Pouco espaço entre cabeçalho
    * e atividade.
    */
   const espacoEntre =
-    imagemCabecalho
-      ? 8
+    cabecalhoRun
+      ? 6
       : 0;
 
   /*
-   * Espaço reservado pela borda e
-   * respiro interno da atividade.
+   * Borda interna da atividade.
    */
-  const espacoBorda = 12;
-
-  const alturaDisponivelAtividade =
-    Math.max(
-      100,
-
-      alturaUtil -
-        alturaCabecalhoWord -
-        espacoEntre -
-        espacoBorda
-    );
+  const respiroBorda = 10;
 
   const larguraDisponivelAtividade =
     Math.max(
       100,
       larguraUtil -
-        espacoBorda
+        respiroBorda
     );
 
-  const dimensoesAtividade =
-    await obterDimensoesImagem(
-      imagem
+  const alturaDisponivelAtividade =
+    Math.max(
+      100,
+      alturaUtil -
+        alturaCabecalhoWord -
+        espacoEntre -
+        respiroBorda
     );
 
   /*
-   * Aqui está o encaixe automático.
+   * Encaixe automático:
    *
-   * Usamos a menor proporção para a
-   * atividade caber inteira no espaço
-   * que realmente sobrou.
+   * usa a menor proporção possível
+   * para a atividade entrar inteira.
    */
   const escalaAtividade =
     Math.min(
@@ -793,19 +803,26 @@ export async function exportarAtividadeWord(
       )
     );
 
-  const dadosAtividade =
-    dataUrlParaUint8Array(
-      imagem
-    );
-
-  const tipoAtividade =
-    obterTipoImagem(
-      imagem
-    );
+  const atividadeRun =
+    new ImageRun({
+      data:
+        dataUrlParaUint8Array(
+          atividadePng
+        ),
+      type: "png",
+      transformation: {
+        width:
+          larguraAtividade,
+        height:
+          alturaAtividade,
+      },
+    });
 
   /*
-   * Quadro profissional em volta
-   * da atividade.
+   * Área da atividade com borda própria.
+   *
+   * A borda não altera nem estica
+   * a imagem.
    */
   const tabelaAtividade =
     new Table({
@@ -823,13 +840,13 @@ export async function exportarAtividadeWord(
                 VerticalAlign.TOP,
 
               borders:
-                criarBordasAtividade(),
+                criarBordasPretas(5),
 
               margins: {
-                top: 60,
-                bottom: 60,
-                left: 60,
-                right: 60,
+                top: 50,
+                bottom: 50,
+                left: 50,
+                right: 50,
               },
 
               children: [
@@ -843,21 +860,7 @@ export async function exportarAtividadeWord(
                   },
 
                   children: [
-                    new ImageRun({
-                      data:
-                        dadosAtividade,
-
-                      type:
-                        tipoAtividade,
-
-                      transformation: {
-                        width:
-                          larguraAtividade,
-
-                        height:
-                          alturaAtividade,
-                      },
-                    }),
+                    atividadeRun,
                   ],
                 }),
               ],
@@ -867,17 +870,17 @@ export async function exportarAtividadeWord(
       ],
     });
 
-  const filhosDocumento: (
+  /*
+   * Conteúdo que ficará dentro da
+   * borda externa da A4.
+   */
+  const conteudoFolha: (
     | Paragraph
     | Table
   )[] = [];
 
-  /*
-   * Cabeçalho exatamente como aparece
-   * na tela.
-   */
   if (cabecalhoRun) {
-    filhosDocumento.push(
+    conteudoFolha.push(
       new Paragraph({
         alignment:
           AlignmentType.CENTER,
@@ -893,11 +896,11 @@ export async function exportarAtividadeWord(
       })
     );
 
-    filhosDocumento.push(
+    conteudoFolha.push(
       new Paragraph({
         spacing: {
           before: 0,
-          after: 40,
+          after: 20,
         },
 
         children: [],
@@ -905,9 +908,55 @@ export async function exportarAtividadeWord(
     );
   }
 
-  filhosDocumento.push(
+  conteudoFolha.push(
     tabelaAtividade
   );
+
+  /*
+   * Uma única célula grande cria a
+   * borda externa da folha.
+   *
+   * Cabeçalho + atividade ficam
+   * dentro da MESMA borda.
+   */
+  const quadroFolha =
+    new Table({
+      width: {
+        size: 100,
+        type:
+          WidthType.PERCENTAGE,
+      },
+
+      rows: [
+        new TableRow({
+          height: {
+            value: 15500,
+            rule:
+              HeightRule.ATLEAST,
+          },
+
+          children: [
+            new TableCell({
+              verticalAlign:
+                VerticalAlign.TOP,
+
+              borders:
+                criarBordasPretas(6),
+
+              margins: {
+                top: 100,
+                bottom: 100,
+                left: 100,
+                right: 100,
+              },
+
+              children:
+                conteudoFolha,
+            }),
+          ],
+        }),
+      ],
+    });
 
   const documento =
     new Document({
@@ -920,11 +969,10 @@ export async function exportarAtividadeWord(
                 height: 16838,
               },
 
+              /*
+               * Aproximadamente 8 mm.
+               */
               margin: {
-                /*
-                 * Aproximadamente
-                 * 8 mm.
-                 */
                 top: 454,
                 right: 454,
                 bottom: 454,
@@ -933,8 +981,9 @@ export async function exportarAtividadeWord(
             },
           },
 
-          children:
-            filhosDocumento,
+          children: [
+            quadroFolha,
+          ],
         },
       ],
     });
