@@ -666,34 +666,38 @@ export default function FinalizarAtividadePage() {
                   "border-box",
               }}
             >
-              {cabecalho.trim() && (
-                <div
-                  className="cabecalho-preview mb-[2.5%] max-h-[15%] shrink-0 overflow-hidden"
-                  dangerouslySetInnerHTML={{
-                    __html:
-                      cabecalho,
-                  }}
-                />
-              )}
+              <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-black bg-white">
+                {cabecalho.trim() && (
+                  <div
+                    className="cabecalho-preview max-h-[15%] shrink-0 overflow-hidden px-[1.5%] pt-[1.5%]"
+                    dangerouslySetInnerHTML={{
+                      __html:
+                        cabecalho,
+                    }}
+                  />
+                )}
 
-              <div className="flex min-h-0 flex-1 overflow-hidden border border-black bg-white p-[1.5%]">
-  <img
-    src={imagem}
-    alt={
-      versaoSelecionada ===
-      "professor"
-        ? "Atividade pedagógica com gabarito"
-        : "Atividade pedagógica final"
-    }
-    className="block h-full w-full bg-white object-contain object-top"
-    style={{
-      filter:
-        "brightness(1.02) contrast(1.01)",
-      transform: "scale(1.08)",
-      transformOrigin: "top center",
-    }}
-  />
-</div>
+                <div className="flex min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]">
+                  <img
+                    src={imagem}
+                    alt={
+                      versaoSelecionada ===
+                      "professor"
+                        ? "Atividade pedagógica com gabarito"
+                        : "Atividade pedagógica final"
+                    }
+                    className="block h-full w-full bg-white object-contain object-top"
+                    style={{
+                      filter:
+                        "brightness(1.02) contrast(1.01)",
+                      transform:
+                        "scale(1.08)",
+                      transformOrigin:
+                        "top center",
+                    }}
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
@@ -719,7 +723,7 @@ export default function FinalizarAtividadePage() {
             </button>
           </div>
         </div>
-      </section>
+            </section>
     </main>
   );
 }
