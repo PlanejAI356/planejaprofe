@@ -267,9 +267,10 @@ export default function Home() {
   }
 
   function iniciarTesteGratis() {
-    limparPlanoAnterior();
-    setEtapa("configuracao");
-  }
+  limparPlanoAnterior();
+  localStorage.setItem("testeGratisAtivo", "true");
+  setEtapa("painel");
+}
 
   async function iniciarNovoPlanejamento() {
     const permissao = await usarPlanejamentoGratis();
@@ -364,7 +365,7 @@ export default function Home() {
         </div>
       )}
 
-      {etapa === "painel" && usuarioLogado && (
+      {etapa === "painel" && (
         <section className="mx-auto flex min-h-[calc(100vh-70px)] max-w-6xl flex-col justify-center px-4 py-8">
           <div className="mb-8 text-center">
             <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
@@ -379,7 +380,14 @@ export default function Home() {
           <div className="grid gap-5 md:grid-cols-3">
             <button
               type="button"
-              onClick={iniciarNovoPlanejamento}
+              onClick={() => {
+  if (usuarioLogado) {
+    iniciarNovoPlanejamento();
+  } else {
+    limparPlanoAnterior();
+    setEtapa("configuracao");
+  }
+}}
               className="group cursor-pointer rounded-2xl border border-green-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-green-400 hover:shadow-lg"
             >
               <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-3xl">
@@ -462,12 +470,8 @@ export default function Home() {
           setTipoPlanejamento={setTipoPlanejamento}
           onSelecionarSerie={clicarEmSerie}
           onVoltar={() => {
-            if (usuarioLogado) {
-              setEtapa("painel");
-            } else {
-              setEtapa("inicio");
-            }
-          }}
+  setEtapa("painel");
+}}
           onContinuar={() => {
             setDatasSelecionadas([]);
             setEtapa("calendario");
