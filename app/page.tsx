@@ -21,6 +21,10 @@ export default function Home() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [contabilizandoPlano, setContabilizandoPlano] = useState(false);
   const [mostrarModalPremium, setMostrarModalPremium] = useState(false);
+  const [
+    mostrarModalTesteConcluido,
+    setMostrarModalTesteConcluido,
+  ] = useState(false);
 
   const [etapa, setEtapa] = useState("inicio");
 
@@ -294,11 +298,7 @@ export default function Home() {
 
   function irParaExportacao() {
     if (!usuarioLogado) {
-      alert(
-        "Você concluiu seu teste do PlanejAI. Crie sua conta para exportar o plano e continuar usando."
-      );
-
-      window.location.href = "/cadastro";
+      setMostrarModalTesteConcluido(true);
       return;
     }
 
@@ -511,6 +511,62 @@ export default function Home() {
 
       {etapa === "exportacao" && (
         <Exportacao onVoltar={() => setEtapa("planoCompleto")} />
+      )}
+
+      {mostrarModalTesteConcluido && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-[2px]">
+          <div className="relative w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
+            <button
+              type="button"
+              onClick={() =>
+                setMostrarModalTesteConcluido(false)
+              }
+              aria-label="Fechar"
+              className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xl font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            >
+              ×
+            </button>
+
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl shadow-sm">
+              🎉
+            </div>
+
+            <h2 className="mt-6 text-2xl font-extrabold leading-tight text-slate-950 sm:text-3xl">
+              Seu teste gratuito foi concluído!
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600 sm:text-base">
+              Você já conheceu como o PlanejAI cria seus materiais.
+              Crie sua conta para continuar usando e liberar todos os recursos.
+            </p>
+
+            <div className="mt-7 flex flex-col gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/cadastro";
+                }}
+                className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl"
+              >
+                Criar minha conta
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setMostrarModalTesteConcluido(false)
+                }
+                className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
+              >
+                Agora não
+              </button>
+            </div>
+
+            <p className="mt-4 text-xs font-medium text-slate-400">
+              A criação da conta é gratuita.
+            </p>
+          </div>
+        </div>
       )}
 
       {mostrarModalPremium && (
