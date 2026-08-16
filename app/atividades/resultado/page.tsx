@@ -210,8 +210,10 @@ export default function ResultadoAtividadePage() {
 
   function avisarRecursoPremium() {
     alert(
-      "🔒 Este recurso está disponível no PlanejAI Premium.\n\nNo teste grátis você pode gerar e visualizar a atividade completa. Assine o Premium para baixar, imprimir e adicionar cabeçalho."
+      "🔒 Este recurso é exclusivo para usuários Premium.\n\nCrie sua conta e seja Premium para baixar, imprimir e adicionar cabeçalho às suas atividades."
     );
+
+    router.push("/cadastro");
   }
 
   function baixarImagem() {
