@@ -6,6 +6,7 @@ import {
   ArrowLeft,
   BookOpen,
   CalendarDays,
+  Download,
   Eye,
   FileText,
   FolderOpen,
@@ -292,6 +293,37 @@ export default function MeusPlanosPage() {
     } finally {
       setSalvando(false);
     }
+  }
+
+  function exportarPlano(plano: PlanoSalvo) {
+    const conteudo = lerConteudoPlano(plano.plano_completo);
+
+    localStorage.setItem("temasPlano", conteudo.temas);
+    localStorage.setItem("objetivosPlano", conteudo.objetivos);
+    localStorage.setItem("recursosPlano", conteudo.recursos);
+    localStorage.setItem("metodologiaPlano", conteudo.metodologia);
+    localStorage.setItem("avaliacaoPlano", conteudo.avaliacao);
+    localStorage.setItem("referenciasPlano", conteudo.referencias);
+    localStorage.setItem("atividadePlano", conteudo.atividade);
+
+    localStorage.setItem("serieSelecionada", plano.serie || "");
+    localStorage.setItem(
+      "disciplinaSelecionada",
+      plano.disciplina || ""
+    );
+    localStorage.setItem("etapaEnsino", plano.etapa_ensino || "");
+    localStorage.setItem(
+      "tipoPlanejamento",
+      plano.tipo_planejamento || ""
+    );
+    localStorage.setItem(
+      "periodoPlanejamento",
+      plano.periodo || ""
+    );
+    localStorage.setItem("planoSalvoId", plano.id);
+    localStorage.setItem("abrirExportacaoPlano", "true");
+
+    window.location.href = "/";
   }
 
   async function excluirPlano(plano: PlanoSalvo) {
@@ -583,9 +615,7 @@ export default function MeusPlanosPage() {
                       <div className="mt-4 grid grid-cols-2 gap-2">
                         <button
                           type="button"
-                          onClick={() =>
-                            abrirPlano(plano)
-                          }
+                          onClick={() => abrirPlano(plano)}
                           className="flex items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2 font-bold text-white transition hover:bg-emerald-700"
                         >
                           <Eye size={17} />
@@ -606,13 +636,18 @@ export default function MeusPlanosPage() {
 
                         <button
                           type="button"
-                          onClick={() =>
-                            excluirPlano(plano)
-                          }
-                          disabled={
-                            excluindoId === plano.id
-                          }
-                          className="col-span-2 flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          onClick={() => exportarPlano(plano)}
+                          className="flex items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 font-bold text-emerald-700 transition hover:bg-emerald-100"
+                        >
+                          <Download size={17} />
+                          Exportar
+                        </button>
+
+                        <button
+                          type="button"
+                          onClick={() => excluirPlano(plano)}
+                          disabled={excluindoId === plano.id}
+                          className="flex items-center justify-center gap-2 rounded-xl border border-red-200 bg-red-50 px-3 py-2 font-bold text-red-700 transition hover:bg-red-100 disabled:cursor-not-allowed disabled:opacity-60"
                         >
                           {excluindoId === plano.id ? (
                             <Loader2

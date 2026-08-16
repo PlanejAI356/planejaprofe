@@ -360,7 +360,7 @@ export default function Home() {
       {!usuarioLogado && (
         <div className="border-b border-green-200 bg-green-50 px-3 py-2 text-center">
           <p className="text-sm font-semibold text-green-800">
-            🎁 Crie seu primeiro plano sem cadastro.
+            🎁 Experimente o PlanejAI gratuitamente, sem cadastro.
           </p>
         </div>
       )}
