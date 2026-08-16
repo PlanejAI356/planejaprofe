@@ -147,8 +147,8 @@ export default function Inicio({ onComecar }: InicioProps) {
             {/* CARD CENTRAL */}
 
             <div className="relative mx-auto max-w-3xl rounded-[32px] border border-slate-200/80 bg-white/90 px-6 py-8 text-center shadow-[0_25px_70px_rgba(15,23,42,0.10)] backdrop-blur-sm sm:px-10 md:py-10">
-              <h1 >
-                Crie seus materiaisclassName="mx-auto max-w-2xl text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-950 sm:text-4xl md:text-5xl"
+              <h1 className="mx-auto max-w-2xl text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
+                Crie seus materiais
                 <span className="block">
                   pedagógicos
                 </span>
