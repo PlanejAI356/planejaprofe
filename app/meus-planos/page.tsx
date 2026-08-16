@@ -321,9 +321,8 @@ export default function MeusPlanosPage() {
       plano.periodo || ""
     );
     localStorage.setItem("planoSalvoId", plano.id);
-    localStorage.setItem("abrirExportacaoPlano", "true");
 
-    window.location.href = "/";
+    window.location.href = "/exportacao-plano";
   }
 
   async function excluirPlano(plano: PlanoSalvo) {
