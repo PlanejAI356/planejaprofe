@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -208,7 +209,20 @@ export default function ResultadoAtividadePage() {
     );
   }
 
-  function avisarRecursoPremium() {
+  async function avisarRecursoPremium() {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (session) {
+      alert(
+        "🔒 Este recurso é exclusivo para usuários Premium.\n\nAssine o Premium para baixar, imprimir e adicionar cabeçalho às suas atividades."
+      );
+
+      router.push("/assinatura");
+      return;
+    }
+
     alert(
       "🔒 Este recurso é exclusivo para usuários Premium.\n\nCrie sua conta e seja Premium para baixar, imprimir e adicionar cabeçalho às suas atividades."
     );
