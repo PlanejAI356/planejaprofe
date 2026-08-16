@@ -66,6 +66,11 @@ export default function ResultadoAtividadePage() {
     useState("");
 
   const [
+    testeGratisAtivo,
+    setTesteGratisAtivo,
+  ] = useState(false);
+
+  const [
     carregando,
     setCarregando,
   ] = useState(true);
@@ -106,6 +111,15 @@ export default function ResultadoAtividadePage() {
 
   useEffect(() => {
     try {
+      const testeGratis =
+        localStorage.getItem(
+          "testeGratisAtivo"
+        ) === "true";
+
+      setTesteGratisAtivo(
+        testeGratis
+      );
+
       const imagemAlunoSalva =
         localStorage.getItem(
           "atividadeImagem"
@@ -194,7 +208,18 @@ export default function ResultadoAtividadePage() {
     );
   }
 
+  function avisarRecursoPremium() {
+    alert(
+      "🔒 Este recurso está disponível no PlanejAI Premium.\n\nNo teste grátis você pode gerar e visualizar a atividade completa. Assine o Premium para baixar, imprimir e adicionar cabeçalho."
+    );
+  }
+
   function baixarImagem() {
+    if (testeGratisAtivo) {
+      avisarRecursoPremium();
+      return;
+    }
+
     if (!imagemAtual) {
       return;
     }
@@ -220,6 +245,11 @@ export default function ResultadoAtividadePage() {
   }
 
   function imprimirSomenteImagem() {
+    if (testeGratisAtivo) {
+      avisarRecursoPremium();
+      return;
+    }
+
     if (!imagemAtual) {
       return;
     }
@@ -228,6 +258,11 @@ export default function ResultadoAtividadePage() {
   }
 
   function adicionarCabecalho() {
+    if (testeGratisAtivo) {
+      avisarRecursoPremium();
+      return;
+    }
+
     if (!imagemAtual) {
       alert(
         "Não foi possível localizar a atividade."
@@ -647,7 +682,11 @@ export default function ResultadoAtividadePage() {
             onClick={
               baixarImagem
             }
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-6 py-3 font-bold transition ${
+              testeGratisAtivo
+                ? "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200"
+                : "border-emerald-600 bg-white text-emerald-700"
+            }`}
           >
             <Download
               size={19}
@@ -655,8 +694,12 @@ export default function ResultadoAtividadePage() {
 
             {versaoSelecionada ===
             "professor"
-              ? "Baixar cópia do professor"
-              : "Baixar atividade"}
+              ? testeGratisAtivo
+                ? "🔒 Baixar cópia do professor"
+                : "Baixar cópia do professor"
+              : testeGratisAtivo
+                ? "🔒 Baixar atividade"
+                : "Baixar atividade"}
           </button>
 
           <button
@@ -664,7 +707,11 @@ export default function ResultadoAtividadePage() {
             onClick={
               imprimirSomenteImagem
             }
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-600 bg-white px-6 py-3 font-bold text-emerald-700"
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-6 py-3 font-bold transition ${
+              testeGratisAtivo
+                ? "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200"
+                : "border-emerald-600 bg-white text-emerald-700"
+            }`}
           >
             <Printer
               size={19}
@@ -672,8 +719,12 @@ export default function ResultadoAtividadePage() {
 
             {versaoSelecionada ===
             "professor"
-              ? "Imprimir gabarito"
-              : "Imprimir sem cabeçalho"}
+              ? testeGratisAtivo
+                ? "🔒 Imprimir gabarito"
+                : "Imprimir gabarito"
+              : testeGratisAtivo
+                ? "🔒 Imprimir sem cabeçalho"
+                : "Imprimir sem cabeçalho"}
           </button>
 
           <button
@@ -681,13 +732,19 @@ export default function ResultadoAtividadePage() {
             onClick={
               adicionarCabecalho
             }
-            className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-7 py-3 font-bold text-white"
+            className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-7 py-3 font-bold transition ${
+              testeGratisAtivo
+                ? "bg-slate-300 text-slate-600 hover:bg-slate-400"
+                : "bg-emerald-600 text-white"
+            }`}
           >
             <FilePenLine
               size={19}
             />
 
-            Adicionar cabeçalho
+            {testeGratisAtivo
+              ? "🔒 Adicionar cabeçalho"
+              : "Adicionar cabeçalho"}
           </button>
 
         </div>
