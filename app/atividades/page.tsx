@@ -184,12 +184,17 @@ export default function AtividadesPage() {
   async function gerarAtividade() {
     setErro("");
 
-    const permissao = await usarPlanejamentoGratis();
+    const testeGratisAtivo =
+      localStorage.getItem("testeGratisAtivo") === "true";
 
-    if (!permissao.permitido) {
-      alert(permissao.mensagem);
-      router.push("/assinatura");
-      return;
+    if (!testeGratisAtivo) {
+      const permissao = await usarPlanejamentoGratis();
+
+      if (!permissao.permitido) {
+        alert(permissao.mensagem);
+        router.push("/assinatura");
+        return;
+      }
     }
 
     if (!etapaEnsino || !serie || !disciplina) {
