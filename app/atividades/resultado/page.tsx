@@ -67,8 +67,8 @@ export default function ResultadoAtividadePage() {
     useState("");
 
   const [
-    testeGratisAtivo,
-    setTesteGratisAtivo,
+    usuarioPremium,
+    setUsuarioPremium,
   ] = useState(false);
 
   const [
@@ -111,87 +111,187 @@ export default function ResultadoAtividadePage() {
     );
 
   useEffect(() => {
-    try {
-      const testeGratis =
-        localStorage.getItem(
-          "testeGratisAtivo"
-        ) === "true";
+    async function carregarAtividade() {
+      try {
+        /*
+         * Verifica o status REAL da conta no Supabase.
+         * O localStorage do teste grátis não pode decidir sozinho
+         * se uma pessoa que já pagou continua bloqueada.
+         */
+        const {
+          data: { user },
+          error: erroUsuario,
+        } = await supabase.auth.getUser();
 
-      setTesteGratisAtivo(
-        testeGratis
-      );
+        let premium = false;
 
-      const imagemAlunoSalva =
-        localStorage.getItem(
-          "atividadeImagem"
-        );
-
-      const imagemProfessorSalva =
-        localStorage.getItem(
-          "atividadeImagemProfessor"
-        );
-
-      const configuracaoSalva =
-        localStorage.getItem(
-          "configuracaoAtividadeImagem"
-        );
-
-      if (
-        !imagemAlunoSalva ||
-        !imagemAlunoSalva.startsWith(
-          "data:image/"
-        )
-      ) {
-        setErro(
-          "Não encontrei a imagem da atividade. Volte e gere uma nova atividade."
-        );
-
-        return;
-      }
-
-      setImagemAluno(
-        imagemAlunoSalva
-      );
-
-      if (
-        imagemProfessorSalva &&
-        imagemProfessorSalva.startsWith(
-          "data:image/"
-        )
-      ) {
-        setImagemProfessor(
-          imagemProfessorSalva
-        );
-      }
-
-      if (configuracaoSalva) {
-        try {
-          setConfiguracao(
-            JSON.parse(
-              configuracaoSalva
-            )
-          );
-        } catch (error) {
+        if (erroUsuario) {
           console.error(
-            "Erro ao carregar configuração:",
-            error
+            "Erro ao identificar usuário autenticado:",
+            erroUsuario
+          );
+        }
+
+        if (user) {
+          const {
+            data: perfil,
+            error: erroPerfil,
+          } = await supabase
+            .from("profiles")
+            .select("plano")
+            .eq("id", user.id)
+            .maybeSingle();
+
+          if (erroPerfil) {
+            console.error(
+              "Erro ao verificar plano do usuário:",
+              erroPerfil
+            );
+          } else if (perfil) {
+            premium =
+              perfil.plano === "premium";
+          } else {
+            /*
+             * Se o usuário existe no Auth, mas ainda não existe
+             * em profiles, usa a mesma sincronização já adotada
+             * no restante do PlanejAI.
+             */
+            const {
+              data: { session },
+            } = await supabase.auth.getSession();
+
+            if (session?.access_token) {
+              const respostaSincronizacao =
+                await fetch(
+                  "/api/perfil/sincronizar",
+                  {
+                    method: "POST",
+                    headers: {
+                      Authorization: `Bearer ${session.access_token}`,
+                      "Content-Type":
+                        "application/json",
+                    },
+                  }
+                );
+
+              if (respostaSincronizacao.ok) {
+                const {
+                  data: perfilSincronizado,
+                  error:
+                    erroPerfilSincronizado,
+                } = await supabase
+                  .from("profiles")
+                  .select("plano")
+                  .eq("id", user.id)
+                  .maybeSingle();
+
+                if (
+                  erroPerfilSincronizado
+                ) {
+                  console.error(
+                    "Erro ao verificar perfil após sincronização:",
+                    erroPerfilSincronizado
+                  );
+                } else {
+                  premium =
+                    perfilSincronizado?.plano ===
+                    "premium";
+                }
+              } else {
+                console.error(
+                  "Não foi possível sincronizar o perfil para verificar o Premium."
+                );
+              }
+            }
+          }
+        }
+
+        setUsuarioPremium(premium);
+
+        /*
+         * Se a pessoa já é Premium, remove a marca antiga
+         * do teste grátis que poderia continuar no navegador.
+         */
+        if (premium) {
+          localStorage.removeItem(
+            "testeGratisAtivo"
+          );
+        }
+
+        const imagemAlunoSalva =
+          localStorage.getItem(
+            "atividadeImagem"
           );
 
-          setConfiguracao(null);
-        }
-      }
-    } catch (error) {
-      console.error(
-        "Erro ao carregar atividade:",
-        error
-      );
+        const imagemProfessorSalva =
+          localStorage.getItem(
+            "atividadeImagemProfessor"
+          );
 
-      setErro(
-        "Não foi possível carregar a atividade gerada."
-      );
-    } finally {
-      setCarregando(false);
+        const configuracaoSalva =
+          localStorage.getItem(
+            "configuracaoAtividadeImagem"
+          );
+
+        if (
+          !imagemAlunoSalva ||
+          !imagemAlunoSalva.startsWith(
+            "data:image/"
+          )
+        ) {
+          setErro(
+            "Não encontrei a imagem da atividade. Volte e gere uma nova atividade."
+          );
+
+          return;
+        }
+
+        setImagemAluno(
+          imagemAlunoSalva
+        );
+
+        if (
+          imagemProfessorSalva &&
+          imagemProfessorSalva.startsWith(
+            "data:image/"
+          )
+        ) {
+          setImagemProfessor(
+            imagemProfessorSalva
+          );
+        }
+
+        if (configuracaoSalva) {
+          try {
+            setConfiguracao(
+              JSON.parse(
+                configuracaoSalva
+              )
+            );
+          } catch (error) {
+            console.error(
+              "Erro ao carregar configuração:",
+              error
+            );
+
+            setConfiguracao(null);
+          }
+        }
+      } catch (error) {
+        console.error(
+          "Erro ao carregar atividade:",
+          error
+        );
+
+        setErro(
+          "Não foi possível carregar a atividade gerada."
+        );
+      } finally {
+        setCarregando(false);
+      }
     }
+
+    carregarAtividade();
   }, []);
 
   function selecionarVersao(
@@ -231,7 +331,7 @@ export default function ResultadoAtividadePage() {
   }
 
   function baixarImagem() {
-    if (testeGratisAtivo) {
+    if (!usuarioPremium) {
       avisarRecursoPremium();
       return;
     }
@@ -261,7 +361,7 @@ export default function ResultadoAtividadePage() {
   }
 
   function imprimirSomenteImagem() {
-    if (testeGratisAtivo) {
+    if (!usuarioPremium) {
       avisarRecursoPremium();
       return;
     }
@@ -274,7 +374,7 @@ export default function ResultadoAtividadePage() {
   }
 
   function adicionarCabecalho() {
-    if (testeGratisAtivo) {
+    if (!usuarioPremium) {
       avisarRecursoPremium();
       return;
     }
@@ -699,7 +799,7 @@ export default function ResultadoAtividadePage() {
               baixarImagem
             }
             className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-6 py-3 font-bold transition ${
-              testeGratisAtivo
+              !usuarioPremium
                 ? "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200"
                 : "border-emerald-600 bg-white text-emerald-700"
             }`}
@@ -710,10 +810,10 @@ export default function ResultadoAtividadePage() {
 
             {versaoSelecionada ===
             "professor"
-              ? testeGratisAtivo
+              ? !usuarioPremium
                 ? "🔒 Baixar cópia do professor"
                 : "Baixar cópia do professor"
-              : testeGratisAtivo
+              : !usuarioPremium
                 ? "🔒 Baixar atividade"
                 : "Baixar atividade"}
           </button>
@@ -724,7 +824,7 @@ export default function ResultadoAtividadePage() {
               imprimirSomenteImagem
             }
             className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl border px-6 py-3 font-bold transition ${
-              testeGratisAtivo
+              !usuarioPremium
                 ? "border-slate-300 bg-slate-100 text-slate-500 hover:bg-slate-200"
                 : "border-emerald-600 bg-white text-emerald-700"
             }`}
@@ -735,10 +835,10 @@ export default function ResultadoAtividadePage() {
 
             {versaoSelecionada ===
             "professor"
-              ? testeGratisAtivo
+              ? !usuarioPremium
                 ? "🔒 Imprimir gabarito"
                 : "Imprimir gabarito"
-              : testeGratisAtivo
+              : !usuarioPremium
                 ? "🔒 Imprimir sem cabeçalho"
                 : "Imprimir sem cabeçalho"}
           </button>
@@ -749,7 +849,7 @@ export default function ResultadoAtividadePage() {
               adicionarCabecalho
             }
             className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-7 py-3 font-bold transition ${
-              testeGratisAtivo
+              !usuarioPremium
                 ? "bg-slate-300 text-slate-600 hover:bg-slate-400"
                 : "bg-emerald-600 text-white"
             }`}
@@ -758,7 +858,7 @@ export default function ResultadoAtividadePage() {
               size={19}
             />
 
-            {testeGratisAtivo
+            {!usuarioPremium
               ? "🔒 Adicionar cabeçalho"
               : "Adicionar cabeçalho"}
           </button>
