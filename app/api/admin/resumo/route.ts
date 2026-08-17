@@ -103,9 +103,6 @@ export async function GET(req: NextRequest) {
 
     /*
      * 4. BUSCA OS PERFIS
-     *
-     * cupom_origem identifica
-     * de qual parceiro veio o cadastro.
      */
     const {
       data: perfis,
@@ -170,9 +167,6 @@ export async function GET(req: NextRequest) {
 
     /*
      * 6. BUSCA AS INDICAÇÕES
-     *
-     * Usadas principalmente para
-     * pagamentos e comissões.
      */
     const {
       data: indicacoes,
@@ -203,9 +197,8 @@ export async function GET(req: NextRequest) {
     /*
      * 7. BUSCA OS VISITANTES ÚNICOS
      *
-     * cliques_parceiros mantém
-     * apenas um registro por
-     * visitante/parceiro.
+     * cliques_parceiros continua sendo
+     * a fonte de visitantes únicos.
      */
     const {
       data: cliquesParceiros,
@@ -234,14 +227,20 @@ export async function GET(req: NextRequest) {
     }
 
     /*
-     * 8. BUSCA TODOS OS ACESSOS
+     * 8. TENTA BUSCAR TODOS OS ACESSOS
      *
-     * acessos_parceiros registra
-     * cada abertura do link,
-     * inclusive acessos repetidos.
+     * Se acessos_parceiros ainda não existir
+     * ou estiver indisponível, o painel NÃO
+     * será derrubado.
      */
+    let acessosParceiros: {
+      id: string;
+      parceiro_id: string | null;
+      cupom: string | null;
+    }[] = [];
+
     const {
-      data: acessosParceiros,
+      data: acessos,
       error: erroAcessos,
     } = await supabaseAdmin
       .from("acessos_parceiros")
@@ -250,20 +249,16 @@ export async function GET(req: NextRequest) {
       );
 
     if (erroAcessos) {
-      console.error(
-        "Erro ao buscar acessos dos parceiros:",
+      console.warn(
+        "Tabela acessos_parceiros ainda não disponível. " +
+          "O painel continuará usando visitantes únicos.",
         erroAcessos
       );
 
-      return NextResponse.json(
-        {
-          erro:
-            "Não foi possível carregar os acessos dos parceiros.",
-        },
-        {
-          status: 500,
-        }
-      );
+      acessosParceiros = [];
+    } else {
+      acessosParceiros =
+        acessos || [];
     }
 
     /*
@@ -308,13 +303,11 @@ export async function GET(req: NextRequest) {
           /*
            * CADASTROS
            *
-           * Junta cadastros novos
-           * de profiles.cupom_origem
-           * com registros antigos
-           * da tabela indicacoes.
+           * Usa profiles.cupom_origem
+           * e também recupera registros
+           * antigos da tabela indicacoes.
            *
-           * O Set evita duplicar o
-           * mesmo email.
+           * Set evita duplicação por e-mail.
            */
           const emailsCadastros =
             new Set<string>();
@@ -375,28 +368,7 @@ export async function GET(req: NextRequest) {
             emailsCadastros.size;
 
           /*
-           * ACESSOS TOTAIS
-           *
-           * Conta toda abertura
-           * do link.
-           */
-          const totalAcessos =
-            (
-              acessosParceiros || []
-            ).filter(
-              (acesso) =>
-                acesso.parceiro_id ===
-                  parceiro.id ||
-                normalizarCupom(
-                  acesso.cupom
-                ) === cupomParceiro
-            ).length;
-
-          /*
            * VISITANTES ÚNICOS
-           *
-           * Conta cada navegador/
-           * visitante apenas uma vez.
            */
           const totalVisitantes =
             (
@@ -409,6 +381,28 @@ export async function GET(req: NextRequest) {
                   clique.cupom
                 ) === cupomParceiro
             ).length;
+
+          /*
+           * ACESSOS TOTAIS
+           *
+           * Se a tabela acessos_parceiros
+           * estiver disponível, usa ela.
+           *
+           * Caso contrário, usa os visitantes
+           * únicos temporariamente para que
+           * o painel continue funcionando.
+           */
+          const totalAcessos =
+            acessosParceiros.length > 0
+              ? acessosParceiros.filter(
+                  (acesso) =>
+                    acesso.parceiro_id ===
+                      parceiro.id ||
+                    normalizarCupom(
+                      acesso.cupom
+                    ) === cupomParceiro
+                ).length
+              : totalVisitantes;
 
           /*
            * INDICAÇÕES DO PARCEIRO
@@ -424,8 +418,7 @@ export async function GET(req: NextRequest) {
             );
 
           /*
-           * SOMENTE PAGAMENTOS
-           * CONFIRMADOS
+           * PAGAMENTOS CONFIRMADOS
            */
           const pagamentos =
             indicacoesParceiro.filter(
@@ -474,7 +467,7 @@ export async function GET(req: NextRequest) {
           /*
            * CONVERSÃO
            *
-           * Pagamentos / Cadastros
+           * pagamentos ÷ cadastros
            */
           const conversao =
             totalCadastros > 0
