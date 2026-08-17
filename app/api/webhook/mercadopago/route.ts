@@ -1,57 +1,122 @@
 import { NextResponse } from "next/server";
-import { MercadoPagoConfig, Payment } from "mercadopago";
+import {
+  MercadoPagoConfig,
+  Payment,
+} from "mercadopago";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
 const client = new MercadoPagoConfig({
-  accessToken: process.env.MERCADO_PAGO_ACCESS_TOKEN!,
+  accessToken:
+    process.env.MERCADO_PAGO_ACCESS_TOKEN!,
 });
+
+function respostaSucesso() {
+  return NextResponse.json(
+    {
+      recebido: true,
+    },
+    {
+      status: 200,
+    }
+  );
+}
+
+function respostaErroCritico(
+  mensagem: string
+) {
+  console.error(
+    "ERRO CRÍTICO NO WEBHOOK:",
+    mensagem
+  );
+
+  return NextResponse.json(
+    {
+      recebido: false,
+      erro: mensagem,
+    },
+    {
+      status: 500,
+    }
+  );
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    console.log("=== WEBHOOK MERCADO PAGO RECEBIDO ===");
+    console.log(
+      "=== WEBHOOK MERCADO PAGO RECEBIDO ==="
+    );
     console.log("Body:", body);
 
     const paymentId = body?.data?.id;
 
-    if (!paymentId || String(paymentId) === "123456") {
-      console.log("Webhook ignorado. ID inválido:", paymentId);
+    /*
+     * Ignora notificações sem ID válido
+     * e também a simulação padrão 123456.
+     */
+    if (
+      !paymentId ||
+      String(paymentId) === "123456"
+    ) {
+      console.log(
+        "Webhook ignorado. ID inválido:",
+        paymentId
+      );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaSucesso();
     }
 
     /*
-     * 1. CONSULTA O PAGAMENTO NO MERCADO PAGO
+     * 1. CONSULTA O PAGAMENTO
+     * DIRETAMENTE NO MERCADO PAGO
      */
     const payment = new Payment(client);
 
-    const pagamento = await payment.get({
-      id: paymentId,
-    });
+    let pagamento;
+
+    try {
+      pagamento = await payment.get({
+        id: paymentId,
+      });
+    } catch (error) {
+      console.error(
+        "Erro ao consultar pagamento no Mercado Pago:",
+        error
+      );
+
+      return respostaErroCritico(
+        "Não foi possível consultar o pagamento no Mercado Pago."
+      );
+    }
 
     console.log("Pagamento:", {
       id: pagamento.id,
       status: pagamento.status,
-      external_reference: pagamento.external_reference,
-      payer_email: pagamento.payer?.email,
-      transaction_amount: pagamento.transaction_amount,
+      external_reference:
+        pagamento.external_reference,
+      payer_email:
+        pagamento.payer?.email,
+      transaction_amount:
+        pagamento.transaction_amount,
     });
 
     /*
-     * Só continua se o pagamento estiver aprovado.
+     * Se ainda não foi aprovado,
+     * não existe Premium para liberar.
+     *
+     * Neste caso a notificação foi
+     * processada corretamente.
      */
-    if (pagamento.status !== "approved") {
+    if (
+      pagamento.status !== "approved"
+    ) {
       console.log(
         "Pagamento ainda não aprovado:",
         pagamento.status
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaSucesso();
     }
 
     /*
@@ -61,24 +126,30 @@ export async function POST(req: Request) {
       pagamento.external_reference ||
       pagamento.payer?.email;
 
+    /*
+     * PAGAMENTO APROVADO SEM EMAIL:
+     *
+     * Aqui NÃO respondemos sucesso.
+     * O cliente pagou e ainda não
+     * conseguimos identificar a conta.
+     */
     if (!emailBruto) {
-      console.error(
-        "ERRO: pagamento aprovado, mas nenhum email foi encontrado."
+      return respostaErroCritico(
+        `Pagamento ${paymentId} foi aprovado, mas nenhum email foi encontrado.`
       );
-
-      return NextResponse.json({
-        recebido: true,
-      });
     }
 
     const email = String(emailBruto)
       .trim()
       .toLowerCase();
 
-    console.log("Email do cliente:", email);
+    console.log(
+      "Email do cliente:",
+      email
+    );
 
     /*
-     * 3. CONFIRMA SE O PERFIL EXISTE
+     * 3. PROCURA O PERFIL
      */
     const {
       data: perfil,
@@ -91,32 +162,49 @@ export async function POST(req: Request) {
       .eq("email", email)
       .maybeSingle();
 
+    /*
+     * PAGAMENTO APROVADO,
+     * MAS HOUVE ERRO NO SUPABASE.
+     *
+     * Responde 500 para permitir
+     * uma nova tentativa do webhook.
+     */
     if (erroBuscarPerfil) {
       console.error(
-        "ERRO ao procurar perfil:",
+        "Erro ao procurar perfil:",
         erroBuscarPerfil
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
-    }
-
-    if (!perfil) {
-      console.error(
-        "ERRO CRÍTICO: pagamento aprovado, mas nenhum perfil foi encontrado para:",
-        email
+      return respostaErroCritico(
+        `Pagamento ${paymentId} aprovado, mas houve erro ao procurar o perfil de ${email}.`
       );
-
-      return NextResponse.json({
-        recebido: true,
-      });
     }
-
-    console.log("Perfil encontrado:", perfil.email);
 
     /*
-     * 4. LIBERA O PREMIUM
+     * PAGAMENTO APROVADO,
+     * MAS PERFIL NÃO ENCONTRADO.
+     *
+     * Também não podemos confirmar
+     * o webhook como concluído.
+     */
+    if (!perfil) {
+      return respostaErroCritico(
+        `Pagamento ${paymentId} aprovado, mas nenhum perfil foi encontrado para ${email}.`
+      );
+    }
+
+    console.log(
+      "Perfil encontrado:",
+      perfil.email
+    );
+
+    /*
+     * 4. GARANTE O PREMIUM
+     *
+     * Mesmo que o Mercado Pago envie
+     * o webhook novamente, atualizar
+     * o perfil para Premium outra vez
+     * não causa problema.
      */
     const {
       data: perfilAtualizado,
@@ -126,7 +214,8 @@ export async function POST(req: Request) {
       .update({
         plano: "premium",
         planos_restantes: 999999,
-        mercado_pago_id: String(paymentId),
+        mercado_pago_id:
+          String(paymentId),
       })
       .eq("id", perfil.id)
       .select(
@@ -134,31 +223,41 @@ export async function POST(req: Request) {
       )
       .single();
 
+    /*
+     * PAGAMENTO APROVADO,
+     * MAS O PREMIUM NÃO FOI LIBERADO.
+     *
+     * Este é justamente o caso que
+     * queremos impedir de ficar perdido.
+     */
     if (erroAtualizarPerfil) {
       console.error(
-        "ERRO CRÍTICO ao liberar Premium:",
+        "Erro ao liberar Premium:",
         erroAtualizarPerfil
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaErroCritico(
+        `Pagamento ${paymentId} aprovado, mas não foi possível liberar o Premium para ${email}.`
+      );
     }
 
+    /*
+     * Confirma que o banco realmente
+     * devolveu o perfil como Premium.
+     */
     if (
       !perfilAtualizado ||
-      perfilAtualizado.plano !== "premium"
+      perfilAtualizado.plano !==
+        "premium"
     ) {
-      console.error(
-        "ERRO CRÍTICO: atualização executada, mas Premium não foi confirmado."
+      return respostaErroCritico(
+        `Pagamento ${paymentId} aprovado, mas o perfil de ${email} não foi confirmado como Premium.`
       );
-
-      return NextResponse.json({
-        recebido: true,
-      });
     }
 
-    console.log("=== PREMIUM LIBERADO COM SUCESSO ===");
+    console.log(
+      "=== PREMIUM LIBERADO COM SUCESSO ==="
+    );
 
     console.log({
       email: perfilAtualizado.email,
@@ -170,18 +269,29 @@ export async function POST(req: Request) {
     });
 
     /*
-     * 5. PROCURA SE O PAGAMENTO JÁ FOI
-     * REGISTRADO EM ALGUMA INDICAÇÃO
+     * A PARTIR DAQUI O CLIENTE
+     * JÁ ESTÁ PREMIUM.
      *
-     * Isso evita comissão duplicada caso
-     * o Mercado Pago envie o webhook novamente.
+     * Problemas relacionados a parceiro
+     * ou comissão NÃO devem tirar o
+     * acesso do cliente.
+     */
+
+    /*
+     * 5. VERIFICA SE ESTE PAGAMENTO
+     * JÁ FOI REGISTRADO EM INDICAÇÕES
+     *
+     * Isso evita comissão duplicada
+     * se o webhook for recebido novamente.
      */
     const {
       data: pagamentoJaRegistrado,
       error: erroPagamentoRegistrado,
     } = await supabaseAdmin
       .from("indicacoes")
-      .select("id, mercado_pago_id, status")
+      .select(
+        "id, mercado_pago_id, status"
+      )
       .eq(
         "mercado_pago_id",
         String(paymentId)
@@ -193,6 +303,13 @@ export async function POST(req: Request) {
         "Erro ao verificar pagamento já registrado:",
         erroPagamentoRegistrado
       );
+
+      /*
+       * Premium já foi liberado.
+       * Não bloqueamos o cliente
+       * por problema de comissão.
+       */
+      return respostaSucesso();
     }
 
     if (pagamentoJaRegistrado) {
@@ -200,17 +317,12 @@ export async function POST(req: Request) {
         "Pagamento já registrado em uma indicação. Comissão não será duplicada."
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaSucesso();
     }
 
     /*
-     * 6. PROCURA INDICAÇÃO DO CLIENTE
-     *
-     * Aceitamos tanto "cadastrado"
-     * quanto "pendente" para não perder
-     * registros antigos.
+     * 6. PROCURA UMA INDICAÇÃO
+     * ASSOCIADA AO CLIENTE
      */
     const {
       data: indicacoes,
@@ -220,7 +332,10 @@ export async function POST(req: Request) {
       .select(
         "id, parceiro_id, cupom, email_cliente, status"
       )
-      .eq("email_cliente", email)
+      .eq(
+        "email_cliente",
+        email
+      )
       .in("status", [
         "cadastrado",
         "pendente",
@@ -234,17 +349,15 @@ export async function POST(req: Request) {
       );
 
       /*
-       * O Premium já foi liberado.
-       * Erro na comissão não bloqueia
+       * Premium já está ativo.
+       * Erro de parceiro não bloqueia
        * o acesso do cliente.
        */
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaSucesso();
     }
 
     /*
-     * Cliente não veio de parceiro.
+     * CLIENTE SEM PARCEIRO
      */
     if (
       !indicacoes ||
@@ -254,12 +367,11 @@ export async function POST(req: Request) {
         "Pagamento aprovado sem indicação de parceiro."
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      return respostaSucesso();
     }
 
-    const indicacao = indicacoes[0];
+    const indicacao =
+      indicacoes[0];
 
     console.log(
       "Indicação encontrada:",
@@ -268,53 +380,67 @@ export async function POST(req: Request) {
 
     /*
      * 7. CALCULA A COMISSÃO
-     *
-     * Comissão = 30% do valor efetivamente pago.
      */
-    const valorAssinatura = Number(
-      pagamento.transaction_amount || 0
-    );
+    const valorAssinatura =
+      Number(
+        pagamento.transaction_amount ||
+          0
+      );
 
     if (valorAssinatura <= 0) {
       console.error(
         "Não foi possível identificar o valor da assinatura."
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      /*
+       * Premium já está liberado.
+       */
+      return respostaSucesso();
     }
 
-    const percentualComissao = 0.3;
+    const percentualComissao =
+      0.3;
 
-    const valorComissao = Number(
-      (
-        valorAssinatura *
-        percentualComissao
-      ).toFixed(2)
+    const valorComissao =
+      Number(
+        (
+          valorAssinatura *
+          percentualComissao
+        ).toFixed(2)
+      );
+
+    console.log(
+      "Valores da indicação:",
+      {
+        valorAssinatura,
+        percentualComissao,
+        valorComissao,
+      }
     );
 
-    console.log("Valores da indicação:", {
-      valorAssinatura,
-      percentualComissao,
-      valorComissao,
-    });
-
     /*
-     * 8. TRANSFORMA O CADASTRO EM PAGAMENTO
+     * 8. MARCA A INDICAÇÃO
+     * COMO PAGA
      */
     const {
       data: indicacaoAtualizada,
-      error: erroAtualizarIndicacao,
+      error:
+        erroAtualizarIndicacao,
     } = await supabaseAdmin
       .from("indicacoes")
       .update({
         status: "pago",
-        valor_assinatura: valorAssinatura,
-        valor_comissao: valorComissao,
-        mercado_pago_id: String(paymentId),
+        valor_assinatura:
+          valorAssinatura,
+        valor_comissao:
+          valorComissao,
+        mercado_pago_id:
+          String(paymentId),
       })
-      .eq("id", indicacao.id)
+      .eq(
+        "id",
+        indicacao.id
+      )
       .select(
         "id, parceiro_id, cupom, email_cliente, status, valor_assinatura, valor_comissao, mercado_pago_id"
       )
@@ -322,13 +448,16 @@ export async function POST(req: Request) {
 
     if (erroAtualizarIndicacao) {
       console.error(
-        "ERRO ao registrar comissão:",
+        "Erro ao registrar comissão:",
         erroAtualizarIndicacao
       );
 
-      return NextResponse.json({
-        recebido: true,
-      });
+      /*
+       * Cliente já está Premium.
+       * Não tiramos o acesso dele
+       * por problema na comissão.
+       */
+      return respostaSucesso();
     }
 
     console.log(
@@ -352,17 +481,21 @@ export async function POST(req: Request) {
         indicacaoAtualizada.mercado_pago_id,
     });
 
-    return NextResponse.json({
-      recebido: true,
-    });
+    return respostaSucesso();
   } catch (error) {
     console.error(
       "ERRO GERAL NO WEBHOOK:",
       error
     );
 
-    return NextResponse.json({
-      recebido: true,
-    });
+    /*
+     * Como não sabemos se um pagamento
+     * aprovado deixou de ser processado,
+     * não confirmamos o webhook como
+     * recebido com sucesso.
+     */
+    return respostaErroCritico(
+      "Erro inesperado ao processar o webhook do Mercado Pago."
+    );
   }
 }
