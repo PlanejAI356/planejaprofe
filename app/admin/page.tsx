@@ -1182,6 +1182,7 @@ export default function AdminPage() {
             className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
           >
             Fechar
+            
           </button>
         </div>
       </div>

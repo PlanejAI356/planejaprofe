@@ -7,19 +7,31 @@ import { supabase } from "../lib/supabase";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] = useState(false);
-  const [carregando, setCarregando] = useState(false);
+  const [mostrarSenha, setMostrarSenha] =
+    useState(false);
+  const [carregando, setCarregando] =
+    useState(false);
 
-  async function sincronizarPerfil(accessToken: string) {
-    const resposta = await fetch("/api/perfil/sincronizar", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        "Content-Type": "application/json",
-      },
-    });
+  async function sincronizarPerfil(
+    accessToken: string
+  ) {
+    const resposta = await fetch(
+      "/api/perfil/sincronizar",
+      {
+        method: "POST",
+        headers: {
+          Authorization:
+            `Bearer ${accessToken}`,
+          "Content-Type":
+            "application/json",
+        },
+      }
+    );
 
-    const resultado = await resposta.json().catch(() => null);
+    const resultado =
+      await resposta
+        .json()
+        .catch(() => null);
 
     if (!resposta.ok) {
       throw new Error(
@@ -31,13 +43,18 @@ export default function LoginPage() {
     return resultado;
   }
 
-  async function entrar(e: React.FormEvent) {
+  async function entrar(
+    e: React.FormEvent
+  ) {
     e.preventDefault();
 
     if (carregando) return;
 
-    const emailNormalizado = email.trim().toLowerCase();
-    const senhaNormalizada = senha.trim();
+    const emailNormalizado =
+      email.trim().toLowerCase();
+
+    const senhaNormalizada =
+      senha.trim();
 
     if (!emailNormalizado) {
       alert("Informe seu e-mail.");
@@ -52,26 +69,45 @@ export default function LoginPage() {
     setCarregando(true);
 
     try {
-      const { data, error } =
+      const {
+        data,
+        error,
+      } =
         await supabase.auth.signInWithPassword({
-          email: emailNormalizado,
-          password: senhaNormalizada,
+          email:
+            emailNormalizado,
+          password:
+            senhaNormalizada,
         });
 
       if (error) {
-        console.error("Erro no login:", error);
+        console.error(
+          "Erro no login:",
+          error
+        );
 
-        const mensagem = error.message.toLowerCase();
+        const mensagem =
+          error.message.toLowerCase();
 
         if (
-          mensagem.includes("invalid login credentials") ||
-          mensagem.includes("invalid credentials")
+          mensagem.includes(
+            "invalid login credentials"
+          ) ||
+          mensagem.includes(
+            "invalid credentials"
+          )
         ) {
-          alert("E-mail ou senha incorretos.");
+          alert(
+            "E-mail ou senha incorretos."
+          );
           return;
         }
 
-        if (mensagem.includes("email not confirmed")) {
+        if (
+          mensagem.includes(
+            "email not confirmed"
+          )
+        ) {
           alert(
             "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada."
           );
@@ -84,9 +120,13 @@ export default function LoginPage() {
         return;
       }
 
-      const accessToken = data.session?.access_token;
+      const accessToken =
+        data.session?.access_token;
 
-      if (!data.user || !accessToken) {
+      if (
+        !data.user ||
+        !accessToken
+      ) {
         console.error(
           "Login concluído sem usuário ou sessão válida."
         );
@@ -97,16 +137,50 @@ export default function LoginPage() {
         return;
       }
 
-      await sincronizarPerfil(accessToken);
+      await sincronizarPerfil(
+        accessToken
+      );
 
-      window.location.href = "/";
+      /*
+       * Se o usuário chegou ao login
+       * vindo de uma página específica,
+       * volta para ela depois do acesso.
+       *
+       * Exemplo:
+       * /login?next=/admin
+       */
+      const params =
+        new URLSearchParams(
+          window.location.search
+        );
+
+      const destinoRecebido =
+        params.get("next") || "/";
+
+      /*
+       * Segurança:
+       * só aceita caminhos internos
+       * do próprio PlanejAI.
+       */
+      const destinoSeguro =
+        destinoRecebido.startsWith("/") &&
+        !destinoRecebido.startsWith("//")
+          ? destinoRecebido
+          : "/";
+
+      window.location.href =
+        destinoSeguro;
     } catch (error) {
       console.error(
         "Erro ao verificar o perfil após o login:",
         error
       );
 
-      await supabase.auth.signOut().catch(() => undefined);
+      await supabase.auth
+        .signOut()
+        .catch(
+          () => undefined
+        );
 
       alert(
         error instanceof Error
@@ -121,6 +195,7 @@ export default function LoginPage() {
   return (
     <main className="relative flex min-h-screen items-center justify-center overflow-hidden bg-gradient-to-br from-blue-100 via-white to-green-100 p-4">
       <div className="absolute -left-32 -top-32 h-96 w-96 rounded-full bg-blue-200/40 blur-3xl" />
+
       <div className="absolute -bottom-32 -right-32 h-96 w-96 rounded-full bg-green-200/50 blur-3xl" />
 
       <div className="relative w-full max-w-md rounded-3xl border-2 border-green-200 bg-white p-8 shadow-2xl sm:p-10">
@@ -132,12 +207,19 @@ export default function LoginPage() {
           Acesse sua conta do PlanejAI.
         </p>
 
-        <form onSubmit={entrar} className="space-y-5">
+        <form
+          onSubmit={entrar}
+          className="space-y-5"
+        >
           <input
             type="email"
             placeholder="E-mail"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) =>
+              setEmail(
+                e.target.value
+              )
+            }
             autoComplete="email"
             className="w-full rounded-xl border border-slate-300 px-4 py-4 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
             required
@@ -145,10 +227,18 @@ export default function LoginPage() {
 
           <div className="relative">
             <input
-              type={mostrarSenha ? "text" : "password"}
+              type={
+                mostrarSenha
+                  ? "text"
+                  : "password"
+              }
               placeholder="Senha"
               value={senha}
-              onChange={(e) => setSenha(e.target.value)}
+              onChange={(e) =>
+                setSenha(
+                  e.target.value
+                )
+              }
               autoComplete="current-password"
               className="w-full rounded-xl border border-slate-300 px-4 py-4 pr-12 outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
               required
@@ -157,17 +247,28 @@ export default function LoginPage() {
             <button
               type="button"
               onClick={() =>
-                setMostrarSenha((valorAtual) => !valorAtual)
+                setMostrarSenha(
+                  (
+                    valorAtual
+                  ) =>
+                    !valorAtual
+                )
               }
               className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-green-600"
               aria-label={
-                mostrarSenha ? "Ocultar senha" : "Mostrar senha"
+                mostrarSenha
+                  ? "Ocultar senha"
+                  : "Mostrar senha"
               }
             >
               {mostrarSenha ? (
-                <EyeOff size={20} />
+                <EyeOff
+                  size={20}
+                />
               ) : (
-                <Eye size={20} />
+                <Eye
+                  size={20}
+                />
               )}
             </button>
           </div>
