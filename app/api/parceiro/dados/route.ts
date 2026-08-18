@@ -1,31 +1,59 @@
 import { NextResponse } from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
+const PRECO_PREMIUM = 29.9;
+
+function normalizarCupom(valor: unknown) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/gi, "")
+    .trim()
+    .toUpperCase();
+}
+
+function normalizarEmail(valor: unknown) {
+  return String(valor || "")
+    .trim()
+    .toLowerCase();
+}
+
 function ocultarEmail(email: string) {
-  const [usuario, dominio] = email.split("@");
+  const [usuario, dominio] =
+    email.split("@");
 
   if (!usuario || !dominio) {
     return "Cliente";
   }
 
-  return `${usuario.slice(0, 2)}***@${dominio}`;
+  return `${usuario.slice(
+    0,
+    2
+  )}***@${dominio}`;
 }
 
-export async function GET(request: Request) {
+export async function GET(
+  request: Request
+) {
   try {
     /*
      * 1. VERIFICA O TOKEN
      */
     const authorization =
-      request.headers.get("authorization");
+      request.headers.get(
+        "authorization"
+      );
 
     if (
       !authorization ||
-      !authorization.startsWith("Bearer ")
+      !authorization.startsWith(
+        "Bearer "
+      )
     ) {
       return NextResponse.json(
         {
-          erro: "Usuário não autenticado.",
+          erro:
+            "Usuário não autenticado.",
         },
         {
           status: 401,
@@ -33,18 +61,22 @@ export async function GET(request: Request) {
       );
     }
 
-    const token = authorization.replace(
-      "Bearer ",
-      ""
-    );
+    const token =
+      authorization.replace(
+        "Bearer ",
+        ""
+      );
 
     /*
-     * 2. IDENTIFICA O USUÁRIO LOGADO
+     * 2. IDENTIFICA O USUÁRIO
      */
     const {
       data: usuarioAuth,
       error: erroUsuario,
-    } = await supabaseAdmin.auth.getUser(token);
+    } =
+      await supabaseAdmin.auth.getUser(
+        token
+      );
 
     if (
       erroUsuario ||
@@ -57,7 +89,8 @@ export async function GET(request: Request) {
 
       return NextResponse.json(
         {
-          erro: "Sessão inválida ou expirada.",
+          erro:
+            "Sessão inválida ou expirada.",
         },
         {
           status: 401,
@@ -67,11 +100,6 @@ export async function GET(request: Request) {
 
     const userId =
       usuarioAuth.user.id;
-
-    console.log(
-      "Usuário da área do parceiro:",
-      userId
-    );
 
     /*
      * 3. PROCURA O PARCEIRO
@@ -84,7 +112,10 @@ export async function GET(request: Request) {
       .select(
         "id, nome, cupom, comissao_percentual, ativo, user_id"
       )
-      .eq("user_id", userId)
+      .eq(
+        "user_id",
+        userId
+      )
       .maybeSingle();
 
     if (erroParceiro) {
@@ -130,64 +161,50 @@ export async function GET(request: Request) {
       );
     }
 
+    const cupomParceiro =
+      normalizarCupom(
+        parceiro.cupom
+      );
+
     /*
-     * 4. CONTA OS CLIQUES
-     *
-     * Se houver erro aqui,
-     * o painel continua funcionando.
+     * 4. BUSCA PERFIS
      */
-    let totalCliques = 0;
-
     const {
-      count,
-      error: erroCliques,
+      data: perfis,
+      error: erroPerfis,
     } = await supabaseAdmin
-      .from("cliques_parceiros")
-      .select("id", {
-        count: "exact",
-        head: true,
-      })
-      .eq(
-        "parceiro_id",
-        parceiro.id
+      .from("profiles")
+      .select(
+        "id, nome, email, plano, mercado_pago_id, cupom_origem"
       );
 
-    if (erroCliques) {
+    if (erroPerfis) {
       console.error(
-        "Erro ao contar cliques:",
-        erroCliques
+        "Erro ao buscar perfis:",
+        erroPerfis
       );
-    } else {
-      totalCliques =
-        count || 0;
+
+      return NextResponse.json(
+        {
+          erro:
+            "Não foi possível carregar os usuários da parceria.",
+        },
+        {
+          status: 500,
+        }
+      );
     }
 
     /*
-     * 5. BUSCA AS INDICAÇÕES
-     *
-     * Se a tabela estiver vazia,
-     * retorna uma lista vazia normalmente.
+     * 5. BUSCA INDICAÇÕES
      */
-    let listaIndicacoes: any[] = [];
-
     const {
       data: indicacoes,
       error: erroIndicacoes,
     } = await supabaseAdmin
       .from("indicacoes")
       .select(
-        `
-        id,
-        email_cliente,
-        status,
-        valor_assinatura,
-        valor_comissao,
-        created_at
-        `
-      )
-      .eq(
-        "parceiro_id",
-        parceiro.id
+        "id, parceiro_id, cupom, email_cliente, status, valor_assinatura, valor_comissao, mercado_pago_id, created_at"
       )
       .order(
         "created_at",
@@ -202,102 +219,500 @@ export async function GET(request: Request) {
         erroIndicacoes
       );
 
-      /*
-       * NÃO derruba o painel.
-       */
-      listaIndicacoes = [];
-    } else {
-      listaIndicacoes =
-        indicacoes || [];
+      return NextResponse.json(
+        {
+          erro:
+            "Não foi possível carregar as indicações.",
+        },
+        {
+          status: 500,
+        }
+      );
     }
 
     /*
-     * 6. CALCULA OS RESULTADOS
+     * 6. FILTRA INDICAÇÕES
+     * DO PARCEIRO
      */
-    const cadastros =
-      listaIndicacoes.length;
+    const indicacoesParceiro =
+      (indicacoes || []).filter(
+        (indicacao) =>
+          indicacao.parceiro_id ===
+            parceiro.id ||
+          normalizarCupom(
+            indicacao.cupom
+          ) === cupomParceiro
+      );
 
-    const indicacoesPagas =
-      listaIndicacoes.filter(
-        (item) =>
-          item.status === "pago" ||
-          item.status === "confirmada"
+    /*
+     * 7. ACESSOS TOTAIS
+     */
+    let totalAcessos = 0;
+
+    const {
+      count: countAcessos,
+      error: erroAcessos,
+    } = await supabaseAdmin
+      .from("acessos_parceiros")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq(
+        "parceiro_id",
+        parceiro.id
+      );
+
+    if (erroAcessos) {
+      console.warn(
+        "Erro ao contar acessos:",
+        erroAcessos
+      );
+    } else {
+      totalAcessos =
+        countAcessos || 0;
+    }
+
+    /*
+     * 8. VISITANTES ÚNICOS
+     */
+    let totalVisitantes = 0;
+
+    const {
+      count: countVisitantes,
+      error: erroVisitantes,
+    } = await supabaseAdmin
+      .from("cliques_parceiros")
+      .select("id", {
+        count: "exact",
+        head: true,
+      })
+      .eq(
+        "parceiro_id",
+        parceiro.id
+      );
+
+    if (erroVisitantes) {
+      console.warn(
+        "Erro ao contar visitantes:",
+        erroVisitantes
+      );
+    } else {
+      totalVisitantes =
+        countVisitantes || 0;
+    }
+
+    /*
+     * 9. CADASTROS
+     *
+     * profiles.cupom_origem
+     * + indicações antigas
+     * sem duplicar email
+     */
+    const emailsCadastros =
+      new Set<string>();
+
+    (perfis || []).forEach(
+      (perfil) => {
+        if (
+          normalizarCupom(
+            perfil.cupom_origem
+          ) !== cupomParceiro
+        ) {
+          return;
+        }
+
+        const email =
+          normalizarEmail(
+            perfil.email
+          );
+
+        if (email) {
+          emailsCadastros.add(
+            email
+          );
+        }
+      }
+    );
+
+    indicacoesParceiro.forEach(
+      (indicacao) => {
+        const email =
+          normalizarEmail(
+            indicacao.email_cliente
+          );
+
+        if (email) {
+          emailsCadastros.add(
+            email
+          );
+        }
+      }
+    );
+
+    const cadastros =
+      emailsCadastros.size;
+
+    /*
+     * 10. MAPA DE INDICAÇÕES
+     * POR EMAIL
+     */
+    const indicacoesPorEmail =
+      new Map<
+        string,
+        typeof indicacoesParceiro
+      >();
+
+    indicacoesParceiro.forEach(
+      (indicacao) => {
+        const email =
+          normalizarEmail(
+            indicacao.email_cliente
+          );
+
+        if (!email) return;
+
+        const lista =
+          indicacoesPorEmail.get(
+            email
+          ) || [];
+
+        lista.push(indicacao);
+
+        indicacoesPorEmail.set(
+          email,
+          lista
+        );
+      }
+    );
+
+    /*
+     * 11. PREMIUM / PAGAMENTOS
+     */
+    const clientesPagos =
+      new Map<
+        string,
+        {
+          email: string;
+          created_at:
+            string | null;
+          valor_assinatura:
+            number;
+          valor_comissao:
+            number;
+        }
+      >();
+
+    (perfis || []).forEach(
+      (perfil) => {
+        const email =
+          normalizarEmail(
+            perfil.email
+          );
+
+        if (!email) {
+          return;
+        }
+
+        const premium =
+          String(
+            perfil.plano || ""
+          ).toLowerCase() ===
+          "premium";
+
+        if (!premium) {
+          return;
+        }
+
+        const indicacoesEmail =
+          indicacoesPorEmail.get(
+            email
+          ) || [];
+
+        const pertencePeloPerfil =
+          normalizarCupom(
+            perfil.cupom_origem
+          ) === cupomParceiro;
+
+        const pertencePelaIndicacao =
+          indicacoesEmail.length >
+          0;
+
+        if (
+          !pertencePeloPerfil &&
+          !pertencePelaIndicacao
+        ) {
+          return;
+        }
+
+        const indicacaoPaga =
+          indicacoesEmail.find(
+            (indicacao) =>
+              String(
+                indicacao.status ||
+                  ""
+              ).toLowerCase() ===
+              "pago" ||
+              String(
+                indicacao.status ||
+                  ""
+              ).toLowerCase() ===
+              "confirmada"
+          );
+
+        const possuiMercadoPago =
+          Boolean(
+            String(
+              perfil.mercado_pago_id ||
+                ""
+            ).trim()
+          );
+
+        if (
+          !indicacaoPaga &&
+          !possuiMercadoPago
+        ) {
+          return;
+        }
+
+        const percentual =
+          Number(
+            parceiro.comissao_percentual ||
+              0
+          );
+
+        const valorAssinatura =
+          indicacaoPaga
+            ? Number(
+                indicacaoPaga.valor_assinatura ||
+                  PRECO_PREMIUM
+              )
+            : PRECO_PREMIUM;
+
+        const valorComissao =
+          indicacaoPaga &&
+          Number(
+            indicacaoPaga.valor_comissao ||
+              0
+          ) > 0
+            ? Number(
+                indicacaoPaga.valor_comissao
+              )
+            : Number(
+                (
+                  valorAssinatura *
+                  (percentual / 100)
+                ).toFixed(2)
+              );
+
+        clientesPagos.set(
+          email,
+          {
+            email,
+            created_at:
+              indicacaoPaga?.created_at ||
+              null,
+            valor_assinatura:
+              valorAssinatura,
+            valor_comissao:
+              valorComissao,
+          }
+        );
+      }
+    );
+
+    /*
+     * 12. COMPLEMENTA PAGAMENTOS
+     * ANTIGOS
+     */
+    indicacoesParceiro.forEach(
+      (indicacao) => {
+        const status =
+          String(
+            indicacao.status || ""
+          ).toLowerCase();
+
+        if (
+          status !== "pago" &&
+          status !== "confirmada"
+        ) {
+          return;
+        }
+
+        const email =
+          normalizarEmail(
+            indicacao.email_cliente
+          );
+
+        if (
+          !email ||
+          clientesPagos.has(
+            email
+          )
+        ) {
+          return;
+        }
+
+        const perfil =
+          (perfis || []).find(
+            (item) =>
+              normalizarEmail(
+                item.email
+              ) === email
+          );
+
+        if (!perfil) {
+          return;
+        }
+
+        if (
+          String(
+            perfil.plano || ""
+          ).toLowerCase() !==
+          "premium"
+        ) {
+          return;
+        }
+
+        const percentual =
+          Number(
+            parceiro.comissao_percentual ||
+              0
+          );
+
+        const valorAssinatura =
+          Number(
+            indicacao.valor_assinatura ||
+              PRECO_PREMIUM
+          );
+
+        const valorComissao =
+          Number(
+            indicacao.valor_comissao ||
+              0
+          ) > 0
+            ? Number(
+                indicacao.valor_comissao
+              )
+            : Number(
+                (
+                  valorAssinatura *
+                  (percentual / 100)
+                ).toFixed(2)
+              );
+
+        clientesPagos.set(
+          email,
+          {
+            email,
+            created_at:
+              indicacao.created_at ||
+              null,
+            valor_assinatura:
+              valorAssinatura,
+            valor_comissao:
+              valorComissao,
+          }
+        );
+      }
+    );
+
+    const pagamentos =
+      Array.from(
+        clientesPagos.values()
       );
 
     const assinaturas =
-      indicacoesPagas.length;
+      pagamentos.length;
 
     const valorGerado =
-      indicacoesPagas.reduce(
-        (total, item) =>
+      pagamentos.reduce(
+        (
+          total,
+          pagamento
+        ) =>
           total +
-          Number(
-            item.valor_assinatura ||
-              0
-          ),
+          pagamento.valor_assinatura,
         0
       );
 
     const comissaoAcumulada =
-      indicacoesPagas.reduce(
-        (total, item) =>
+      pagamentos.reduce(
+        (
+          total,
+          pagamento
+        ) =>
           total +
-          Number(
-            item.valor_comissao ||
-              0
-          ),
+          pagamento.valor_comissao,
         0
       );
 
+    const conversao =
+      cadastros > 0
+        ? Number(
+            (
+              (assinaturas /
+                cadastros) *
+              100
+            ).toFixed(1)
+          )
+        : 0;
+
     /*
-     * 7. MONTA A LISTA
+     * 13. LISTA DE RESULTADOS
+     *
+     * Mostra todos os cadastros
+     * atribuídos ao parceiro.
      */
     const resultados =
-      listaIndicacoes.map(
-        (item) => {
-          const pago =
-            item.status ===
-              "pago" ||
-            item.status ===
-              "confirmada";
+      Array.from(
+        emailsCadastros
+      ).map(
+        (email) => {
+          const pagamento =
+            clientesPagos.get(
+              email
+            );
+
+          const indicacao =
+            indicacoesPorEmail.get(
+              email
+            )?.[0];
 
           return {
-            id: item.id,
+            id:
+              indicacao?.id ||
+              email,
 
             cliente:
               ocultarEmail(
-                item.email_cliente ||
-                  ""
+                email
               ),
 
             created_at:
-              item.created_at,
+              indicacao?.created_at ||
+              pagamento?.created_at ||
+              null,
 
-            status: pago
+            status: pagamento
               ? "pago"
               : "cadastrado",
 
             valor_assinatura:
-              pago
-                ? Number(
-                    item.valor_assinatura ||
-                      0
-                  )
+              pagamento
+                ? pagamento.valor_assinatura
                 : 0,
 
             valor_comissao:
-              pago
-                ? Number(
-                    item.valor_comissao ||
-                      0
-                  )
+              pagamento
+                ? pagamento.valor_comissao
                 : 0,
           };
         }
       );
 
     /*
-     * 8. RETORNA O PAINEL
+     * 14. RETORNA O PAINEL
      */
     return NextResponse.json(
       {
@@ -315,12 +730,25 @@ export async function GET(request: Request) {
         },
 
         resumo: {
+          acessos:
+            totalAcessos,
+
+          visitantes:
+            totalVisitantes,
+
+          /*
+           * Mantemos cliques por
+           * compatibilidade temporária
+           * com a página antiga.
+           */
           cliques:
-            totalCliques,
+            totalVisitantes,
 
           cadastros,
 
           assinaturas,
+
+          conversao,
 
           valorGerado:
             Number(
