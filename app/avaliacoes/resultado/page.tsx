@@ -106,6 +106,98 @@ export default function ResultadoAvaliacaoPage() {
     setCarregando(false);
   }, []);
 
+  function arquivoParaDataUrl(
+    arquivo: File
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+
+      leitor.onload = () => {
+        if (typeof leitor.result === "string") {
+          resolve(leitor.result);
+          return;
+        }
+
+        reject(
+          new Error(
+            "Não foi possível converter a imagem."
+          )
+        );
+      };
+
+      leitor.onerror = () => {
+        reject(
+          new Error(
+            "Não foi possível ler a imagem."
+          )
+        );
+      };
+
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function processarColagemCabecalho(
+    evento: React.ClipboardEvent<HTMLDivElement>
+  ) {
+    const itens = Array.from(
+      evento.clipboardData?.items || []
+    );
+
+    const arquivosImagem = itens
+      .filter(
+        (item) =>
+          item.kind === "file" &&
+          item.type.startsWith("image/")
+      )
+      .map((item) => item.getAsFile())
+      .filter(
+        (arquivo): arquivo is File =>
+          Boolean(arquivo)
+      );
+
+    if (arquivosImagem.length > 0) {
+      evento.preventDefault();
+
+      try {
+        for (const arquivo of arquivosImagem) {
+          const dataUrl =
+            await arquivoParaDataUrl(
+              arquivo
+            );
+
+          document.execCommand(
+            "insertImage",
+            false,
+            dataUrl
+          );
+        }
+
+        const htmlAtual =
+          cabecalhoRef.current?.innerHTML ||
+          "";
+
+        setCabecalho(htmlAtual);
+        setCabecalhoSalvo(false);
+      } catch (error) {
+        console.error(
+          "Erro ao colar imagem no cabeçalho:",
+          error
+        );
+      }
+
+      return;
+    }
+
+    window.setTimeout(() => {
+      const htmlAtual =
+        cabecalhoRef.current?.innerHTML || "";
+
+      setCabecalho(htmlAtual);
+      setCabecalhoSalvo(false);
+    }, 0);
+  }
+
   function executarComando(
     comando: string,
     valor?: string
@@ -126,7 +218,16 @@ export default function ResultadoAvaliacaoPage() {
       cabecalhoRef.current?.innerText.trim() ||
       "";
 
-    if (!cabecalhoSomenteTexto) {
+    const possuiImagem = Boolean(
+      cabecalhoRef.current?.querySelector(
+        "img"
+      )
+    );
+
+    if (
+      !cabecalhoSomenteTexto &&
+      !possuiImagem
+    ) {
       localStorage.removeItem(
         "cabecalhoAvaliacao"
       );
@@ -470,6 +571,50 @@ elementoImagem.addEventListener("blur", () => {
 }
   return (
     <main className="min-h-screen bg-slate-50">
+      <style jsx global>{`
+        .cabecalho-editor table,
+        .cabecalho-preview table {
+          width: 100% !important;
+          border-collapse: collapse !important;
+          table-layout: fixed;
+        }
+
+        .cabecalho-editor td,
+        .cabecalho-editor th,
+        .cabecalho-preview td,
+        .cabecalho-preview th {
+          border: 1px solid #000;
+          box-sizing: border-box;
+        }
+
+        .cabecalho-editor img,
+        .cabecalho-preview img {
+          max-width: 120px;
+          max-height: 80px;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+        }
+
+        .cabecalho-editor:empty::before {
+          content: attr(data-placeholder);
+          color: #94a3b8;
+          pointer-events: none;
+        }
+
+        .cabecalho-editor p,
+        .cabecalho-preview p {
+          margin-top: 0;
+          margin-bottom: 4px;
+        }
+
+        .cabecalho-preview {
+          width: 100%;
+          box-sizing: border-box;
+          overflow: hidden;
+        }
+      `}</style>
+
       <TopoAvaliacoes
         destinoVoltar="/avaliacoes"
         textoVoltar="Configurar avaliação"
@@ -680,6 +825,61 @@ elementoImagem.addEventListener("blur", () => {
               </div>
             )}
 
+            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
+              <div className="border-b border-slate-200 p-5">
+                <h2 className="font-bold text-slate-950">
+                  Cabeçalho da escola
+                </h2>
+
+                <p className="mt-1 text-sm text-slate-500">
+                  Copie o cabeçalho usado pela escola e cole na área abaixo. Você pode editar antes de baixar.
+                </p>
+
+                <div
+                  ref={cabecalhoRef}
+                  contentEditable
+                  suppressContentEditableWarning
+                  data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
+                  onPaste={processarColagemCabecalho}
+                  onInput={() => {
+                    const htmlAtual =
+                      cabecalhoRef.current?.innerHTML ||
+                      "";
+
+                    setCabecalho(htmlAtual);
+                    setCabecalhoSalvo(false);
+                  }}
+                  className="cabecalho-editor mt-4 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                  dangerouslySetInnerHTML={{
+                    __html: cabecalho,
+                  }}
+                />
+
+                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
+                  <p
+                    className={`text-xs font-semibold ${
+                      cabecalhoSalvo
+                        ? "text-green-700"
+                        : "text-slate-500"
+                    }`}
+                  >
+                    {cabecalhoSalvo
+                      ? "Cabeçalho salvo. Ele aparecerá nas próximas avaliações."
+                      : "Você pode alterar o cabeçalho desta avaliação antes de baixar."}
+                  </p>
+
+                  <button
+                    type="button"
+                    onClick={salvarCabecalho}
+                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
+                  >
+                    <Save size={16} />
+                    Salvar cabeçalho
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="max-h-[760px] overflow-auto rounded-xl border border-slate-200 bg-slate-100 p-4 sm:p-6">
               {carregando ? (
                 <div className="flex min-h-[560px] items-center justify-center gap-2 text-sm text-slate-500">
@@ -692,45 +892,16 @@ elementoImagem.addEventListener("blur", () => {
               ) : conteudoAluno ? (
                 <div
                   ref={documentoRef}
-                  className="mx-auto min-h-[1123px] w-full max-w-[794px] border border-slate-300 bg-white px-8 py-10 shadow-md sm:px-12"
+                  className="mx-auto min-h-[1123px] w-full max-w-[794px] border-2 border-black bg-white px-8 py-10 shadow-md sm:px-12"
                 >
-                  <div className="mb-4">
+                  {cabecalho.trim() && (
                     <div
-                      ref={cabecalhoRef}
-                      contentEditable
-                      suppressContentEditableWarning
-                      data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-                      className="min-h-[130px] w-full rounded-lg border border-dashed border-slate-300 px-5 py-4 text-center text-sm leading-6 text-slate-900 outline-none transition empty:before:pointer-events-none empty:before:text-slate-400 empty:before:content-[attr(data-placeholder)] focus:border-green-600 focus:ring-2 focus:ring-green-100"
+                      className="cabecalho-preview mb-5"
                       dangerouslySetInnerHTML={{
                         __html: cabecalho,
                       }}
                     />
-
-                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                      <p
-                        className={`text-xs font-semibold ${
-                          cabecalhoSalvo
-                            ? "text-green-700"
-                            : "text-slate-500"
-                        }`}
-                      >
-                        {cabecalhoSalvo
-                          ? "Cabeçalho salvo. Ele aparecerá nas próximas avaliações."
-                          : "Copie o cabeçalho usado pela escola e cole nessa área."}
-                      </p>
-
-                      <button
-                        type="button"
-                        onClick={salvarCabecalho}
-                        className="flex cursor-pointer items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
-                      >
-                        <Save size={16} />
-                        Salvar cabeçalho
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="mb-6 border-t border-slate-300" />
+                  )}
 
                   <div
                     ref={editorRef}

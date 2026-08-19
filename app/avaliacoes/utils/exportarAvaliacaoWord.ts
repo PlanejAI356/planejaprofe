@@ -596,24 +596,24 @@ async function criarCabecalhoWord(
             },
             borders: {
               top: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "64748B",
+                style: BorderStyle.NONE,
+                size: 0,
+                color: "FFFFFF",
               },
               right: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "64748B",
+                style: BorderStyle.NONE,
+                size: 0,
+                color: "FFFFFF",
               },
               bottom: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "64748B",
+                style: BorderStyle.NONE,
+                size: 0,
+                color: "FFFFFF",
               },
               left: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "64748B",
+                style: BorderStyle.NONE,
+                size: 0,
+                color: "FFFFFF",
               },
             },
             children: conteudoCabecalho,
@@ -693,52 +693,86 @@ export async function exportarAvaliacaoWord(
     );
   }
 
+  /*
+   * Uma única borda externa envolve:
+   * cabeçalho + conteúdo da avaliação.
+   * Não cria caixas separadas nas questões.
+   */
+  const quadroAvaliacao = new Table({
+    width: {
+      size: 100,
+      type: WidthType.PERCENTAGE,
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            verticalAlign: VerticalAlign.TOP,
+            margins: {
+              top: 180,
+              right: 180,
+              bottom: 180,
+              left: 180,
+            },
+            borders: {
+              top: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "000000",
+              },
+              right: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "000000",
+              },
+              bottom: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "000000",
+              },
+              left: {
+                style: BorderStyle.SINGLE,
+                size: 8,
+                color: "000000",
+              },
+            },
+            children: [
+              cabecalhoWord,
+
+              new Paragraph({
+                spacing: {
+                  before: 60,
+                  after: 100,
+                },
+                children: [],
+              }),
+
+              ...conteudoWord,
+            ],
+          }),
+        ],
+      }),
+    ],
+  });
+
   const documento = new Document({
     sections: [
       {
         properties: {
           page: {
             margin: {
-              top: 560,
-              right: 560,
-              bottom: 560,
-              left: 560,
+              top: 400,
+              right: 400,
+              bottom: 400,
+              left: 400,
             },
           },
-          column: duasColunas
-            ? {
-                count: 2,
-                space: 360,
-                separate: true,
-              }
-            : {
-                count: 1,
-              },
+          column: {
+            count: 1,
+          },
         },
         children: [
-          cabecalhoWord,
-
-          new Paragraph({
-            spacing: {
-              before: 80,
-              after: 80,
-            },
-            border: {
-              bottom: {
-                color: "CBD5E1",
-                size: 6,
-                style:
-                  BorderStyle.SINGLE,
-              },
-            },
-            children: [
-              new TextRun({
-                text: " ",
-              }),
-            ],
-          }),
-
-          ...conteudoWord,
+          quadroAvaliacao,
         ],
       },
     ],
