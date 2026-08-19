@@ -46,9 +46,14 @@ function prepararDocumentoClonado(
     )
     .forEach((item) => item.remove());
 
+  /*
+   * Na tela nova o cabeçalho exibido dentro da folha
+   * usa .cabecalho-preview. Mantemos também
+   * [data-placeholder] para compatibilidade.
+   */
   const cabecalho =
     documentoClonado.querySelector<HTMLElement>(
-      "[data-placeholder]"
+      ".cabecalho-preview, [data-placeholder]"
     );
 
   if (cabecalho) {
@@ -186,6 +191,32 @@ export async function exportarAvaliacao(
     documentoClonado
   );
 
+  /*
+   * A folha da tela já possui borda.
+   * Aqui forçamos somente UMA borda preta,
+   * sem criar uma segunda borda no body.
+   */
+  documentoClonado.style.border =
+    "1px solid #000000";
+
+  documentoClonado.style.boxShadow =
+    "none";
+
+  documentoClonado.style.width =
+    "100%";
+
+  documentoClonado.style.maxWidth =
+    "100%";
+
+  documentoClonado.style.minHeight =
+    "0";
+
+  documentoClonado.style.margin =
+    "0";
+
+  documentoClonado.style.padding =
+    "7mm";
+
   documentoImpressao.open();
 
   documentoImpressao.write(`
@@ -232,27 +263,11 @@ export async function exportarAvaliacao(
             width: 100%;
           }
 
-          /*
-           * Borda externa da folha impressa.
-           * Ela aparece também ao salvar como PDF.
-           */
-          body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            border: 1px solid #000000;
-            pointer-events: none;
-            z-index: 9999;
-          }
-
           .documento-exportacao {
             width: 100%;
             max-width: 100%;
             margin: 0;
-            padding: 4mm;
+            padding: 0;
             background: #ffffff;
           }
 
@@ -261,18 +276,31 @@ export async function exportarAvaliacao(
             box-shadow: none !important;
           }
 
+          .documento-exportacao > * {
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            border: 1px solid #000000 !important;
+            box-shadow: none !important;
+            background: #ffffff !important;
+          }
+
           .cabecalho-avaliacao-exportacao {
             width: 100% !important;
             max-width: 100% !important;
+
             margin: 0 0 5mm 0 !important;
+
             page-break-inside: avoid;
             break-inside: avoid;
+
             overflow: visible !important;
           }
 
           .cabecalho-avaliacao-exportacao table {
             width: 100% !important;
             max-width: 100% !important;
+
             border-collapse: collapse !important;
             table-layout: fixed;
           }
@@ -280,32 +308,42 @@ export async function exportarAvaliacao(
           .cabecalho-avaliacao-exportacao td,
           .cabecalho-avaliacao-exportacao th {
             border: 1px solid #000000;
+
             padding: 1.5mm 2mm;
+
             vertical-align: middle;
+
             overflow-wrap: anywhere;
+
             line-height: 1.2;
           }
 
           .cabecalho-avaliacao-exportacao img {
             max-width: 30mm !important;
             max-height: 22mm !important;
+
             width: auto !important;
             height: auto !important;
+
             object-fit: contain;
           }
 
           .conteudo-avaliacao-exportacao {
             width: 100% !important;
             max-width: 100% !important;
+
             margin: 0 !important;
             padding: 0 !important;
+
             color: #000000 !important;
+
             overflow: visible !important;
           }
 
           .conteudo-avaliacao-exportacao img {
             max-width: 100% !important;
             height: auto !important;
+
             object-fit: contain;
           }
 
@@ -331,12 +369,14 @@ export async function exportarAvaliacao(
             body {
               width: auto !important;
               height: auto !important;
+
               overflow: visible !important;
             }
 
             .documento-exportacao {
               width: 100% !important;
               max-width: 100% !important;
+
               overflow: visible !important;
             }
 

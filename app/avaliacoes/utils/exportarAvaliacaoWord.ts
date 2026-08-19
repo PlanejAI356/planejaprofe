@@ -693,67 +693,200 @@ export async function exportarAvaliacaoWord(
     );
   }
 
-  /*
-   * Uma única borda externa envolve:
-   * cabeçalho + conteúdo da avaliação.
-   * Não cria caixas separadas nas questões.
-   */
-  const quadroAvaliacao = new Table({
-    width: {
-      size: 100,
-      type: WidthType.PERCENTAGE,
+  const semBordas = {
+    top: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
     },
-    rows: [
-      new TableRow({
-        children: [
-          new TableCell({
-            verticalAlign: VerticalAlign.TOP,
-            margins: {
-              top: 180,
-              right: 180,
-              bottom: 180,
-              left: 180,
-            },
-            borders: {
-              top: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "000000",
-              },
-              right: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "000000",
-              },
-              bottom: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "000000",
-              },
-              left: {
-                style: BorderStyle.SINGLE,
-                size: 8,
-                color: "000000",
-              },
-            },
-            children: [
-              cabecalhoWord,
+    right: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    bottom: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    left: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    insideHorizontal: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    insideVertical: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+  };
 
-              new Paragraph({
-                spacing: {
-                  before: 60,
-                  after: 100,
+  /*
+   * Quando "Duas colunas" estiver marcado,
+   * o cabeçalho continua em largura inteira
+   * e somente as questões ficam em duas colunas.
+   */
+  let conteudoAvaliacaoWord:
+    | Array<Paragraph | Table>
+    = conteudoWord;
+
+  if (duasColunas) {
+    const metade =
+      Math.ceil(
+        conteudoWord.length / 2
+      );
+
+    const colunaEsquerda =
+      conteudoWord.slice(0, metade);
+
+    const colunaDireita =
+      conteudoWord.slice(metade);
+
+    conteudoAvaliacaoWord = [
+      new Table({
+        width: {
+          size: 100,
+          type: WidthType.PERCENTAGE,
+        },
+        borders: semBordas,
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                width: {
+                  size: 50,
+                  type:
+                    WidthType.PERCENTAGE,
                 },
-                children: [],
+                verticalAlign:
+                  VerticalAlign.TOP,
+                margins: {
+                  top: 0,
+                  right: 180,
+                  bottom: 0,
+                  left: 0,
+                },
+                borders: {
+                  ...semBordas,
+                  right: {
+                    style:
+                      BorderStyle.SINGLE,
+                    size: 4,
+                    color: "CBD5E1",
+                  },
+                },
+                children:
+                  colunaEsquerda.length > 0
+                    ? colunaEsquerda
+                    : [
+                        new Paragraph({
+                          children: [],
+                        }),
+                      ],
               }),
 
-              ...conteudoWord,
+              new TableCell({
+                width: {
+                  size: 50,
+                  type:
+                    WidthType.PERCENTAGE,
+                },
+                verticalAlign:
+                  VerticalAlign.TOP,
+                margins: {
+                  top: 0,
+                  right: 0,
+                  bottom: 0,
+                  left: 180,
+                },
+                borders: semBordas,
+                children:
+                  colunaDireita.length > 0
+                    ? colunaDireita
+                    : [
+                        new Paragraph({
+                          children: [],
+                        }),
+                      ],
+              }),
             ],
           }),
         ],
       }),
-    ],
-  });
+    ];
+  }
+
+  /*
+   * Uma única borda externa envolve:
+   * cabeçalho + conteúdo da avaliação.
+   */
+  const quadroAvaliacao =
+    new Table({
+      width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+      },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              verticalAlign:
+                VerticalAlign.TOP,
+              margins: {
+                top: 180,
+                right: 180,
+                bottom: 180,
+                left: 180,
+              },
+              borders: {
+                top: {
+                  style:
+                    BorderStyle.SINGLE,
+                  size: 8,
+                  color: "000000",
+                },
+                right: {
+                  style:
+                    BorderStyle.SINGLE,
+                  size: 8,
+                  color: "000000",
+                },
+                bottom: {
+                  style:
+                    BorderStyle.SINGLE,
+                  size: 8,
+                  color: "000000",
+                },
+                left: {
+                  style:
+                    BorderStyle.SINGLE,
+                  size: 8,
+                  color: "000000",
+                },
+              },
+              children: [
+                cabecalhoWord,
+
+                new Paragraph({
+                  spacing: {
+                    before: 60,
+                    after: 100,
+                  },
+                  children: [],
+                }),
+
+                ...conteudoAvaliacaoWord,
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
 
   const documento = new Document({
     sections: [

@@ -140,8 +140,37 @@ export default function ResultadoAvaliacaoPage() {
   async function processarColagemCabecalho(
     evento: React.ClipboardEvent<HTMLDivElement>
   ) {
+    const clipboard =
+      evento.clipboardData;
+
+    if (!clipboard) {
+      return;
+    }
+
+    const htmlColado =
+      clipboard.getData("text/html");
+
+    /*
+     * Se o cabeçalho veio com HTML (por exemplo,
+     * copiado do Word), deixamos o navegador colar
+     * normalmente. Assim tabela, texto e imagens
+     * embutidas no próprio HTML não são descartados.
+     */
+    if (htmlColado) {
+      window.setTimeout(() => {
+        const htmlAtual =
+          cabecalhoRef.current?.innerHTML ||
+          "";
+
+        setCabecalho(htmlAtual);
+        setCabecalhoSalvo(false);
+      }, 0);
+
+      return;
+    }
+
     const itens = Array.from(
-      evento.clipboardData?.items || []
+      clipboard.items || []
     );
 
     const arquivosImagem = itens
@@ -191,7 +220,8 @@ export default function ResultadoAvaliacaoPage() {
 
     window.setTimeout(() => {
       const htmlAtual =
-        cabecalhoRef.current?.innerHTML || "";
+        cabecalhoRef.current?.innerHTML ||
+        "";
 
       setCabecalho(htmlAtual);
       setCabecalhoSalvo(false);
