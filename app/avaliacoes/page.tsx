@@ -185,6 +185,9 @@ export default function AvaliacoesPage() {
     setIncluirTextoApoio,
   ] = useState(false);
 
+  const [usoImagens, setUsoImagens] =
+    useState<"" | "parcial" | "total">("");
+
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState("");
   useEffect(() => {
@@ -244,6 +247,13 @@ export default function AvaliacoesPage() {
       Boolean(
         configuracao.incluirTextoApoio
       )
+    );
+
+    setUsoImagens(
+      configuracao.usoImagens === "parcial" ||
+      configuracao.usoImagens === "total"
+        ? configuracao.usoImagens
+        : ""
     );
   } catch (error) {
     console.error(
@@ -355,6 +365,7 @@ export default function AvaliacoesPage() {
               ? habilidadeBncc.trim()
               : "",
             incluirTextoApoio,
+            usoImagens,
 
             quantidadeMultiplaEscolha:
               transformarEmNumero(
@@ -441,6 +452,7 @@ if (
             ? habilidadeBncc.trim()
             : "",
           incluirTextoApoio,
+          usoImagens,
           totalQuestoes,
         })
       );
@@ -784,6 +796,46 @@ if (
                     Incluir texto de apoio
                   </span>
                 </label>
+
+                <div className="rounded-xl border-2 border-emerald-200 bg-white px-4 py-3">
+                  <label
+                    htmlFor="uso-imagens"
+                    className="mb-2 block text-sm font-bold text-slate-800"
+                  >
+                    Uso de imagens nas questões
+                    <span className="ml-2 text-xs font-semibold text-slate-500">
+                      opcional
+                    </span>
+                  </label>
+
+                  <select
+                    id="uso-imagens"
+                    value={usoImagens}
+                    onChange={(event) =>
+                      setUsoImagens(
+                        event.target.value as
+                          | ""
+                          | "parcial"
+                          | "total"
+                      )
+                    }
+                    className="w-full cursor-pointer rounded-xl border-2 border-emerald-300 bg-white px-4 py-3 text-sm font-bold text-slate-800 outline-none transition hover:border-emerald-500 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-200"
+                  >
+                    <option value="">
+                      Deixar a IA decidir
+                    </option>
+                    <option value="parcial">
+                      Imagens em algumas questões
+                    </option>
+                    <option value="total">
+                      Imagens em todas as questões
+                    </option>
+                  </select>
+
+                  <p className="mt-2 text-xs font-semibold leading-5 text-emerald-800">
+                    Se não escolher uma opção, o PlanejAI decide quando a imagem ajuda. Um pedido escrito pelo professor continua tendo prioridade.
+                  </p>
+                </div>
               </div>
 
               <div className="mt-4">
@@ -841,8 +893,7 @@ if (
               </label>
 
               <p className="mb-3 text-sm font-semibold leading-5 text-slate-600">
-                Explique com clareza o que foi ensinado em sala. Cite tópicos,
-                conceitos, exemplos, atividades ou habilidades trabalhadas.
+                Informe os conteúdos e, se quiser, escreva também pedidos específicos para a avaliação. O PlanejAI deve respeitar essas instruções.
               </p>
 
               <textarea
@@ -852,7 +903,7 @@ if (
                     event.target.value
                   )
                 }
-                placeholder="Exemplo: características dos planetas; movimentos de rotação e translação; planetas rochosos e gasosos; fases da Lua; eclipses."
+                placeholder="Exemplo: rotação e translação da Terra. Quero uma questão com imagem mostrando os movimentos da Terra e outra questão comparando rotação e translação."
                 rows={6}
                 className="w-full resize-none rounded-xl border-2 border-green-300 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition placeholder:text-slate-400 hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
               />

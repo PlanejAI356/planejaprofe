@@ -95,6 +95,12 @@ export function gerarPromptProvaJson(body: any) {
     body.incluirTextoApoio
   );
 
+  const usoImagens =
+    body.usoImagens === "parcial" ||
+    body.usoImagens === "total"
+      ? body.usoImagens
+      : "";
+
   const regrasBncc = incluirBncc
     ? habilidadeBncc
       ? `
@@ -135,6 +141,34 @@ TEXTO DE APOIO:
 - O texto servirá de base para uma ou mais questões sempre que possível.
 `
   : "";
+
+  const regrasUsoImagens =
+    usoImagens === "total"
+      ? `
+USO DE IMAGENS ESCOLHIDO PELO PROFESSOR:
+
+- O professor escolheu imagens em todas as questões.
+- Todas as questões devem usar "imagemNecessaria": true.
+- Todas as questões devem possuir "descricaoImagem" completa e compatível com o enunciado.
+- A imagem deve ter função pedagógica e não pode revelar a resposta.
+`
+      : usoImagens === "parcial"
+        ? `
+USO DE IMAGENS ESCOLHIDO PELO PROFESSOR:
+
+- O professor escolheu imagens em algumas questões.
+- Distribua imagens em parte da avaliação, sem obrigar todas as questões a terem imagem.
+- Priorize as questões em que o recurso visual realmente ajuda na compreensão ou na resolução.
+- Toda questão com imagem deve usar "imagemNecessaria": true e preencher "descricaoImagem".
+`
+        : `
+USO DE IMAGENS:
+
+- O professor não selecionou uma regra fixa para imagens.
+- Decida pedagogicamente quando uma imagem é útil.
+- Não force imagens em todas as questões.
+- Se o professor pedir imagem explicitamente no campo de conteúdos/instruções, esse pedido tem prioridade e deve ser cumprido.
+`;
 
   const regrasDificuldade =
   dificuldade === "Mais fáceis"
@@ -327,27 +361,13 @@ ESTRATÉGIAS DE ALFABETIZAÇÃO E LETRAMENTO:
 - produzir respostas curtas;
 - utilizar banco de palavras quando ele facilitar a leitura e a escrita.
 
-REGRAS OBRIGATÓRIAS PARA APOIO VISUAL:
+REGRAS DE APOIO VISUAL PARA OS ANOS INICIAIS:
 
-1º ANO
-- Todas as questões devem utilizar imagem.
-- Todas devem possuir:
-  "imagemNecessaria": true
-- Todas devem possuir "descricaoImagem".
-
-2º ANO
-- Utilizar imagem em até 8 questões.
-- Nunca ultrapassar o número total de questões.
-
-3º ANO
-- Utilizar imagem em até 5 questões.
-- Nunca ultrapassar o número total de questões.
-
-4º ANO
-- Utilizar imagem somente quando ela realmente ajudar na compreensão da questão.
-
-5º ANO
-- Utilizar imagem somente quando ela realmente ajudar na compreensão da questão.
+- Priorizar apoio visual especialmente no 1º, 2º e 3º ano quando ele facilitar leitura, compreensão, associação ou interpretação.
+- Não obrigar uma quantidade fixa de imagens apenas por causa da série.
+- A escolha feita pelo professor em "Uso de imagens nas questões" tem prioridade.
+- Um pedido explícito de imagem escrito pelo professor tem prioridade.
+- Quando nenhuma escolha ou pedido específico existir, decidir pedagogicamente em quais questões a imagem realmente ajuda.
 
 PADRÃO DAS IMAGENS
 
@@ -478,15 +498,28 @@ Etapa de ensino: ${etapaEnsino}
 Série ou turma: ${serie}
 Disciplina: ${disciplina}
 Tipo de avaliação: ${tipoAvaliacao}
-Conteúdos avaliados: ${conteudos}
+Conteúdos e instruções do professor: ${conteudos}
 Dificuldade: ${dificuldade}
 Valor total: ${valorAvaliacao} pontos
 Quantidade total de questões: ${totalQuestoes}
+
+PRIORIDADE ABSOLUTA AO PEDIDO DO PROFESSOR:
+
+- O campo "Conteúdos e instruções do professor" pode conter conteúdos, exemplos e pedidos específicos de como a avaliação deve ser construída.
+- Toda solicitação explícita escrita pelo professor deve ser cumprida.
+- Se o professor pedir uma questão específica, essa questão deve aparecer na avaliação.
+- Se pedir imagem, mapa, gráfico, tabela, esquema, comparação, situação-problema, texto, exemplo, sequência, interpretação ou outro formato, respeite exatamente o pedido sempre que for compatível com o tipo e a quantidade de questões escolhidos.
+- Não substitua uma solicitação explícita por uma estratégia pedagógica escolhida automaticamente.
+- Não transforme um pedido detalhado em uma pergunta genérica.
+- Primeiro cumpra todas as solicitações explícitas do professor; depois distribua os demais conteúdos nas questões restantes.
+- Quando houver conflito entre uma recomendação automática deste prompt e um pedido explícito do professor, priorize o pedido do professor, exceto se isso tornar o JSON inválido ou contrariar a quantidade total/tipos selecionados.
 
 
 ${regrasBncc}
 
 ${regrasTextoApoio}
+
+${regrasUsoImagens}
 
 ${regrasDificuldade}
 
@@ -894,6 +927,8 @@ VERIFICAÇÃO SILENCIOSA ANTES DE RESPONDER:
 - Nenhum enunciado contém [IMAGEM SUGERIDA].
 - As questões estão adequadas para ${serie}.
 - Os conteúdos estão limitados ao que foi informado.
+- Todas as instruções explícitas do professor foram cumpridas.
+- O uso de imagens respeita a opção escolhida pelo professor e os pedidos escritos no campo de conteúdos/instruções.
 - As questões não estão agrupadas por tipo.
 
 Entregue somente o JSON.
