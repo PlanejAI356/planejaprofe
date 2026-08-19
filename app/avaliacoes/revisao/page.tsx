@@ -1121,14 +1121,21 @@ export default function RevisaoAvaliacaoPage() {
   </div>
 )}
 
-        <div className="space-y-4">
+        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="border-b border-slate-200 px-6 py-5">
+            <p className="text-sm font-extrabold text-green-800">Edite toda a avaliação abaixo</p>
+            <p className="mt-1 text-xs text-slate-500">
+              Enunciados, alternativas, textos e demais campos podem ser alterados antes de montar a avaliação.
+            </p>
+          </div>
+          <div className="px-6 py-6 sm:px-8">
           {avaliacao.questoes.map(
             (questao, indice) => (
               <article
                 key={questao.id}
-                className="overflow-hidden rounded-2xl border-2 border-green-200 bg-white shadow-sm transition hover:border-green-400"
+                className="mb-8 bg-white last:mb-0"
               >
-                <div className="flex flex-wrap items-center gap-2 border-b-2 border-green-200 bg-green-50 px-4 py-3">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
                   <div className="mr-auto">
                     <p className="font-extrabold text-slate-900">
                       Questão {indice + 1}
@@ -1189,7 +1196,7 @@ export default function RevisaoAvaliacaoPage() {
                 </div>
 
                 {sugestaoAberta === questao.id && (
-                  <div className="border-b-2 border-green-200 bg-green-50 p-4">
+                  <div className="mb-4 rounded-xl border border-green-200 bg-green-50/60 p-4">
                     <label className="mb-2 block text-sm font-extrabold text-slate-900">
                       O que você deseja mudar nesta questão?
                     </label>
@@ -1271,7 +1278,7 @@ export default function RevisaoAvaliacaoPage() {
                   </div>
                 )}
 
-                <div className="space-y-4 p-5">
+                <div className="space-y-4">
                                     {(questao.tipo === "discursiva" ||
                     questao.tipo === "relacione") && (
                     <div>
@@ -1291,7 +1298,7 @@ export default function RevisaoAvaliacaoPage() {
                           )
                         }
                         rows={3}
-                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+                        className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
                   )}
@@ -1331,7 +1338,7 @@ export default function RevisaoAvaliacaoPage() {
         8,
         questao.alternativas.length + 5
       )}
-      className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+      className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
     />
   </div>
 )}
@@ -1358,7 +1365,7 @@ export default function RevisaoAvaliacaoPage() {
         8,
         questao.afirmativas.length + 5
       )}
-      className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+      className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
     />
   </div>
 )}
@@ -1388,7 +1395,7 @@ export default function RevisaoAvaliacaoPage() {
                           10,
                           questao.frasesComplete.length + 7
                         )}
-                        className="w-full cursor-text resize-y rounded-xl border-2 border-green-300 bg-white px-5 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
+                        className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
                       />
                     </div>
                   )}
@@ -1435,8 +1442,8 @@ export default function RevisaoAvaliacaoPage() {
                       </p>
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="overflow-hidden rounded-xl border-2 border-green-300 bg-white transition focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200">
-                          <div className="border-b border-green-200 bg-green-50 px-4 py-2">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white transition focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
+                          <div className="border-b border-slate-200 bg-slate-50 px-4 py-2">
                             <p className="text-center text-sm font-extrabold text-slate-800">
                               COLUNA A
                             </p>
@@ -1478,8 +1485,8 @@ export default function RevisaoAvaliacaoPage() {
                           />
                         </div>
 
-                        <div className="overflow-hidden rounded-xl border-2 border-green-300 bg-white transition focus-within:border-green-600 focus-within:ring-2 focus-within:ring-green-200">
-                          <div className="border-b border-green-200 bg-green-50 px-4 py-2">
+                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white transition focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
+                          <div className="border-b border-slate-200 bg-slate-50 px-4 py-2">
                             <p className="text-center text-sm font-extrabold text-slate-800">
                               COLUNA B
                             </p>
@@ -1557,6 +1564,7 @@ export default function RevisaoAvaliacaoPage() {
               </article>
             )
           )}
+          </div>
         </div>
 
         <div className="mt-6 flex justify-end">

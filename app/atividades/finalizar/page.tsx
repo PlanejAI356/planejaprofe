@@ -225,6 +225,119 @@ export default function FinalizarAtividadePage() {
       .join(" • ");
   }, [configuracao]);
 
+  function arquivoParaDataUrl(
+    arquivo: File
+  ): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const leitor = new FileReader();
+
+      leitor.onload = () => {
+        if (typeof leitor.result === "string") {
+          resolve(leitor.result);
+          return;
+        }
+
+        reject(
+          new Error(
+            "Não foi possível converter a imagem."
+          )
+        );
+      };
+
+      leitor.onerror = () => {
+        reject(
+          new Error(
+            "Não foi possível ler a imagem."
+          )
+        );
+      };
+
+      leitor.readAsDataURL(arquivo);
+    });
+  }
+
+  async function processarColagemCabecalho(
+    evento: React.ClipboardEvent<HTMLDivElement>
+  ) {
+    const itens =
+      Array.from(
+        evento.clipboardData?.items || []
+      );
+
+    const arquivosImagem = itens
+      .filter(
+        (item) =>
+          item.kind === "file" &&
+          item.type.startsWith("image/")
+      )
+      .map((item) => item.getAsFile())
+      .filter(
+        (arquivo): arquivo is File =>
+          Boolean(arquivo)
+      );
+
+    /*
+     * Se a área de transferência tiver uma
+     * imagem real, convertemos para base64.
+     * Assim ela continua existindo depois
+     * que o cabeçalho é salvo no navegador.
+     */
+    if (arquivosImagem.length > 0) {
+      evento.preventDefault();
+
+      try {
+        for (const arquivo of arquivosImagem) {
+          const dataUrl =
+            await arquivoParaDataUrl(
+              arquivo
+            );
+
+          document.execCommand(
+            "insertImage",
+            false,
+            dataUrl
+          );
+        }
+
+        const htmlAtual =
+          cabecalhoRef.current
+            ?.innerHTML || "";
+
+        setCabecalho(htmlAtual);
+        setCabecalhoSalvo(false);
+        setMensagem("");
+      } catch (error) {
+        console.error(
+          "Erro ao colar imagem no cabeçalho:",
+          error
+        );
+
+        setMensagem(
+          "Não foi possível colar a imagem do cabeçalho."
+        );
+      }
+
+      return;
+    }
+
+    /*
+     * Quando a colagem vem do Word/Google Docs
+     * como HTML, deixamos o navegador fazer
+     * a colagem normalmente. Logo depois
+     * atualizamos o estado com o conteúdo
+     * realmente inserido no editor.
+     */
+    window.setTimeout(() => {
+      const htmlAtual =
+        cabecalhoRef.current
+          ?.innerHTML || "";
+
+      setCabecalho(htmlAtual);
+      setCabecalhoSalvo(false);
+      setMensagem("");
+    }, 0);
+  }
+
   function executarComando(
     comando: string,
     valor?: string
@@ -602,6 +715,9 @@ export default function FinalizarAtividadePage() {
               contentEditable
               suppressContentEditableWarning
               data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
+              onPaste={
+                processarColagemCabecalho
+              }
               onInput={() => {
                 setCabecalhoSalvo(
                   false
