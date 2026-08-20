@@ -137,6 +137,56 @@ export default function ResultadoAvaliacaoPage() {
     });
   }
 
+  async function incorporarImagensDoCabecalho() {
+    const editor = cabecalhoRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const imagens = Array.from(
+      editor.querySelectorAll<HTMLImageElement>("img")
+    );
+
+    for (const imagem of imagens) {
+      const origem = imagem.getAttribute("src") || "";
+
+      if (!origem || origem.startsWith("data:")) {
+        continue;
+      }
+
+      try {
+        const resposta = await fetch(origem);
+
+        if (!resposta.ok) {
+          continue;
+        }
+
+        const blob = await resposta.blob();
+
+        if (!blob.type.startsWith("image/")) {
+          continue;
+        }
+
+        const arquivo = new File(
+          [blob],
+          "imagem-cabecalho",
+          { type: blob.type }
+        );
+
+        imagem.src =
+          await arquivoParaDataUrl(arquivo);
+      } catch {
+        /*
+         * Algumas imagens vindas do Word usam uma
+         * origem local/temporária que o navegador
+         * não permite acessar. Nesse caso mantemos
+         * a colagem sem interromper o cabeçalho.
+         */
+      }
+    }
+  }
+
   async function processarColagemCabecalho(
     evento: React.ClipboardEvent<HTMLDivElement>
   ) {
@@ -144,28 +194,6 @@ export default function ResultadoAvaliacaoPage() {
       evento.clipboardData;
 
     if (!clipboard) {
-      return;
-    }
-
-    const htmlColado =
-      clipboard.getData("text/html");
-
-    /*
-     * Se o cabeçalho veio com HTML (por exemplo,
-     * copiado do Word), deixamos o navegador colar
-     * normalmente. Assim tabela, texto e imagens
-     * embutidas no próprio HTML não são descartados.
-     */
-    if (htmlColado) {
-      window.setTimeout(() => {
-        const htmlAtual =
-          cabecalhoRef.current?.innerHTML ||
-          "";
-
-        setCabecalho(htmlAtual);
-        setCabecalhoSalvo(false);
-      }, 0);
-
       return;
     }
 
@@ -184,6 +212,29 @@ export default function ResultadoAvaliacaoPage() {
         (arquivo): arquivo is File =>
           Boolean(arquivo)
       );
+
+    const htmlColado =
+      clipboard.getData("text/html");
+
+    /*
+     * Preserva tabela e formatação quando o
+     * cabeçalho é copiado do Word e, em seguida,
+     * tenta incorporar as imagens no próprio HTML.
+     */
+    if (htmlColado) {
+      window.setTimeout(async () => {
+        await incorporarImagensDoCabecalho();
+
+        const htmlAtual =
+          cabecalhoRef.current?.innerHTML ||
+          "";
+
+        setCabecalho(htmlAtual);
+        setCabecalhoSalvo(false);
+      }, 0);
+
+      return;
+    }
 
     if (arquivosImagem.length > 0) {
       evento.preventDefault();
@@ -638,10 +689,24 @@ elementoImagem.addEventListener("blur", () => {
           margin-bottom: 4px;
         }
 
+        .cabecalho-editor,
         .cabecalho-preview {
-          width: 100%;
+          width: 100% !important;
+          max-width: 100% !important;
           box-sizing: border-box;
-          overflow: hidden;
+        }
+
+        .cabecalho-editor {
+          overflow-x: auto;
+        }
+
+        .cabecalho-preview {
+          overflow: visible;
+        }
+
+        .cabecalho-editor > *,
+        .cabecalho-preview > * {
+          max-width: 100% !important;
         }
       `}</style>
 

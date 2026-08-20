@@ -256,13 +256,80 @@ export default function FinalizarAtividadePage() {
     });
   }
 
+  async function incorporarImagensDoCabecalho() {
+    const editor = cabecalhoRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const imagens = Array.from(
+      editor.querySelectorAll<HTMLImageElement>("img")
+    );
+
+    for (const imagem of imagens) {
+      const origem =
+        imagem.getAttribute("src") || "";
+
+      if (
+        !origem ||
+        origem.startsWith("data:")
+      ) {
+        continue;
+      }
+
+      /*
+       * Imagens coladas do Word/Google Docs podem
+       * usar endereços temporários. Tentamos
+       * incorporá-las como base64 para que não
+       * desapareçam depois de salvar ou exportar.
+       */
+      try {
+        const resposta = await fetch(origem);
+
+        if (!resposta.ok) {
+          continue;
+        }
+
+        const blob = await resposta.blob();
+
+        if (!blob.type.startsWith("image/")) {
+          continue;
+        }
+
+        const arquivo = new File(
+          [blob],
+          "imagem-cabecalho",
+          {
+            type: blob.type,
+          }
+        );
+
+        imagem.src =
+          await arquivoParaDataUrl(arquivo);
+      } catch {
+        /*
+         * Se a origem não puder ser acessada,
+         * mantemos o HTML original sem impedir
+         * que o cabeçalho seja colado.
+         */
+      }
+    }
+  }
+
   async function processarColagemCabecalho(
     evento: React.ClipboardEvent<HTMLDivElement>
   ) {
-    const itens =
-      Array.from(
-        evento.clipboardData?.items || []
-      );
+    const clipboard =
+      evento.clipboardData;
+
+    if (!clipboard) {
+      return;
+    }
+
+    const itens = Array.from(
+      clipboard.items || []
+    );
 
     const arquivosImagem = itens
       .filter(
@@ -276,11 +343,33 @@ export default function FinalizarAtividadePage() {
           Boolean(arquivo)
       );
 
+    const htmlColado =
+      clipboard.getData("text/html");
+
+    /*
+     * Quando o cabeçalho vem do Word/Google Docs,
+     * preservamos tabela e formatação e depois
+     * tentamos incorporar as imagens.
+     */
+    if (htmlColado) {
+      window.setTimeout(async () => {
+        await incorporarImagensDoCabecalho();
+
+        const htmlAtual =
+          cabecalhoRef.current
+            ?.innerHTML || "";
+
+        setCabecalho(htmlAtual);
+        setCabecalhoSalvo(false);
+        setMensagem("");
+      }, 0);
+
+      return;
+    }
+
     /*
      * Se a área de transferência tiver uma
      * imagem real, convertemos para base64.
-     * Assim ela continua existindo depois
-     * que o cabeçalho é salvo no navegador.
      */
     if (arquivosImagem.length > 0) {
       evento.preventDefault();
@@ -320,13 +409,6 @@ export default function FinalizarAtividadePage() {
       return;
     }
 
-    /*
-     * Quando a colagem vem do Word/Google Docs
-     * como HTML, deixamos o navegador fazer
-     * a colagem normalmente. Logo depois
-     * atualizamos o estado com o conteúdo
-     * realmente inserido no editor.
-     */
     window.setTimeout(() => {
       const htmlAtual =
         cabecalhoRef.current
@@ -565,9 +647,24 @@ export default function FinalizarAtividadePage() {
           margin-bottom: 4px;
         }
 
+        .cabecalho-editor,
         .cabecalho-preview {
-          width: 100%;
+          width: 100% !important;
+          max-width: 100% !important;
           box-sizing: border-box;
+        }
+
+        .cabecalho-editor {
+          overflow-x: auto;
+        }
+
+        .cabecalho-preview {
+          overflow: visible;
+        }
+
+        .cabecalho-editor > *,
+        .cabecalho-preview > * {
+          max-width: 100% !important;
         }
       `}</style>
 
@@ -785,7 +882,7 @@ export default function FinalizarAtividadePage() {
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-black bg-white">
                 {cabecalho.trim() && (
                   <div
-                    className="cabecalho-preview max-h-[15%] shrink-0 overflow-hidden px-[1.5%] pt-[1.5%]"
+                    className="cabecalho-preview w-full shrink-0"
                     dangerouslySetInnerHTML={{
                       __html:
                         cabecalho,

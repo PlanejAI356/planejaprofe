@@ -287,6 +287,23 @@ export default function RevisaoAvaliacaoPage() {
   const [salvando, setSalvando] =
     useState(false);
 
+  const [
+    sugestaoAvaliacaoAberta,
+    setSugestaoAvaliacaoAberta,
+  ] = useState(false);
+
+  const [
+    sugestaoAvaliacao,
+    setSugestaoAvaliacao,
+  ] = useState("");
+
+  const [
+    acaoAvaliacao,
+    setAcaoAvaliacao,
+  ] = useState<
+    "corrigir" | "sugestao" | "refazer" | null
+  >(null);
+
   useEffect(() => {
     const avaliacaoSalva =
       localStorage.getItem("avaliacaoJson");
@@ -824,6 +841,178 @@ export default function RevisaoAvaliacaoPage() {
     }
   }
 
+  function contarTiposQuestoes() {
+    if (!avaliacao) {
+      return {
+        quantidadeMultiplaEscolha: 0,
+        quantidadeDiscursivas: 0,
+        quantidadeVerdadeiroFalso: 0,
+        quantidadeComplete: 0,
+        quantidadeRelacione: 0,
+      };
+    }
+
+    return {
+      quantidadeMultiplaEscolha:
+        avaliacao.questoes.filter(
+          (questao) =>
+            questao.tipo === "multipla_escolha"
+        ).length,
+
+      quantidadeDiscursivas:
+        avaliacao.questoes.filter(
+          (questao) =>
+            questao.tipo === "discursiva"
+        ).length,
+
+      quantidadeVerdadeiroFalso:
+        avaliacao.questoes.filter(
+          (questao) =>
+            questao.tipo === "verdadeiro_falso"
+        ).length,
+
+      quantidadeComplete:
+        avaliacao.questoes.filter(
+          (questao) =>
+            questao.tipo === "complete"
+        ).length,
+
+      quantidadeRelacione:
+        avaliacao.questoes.filter(
+          (questao) =>
+            questao.tipo === "relacione"
+        ).length,
+    };
+  }
+
+  async function executarAcaoAvaliacao(
+    acao: "corrigir" | "sugestao" | "refazer",
+    instrucao: string
+  ) {
+    if (!avaliacao || acaoAvaliacao) return;
+
+    const textoInstrucao = instrucao.trim();
+
+    if (!textoInstrucao) {
+      setErro(
+        "Escreva o que deseja mudar na avaliação."
+      );
+      return;
+    }
+
+    setErro("");
+    setAcaoAvaliacao(acao);
+
+    const configuracaoSalva =
+      localStorage.getItem(
+        "configuracaoAvaliacao"
+      );
+
+    const configuracao = configuracaoSalva
+      ? JSON.parse(configuracaoSalva)
+      : {};
+
+    const quantidades =
+      contarTiposQuestoes();
+
+    try {
+      const resposta = await fetch(
+        "/api/gerar-plano",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "prova_json",
+            ...configuracao,
+            ...quantidades,
+            totalQuestoes:
+              avaliacao.questoes.length,
+            sugestaoProfessor:
+              textoInstrucao,
+            avaliacaoAtual:
+              avaliacao,
+          }),
+        }
+      );
+
+      const dados = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          dados.erro ||
+            "Não foi possível atualizar a avaliação."
+        );
+      }
+
+      const novaAvaliacao =
+        dados.avaliacao as
+          | AvaliacaoJson
+          | undefined;
+
+      if (
+        !novaAvaliacao ||
+        !Array.isArray(
+          novaAvaliacao.questoes
+        )
+      ) {
+        throw new Error(
+          "A inteligência artificial não retornou a avaliação atualizada."
+        );
+      }
+
+      const questoesNormalizadas =
+        novaAvaliacao.questoes.map(
+          (questao, indice) => ({
+            ...questao,
+            id:
+              questao.id ||
+              `questao-${Date.now()}-${indice}`,
+            numero: indice + 1,
+            alternativas:
+              questao.alternativas || [],
+            afirmativas:
+              questao.afirmativas || [],
+            bancoPalavras:
+              questao.bancoPalavras || [],
+            frasesComplete:
+              questao.frasesComplete || [],
+            colunaA:
+              questao.colunaA || [],
+            colunaB:
+              questao.colunaB || [],
+          })
+        );
+
+      salvarAvaliacao({
+        ...avaliacao,
+        ...novaAvaliacao,
+        titulo:
+          novaAvaliacao.titulo ||
+          avaliacao.titulo,
+        questoes:
+          questoesNormalizadas,
+      });
+
+      if (acao === "sugestao") {
+        setSugestaoAvaliacao("");
+        setSugestaoAvaliacaoAberta(
+          false
+        );
+      }
+    } catch (error) {
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível atualizar a avaliação."
+      );
+    } finally {
+      setAcaoAvaliacao(null);
+    }
+  }
+
   async function montarAvaliacao() {
     if (!avaliacao || salvando) return;
 
@@ -1065,23 +1254,19 @@ export default function RevisaoAvaliacaoPage() {
 
       <section className="mx-auto max-w-6xl px-4 py-5">
         <div className="mb-5 rounded-2xl border-2 border-green-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <p className="text-xs font-extrabold uppercase tracking-wide text-green-700">
-                Revisão das questões
-              </p>
+          <p className="text-xs font-extrabold uppercase tracking-wide text-green-700">
+            Revisão da avaliação
+          </p>
 
-              <h1 className="mt-1 text-xl font-extrabold text-slate-900">
-                {avaliacao.titulo}
-              </h1>
+          <h1 className="mt-1 text-xl font-extrabold text-slate-900">
+            {avaliacao.titulo}
+          </h1>
 
-              <p className="mt-1 text-sm text-slate-500">
-                {avaliacao.serie} •{" "}
-                {avaliacao.disciplina} •{" "}
-                {avaliacao.questoes.length} questões
-              </p>
-            </div>
-          </div>
+          <p className="mt-1 text-sm text-slate-500">
+            {avaliacao.serie} •{" "}
+            {avaliacao.disciplina} •{" "}
+            {avaliacao.questoes.length} questões
+          </p>
         </div>
 
         {erro && (
@@ -1090,297 +1275,215 @@ export default function RevisaoAvaliacaoPage() {
           </div>
         )}
 
-        {avaliacao.textoApoio?.trim() && (
-  <div className="mb-4 rounded-2xl border-2 border-blue-200 bg-blue-50 p-5 shadow-sm">
-    <h2 className="mb-3 text-lg font-extrabold text-blue-900">
-      Texto de apoio
-    </h2>
+        <div className="mb-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+          <div className="flex flex-wrap items-center gap-2 p-4">
+            <button
+              type="button"
+              onClick={() =>
+                executarAcaoAvaliacao(
+                  "corrigir",
+                  "Corrija somente erros de ortografia, gramática, clareza, coerência, numeração e formatação desta avaliação. Preserve os conteúdos, os tipos de questão, a quantidade de questões, as imagens e o nível de dificuldade. Não troque questões corretas sem necessidade."
+                )
+              }
+              disabled={acaoAvaliacao !== null}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-green-300 bg-white px-4 py-2.5 text-sm font-extrabold text-green-800 transition hover:border-green-600 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {acaoAvaliacao === "corrigir" ? (
+                <Loader2
+                  size={17}
+                  className="animate-spin"
+                />
+              ) : (
+                <Sparkles size={17} />
+              )}
+              Corrigir avaliação
+            </button>
 
-    <p className="whitespace-pre-line text-[15px] leading-7 text-slate-800">
-      {avaliacao.textoApoio}
-    </p>
-  </div>
-)}
+            <button
+              type="button"
+              onClick={() =>
+                setSugestaoAvaliacaoAberta(
+                  (aberta) => !aberta
+                )
+              }
+              disabled={acaoAvaliacao !== null}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-emerald-300 bg-white px-4 py-2.5 text-sm font-extrabold text-emerald-800 transition hover:border-emerald-600 hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              <MessageSquareText size={17} />
+              Minhas sugestões
+            </button>
 
-{avaliacao.habilidadesBncc?.length > 0 && (
-  <div className="mb-5 rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5 shadow-sm">
-    <h2 className="mb-3 text-lg font-extrabold text-emerald-900">
-      Habilidades da BNCC
-    </h2>
-
-    <div className="flex flex-wrap gap-2">
-      {avaliacao.habilidadesBncc.map((habilidade) => (
-        <span
-          key={habilidade}
-          className="rounded-full bg-emerald-700 px-3 py-1 text-sm font-bold text-white"
-        >
-          {habilidade}
-        </span>
-      ))}
-    </div>
-  </div>
-)}
-
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-5">
-            <p className="text-sm font-extrabold text-green-800">Edite toda a avaliação abaixo</p>
-            <p className="mt-1 text-xs text-slate-500">
-              Enunciados, alternativas, textos e demais campos podem ser alterados antes de montar a avaliação.
-            </p>
+            <button
+              type="button"
+              onClick={() =>
+                executarAcaoAvaliacao(
+                  "refazer",
+                  "Refaça toda a avaliação mantendo a mesma etapa de ensino, série, disciplina, conteúdos, quantidade total e distribuição dos tipos de questão. Crie questões novas, claras e adequadas ao nível solicitado."
+                )
+              }
+              disabled={acaoAvaliacao !== null}
+              className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-blue-300 bg-white px-4 py-2.5 text-sm font-extrabold text-blue-700 transition hover:border-blue-500 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              {acaoAvaliacao === "refazer" ? (
+                <Loader2
+                  size={17}
+                  className="animate-spin"
+                />
+              ) : (
+                <RefreshCw size={17} />
+              )}
+              Refazer avaliação
+            </button>
           </div>
-          <div className="px-6 py-6 sm:px-8">
-          {avaliacao.questoes.map(
-            (questao, indice) => (
-              <article
-                key={questao.id}
-                className="mb-8 bg-white last:mb-0"
-              >
-                <div className="mb-3 flex flex-wrap items-center gap-2">
-                  <div className="mr-auto">
-                    <p className="font-extrabold text-slate-900">
-                      Questão {indice + 1}
-                    </p>
 
-                    <p className="text-xs font-semibold text-green-700">
-                      {nomeTipo(questao.tipo)}
-                    </p>
-                  </div>
+          {sugestaoAvaliacaoAberta && (
+            <div className="border-t border-slate-200 bg-green-50/50 p-4">
+              <label className="mb-2 block text-sm font-extrabold text-slate-900">
+                O que você deseja mudar na avaliação?
+              </label>
 
+              <textarea
+                value={sugestaoAvaliacao}
+                onChange={(event) =>
+                  setSugestaoAvaliacao(
+                    event.target.value
+                  )
+                }
+                rows={4}
+                placeholder="Exemplo: deixe a avaliação mais fácil; troque duas questões por situações do cotidiano; melhore os enunciados; use linguagem mais simples; aumente o espaço das discursivas."
+                className="w-full resize-y rounded-xl border-2 border-green-300 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-200"
+              />
+
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    executarAcaoAvaliacao(
+                      "sugestao",
+                      sugestaoAvaliacao
+                    )
+                  }
+                  disabled={
+                    acaoAvaliacao !== null ||
+                    !sugestaoAvaliacao.trim()
+                  }
+                  className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {acaoAvaliacao === "sugestao" ? (
+                    <Loader2
+                      size={17}
+                      className="animate-spin"
+                    />
+                  ) : (
+                    <Sparkles size={17} />
+                  )}
+                  Aplicar sugestão
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSugestaoAvaliacaoAberta(
+                      false
+                    )
+                  }
+                  className="cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 hover:bg-slate-100"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+
+        <div className="mx-auto max-w-[850px] border border-slate-300 bg-white px-6 py-8 shadow-md sm:px-10 sm:py-10">
+          <div className="mb-8 text-center">
+            <input
+              value={avaliacao.titulo}
+              onChange={(event) =>
+                salvarAvaliacao({
+                  ...avaliacao,
+                  titulo:
+                    event.target.value,
+                })
+              }
+              className="w-full bg-transparent text-center text-xl font-extrabold text-slate-950 outline-none"
+            />
+          </div>
+
+          {avaliacao.habilidadesBncc?.length > 0 && (
+            <div className="mb-6">
+              <p className="mb-2 text-sm font-extrabold text-slate-900">
+                HABILIDADES DA BNCC
+              </p>
+
+              <p className="text-sm leading-6 text-slate-800">
+                {avaliacao.habilidadesBncc.join(
+                  "; "
+                )}
+              </p>
+            </div>
+          )}
+
+          {avaliacao.textoApoio?.trim() && (
+            <div className="mb-8">
+              <p className="mb-2 text-sm font-extrabold text-slate-900">
+                TEXTO DE APOIO
+              </p>
+
+              <textarea
+                value={avaliacao.textoApoio}
+                onChange={(event) =>
+                  salvarAvaliacao({
+                    ...avaliacao,
+                    textoApoio:
+                      event.target.value,
+                  })
+                }
+                rows={Math.max(
+                  5,
+                  avaliacao.textoApoio
+                    .split("\n").length + 2
+                )}
+                className="w-full resize-y border-0 bg-transparent p-0 font-serif text-[16px] leading-7 text-slate-900 outline-none"
+              />
+            </div>
+          )}
+
+          <div className="space-y-8">
+            {avaliacao.questoes.map(
+              (questao, indice) => (
+                <section
+                  key={questao.id}
+                  className="relative"
+                >
                   <button
                     type="button"
+                    title="Excluir questão"
                     onClick={() =>
-                      setSugestaoAberta(
-                        sugestaoAberta === questao.id
-                          ? null
-                          : questao.id
+                      excluirQuestao(
+                        questao.id
                       )
                     }
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-green-300 bg-white px-3 py-2 text-xs font-extrabold text-green-800 transition hover:border-green-600 hover:bg-green-100"
-                  >
-                    <MessageSquareText size={16} />
-                    Minhas sugestões
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      refazerQuestao(questao)
-                    }
-                    disabled={
-                      questaoRefazendo === questao.id
-                    }
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-blue-300 px-3 py-2 text-xs font-extrabold text-blue-700 hover:bg-blue-50 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {questaoRefazendo ===
-                    questao.id ? (
-                      <Loader2
-                        size={16}
-                        className="animate-spin"
-                      />
-                    ) : (
-                      <RefreshCw size={16} />
-                    )}
-                    Refazer
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() =>
-                      excluirQuestao(questao.id)
-                    }
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border-2 border-red-200 px-3 py-2 text-xs font-extrabold text-red-700 hover:border-red-400 hover:bg-red-50"
+                    className="absolute right-0 top-0 cursor-pointer rounded-lg p-1.5 text-slate-300 transition hover:bg-red-50 hover:text-red-600"
                   >
                     <Trash2 size={16} />
-                    Excluir
                   </button>
-                </div>
 
-                {sugestaoAberta === questao.id && (
-                  <div className="mb-4 rounded-xl border border-green-200 bg-green-50/60 p-4">
-                    <label className="mb-2 block text-sm font-extrabold text-slate-900">
-                      O que você deseja mudar nesta questão?
-                    </label>
+                  <div className="pr-8">
+                    <p className="mb-2 text-xs font-bold uppercase tracking-wide text-slate-400">
+                      Questão {indice + 1} •{" "}
+                      {nomeTipo(
+                        questao.tipo
+                      )}
+                    </p>
 
-                    <textarea
-                      value={
-                        sugestoes[questao.id] || ""
-                      }
-                      onChange={(event) =>
-                        setSugestoes(
-                          (estadoAtual) => ({
-                            ...estadoAtual,
-                            [questao.id]:
-                              event.target.value,
-                          })
-                        )
-                      }
-                      placeholder="Exemplo: deixe a questão mais difícil; troque o exemplo; crie alternativas menos óbvias; simplifique o enunciado; transforme em uma questão com imagem."
-                      rows={3}
-                      className="w-full cursor-text resize-none rounded-xl border-2 border-green-300 bg-white px-4 py-3 text-sm leading-6 text-slate-800 outline-none transition hover:border-green-500 focus:border-green-600 focus:ring-2 focus:ring-green-200"
-                    />
-
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      <button
-                        type="button"
-                        onClick={() =>
-                          aplicarSugestao(questao)
-                        }
-                        disabled={
-                          aplicandoSugestao ===
-                          questao.id
-                        }
-                        className="flex cursor-pointer items-center gap-2 rounded-xl bg-green-700 px-4 py-2.5 text-sm font-extrabold text-white transition hover:bg-green-800 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {aplicandoSugestao ===
-                        questao.id ? (
-                          <Loader2
-                            size={17}
-                            className="animate-spin"
-                          />
-                        ) : (
-                          <Sparkles size={17} />
-                        )}
-                        Aplicar sugestão com IA
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() =>
-                          gerarImagemQuestao({
-                            ...questao,
-                            descricaoImagem:
-                              sugestoes[
-                                questao.id
-                              ]?.trim() ||
-                              questao.descricaoImagem,
-                          })
-                        }
-                        disabled={
-                          imagemGerando ===
-                          questao.id
-                        }
-                        className="flex cursor-pointer items-center gap-2 rounded-xl border-2 border-green-400 bg-white px-4 py-2.5 text-sm font-extrabold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
-                      >
-                        {imagemGerando ===
-                        questao.id ? (
-                          <Loader2
-                            size={17}
-                            className="animate-spin"
-                          />
-                        ) : (
-                          <ImagePlus size={17} />
-                        )}
-                        {questao.imagemUrl
-                          ? "Refazer imagem"
-                          : "Gerar imagem"}
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-4">
-                                    {(questao.tipo === "discursiva" ||
-                    questao.tipo === "relacione") && (
-                    <div>
-                      <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Enunciado
-                      </label>
-
-                      <textarea
-                        value={questao.enunciado}
-                        onChange={(event) =>
-                          atualizarQuestao(
-                            questao.id,
-                            {
-                              enunciado:
-                                event.target.value,
-                            }
-                          )
-                        }
-                        rows={3}
-                        className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-                      />
-                    </div>
-                  )}
-
-                  {questao.imagemUrl && (
-                    <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">
-                      <img
-                        src={questao.imagemUrl}
-                        alt={
-                          questao.descricaoImagem ||
-                          "Imagem da questão"
-                        }
-                        className="mx-auto max-h-[360px] max-w-full rounded-lg object-contain"
-                      />
-                    </div>
-                  )}
-
-                   {questao.tipo === "multipla_escolha" && (
-  <div>
-    <label className="mb-2 block text-sm font-bold text-slate-700">
-      Questão completa
-    </label>
-
-    <p className="mb-2 text-xs text-slate-500">
-      Edite o enunciado e as alternativas na mesma caixa.
-    </p>
-
-    <textarea
-      value={montarTextoEditorQuestao(questao)}
-      onChange={(event) =>
-        atualizarTextoEditor(
-          questao,
-          event.target.value
-        )
-      }
-      rows={Math.max(
-        8,
-        questao.alternativas.length + 5
-      )}
-      className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-    />
-  </div>
-)}
-
-                  {questao.tipo === "verdadeiro_falso" && (
-  <div>
-    <label className="mb-2 block text-sm font-bold text-slate-700">
-      Questão completa
-    </label>
-
-    <p className="mb-2 text-xs text-slate-500">
-      Edite o enunciado e as afirmativas na mesma caixa.
-    </p>
-
-    <textarea
-      value={montarTextoEditorQuestao(questao)}
-      onChange={(event) =>
-        atualizarTextoEditor(
-          questao,
-          event.target.value
-        )
-      }
-      rows={Math.max(
-        8,
-        questao.afirmativas.length + 5
-      )}
-      className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
-    />
-  </div>
-)}
-
-                                    {questao.tipo === "complete" && (
-                    <div>
-                      <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Questão completa
-                      </label>
-
-                      <p className="mb-2 text-xs text-slate-500">
-                        Edite o enunciado, o banco de palavras e as frases
-                        na mesma caixa.
-                      </p>
-
+                    {(questao.tipo ===
+                      "multipla_escolha" ||
+                      questao.tipo ===
+                        "verdadeiro_falso" ||
+                      questao.tipo ===
+                        "complete") && (
                       <textarea
                         value={montarTextoEditorQuestao(
                           questao
@@ -1392,178 +1495,284 @@ export default function RevisaoAvaliacaoPage() {
                           )
                         }
                         rows={Math.max(
-                          10,
-                          questao.frasesComplete.length + 7
+                          6,
+                          questao.tipo ===
+                            "multipla_escolha"
+                            ? questao.alternativas
+                                .length + 4
+                            : questao.tipo ===
+                                "verdadeiro_falso"
+                              ? questao
+                                  .afirmativas
+                                  .length + 4
+                              : questao
+                                  .frasesComplete
+                                  .length + 6
                         )}
-                        className="w-full cursor-text resize-y rounded-lg border border-slate-200 bg-white px-4 py-3 font-serif text-[16px] leading-8 text-slate-900 outline-none transition hover:border-slate-300 focus:border-green-500 focus:ring-2 focus:ring-green-100"
+                        className="w-full resize-y border border-transparent bg-transparent px-1 py-1 font-serif text-[16px] leading-8 text-slate-950 outline-none transition hover:border-slate-200 focus:border-green-300"
                       />
-                    </div>
-                  )}
+                    )}
 
-                  {questao.tipo ===
-                    "discursiva" && (
-                    <div>
-                      <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Linhas para resposta
-                      </label>
+                    {questao.tipo ===
+                      "discursiva" && (
+                      <>
+                        <textarea
+                          value={
+                            questao.enunciado
+                          }
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                enunciado:
+                                  event.target
+                                    .value,
+                              }
+                            )
+                          }
+                          rows={3}
+                          className="w-full resize-y border border-transparent bg-transparent px-1 py-1 font-serif text-[16px] leading-8 text-slate-950 outline-none transition hover:border-slate-200 focus:border-green-300"
+                        />
 
-                      <input
-                        type="number"
-                        min="1"
-                        max="6"
-                        value={
-                          questao.linhasResposta
-                        }
-                        onChange={(event) =>
-                          atualizarQuestao(
-                            questao.id,
-                            {
-                              linhasResposta:
+                        <div className="mt-2 space-y-4">
+                          {Array.from({
+                            length: Math.max(
+                              1,
+                              Math.min(
+                                6,
                                 Number(
-                                  event.target.value
-                                ),
+                                  questao.linhasResposta ||
+                                    3
+                                )
+                              )
+                            ),
+                          }).map((_, linha) => (
+                            <div
+                              key={linha}
+                              className="h-7 border-b border-slate-500"
+                            />
+                          ))}
+                        </div>
+
+                        <div className="mt-3 flex items-center gap-2 text-xs text-slate-500">
+                          <span>
+                            Linhas para resposta:
+                          </span>
+                          <input
+                            type="number"
+                            min="1"
+                            max="6"
+                            value={
+                              questao.linhasResposta
                             }
-                          )
-                        }
-                        className="w-28 cursor-pointer rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-2.5 text-sm outline-none transition hover:border-green-500 focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                      />
-                    </div>
-                  )}
+                            onChange={(
+                              event
+                            ) =>
+                              atualizarQuestao(
+                                questao.id,
+                                {
+                                  linhasResposta:
+                                    Number(
+                                      event.target
+                                        .value
+                                    ),
+                                }
+                              )
+                            }
+                            className="w-16 rounded border border-slate-200 px-2 py-1 outline-none focus:border-green-500"
+                          />
+                        </div>
+                      </>
+                    )}
 
-                                    {questao.tipo === "relacione" && (
-                    <div>
-                      <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Colunas da questão
-                      </label>
+                    {questao.tipo ===
+                      "relacione" && (
+                      <>
+                        <textarea
+                          value={
+                            questao.enunciado
+                          }
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                enunciado:
+                                  event.target
+                                    .value,
+                              }
+                            )
+                          }
+                          rows={3}
+                          className="mb-3 w-full resize-y border border-transparent bg-transparent px-1 py-1 font-serif text-[16px] leading-8 text-slate-950 outline-none transition hover:border-slate-200 focus:border-green-300"
+                        />
 
-                      <p className="mb-3 text-xs text-slate-500">
-                        Edite os itens diretamente nas duas caixas.
-                        Digite um item em cada linha.
-                      </p>
-
-                      <div className="grid gap-4 sm:grid-cols-2">
-                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white transition focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
-                          <div className="border-b border-slate-200 bg-slate-50 px-4 py-2">
-                            <p className="text-center text-sm font-extrabold text-slate-800">
+                        <div className="grid gap-5 sm:grid-cols-2">
+                          <div>
+                            <p className="mb-2 text-center text-sm font-extrabold text-slate-800">
                               COLUNA A
                             </p>
+                            <textarea
+                              value={questao.colunaA
+                                .map(
+                                  (
+                                    item,
+                                    itemIndice
+                                  ) =>
+                                    `${itemIndice + 1}. ${item}`
+                                )
+                                .join("\n")}
+                              onChange={(
+                                event
+                              ) => {
+                                const colunaA =
+                                  event.target.value
+                                    .split("\n")
+                                    .map(
+                                      (
+                                        linha
+                                      ) =>
+                                        linha.replace(
+                                          /^\s*\d+\s*[\.\)\-:]\s*/,
+                                          ""
+                                        )
+                                    );
+
+                                atualizarQuestao(
+                                  questao.id,
+                                  { colunaA }
+                                );
+                              }}
+                              rows={Math.max(
+                                6,
+                                questao.colunaA
+                                  .length + 1
+                              )}
+                              className="w-full resize-y border border-slate-200 bg-transparent px-3 py-3 font-serif text-[16px] leading-8 text-slate-950 outline-none focus:border-green-400"
+                            />
                           </div>
 
-                          <textarea
-                            value={questao.colunaA
-                              .map(
-                                (item, itemIndice) =>
-                                  `${itemIndice + 1}. ${item}`
-                              )
-                              .join("\n")}
-                            onChange={(event) => {
-                              const colunaA =
-                                event.target.value
-                                  .split("\n")
-                                  .map((linha) =>
-                                    linha.replace(
-                                      /^\s*\d+\s*[\.\)\-:]\s*/,
-                                      ""
-                                    )
-                                  );
-
-                              atualizarQuestao(
-                                questao.id,
-                                {
-                                  colunaA,
-                                }
-                              );
-                            }}
-                            rows={Math.max(
-                              7,
-                              questao.colunaA.length + 2
-                            )}
-                            placeholder={
-                              "1. Mamíferos\n2. Aves\n3. Répteis\n4. Anfíbios"
-                            }
-                            className="w-full cursor-text resize-y bg-white px-4 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none"
-                          />
-                        </div>
-
-                        <div className="overflow-hidden rounded-lg border border-slate-200 bg-white transition focus-within:border-green-500 focus-within:ring-2 focus-within:ring-green-100">
-                          <div className="border-b border-slate-200 bg-slate-50 px-4 py-2">
-                            <p className="text-center text-sm font-extrabold text-slate-800">
+                          <div>
+                            <p className="mb-2 text-center text-sm font-extrabold text-slate-800">
                               COLUNA B
                             </p>
+                            <textarea
+                              value={questao.colunaB
+                                .map(
+                                  (
+                                    item,
+                                    itemIndice
+                                  ) =>
+                                    `${String.fromCharCode(
+                                      65 +
+                                        itemIndice
+                                    )}. ${item}`
+                                )
+                                .join("\n")}
+                              onChange={(
+                                event
+                              ) => {
+                                const colunaB =
+                                  event.target.value
+                                    .split("\n")
+                                    .map(
+                                      (
+                                        linha
+                                      ) =>
+                                        linha.replace(
+                                          /^\s*[A-Za-z]\s*[\.\)\-:]\s*/,
+                                          ""
+                                        )
+                                    );
+
+                                atualizarQuestao(
+                                  questao.id,
+                                  { colunaB }
+                                );
+                              }}
+                              rows={Math.max(
+                                6,
+                                questao.colunaB
+                                  .length + 1
+                              )}
+                              className="w-full resize-y border border-slate-200 bg-transparent px-3 py-3 font-serif text-[16px] leading-8 text-slate-950 outline-none focus:border-green-400"
+                            />
                           </div>
-
-                          <textarea
-                            value={questao.colunaB
-                              .map(
-                                (item, itemIndice) =>
-                                  `${String.fromCharCode(
-                                    65 + itemIndice
-                                  )}. ${item}`
-                              )
-                              .join("\n")}
-                            onChange={(event) => {
-                              const colunaB =
-                                event.target.value
-                                  .split("\n")
-                                  .map((linha) =>
-                                    linha.replace(
-                                      /^\s*[A-Za-z]\s*[\.\)\-:]\s*/,
-                                      ""
-                                    )
-                                  );
-
-                              atualizarQuestao(
-                                questao.id,
-                                {
-                                  colunaB,
-                                }
-                              );
-                            }}
-                            rows={Math.max(
-                              7,
-                              questao.colunaB.length + 2
-                            )}
-                            placeholder={
-                              "A. Possuem pelos e amamentam\nB. Possuem penas\nC. Possuem pele seca com escamas\nD. Possuem pele úmida"
-                            }
-                            className="w-full cursor-text resize-y bg-white px-4 py-4 font-serif text-[16px] leading-8 text-slate-900 outline-none"
-                          />
                         </div>
+                      </>
+                    )}
+
+                    {questao.imagemUrl && (
+                      <div className="mt-4">
+                        <img
+                          src={
+                            questao.imagemUrl
+                          }
+                          alt={
+                            questao.descricaoImagem ||
+                            "Imagem da questão"
+                          }
+                          className="mx-auto max-h-[340px] max-w-full object-contain"
+                        />
                       </div>
-                    </div>
-                  )}
+                    )}
 
-                  {(questao.imagemNecessaria ||
-                    questao.descricaoImagem ||
-                    questao.imagemUrl) && (
-                    <div>
-                      <label className="mb-2 block text-sm font-bold text-slate-700">
-                        Descrição da imagem
-                      </label>
+                    {(questao.imagemNecessaria ||
+                      questao.descricaoImagem ||
+                      questao.imagemUrl) && (
+                      <div className="mt-3">
+                        <textarea
+                          value={
+                            questao.descricaoImagem
+                          }
+                          onChange={(event) =>
+                            atualizarQuestao(
+                              questao.id,
+                              {
+                                descricaoImagem:
+                                  event.target
+                                    .value,
+                              }
+                            )
+                          }
+                          rows={2}
+                          placeholder="Descrição da imagem"
+                          className="w-full resize-y rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs leading-5 text-slate-600 outline-none focus:border-green-400"
+                        />
 
-                      <textarea
-                        value={
-                          questao.descricaoImagem
-                        }
-                        onChange={(event) =>
-                          atualizarQuestao(
-                            questao.id,
-                            {
-                              descricaoImagem:
-                                event.target.value,
-                            }
-                          )
-                        }
-                        rows={2}
-                        placeholder="Descreva a imagem que deve acompanhar esta questão."
-                        className="w-full cursor-text rounded-xl border-2 border-green-200 bg-green-50/40 px-4 py-3 text-sm outline-none transition hover:border-green-500 focus:border-green-600 focus:bg-white focus:ring-2 focus:ring-green-200"
-                      />
-                    </div>
-                  )}
-                </div>
-              </article>
-            )
-          )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            gerarImagemQuestao(
+                              questao
+                            )
+                          }
+                          disabled={
+                            imagemGerando ===
+                            questao.id
+                          }
+                          className="mt-2 flex cursor-pointer items-center gap-2 rounded-lg border border-green-300 px-3 py-2 text-xs font-bold text-green-700 hover:bg-green-50 disabled:cursor-not-allowed disabled:opacity-60"
+                        >
+                          {imagemGerando ===
+                          questao.id ? (
+                            <Loader2
+                              size={15}
+                              className="animate-spin"
+                            />
+                          ) : (
+                            <ImagePlus
+                              size={15}
+                            />
+                          )}
+                          {questao.imagemUrl
+                            ? "Refazer imagem"
+                            : "Gerar imagem"}
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </section>
+              )
+            )}
           </div>
         </div>
 

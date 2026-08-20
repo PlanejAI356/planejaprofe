@@ -30,6 +30,14 @@ type TipoImagemWord =
   | "gif"
   | "bmp";
 
+/*
+ * A biblioteca docx usa half-points:
+ * 22 = 11 pt
+ * 24 = 12 pt
+ */
+const TAMANHO_FONTE_AVALIACAO = 22;
+const TAMANHO_FONTE_CABECALHO = 24;
+
 function limparNomeArquivo(nome: string) {
   const nomeLimpo = nome
     .normalize("NFD")
@@ -223,7 +231,8 @@ function criarRunsDoNo(
     bold?: boolean;
     italics?: boolean;
     underline?: boolean;
-  } = {}
+  } = {},
+  tamanhoFonte = TAMANHO_FONTE_AVALIACAO
 ): TextRun[] {
   if (no.nodeType === Node.TEXT_NODE) {
     const texto =
@@ -244,7 +253,7 @@ function criarRunsDoNo(
               type: UnderlineType.SINGLE,
             }
           : undefined,
-        size: 22,
+        size: tamanhoFonte,
         font: "Arial",
       }),
     ];
@@ -286,7 +295,8 @@ function criarRunsDoNo(
     (filho) =>
       criarRunsDoNo(
         filho,
-        formatoAtual
+        formatoAtual,
+        tamanhoFonte
       )
   );
 }
@@ -309,10 +319,19 @@ function criarParagrafoTexto(
   opcoes: {
     titulo?: boolean;
     espacamentoDepois?: number;
+    tamanhoFonte?: number;
   } = {}
 ) {
+  const tamanhoFonte =
+    opcoes.tamanhoFonte ??
+    TAMANHO_FONTE_AVALIACAO;
+
   const runs =
-    criarRunsDoNo(elemento);
+    criarRunsDoNo(
+      elemento,
+      {},
+      tamanhoFonte
+    );
 
   const ehLinhaResposta =
     elementoEhLinhaResposta(elemento);
@@ -333,7 +352,7 @@ function criarParagrafoTexto(
       children: [
         new TextRun({
           text: " ",
-          size: 22,
+          size: tamanhoFonte,
           font: "Arial",
         }),
       ],
@@ -373,7 +392,7 @@ function criarParagrafoTexto(
         : [
             new TextRun({
               text: " ",
-              size: 22,
+              size: tamanhoFonte,
               font: "Arial",
             }),
           ],
@@ -383,7 +402,8 @@ function criarParagrafoTexto(
 async function converterElementoEmBlocos(
   elemento: HTMLElement,
   duasColunas: boolean,
-  titulo = false
+  titulo = false,
+  tamanhoFonte = TAMANHO_FONTE_AVALIACAO
 ): Promise<
   Array<Paragraph | Table>
 > {
@@ -398,6 +418,7 @@ async function converterElementoEmBlocos(
     blocos.push(
       criarParagrafoTexto(elemento, {
         titulo,
+        tamanhoFonte,
       })
     );
 
@@ -450,6 +471,7 @@ async function converterElementoEmBlocos(
               filhosElementos.length - 1
                 ? 120
                 : 40,
+            tamanhoFonte,
           })
         );
       }
@@ -484,6 +506,7 @@ async function converterElementoEmBlocos(
               subBloco,
               {
                 espacamentoDepois: 40,
+                tamanhoFonte,
               }
             )
           );
@@ -500,6 +523,7 @@ async function converterElementoEmBlocos(
           filhosElementos.length - 1
             ? 120
             : 40,
+        tamanhoFonte,
       })
     );
   }
@@ -559,14 +583,16 @@ async function criarCabecalhoWord(
     )
       ? await converterElementoEmBlocos(
           cabecalhoClonado,
-          duasColunas
+          duasColunas,
+          false,
+          TAMANHO_FONTE_CABECALHO
         )
       : [
           new Paragraph({
             children: [
               new TextRun({
                 text: " ",
-                size: 22,
+                size: TAMANHO_FONTE_CABECALHO,
                 font: "Arial",
               }),
             ],
@@ -676,7 +702,8 @@ export async function exportarAvaliacaoWord(
       await converterElementoEmBlocos(
         filho,
         duasColunas,
-        indice === 0
+        indice === 0,
+        TAMANHO_FONTE_AVALIACAO
       );
 
     conteudoWord.push(...blocos);

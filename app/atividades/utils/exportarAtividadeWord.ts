@@ -25,6 +25,12 @@ type DimensoesImagem = {
   altura: number;
 };
 
+/*
+ * A biblioteca docx usa half-points para tamanho de fonte:
+ * 24 = 12 pt no Word.
+ */
+const TAMANHO_FONTE_CABECALHO = 24;
+
 function limparNomeArquivo(nome: string) {
   const nomeLimpo = nome
     .normalize("NFD")
@@ -352,14 +358,14 @@ function criarParagrafoCabecalho(
       new TextRun({
         text: rotulo,
         bold: negritoRotulo,
-        size: 18,
+        size: TAMANHO_FONTE_CABECALHO,
       }),
 
       ...(valor
         ? [
             new TextRun({
               text: valor,
-              size: 18,
+              size: TAMANHO_FONTE_CABECALHO,
             }),
           ]
         : []),
@@ -467,9 +473,9 @@ async function criarCabecalhoWord(
 
         const escala =
           Math.min(
-            85 /
+            105 /
               dimensoes.largura,
-            70 /
+            82 /
               dimensoes.altura
           );
 
@@ -570,7 +576,7 @@ async function criarCabecalhoWord(
                     new TextRun({
                       text: titulo,
                       bold: true,
-                      size: 18,
+                      size: TAMANHO_FONTE_CABECALHO,
                     }),
                   ],
                 }),
@@ -731,7 +737,7 @@ async function criarCabecalhoWord(
         children: [
           new TableCell({
             width: {
-              size: 18,
+              size: TAMANHO_FONTE_CABECALHO,
               type:
                 WidthType.PERCENTAGE,
             },
@@ -907,7 +913,7 @@ export async function exportarAtividadeWord(
    */
   const alturaCabecalhoWord =
     cabecalhoWord
-      ? 145
+      ? 165
       : 0;
 
   const espacoEntre =
@@ -1085,6 +1091,16 @@ export async function exportarAtividadeWord(
 
   const documento =
     new Document({
+      styles: {
+        default: {
+          document: {
+            run: {
+              size: TAMANHO_FONTE_CABECALHO,
+            },
+          },
+        },
+      },
+
       sections: [
         {
           properties: {
