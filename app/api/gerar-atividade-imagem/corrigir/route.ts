@@ -25,8 +25,7 @@ function extrairImagemBase64(dataUrl: string) {
   }
 
   const mimeType =
-    correspondencia[1].toLowerCase() ===
-    "image/jpg"
+    correspondencia[1].toLowerCase() === "image/jpg"
       ? "image/jpeg"
       : correspondencia[1].toLowerCase();
 
@@ -100,12 +99,11 @@ export async function POST(request: Request) {
     }
 
     /*
-     * Cruzadinhas do PlanejAI atualmente
-     * são SVG gerados pelo código.
+     * Cruzadinhas do PlanejAI são SVG
+     * gerados pelo próprio código.
      *
-     * Não vamos enviá-las para edição
-     * raster porque isso poderia quebrar
-     * grade, cruzamentos e respostas.
+     * Não enviamos cruzadinhas para
+     * edição pelo modelo de imagem.
      */
     if (
       imagem.startsWith(
@@ -142,67 +140,51 @@ export async function POST(request: Request) {
         }
       );
 
+    /*
+     * PROMPT ENXUTO
+     *
+     * Mantém as regras essenciais,
+     * mas reduz bastante o texto
+     * enviado ao modelo de imagem.
+     */
     const promptCorrecao = `
-Você está EDITANDO uma atividade escolar já pronta.
+Edite a atividade escolar enviada.
 
-OBJETIVO:
-Corrigir EXCLUSIVAMENTE o erro informado pelo professor.
-
-ERRO INFORMADO PELO PROFESSOR:
-
+CORREÇÃO SOLICITADA:
 ${correcao}
 
-REGRAS CRÍTICAS E OBRIGATÓRIAS:
+REGRAS OBRIGATÓRIAS:
 
-1. Use a imagem enviada como base.
-2. Faça SOMENTE a alteração necessária para corrigir o erro descrito.
-3. NÃO recrie a atividade inteira.
-4. NÃO mude nenhuma parte que já esteja correta.
-5. NÃO altere o título, salvo se o erro informado estiver no título.
-6. NÃO altere comandos que não tenham sido mencionados.
-7. NÃO altere questões que não tenham sido mencionadas.
-8. NÃO altere textos corretos.
-9. NÃO altere respostas ou alternativas que não tenham sido mencionadas.
-10. NÃO altere desenhos, ilustrações ou figuras que não estejam relacionadas ao erro.
-11. NÃO troque personagens, objetos ou imagens corretas.
-12. NÃO altere cores.
-13. NÃO altere fontes.
-14. NÃO altere tamanhos das letras.
-15. NÃO altere posições dos elementos.
-16. NÃO altere espaçamentos.
-17. NÃO altere bordas.
-18. NÃO altere linhas de resposta.
-19. NÃO altere quantidade de questões.
-20. NÃO acrescente novas questões.
-21. NÃO remova questões.
-22. NÃO acrescente elementos decorativos.
-23. NÃO remova elementos decorativos existentes.
-24. Preserve exatamente a composição e o layout atual.
-25. Preserve a proporção vertical atual da atividade.
-26. Preserve o fundo branco.
-27. Preserve a qualidade para impressão.
-28. Se o professor indicar uma palavra errada, altere somente essa palavra.
-29. Se o professor indicar uma figura errada, altere somente essa figura e, quando solicitado, seu rótulo correspondente.
-30. Antes de finalizar, compare mentalmente com a imagem original e confirme que nenhuma outra parte foi modificada.
+- Corrija SOMENTE o erro informado.
+- Preserve todo o restante da imagem exatamente como está.
+- Não altere layout, posições, fontes, tamanhos, cores, bordas ou espaçamentos.
+- Não altere questões, textos, respostas, imagens ou elementos não mencionados.
+- Não acrescente nem remova conteúdo.
+- Preserve fundo branco e proporção vertical.
+- Mantenha a atividade adequada para impressão.
+- Se o erro for uma palavra, altere somente essa palavra.
+- Se o erro for uma figura, altere somente a figura indicada.
 
-EXEMPLO:
-Se o professor disser:
-"Na questão 4 aparece uma casa, mas deveria ser uma bola."
-
-Você deve trocar SOMENTE a casa por uma bola.
-
-Todo o restante da atividade precisa permanecer visualmente igual.
-
-Faça agora somente a correção solicitada.
+Use a imagem enviada como base e faça apenas a correção solicitada.
 `.trim();
 
+    /*
+     * CORREÇÃO DA IMAGEM
+     *
+     * quality "low" reduz o custo
+     * da geração em comparação com
+     * "medium".
+     *
+     * Mantemos 1024x1536 para preservar
+     * o formato vertical da atividade.
+     */
     const resultado =
       await openai.images.edit({
         model: "gpt-image-2",
         image: arquivo,
         prompt: promptCorrecao,
         size: "1024x1536",
-        quality: "medium",
+        quality: "low",
         output_format: "png",
       });
 
