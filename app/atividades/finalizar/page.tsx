@@ -649,9 +649,12 @@ export default function FinalizarAtividadePage() {
 
         .cabecalho-editor,
         .cabecalho-preview {
+          display: block !important;
           width: 100% !important;
           max-width: 100% !important;
           box-sizing: border-box;
+          float: none !important;
+          clear: both !important;
         }
 
         .cabecalho-editor {
@@ -662,9 +665,35 @@ export default function FinalizarAtividadePage() {
           overflow: visible;
         }
 
+        .cabecalho-editor::after,
+        .cabecalho-preview::after {
+          content: "";
+          display: block;
+          clear: both;
+        }
+
+        .cabecalho-editor table,
+        .cabecalho-preview table {
+          display: table !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          float: none !important;
+        }
+
         .cabecalho-editor > *,
         .cabecalho-preview > * {
           max-width: 100% !important;
+          float: none !important;
+        }
+
+        .conteudo-atividade-tela {
+          display: flex !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          clear: both !important;
+          float: none !important;
         }
       `}</style>
 
@@ -890,7 +919,7 @@ export default function FinalizarAtividadePage() {
                   />
                 )}
 
-                <div className="flex min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]">
+                <div className="conteudo-atividade-tela flex min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]">
                   <img
                     src={imagem}
                     alt={

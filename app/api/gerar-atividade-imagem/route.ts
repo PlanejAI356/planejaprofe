@@ -1664,7 +1664,7 @@ abaixo de um cabeçalho, sem precisar cortar, esticar ou deformar a imagem.
         model: "gpt-image-2",
         prompt: promptFinal,
         size: "1024x1232",
-        quality: "medium",
+        quality: "low",
         output_format: "png",
       });
 
