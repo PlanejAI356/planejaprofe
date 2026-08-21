@@ -57,6 +57,134 @@ function encontrarImagensSugeridas(
   );
 }
 
+
+function sanitizarHtmlCabecalho(html: string) {
+  if (!html.trim()) {
+    return "";
+  }
+
+  const container =
+    document.createElement("div");
+
+  container.innerHTML = html;
+
+  /*
+   * Remove elementos que podem trazer CSS do Word/Google Docs
+   * para fora do cabeçalho e afetar a avaliação inteira.
+   */
+  container
+    .querySelectorAll(
+      "style, script, link, meta, iframe, object, embed"
+    )
+    .forEach((elemento) => elemento.remove());
+
+  container
+    .querySelectorAll<HTMLElement>("*")
+    .forEach((elemento) => {
+      /*
+       * Remove eventos e atributos que não são necessários
+       * para o cabeçalho.
+       */
+      Array.from(elemento.attributes).forEach(
+        (atributo) => {
+          const nome =
+            atributo.name.toLowerCase();
+
+          if (
+            nome.startsWith("on") ||
+            nome === "id"
+          ) {
+            elemento.removeAttribute(
+              atributo.name
+            );
+          }
+        }
+      );
+
+      const estilo = elemento.style;
+
+      /*
+       * Estes estilos são os que mais causam o problema
+       * de jogar a avaliação para a lateral da folha.
+       */
+      [
+        "position",
+        "float",
+        "left",
+        "right",
+        "top",
+        "bottom",
+        "transform",
+        "translate",
+        "margin-left",
+        "margin-right",
+        "min-width",
+        "max-width",
+      ].forEach((propriedade) => {
+        estilo.removeProperty(propriedade);
+      });
+
+      /*
+       * Larguras fixas vindas do Word podem ultrapassar
+       * a folha. Tabelas e blocos passam a obedecer a
+       * largura útil definida pelo PlanejAI.
+       */
+      if (
+        elemento.tagName !== "IMG"
+      ) {
+        estilo.removeProperty("width");
+      }
+
+      if (
+        elemento.tagName === "TABLE"
+      ) {
+        estilo.setProperty(
+          "width",
+          "100%"
+        );
+        estilo.setProperty(
+          "max-width",
+          "100%"
+        );
+        estilo.setProperty(
+          "table-layout",
+          "fixed"
+        );
+        estilo.setProperty(
+          "border-collapse",
+          "collapse"
+        );
+      }
+
+      if (
+        elemento.tagName === "IMG"
+      ) {
+        estilo.setProperty(
+          "max-width",
+          "120px"
+        );
+        estilo.setProperty(
+          "max-height",
+          "80px"
+        );
+        estilo.setProperty(
+          "width",
+          "auto"
+        );
+        estilo.setProperty(
+          "height",
+          "auto"
+        );
+        estilo.setProperty(
+          "object-fit",
+          "contain"
+        );
+      }
+    });
+
+  return container.innerHTML;
+}
+
 export default function ResultadoAvaliacaoPage() {
   const [conteudoAluno, setConteudoAluno] =
     useState("");
@@ -89,10 +217,26 @@ export default function ResultadoAvaliacaoPage() {
     const provaGerada =
       localStorage.getItem("provaGerada") || "";
 
-    const cabecalhoSalvoLocal =
+    const cabecalhoBruto =
       localStorage.getItem(
         "cabecalhoAvaliacao"
       ) || "";
+
+    const cabecalhoSalvoLocal =
+      sanitizarHtmlCabecalho(
+        cabecalhoBruto
+      );
+
+    if (
+      cabecalhoSalvoLocal &&
+      cabecalhoSalvoLocal !==
+        cabecalhoBruto
+    ) {
+      localStorage.setItem(
+        "cabecalhoAvaliacao",
+        cabecalhoSalvoLocal
+      );
+    }
 
     const conteudoInicial = provaEditada
       ? provaEditada
@@ -217,30 +361,148 @@ export default function ResultadoAvaliacaoPage() {
       clipboard.getData("text/html");
 
     /*
-     * Preserva tabela e formatação quando o
-     * cabeçalho é copiado do Word e, em seguida,
-     * tenta incorporar as imagens no próprio HTML.
+     * O Word pode enviar a tabela em HTML e a logo/slogan
+     * separadamente como arquivo. Tratamos os dois juntos.
      */
     if (htmlColado) {
-      window.setTimeout(async () => {
+      evento.preventDefault();
+
+      try {
+        const container =
+          document.createElement("div");
+
+        container.innerHTML =
+          sanitizarHtmlCabecalho(
+            htmlColado
+          );
+
+        const imagensHtml = Array.from(
+          container.querySelectorAll<HTMLImageElement>(
+            "img"
+          )
+        );
+
+        const imagensBase64: string[] =
+          [];
+
+        for (
+          const arquivo of arquivosImagem
+        ) {
+          imagensBase64.push(
+            await arquivoParaDataUrl(
+              arquivo
+            )
+          );
+        }
+
+        if (
+          imagensBase64.length > 0
+        ) {
+          if (
+            imagensHtml.length > 0
+          ) {
+            imagensHtml.forEach(
+              (imagemHtml, indice) => {
+                const dataUrl =
+                  imagensBase64[
+                    Math.min(
+                      indice,
+                      imagensBase64.length - 1
+                    )
+                  ];
+
+                if (dataUrl) {
+                  imagemHtml.src =
+                    dataUrl;
+                  imagemHtml.removeAttribute(
+                    "srcset"
+                  );
+                }
+              }
+            );
+          } else {
+            const primeiraCelula =
+              container.querySelector<HTMLElement>(
+                "td, th"
+              );
+
+            const destino =
+              primeiraCelula ||
+              container;
+
+            imagensBase64.forEach(
+              (dataUrl) => {
+                const imagem =
+                  document.createElement(
+                    "img"
+                  );
+
+                imagem.src = dataUrl;
+                imagem.alt =
+                  "Imagem do cabeçalho";
+                imagem.style.maxWidth =
+                  "120px";
+                imagem.style.maxHeight =
+                  "80px";
+                imagem.style.width =
+                  "auto";
+                imagem.style.height =
+                  "auto";
+                imagem.style.objectFit =
+                  "contain";
+                imagem.style.display =
+                  "block";
+                imagem.style.margin =
+                  "0 auto";
+
+                destino.prepend(
+                  imagem
+                );
+              }
+            );
+          }
+        }
+
+        document.execCommand(
+          "insertHTML",
+          false,
+          container.innerHTML
+        );
+
         await incorporarImagensDoCabecalho();
 
         const htmlAtual =
-          cabecalhoRef.current?.innerHTML ||
-          "";
+          sanitizarHtmlCabecalho(
+            cabecalhoRef.current
+              ?.innerHTML || ""
+          );
+
+        if (cabecalhoRef.current) {
+          cabecalhoRef.current.innerHTML =
+            htmlAtual;
+        }
 
         setCabecalho(htmlAtual);
         setCabecalhoSalvo(false);
-      }, 0);
+      } catch (error) {
+        console.error(
+          "Erro ao colar cabeçalho com imagem:",
+          error
+        );
+      }
 
       return;
     }
 
-    if (arquivosImagem.length > 0) {
+    if (
+      arquivosImagem.length > 0
+    ) {
       evento.preventDefault();
 
       try {
-        for (const arquivo of arquivosImagem) {
+        for (
+          const arquivo of arquivosImagem
+        ) {
           const dataUrl =
             await arquivoParaDataUrl(
               arquivo
@@ -254,8 +516,15 @@ export default function ResultadoAvaliacaoPage() {
         }
 
         const htmlAtual =
-          cabecalhoRef.current?.innerHTML ||
-          "";
+          sanitizarHtmlCabecalho(
+            cabecalhoRef.current
+              ?.innerHTML || ""
+          );
+
+        if (cabecalhoRef.current) {
+          cabecalhoRef.current.innerHTML =
+            htmlAtual;
+        }
 
         setCabecalho(htmlAtual);
         setCabecalhoSalvo(false);
@@ -271,8 +540,15 @@ export default function ResultadoAvaliacaoPage() {
 
     window.setTimeout(() => {
       const htmlAtual =
-        cabecalhoRef.current?.innerHTML ||
-        "";
+        sanitizarHtmlCabecalho(
+          cabecalhoRef.current
+            ?.innerHTML || ""
+        );
+
+      if (cabecalhoRef.current) {
+        cabecalhoRef.current.innerHTML =
+          htmlAtual;
+      }
 
       setCabecalho(htmlAtual);
       setCabecalhoSalvo(false);
@@ -293,7 +569,15 @@ export default function ResultadoAvaliacaoPage() {
 
   function salvarCabecalho() {
     const novoCabecalho =
-      cabecalhoRef.current?.innerHTML || "";
+      sanitizarHtmlCabecalho(
+        cabecalhoRef.current
+          ?.innerHTML || ""
+      );
+
+    if (cabecalhoRef.current) {
+      cabecalhoRef.current.innerHTML =
+        novoCabecalho;
+    }
 
     const cabecalhoSomenteTexto =
       cabecalhoRef.current?.innerText.trim() ||
@@ -691,9 +975,12 @@ elementoImagem.addEventListener("blur", () => {
 
         .cabecalho-editor,
         .cabecalho-preview {
+          display: block !important;
           width: 100% !important;
           max-width: 100% !important;
           box-sizing: border-box;
+          float: none !important;
+          clear: both !important;
         }
 
         .cabecalho-editor {
@@ -704,9 +991,45 @@ elementoImagem.addEventListener("blur", () => {
           overflow: visible;
         }
 
+        .cabecalho-editor::after,
+        .cabecalho-preview::after {
+          content: "";
+          display: block;
+          clear: both;
+        }
+
+        .cabecalho-editor table,
+        .cabecalho-preview table {
+          display: table !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+          float: none !important;
+        }
+
         .cabecalho-editor > *,
         .cabecalho-preview > * {
           max-width: 100% !important;
+          float: none !important;
+        }
+
+        .conteudo-avaliacao-tela {
+          display: block !important;
+          width: 100% !important;
+          max-width: 100% !important;
+          min-width: 0 !important;
+          clear: both !important;
+          float: none !important;
+          position: relative !important;
+          margin-left: 0 !important;
+          margin-right: 0 !important;
+        }
+
+        .conteudo-avaliacao-tela > * {
+          max-width: 100% !important;
+          float: none !important;
+          position: static !important;
         }
       `}</style>
 
@@ -987,11 +1310,11 @@ elementoImagem.addEventListener("blur", () => {
               ) : conteudoAluno ? (
                 <div
                   ref={documentoRef}
-                  className="mx-auto min-h-[1123px] w-full max-w-[794px] border-2 border-black bg-white px-8 py-10 shadow-md sm:px-12"
+                  className="mx-auto flex min-h-[1123px] w-full max-w-[794px] flex-col border-2 border-black bg-white px-8 py-10 shadow-md sm:px-12"
                 >
                   {cabecalho.trim() && (
                     <div
-                      className="cabecalho-preview mb-5"
+                      className="cabecalho-preview mb-5 w-full shrink-0"
                       dangerouslySetInnerHTML={{
                         __html: cabecalho,
                       }}
@@ -1005,7 +1328,7 @@ elementoImagem.addEventListener("blur", () => {
                     onInput={() => {
                       salvarConteudoAtual();
                     }}
-                    className={`min-h-[760px] break-words text-sm leading-7 text-slate-900 outline-none ${
+                    className={`conteudo-avaliacao-tela min-h-[760px] w-full flex-none break-words text-sm leading-7 text-slate-900 outline-none ${
                       duasColunas
                         ? "columns-2 gap-10 [column-rule:1px_solid_#cbd5e1]"
                         : "columns-1"
