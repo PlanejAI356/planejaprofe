@@ -215,7 +215,7 @@ export async function exportarAvaliacao(
     "0";
 
   documentoClonado.style.padding =
-    "7mm";
+    "4mm";
 
   documentoImpressao.open();
 
@@ -240,7 +240,7 @@ export async function exportarAvaliacao(
         <style>
           @page {
             size: A4 portrait;
-            margin: 7mm;
+            margin: 6mm;
           }
 
           * {
@@ -254,9 +254,11 @@ export async function exportarAvaliacao(
             background: #ffffff !important;
             color: #000000 !important;
             font-family:
-              Arial,
-              Helvetica,
-              sans-serif;
+              "Times New Roman",
+              Times,
+              serif;
+            font-size: 12pt;
+            line-height: 1.15;
           }
 
           body {
@@ -289,7 +291,7 @@ export async function exportarAvaliacao(
             width: 100% !important;
             max-width: 100% !important;
 
-            margin: 0 0 5mm 0 !important;
+            margin: 0 0 2.5mm 0 !important;
 
             page-break-inside: avoid;
             break-inside: avoid;
@@ -309,18 +311,24 @@ export async function exportarAvaliacao(
           .cabecalho-avaliacao-exportacao th {
             border: 1px solid #000000;
 
-            padding: 1.5mm 2mm;
+            padding: 1mm 1.5mm;
 
             vertical-align: middle;
 
             overflow-wrap: anywhere;
 
-            line-height: 1.2;
+            font-family:
+              "Times New Roman",
+              Times,
+              serif !important;
+
+            font-size: 12pt !important;
+            line-height: 1.15 !important;
           }
 
           .cabecalho-avaliacao-exportacao img {
-            max-width: 30mm !important;
-            max-height: 22mm !important;
+            max-width: 32mm !important;
+            max-height: 24mm !important;
 
             width: auto !important;
             height: auto !important;
@@ -337,7 +345,58 @@ export async function exportarAvaliacao(
 
             color: #000000 !important;
 
+            font-family:
+              "Times New Roman",
+              Times,
+              serif !important;
+
+            font-size: 12pt !important;
+            line-height: 1.15 !important;
+
             overflow: visible !important;
+          }
+
+          .conteudo-avaliacao-exportacao,
+          .conteudo-avaliacao-exportacao * {
+            font-family:
+              "Times New Roman",
+              Times,
+              serif !important;
+          }
+
+          .conteudo-avaliacao-exportacao p,
+          .conteudo-avaliacao-exportacao div,
+          .conteudo-avaliacao-exportacao h1,
+          .conteudo-avaliacao-exportacao h2,
+          .conteudo-avaliacao-exportacao h3,
+          .conteudo-avaliacao-exportacao h4,
+          .conteudo-avaliacao-exportacao h5,
+          .conteudo-avaliacao-exportacao h6 {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            line-height: 1.15 !important;
+          }
+
+          .conteudo-avaliacao-exportacao h1,
+          .conteudo-avaliacao-exportacao h2,
+          .conteudo-avaliacao-exportacao h3,
+          .conteudo-avaliacao-exportacao h4,
+          .conteudo-avaliacao-exportacao h5,
+          .conteudo-avaliacao-exportacao h6 {
+            font-size: 12pt !important;
+          }
+
+          .conteudo-avaliacao-exportacao ul,
+          .conteudo-avaliacao-exportacao ol {
+            margin-top: 0 !important;
+            margin-bottom: 0 !important;
+            padding-left: 7mm !important;
+          }
+
+          .conteudo-avaliacao-exportacao li {
+            margin: 0 !important;
+            padding: 0 !important;
+            line-height: 1.15 !important;
           }
 
           .conteudo-avaliacao-exportacao img {
@@ -348,14 +407,22 @@ export async function exportarAvaliacao(
           }
 
           .conteudo-avaliacao-exportacao p {
-            orphans: 3;
-            widows: 3;
+            orphans: 2;
+            widows: 2;
           }
 
           .conteudo-avaliacao-exportacao table {
+            width: 100% !important;
             max-width: 100% !important;
+            border-collapse: collapse !important;
             page-break-inside: avoid;
             break-inside: avoid;
+          }
+
+          .conteudo-avaliacao-exportacao td,
+          .conteudo-avaliacao-exportacao th {
+            padding: 1mm 1.5mm !important;
+            line-height: 1.15 !important;
           }
 
           button,

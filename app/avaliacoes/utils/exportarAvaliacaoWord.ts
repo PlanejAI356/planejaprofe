@@ -35,7 +35,7 @@ type TipoImagemWord =
  * 22 = 11 pt
  * 24 = 12 pt
  */
-const TAMANHO_FONTE_AVALIACAO = 22;
+const TAMANHO_FONTE_AVALIACAO = 24;
 const TAMANHO_FONTE_CABECALHO = 24;
 
 function limparNomeArquivo(nome: string) {
@@ -204,8 +204,8 @@ async function criarParagrafoImagem(
     return new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: {
-        before: 40,
-        after: 80,
+        before: 0,
+        after: 20,
       },
       children: [
         new ImageRun({
@@ -254,7 +254,7 @@ function criarRunsDoNo(
             }
           : undefined,
         size: tamanhoFonte,
-        font: "Arial",
+        font: "Times New Roman",
       }),
     ];
   }
@@ -339,8 +339,8 @@ function criarParagrafoTexto(
   if (ehLinhaResposta) {
     return new Paragraph({
       spacing: {
-        before: 20,
-        after: 20,
+        before: 0,
+        after: 0,
       },
       border: {
         bottom: {
@@ -353,7 +353,7 @@ function criarParagrafoTexto(
         new TextRun({
           text: " ",
           size: tamanhoFonte,
-          font: "Arial",
+          font: "Times New Roman",
         }),
       ],
     });
@@ -365,11 +365,11 @@ function criarParagrafoTexto(
       : obterAlinhamento(elemento),
     keepNext: opcoes.titulo || undefined,
     spacing: {
-      before: opcoes.titulo ? 80 : 0,
+      before: 0,
       after:
         opcoes.espacamentoDepois ??
-        (opcoes.titulo ? 160 : 40),
-      line: 276,
+        0,
+      line: 240,
     },
     children:
       runs.length > 0
@@ -382,8 +382,8 @@ function criarParagrafoTexto(
                 text:
                   elemento.innerText.trim(),
                 bold: true,
-                size: 30,
-                font: "Arial",
+                size: TAMANHO_FONTE_AVALIACAO,
+                font: "Times New Roman",
               });
             }
 
@@ -393,9 +393,81 @@ function criarParagrafoTexto(
             new TextRun({
               text: " ",
               size: tamanhoFonte,
-              font: "Arial",
+              font: "Times New Roman",
             }),
           ],
+  });
+}
+
+async function converterTabelaHtmlEmWord(
+  tabelaHtml: HTMLTableElement,
+  duasColunas: boolean,
+  tamanhoFonte: number
+): Promise<Table> {
+  const linhasHtml = Array.from(
+    tabelaHtml.querySelectorAll(
+      ":scope > tbody > tr, :scope > thead > tr, :scope > tfoot > tr, :scope > tr"
+    )
+  ) as HTMLTableRowElement[];
+
+  const linhas = await Promise.all(
+    linhasHtml.map(async (linhaHtml) => {
+      const celulasHtml = Array.from(
+        linhaHtml.children
+      ).filter(
+        (item) =>
+          item.tagName === "TD" ||
+          item.tagName === "TH"
+      ) as HTMLTableCellElement[];
+
+      const celulas = await Promise.all(
+        celulasHtml.map(async (celulaHtml) => {
+          const conteudoCelula =
+            await converterElementoEmBlocos(
+              celulaHtml,
+              duasColunas,
+              false,
+              tamanhoFonte
+            );
+
+          return new TableCell({
+            verticalAlign: VerticalAlign.CENTER,
+            margins: {
+              top: 40,
+              right: 60,
+              bottom: 40,
+              left: 60,
+            },
+            children:
+              conteudoCelula.length > 0
+                ? conteudoCelula
+                : [
+                    new Paragraph({
+                      children: [
+                        new TextRun({
+                          text: " ",
+                          size: tamanhoFonte,
+                          font: "Times New Roman",
+                        }),
+                      ],
+                    }),
+                  ],
+          });
+        })
+      );
+
+      return new TableRow({
+        children: celulas,
+      });
+    })
+  );
+
+  return new Table({
+    width: {
+      size: 100,
+      type: WidthType.PERCENTAGE,
+    },
+    rows: linhas,
   });
 }
 
@@ -433,6 +505,17 @@ async function converterElementoEmBlocos(
     const filho =
       filhosElementos[indice] as HTMLElement;
 
+    if (filho.tagName === "TABLE") {
+      blocos.push(
+        await converterTabelaHtmlEmWord(
+          filho as HTMLTableElement,
+          duasColunas,
+          tamanhoFonte
+        )
+      );
+      continue;
+    }
+
     if (filho.tagName === "IMG") {
       const paragrafoImagem =
         await criarParagrafoImagem(
@@ -469,8 +552,8 @@ async function converterElementoEmBlocos(
             espacamentoDepois:
               indice ===
               filhosElementos.length - 1
-                ? 120
-                : 40,
+                ? 0
+                : 0,
             tamanhoFonte,
           })
         );
@@ -505,7 +588,7 @@ async function converterElementoEmBlocos(
             criarParagrafoTexto(
               subBloco,
               {
-                espacamentoDepois: 40,
+                espacamentoDepois: 0,
                 tamanhoFonte,
               }
             )
@@ -521,8 +604,8 @@ async function converterElementoEmBlocos(
         espacamentoDepois:
           indice ===
           filhosElementos.length - 1
-            ? 120
-            : 40,
+            ? 0
+            : 0,
         tamanhoFonte,
       })
     );
@@ -560,94 +643,39 @@ async function criarCabecalhoWord(
     | HTMLElement
     | null,
   duasColunas: boolean
-) {
+): Promise<Array<Paragraph | Table>> {
   const cabecalhoClonado =
     cabecalhoElemento?.cloneNode(
       true
     ) as HTMLElement | undefined;
 
-  if (cabecalhoClonado) {
-    limparDocumentoClonado(
-      cabecalhoClonado
-    );
-    cabecalhoClonado.removeAttribute(
-      "data-placeholder"
-    );
+  if (!cabecalhoClonado) {
+    return [];
   }
 
-  const conteudoCabecalho =
-    cabecalhoClonado &&
-    (
-      cabecalhoClonado.innerText.trim() ||
-      cabecalhoClonado.querySelector("img")
-    )
-      ? await converterElementoEmBlocos(
-          cabecalhoClonado,
-          duasColunas,
-          false,
-          TAMANHO_FONTE_CABECALHO
-        )
-      : [
-          new Paragraph({
-            children: [
-              new TextRun({
-                text: " ",
-                size: TAMANHO_FONTE_CABECALHO,
-                font: "Arial",
-              }),
-            ],
-          }),
-        ];
+  limparDocumentoClonado(
+    cabecalhoClonado
+  );
 
-  return new Table({
-    width: {
-      size: 100,
-      type: WidthType.PERCENTAGE,
-    },
-    rows: [
-      new TableRow({
-        height: {
-          value: 900,
-          rule: HeightRule.ATLEAST,
-        },
-        children: [
-          new TableCell({
-            verticalAlign:
-              VerticalAlign.CENTER,
-            margins: {
-              top: 100,
-              right: 120,
-              bottom: 100,
-              left: 120,
-            },
-            borders: {
-              top: {
-                style: BorderStyle.NONE,
-                size: 0,
-                color: "FFFFFF",
-              },
-              right: {
-                style: BorderStyle.NONE,
-                size: 0,
-                color: "FFFFFF",
-              },
-              bottom: {
-                style: BorderStyle.NONE,
-                size: 0,
-                color: "FFFFFF",
-              },
-              left: {
-                style: BorderStyle.NONE,
-                size: 0,
-                color: "FFFFFF",
-              },
-            },
-            children: conteudoCabecalho,
-          }),
-        ],
-      }),
-    ],
-  });
+  cabecalhoClonado.removeAttribute(
+    "data-placeholder"
+  );
+
+  const possuiConteudo = Boolean(
+    cabecalhoClonado.innerText.trim() ||
+      cabecalhoClonado.querySelector("img")
+  );
+
+  if (!possuiConteudo) {
+    return [];
+  }
+
+  return converterElementoEmBlocos(
+    cabecalhoClonado,
+    duasColunas,
+    false,
+    TAMANHO_FONTE_CABECALHO
+  );
 }
 
 export async function exportarAvaliacaoWord(
@@ -675,7 +703,7 @@ export async function exportarAvaliacaoWord(
     avaliacaoClonada
   );
 
-  const cabecalhoWord =
+  const blocosCabecalhoWord =
     await criarCabecalhoWord(
       cabecalhoElemento,
       duasColunas
@@ -794,7 +822,7 @@ export async function exportarAvaliacaoWord(
                   VerticalAlign.TOP,
                 margins: {
                   top: 0,
-                  right: 180,
+                  right: 90,
                   bottom: 0,
                   left: 0,
                 },
@@ -829,7 +857,7 @@ export async function exportarAvaliacaoWord(
                   top: 0,
                   right: 0,
                   bottom: 0,
-                  left: 180,
+                  left: 90,
                 },
                 borders: semBordas,
                 children:
@@ -865,10 +893,10 @@ export async function exportarAvaliacaoWord(
               verticalAlign:
                 VerticalAlign.TOP,
               margins: {
-                top: 180,
-                right: 180,
-                bottom: 180,
-                left: 180,
+                top: 80,
+                right: 80,
+                bottom: 80,
+                left: 80,
               },
               borders: {
                 top: {
@@ -897,12 +925,12 @@ export async function exportarAvaliacaoWord(
                 },
               },
               children: [
-                cabecalhoWord,
+                ...blocosCabecalhoWord,
 
                 new Paragraph({
                   spacing: {
-                    before: 60,
-                    after: 100,
+                    before: 0,
+                    after: 40,
                   },
                   children: [],
                 }),

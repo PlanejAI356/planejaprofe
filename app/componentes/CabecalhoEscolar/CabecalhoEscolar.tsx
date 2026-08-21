@@ -28,6 +28,8 @@ export default function CabecalhoEscolar({
   valor,
   onChange,
   chaveLocalStorage,
+  storageKey,
+  fallbackStorageKeys = [],
   titulo = "Cabeçalho da escola",
   descricao = "Cole o cabeçalho usado pela escola e edite antes de salvar.",
   mostrarBotaoSalvar = true,
@@ -44,6 +46,38 @@ export default function CabecalhoEscolar({
 
   const [mensagem, setMensagem] =
     useState("");
+
+  const chaveArmazenamento =
+    storageKey || chaveLocalStorage;
+
+  useEffect(() => {
+    if (
+      valor.trim() ||
+      !chaveArmazenamento
+    ) {
+      return;
+    }
+
+    const chaves = [
+      chaveArmazenamento,
+      ...fallbackStorageKeys,
+    ];
+
+    for (const chave of chaves) {
+      const salvoLocal =
+        localStorage.getItem(chave);
+
+      if (salvoLocal?.trim()) {
+        onChange(salvoLocal);
+        break;
+      }
+    }
+  }, [
+    valor,
+    chaveArmazenamento,
+    fallbackStorageKeys,
+    onChange,
+  ]);
 
   useEffect(() => {
     if (!editorRef.current) {
@@ -471,9 +505,9 @@ export default function CabecalhoEscolar({
 
     onChange("");
 
-    if (chaveLocalStorage) {
+    if (chaveArmazenamento) {
       localStorage.removeItem(
-        chaveLocalStorage
+        chaveArmazenamento
       );
     }
 
@@ -519,15 +553,15 @@ export default function CabecalhoEscolar({
 
     onChange(html);
 
-    if (chaveLocalStorage) {
+    if (chaveArmazenamento) {
       if (html.trim()) {
         localStorage.setItem(
-          chaveLocalStorage,
+          chaveArmazenamento,
           html
         );
       } else {
         localStorage.removeItem(
-          chaveLocalStorage
+          chaveArmazenamento
         );
       }
     }
