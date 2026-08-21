@@ -104,15 +104,24 @@ export default function AdminPage() {
   const [buscaUsuario, setBuscaUsuario] =
     useState("");
 
+  const [
+    somenteNaoPremium,
+    setSomenteNaoPremium,
+  ] = useState(true);
+
   const [aba, setAba] = useState<
     "usuarios" | "parceiros" | "indicacoes"
   >("usuarios");
 
-  const [usuarioSelecionado, setUsuarioSelecionado] =
-  useState<Usuario | null>(null);
-  
-  const [alterandoPlano, setAlterandoPlano] =
-  useState(false);
+  const [
+    usuarioSelecionado,
+    setUsuarioSelecionado,
+  ] = useState<Usuario | null>(null);
+
+  const [
+    alterandoPlano,
+    setAlterandoPlano,
+  ] = useState(false);
 
   const carregarPainel =
     useCallback(async () => {
@@ -185,96 +194,97 @@ export default function AdminPage() {
     setAtualizando(true);
     await carregarPainel();
   }
+
   async function alterarPlanoUsuario(
-  usuario: Usuario,
-  novoPlano: "premium" | "gratuito"
-) {
-  const acao =
-    novoPlano === "premium"
-      ? "liberar o Premium"
-      : "retirar o Premium";
-
-  const confirmou = window.confirm(
-    `Tem certeza que deseja ${acao} para ${
-      usuario.email || "este usuário"
-    }?`
-  );
-
-  if (!confirmou) {
-    return;
-  }
-
-  try {
-    setAlterandoPlano(true);
-
-    const {
-      data: { session },
-      error: erroSessao,
-    } = await supabase.auth.getSession();
-
-    if (
-      erroSessao ||
-      !session?.access_token
-    ) {
-      throw new Error(
-        "Sua sessão expirou. Entre novamente."
-      );
-    }
-
-    const resposta = await fetch(
-      "/api/admin/usuarios/plano",
-      {
-        method: "POST",
-        headers: {
-          Authorization:
-            `Bearer ${session.access_token}`,
-          "Content-Type":
-            "application/json",
-        },
-        body: JSON.stringify({
-          usuarioId: usuario.id,
-          plano: novoPlano,
-        }),
-      }
-    );
-
-    const resultado = await resposta
-      .json()
-      .catch(() => null);
-
-    if (!resposta.ok) {
-      throw new Error(
-        resultado?.erro ||
-          "Não foi possível alterar o plano."
-      );
-    }
-
-    await carregarPainel();
-
-    setUsuarioSelecionado(
-      resultado.usuario
-    );
-
-    alert(
+    usuario: Usuario,
+    novoPlano: "premium" | "gratuito"
+  ) {
+    const acao =
       novoPlano === "premium"
-        ? "Premium liberado com sucesso!"
-        : "Premium retirado com sucesso."
-    );
-  } catch (error) {
-    console.error(
-      "Erro ao alterar plano:",
-      error
+        ? "liberar o Premium"
+        : "retirar o Premium";
+
+    const confirmou = window.confirm(
+      `Tem certeza que deseja ${acao} para ${
+        usuario.email || "este usuário"
+      }?`
     );
 
-    alert(
-      error instanceof Error
-        ? error.message
-        : "Não foi possível alterar o plano."
-    );
-  } finally {
-    setAlterandoPlano(false);
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setAlterandoPlano(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/usuarios/plano",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify({
+            usuarioId: usuario.id,
+            plano: novoPlano,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar o plano."
+        );
+      }
+
+      await carregarPainel();
+
+      setUsuarioSelecionado(
+        resultado.usuario
+      );
+
+      alert(
+        novoPlano === "premium"
+          ? "Premium liberado com sucesso!"
+          : "Premium retirado com sucesso."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar plano:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar o plano."
+      );
+    } finally {
+      setAlterandoPlano(false);
+    }
   }
-}
 
   async function sair() {
     await supabase.auth.signOut();
@@ -288,10 +298,6 @@ export default function AdminPage() {
           .trim()
           .toLowerCase();
 
-      if (!busca) {
-        return dados?.usuarios || [];
-      }
-
       return (
         dados?.usuarios.filter(
           (usuario) => {
@@ -303,9 +309,18 @@ export default function AdminPage() {
               usuario.email
                 ?.toLowerCase() || "";
 
-            return (
+            const correspondeBusca =
+              !busca ||
               nome.includes(busca) ||
-              email.includes(busca)
+              email.includes(busca);
+
+            const correspondePlano =
+              !somenteNaoPremium ||
+              usuario.plano !== "premium";
+
+            return (
+              correspondeBusca &&
+              correspondePlano
             );
           }
         ) || []
@@ -313,6 +328,7 @@ export default function AdminPage() {
     }, [
       buscaUsuario,
       dados?.usuarios,
+      somenteNaoPremium,
     ]);
 
   const parceirosPorId =
@@ -685,145 +701,261 @@ export default function AdminPage() {
                 </h2>
 
                 <p className="text-sm text-slate-500">
-                  {usuariosFiltrados.length} usuário(s)
+                  {usuariosFiltrados.length} usuário(s) exibido(s)
                 </p>
               </div>
 
-              <div className="relative w-full md:max-w-sm">
-                <Search
-                  size={18}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-
-                <input
-                  value={buscaUsuario}
-                  onChange={(event) =>
-                    setBuscaUsuario(event.target.value)
+              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setSomenteNaoPremium(
+                      (valorAtual) =>
+                        !valorAtual
+                    )
                   }
-                  placeholder="Buscar nome ou e-mail..."
-                  className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
-                />
+                  className={`cursor-pointer whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    somenteNaoPremium
+                      ? "bg-emerald-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  {somenteNaoPremium
+                    ? "Mostrando não Premium"
+                    : "Mostrar não Premium"}
+                </button>
+
+                <div className="relative w-full md:w-80">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    value={buscaUsuario}
+                    onChange={(event) =>
+                      setBuscaUsuario(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Buscar nome ou e-mail..."
+                    className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
             </div>
 
             <div className="overflow-x-auto">
-              <table className="w-full min-w-[1250px] text-left text-sm">
+              <table className="w-full min-w-[1450px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">Nome</th>
-                    <th className="px-5 py-4">E-mail</th>
-                    <th className="px-5 py-4">WhatsApp</th>
-                    <th className="px-5 py-4">Plano</th>
-                    <th className="px-5 py-4">Parceiro de origem</th>
-                    <th className="px-5 py-4">Planos restantes</th>
-                    <th className="px-5 py-4">Mercado Pago ID</th>
-                    <th className="px-5 py-4">Ações</th>
+                    <th className="px-5 py-4">
+                      Nome
+                    </th>
+
+                    <th className="px-5 py-4">
+                      E-mail
+                    </th>
+
+                    <th className="px-5 py-4">
+                      WhatsApp
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Contato por e-mail
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Plano
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Parceiro de origem
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Planos restantes
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Mercado Pago ID
+                    </th>
+
+                    <th className="px-5 py-4">
+                      Ações
+                    </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {usuariosFiltrados.map((usuario) => {
-                    const numeroLimpo = String(
-                      usuario.whatsapp || ""
-                    ).replace(/\D/g, "");
+                  {usuariosFiltrados.map(
+                    (usuario) => {
+                      const numeroLimpo =
+                        String(
+                          usuario.whatsapp ||
+                            ""
+                        ).replace(
+                          /\D/g,
+                          ""
+                        );
 
-                    const numeroWhatsApp = numeroLimpo
-                      ? numeroLimpo.startsWith("55")
-                        ? numeroLimpo
-                        : `55${numeroLimpo}`
-                      : "";
+                      const numeroWhatsApp =
+                        numeroLimpo
+                          ? numeroLimpo.startsWith(
+                              "55"
+                            )
+                            ? numeroLimpo
+                            : `55${numeroLimpo}`
+                          : "";
 
-                    const primeiroNome =
-                      usuario.nome?.trim().split(" ")[0] || "";
+                      const primeiroNome =
+                        usuario.nome
+                          ?.trim()
+                          .split(" ")[0] ||
+                        "";
 
-                    const mensagemWhatsApp =
-                      `Olá${
-                        primeiroNome ? `, ${primeiroNome}` : ""
-                      }! 😊 Falo do suporte do PlanejAI. ` +
-                      `Vimos que você já realizou seu cadastro e gostaríamos de saber como foi sua experiência até aqui. ` +
-                      `Você conseguiu testar as ferramentas? Teve alguma dificuldade ou sentiu falta de alguma funcionalidade? ` +
-                      `Sua opinião é muito importante para melhorarmos o PlanejAI. 💚`;
+                      const mensagemWhatsApp =
+                        `Oi${
+                          primeiroNome
+                            ? `, ${primeiroNome}`
+                            : ""
+                        }! 😊 Aqui é a Naiara, do PlanejAI.\n\n` +
+                        `Vi que você já criou sua conta e queria saber se conseguiu conhecer e testar direitinho as ferramentas. 💚\n\n` +
+                        `O PlanejAI conta com geração de planos de aula, avaliações e atividades, tudo pensado para facilitar a rotina do professor e economizar tempo.\n\n` +
+                        `Você pode acessar novamente sua conta por aqui:\n` +
+                        `👉 https://planejaioficial.com.br\n\n` +
+                        `Se tiver alguma dúvida ou dificuldade para usar alguma ferramenta, pode falar comigo por aqui. 😊`;
 
-                    return (
-                      <tr
-                        key={usuario.id}
-                        className="border-t border-slate-100"
-                      >
-                        <td className="px-5 py-4 font-semibold text-slate-800">
-                          {usuario.nome || "Sem nome"}
-                        </td>
+                      const assuntoEmail =
+                        "Conheça melhor o PlanejAI 💚";
 
-                        <td className="px-5 py-4 text-slate-600">
-                          {usuario.email || "-"}
-                        </td>
+                      const mensagemEmail =
+                        `Olá${
+                          primeiroNome
+                            ? `, ${primeiroNome}`
+                            : ""
+                        }!\n\n` +
+                        `Você já criou sua conta no PlanejAI e queremos convidar você a conhecer melhor tudo o que a plataforma pode facilitar na sua rotina.\n\n` +
+                        `Com o PlanejAI, você pode criar planos de aula, avaliações e atividades de forma muito mais prática, economizando tempo no dia a dia. 💚\n\n` +
+                        `O Premium custa R$ 29,90 por mês.\n\n` +
+                        `E tem uma vantagem importante para quem é professor: em dezembro e janeiro não há cobrança, justamente por serem meses de férias e recesso escolar.\n\n` +
+                        `Você pode acessar novamente sua conta por aqui:\n` +
+                        `https://planejaioficial.com.br\n\n` +
+                        `Se tiver alguma dúvida ou dificuldade para utilizar alguma ferramenta, é só responder este e-mail.\n\n` +
+                        `Equipe PlanejAI 💚`;
 
-                        <td className="px-5 py-4">
-                          {numeroWhatsApp ? (
-                            <a
-                              href={`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
-                                mensagemWhatsApp
-                              )}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700"
+                      return (
+                        <tr
+                          key={
+                            usuario.id
+                          }
+                          className="border-t border-slate-100"
+                        >
+                          <td className="px-5 py-4 font-semibold text-slate-800">
+                            {usuario.nome ||
+                              "Sem nome"}
+                          </td>
+
+                          <td className="px-5 py-4 text-slate-600">
+                            {usuario.email ||
+                              "-"}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            {numeroWhatsApp ? (
+                              <a
+                                href={`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+                                  mensagemWhatsApp
+                                )}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700"
+                              >
+                                Chamar no WhatsApp
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">
+                                Sem WhatsApp
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            {usuario.email ? (
+                              <a
+                                href={`mailto:${usuario.email}?subject=${encodeURIComponent(
+                                  assuntoEmail
+                                )}&body=${encodeURIComponent(
+                                  mensagemEmail
+                                )}`}
+                                className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
+                              >
+                                Enviar e-mail
+                              </a>
+                            ) : (
+                              <span className="text-slate-400">
+                                Sem e-mail
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="px-5 py-4">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                                usuario.plano ===
+                                "premium"
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
                             >
-                              Chamar no WhatsApp
-                            </a>
-                          ) : (
-                            <span className="text-slate-400">
-                              Sem WhatsApp
+                              {usuario.plano ===
+                              "premium"
+                                ? "Premium"
+                                : "Gratuito"}
                             </span>
-                          )}
-                        </td>
+                          </td>
 
-                        <td className="px-5 py-4">
-                          <span
-                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                              usuario.plano === "premium"
-                                ? "bg-emerald-100 text-emerald-700"
-                                : "bg-slate-100 text-slate-600"
-                            }`}
-                          >
-                            {usuario.plano === "premium"
-                              ? "Premium"
-                              : "Gratuito"}
-                          </span>
-                        </td>
+                          <td className="px-5 py-4">
+                            {usuario.cupom_origem ? (
+                              <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
+                                {
+                                  usuario.cupom_origem
+                                }
+                              </span>
+                            ) : (
+                              <span className="text-slate-400">
+                                Sem parceiro
+                              </span>
+                            )}
+                          </td>
 
-                        <td className="px-5 py-4">
-                          {usuario.cupom_origem ? (
-                            <span className="inline-flex rounded-full bg-violet-100 px-3 py-1 text-xs font-bold text-violet-700">
-                              {usuario.cupom_origem}
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">
-                              Sem parceiro
-                            </span>
-                          )}
-                        </td>
+                          <td className="px-5 py-4 text-slate-600">
+                            {usuario.planos_restantes ??
+                              "-"}
+                          </td>
 
-                        <td className="px-5 py-4 text-slate-600">
-                          {usuario.planos_restantes ?? "-"}
-                        </td>
+                          <td className="px-5 py-4 text-slate-500">
+                            {usuario.mercado_pago_id ||
+                              "-"}
+                          </td>
 
-                        <td className="px-5 py-4 text-slate-500">
-                          {usuario.mercado_pago_id || "-"}
-                        </td>
-
-                        <td className="px-5 py-4">
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setUsuarioSelecionado(usuario)
-                            }
-                            className="cursor-pointer whitespace-nowrap rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
-                          >
-                            Gerenciar
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                          <td className="px-5 py-4">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setUsuarioSelecionado(
+                                  usuario
+                                )
+                              }
+                              className="cursor-pointer whitespace-nowrap rounded-lg bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
+                            >
+                              Gerenciar
+                            </button>
+                          </td>
+                        </tr>
+                      );
+                    }
+                  )}
                 </tbody>
               </table>
             </div>
@@ -846,80 +978,111 @@ export default function AdminPage() {
               <table className="w-full min-w-[1100px] text-left text-sm">
                 <thead className="bg-slate-50 text-xs uppercase text-slate-500">
                   <tr>
-                    <th className="px-5 py-4">Nome</th>
-                    <th className="px-5 py-4">Cupom</th>
-                    <th className="px-5 py-4">Acessos</th>
-                    <th className="px-5 py-4">Visitantes</th>
-                    <th className="px-5 py-4">Cadastros</th>
-                    <th className="px-5 py-4">Pagamentos</th>
-                    <th className="px-5 py-4">Conversão</th>
-                    <th className="px-5 py-4">Comissão</th>
-                    <th className="px-5 py-4">Status</th>
+                    <th className="px-5 py-4">
+                      Nome
+                    </th>
+                    <th className="px-5 py-4">
+                      Cupom
+                    </th>
+                    <th className="px-5 py-4">
+                      Acessos
+                    </th>
+                    <th className="px-5 py-4">
+                      Visitantes
+                    </th>
+                    <th className="px-5 py-4">
+                      Cadastros
+                    </th>
+                    <th className="px-5 py-4">
+                      Pagamentos
+                    </th>
+                    <th className="px-5 py-4">
+                      Conversão
+                    </th>
+                    <th className="px-5 py-4">
+                      Comissão
+                    </th>
+                    <th className="px-5 py-4">
+                      Status
+                    </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {dados.parceiros.map((parceiro) => (
-                    <tr
-                      key={parceiro.id}
-                      className="border-t border-slate-100"
-                    >
-                      <td className="px-5 py-4 font-semibold text-slate-800">
-                        {parceiro.nome || "-"}
-                      </td>
+                  {dados.parceiros.map(
+                    (parceiro) => (
+                      <tr
+                        key={parceiro.id}
+                        className="border-t border-slate-100"
+                      >
+                        <td className="px-5 py-4 font-semibold text-slate-800">
+                          {parceiro.nome ||
+                            "-"}
+                        </td>
 
-                      <td className="px-5 py-4 font-mono font-semibold text-slate-600">
-                        {parceiro.cupom || "-"}
-                      </td>
+                        <td className="px-5 py-4 font-mono font-semibold text-slate-600">
+                          {parceiro.cupom ||
+                            "-"}
+                        </td>
 
-                      <td className="px-5 py-4 font-bold text-blue-700">
-                        {parceiro.totalAcessos ?? 0}
-                      </td>
+                        <td className="px-5 py-4 font-bold text-blue-700">
+                          {parceiro.totalAcessos ??
+                            0}
+                        </td>
 
-                      <td className="px-5 py-4 text-slate-700">
-                        {parceiro.totalVisitantes ?? 0}
-                      </td>
+                        <td className="px-5 py-4 text-slate-700">
+                          {parceiro.totalVisitantes ??
+                            0}
+                        </td>
 
-                      <td className="px-5 py-4 font-bold text-slate-800">
-                        {parceiro.totalCadastros ?? 0}
-                      </td>
+                        <td className="px-5 py-4 font-bold text-slate-800">
+                          {parceiro.totalCadastros ??
+                            0}
+                        </td>
 
-                      <td className="px-5 py-4 font-bold text-emerald-700">
-                        {parceiro.totalPagamentos ?? 0}
-                      </td>
+                        <td className="px-5 py-4 font-bold text-emerald-700">
+                          {parceiro.totalPagamentos ??
+                            0}
+                        </td>
 
-                      <td className="px-5 py-4">
-                        {parceiro.conversao ?? 0}%
-                      </td>
+                        <td className="px-5 py-4">
+                          {parceiro.conversao ??
+                            0}
+                          %
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <div className="font-bold text-emerald-700">
-                          {formatarDinheiro(
-                            parceiro.comissaoTotal
-                          )}
-                        </div>
+                        <td className="px-5 py-4">
+                          <div className="font-bold text-emerald-700">
+                            {formatarDinheiro(
+                              parceiro.comissaoTotal
+                            )}
+                          </div>
 
-                        <div className="mt-1 text-xs text-slate-400">
-                          {Number(
-                            parceiro.comissao_percentual || 0
-                          )}
-                          % por venda
-                        </div>
-                      </td>
+                          <div className="mt-1 text-xs text-slate-400">
+                            {Number(
+                              parceiro.comissao_percentual ||
+                                0
+                            )}
+                            % por venda
+                          </div>
+                        </td>
 
-                      <td className="px-5 py-4">
-                        <span
-                          className={`rounded-full px-3 py-1 text-xs font-bold ${
-                            parceiro.ativo
-                              ? "bg-emerald-100 text-emerald-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {parceiro.ativo ? "Ativo" : "Inativo"}
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
+                        <td className="px-5 py-4">
+                          <span
+                            className={`rounded-full px-3 py-1 text-xs font-bold ${
+                              parceiro.ativo
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-red-100 text-red-700"
+                            }`}
+                          >
+                            {parceiro.ativo
+                              ? "Ativo"
+                              : "Inativo"}
+                          </span>
+                        </td>
+                      </tr>
+                    )
+                  )}
                 </tbody>
               </table>
             </div>
@@ -1037,158 +1200,182 @@ export default function AdminPage() {
           </div>
         )}
 
-                <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
-      <ShieldCheck
-        size={15}
-      />
+        <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
+          <ShieldCheck
+            size={15}
+          />
 
-      Área administrativa protegida
-    </div>
-
-    </section>
-
-  {usuarioSelecionado && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
-        <div className="flex items-start justify-between gap-4">
-          <div>
-            <p className="text-sm font-semibold text-emerald-600">
-              Controle de usuário
-            </p>
-
-            <h2 className="mt-1 text-2xl font-extrabold text-slate-900">
-              Gerenciar usuário
-            </h2>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => setUsuarioSelecionado(null)}
-            disabled={alterandoPlano}
-            className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            ×
-          </button>
+          Área administrativa protegida
         </div>
+      </section>
 
-        <div className="mt-6 space-y-4 rounded-2xl bg-slate-50 p-5">
-          <div>
-            <p className="text-xs font-semibold uppercase text-slate-400">
-              Nome
-            </p>
-            <p className="mt-1 font-bold text-slate-800">
-              {usuarioSelecionado.nome || "Sem nome"}
-            </p>
-          </div>
+      {usuarioSelecionado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-emerald-600">
+                  Controle de usuário
+                </p>
 
-          <div>
-            <p className="text-xs font-semibold uppercase text-slate-400">
-              E-mail
-            </p>
-            <p className="mt-1 break-all text-slate-700">
-              {usuarioSelecionado.email || "-"}
-            </p>
-          </div>
+                <h2 className="mt-1 text-2xl font-extrabold text-slate-900">
+                  Gerenciar usuário
+                </h2>
+              </div>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">
-                WhatsApp
-              </p>
-              <p className="mt-1 text-slate-700">
-                {usuarioSelecionado.whatsapp || "-"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">
-                Parceiro de origem
-              </p>
-              <p className="mt-1 font-semibold text-slate-700">
-                {usuarioSelecionado.cupom_origem || "Sem parceiro"}
-              </p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">
-                Plano atual
-              </p>
-
-              <span
-                className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                  usuarioSelecionado.plano === "premium"
-                    ? "bg-emerald-100 text-emerald-700"
-                    : "bg-slate-200 text-slate-700"
-                }`}
+              <button
+                type="button"
+                onClick={() =>
+                  setUsuarioSelecionado(
+                    null
+                  )
+                }
+                disabled={alterandoPlano}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                {usuarioSelecionado.plano === "premium"
-                  ? "Premium"
-                  : "Gratuito"}
-              </span>
+                ×
+              </button>
             </div>
 
-            <div>
-              <p className="text-xs font-semibold uppercase text-slate-400">
-                Planos restantes
-              </p>
-              <p className="mt-2 font-bold text-slate-800">
-                {usuarioSelecionado.planos_restantes ?? "-"}
-              </p>
+            <div className="mt-6 space-y-4 rounded-2xl bg-slate-50 p-5">
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">
+                  Nome
+                </p>
+
+                <p className="mt-1 font-bold text-slate-800">
+                  {usuarioSelecionado.nome ||
+                    "Sem nome"}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs font-semibold uppercase text-slate-400">
+                  E-mail
+                </p>
+
+                <p className="mt-1 break-all text-slate-700">
+                  {usuarioSelecionado.email ||
+                    "-"}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">
+                    WhatsApp
+                  </p>
+
+                  <p className="mt-1 text-slate-700">
+                    {usuarioSelecionado.whatsapp ||
+                      "-"}
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">
+                    Parceiro de origem
+                  </p>
+
+                  <p className="mt-1 font-semibold text-slate-700">
+                    {usuarioSelecionado.cupom_origem ||
+                      "Sem parceiro"}
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">
+                    Plano atual
+                  </p>
+
+                  <span
+                    className={`mt-2 inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                      usuarioSelecionado.plano ===
+                      "premium"
+                        ? "bg-emerald-100 text-emerald-700"
+                        : "bg-slate-200 text-slate-700"
+                    }`}
+                  >
+                    {usuarioSelecionado.plano ===
+                    "premium"
+                      ? "Premium"
+                      : "Gratuito"}
+                  </span>
+                </div>
+
+                <div>
+                  <p className="text-xs font-semibold uppercase text-slate-400">
+                    Planos restantes
+                  </p>
+
+                  <p className="mt-2 font-bold text-slate-800">
+                    {usuarioSelecionado.planos_restantes ??
+                      "-"}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-3">
+              {usuarioSelecionado.plano ===
+              "premium" ? (
+                <button
+                  type="button"
+                  disabled={
+                    alterandoPlano
+                  }
+                  onClick={() =>
+                    alterarPlanoUsuario(
+                      usuarioSelecionado,
+                      "gratuito"
+                    )
+                  }
+                  className="cursor-pointer rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {alterandoPlano
+                    ? "Alterando..."
+                    : "Retirar Premium"}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={
+                    alterandoPlano
+                  }
+                  onClick={() =>
+                    alterarPlanoUsuario(
+                      usuarioSelecionado,
+                      "premium"
+                    )
+                  }
+                  className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {alterandoPlano
+                    ? "Alterando..."
+                    : "Liberar Premium"}
+                </button>
+              )}
+
+              <button
+                type="button"
+                disabled={
+                  alterandoPlano
+                }
+                onClick={() =>
+                  setUsuarioSelecionado(
+                    null
+                  )
+                }
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                Fechar
+              </button>
             </div>
           </div>
         </div>
-
-        <div className="mt-6 flex flex-col gap-3">
-          {usuarioSelecionado.plano === "premium" ? (
-            <button
-              type="button"
-              disabled={alterandoPlano}
-              onClick={() =>
-                alterarPlanoUsuario(
-                  usuarioSelecionado,
-                  "gratuito"
-                )
-              }
-              className="cursor-pointer rounded-xl bg-red-600 px-5 py-3 font-bold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {alterandoPlano
-                ? "Alterando..."
-                : "Retirar Premium"}
-            </button>
-          ) : (
-            <button
-              type="button"
-              disabled={alterandoPlano}
-              onClick={() =>
-                alterarPlanoUsuario(
-                  usuarioSelecionado,
-                  "premium"
-                )
-              }
-              className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {alterandoPlano
-                ? "Alterando..."
-                : "Liberar Premium"}
-            </button>
-          )}
-
-          <button
-            type="button"
-            disabled={alterandoPlano}
-            onClick={() => setUsuarioSelecionado(null)}
-            className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            Fechar
-            
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
-</main>
-);
+      )}
+    </main>
+  );
 }
