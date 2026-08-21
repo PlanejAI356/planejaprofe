@@ -239,9 +239,33 @@ export default function ResultadoAvaliacaoPage() {
       );
     }
 
-    const conteudoInicial = provaEditada
-      ? provaEditada
-      : textoParaHtml(provaGerada);
+    let conteudoInicial = provaEditada;
+
+    if (!conteudoInicial && provaGerada) {
+      try {
+        const provaSalva = JSON.parse(provaGerada);
+
+        if (
+          provaSalva &&
+          typeof provaSalva === "object" &&
+          typeof provaSalva.avaliacaoCompleta === "string"
+        ) {
+          conteudoInicial =
+            provaSalva.avaliacaoCompleta;
+        } else if (
+          typeof provaSalva === "string"
+        ) {
+          conteudoInicial =
+            textoParaHtml(provaSalva);
+        } else {
+          conteudoInicial =
+            textoParaHtml(provaGerada);
+        }
+      } catch {
+        conteudoInicial =
+          textoParaHtml(provaGerada);
+      }
+    }
 
     setConteudoAluno(conteudoInicial);
     setCabecalho(cabecalhoSalvoLocal);
