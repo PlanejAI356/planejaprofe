@@ -28,6 +28,7 @@ import {
 import TopoAvaliacoes from "../componentes/TopoAvaliacoes";
 import { exportarAvaliacao } from "../utils/exportarAvaliacao";
 import { exportarAvaliacaoWord } from "../utils/exportarAvaliacaoWord";
+import CabecalhoEscolar from "@/app/componentes/CabecalhoEscolar/CabecalhoEscolar";
 
 function textoParaHtml(texto: string) {
   return texto
@@ -1243,59 +1244,24 @@ elementoImagem.addEventListener("blur", () => {
               </div>
             )}
 
-            <div className="mb-5 overflow-hidden rounded-2xl border border-slate-200 bg-white">
-              <div className="border-b border-slate-200 p-5">
-                <h2 className="font-bold text-slate-950">
-                  Cabeçalho da escola
-                </h2>
-
-                <p className="mt-1 text-sm text-slate-500">
-                  Copie o cabeçalho usado pela escola e cole na área abaixo. Você pode editar antes de baixar.
-                </p>
-
-                <div
-                  ref={cabecalhoRef}
-                  contentEditable
-                  suppressContentEditableWarning
-                  data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-                  onPaste={processarColagemCabecalho}
-                  onInput={() => {
-                    const htmlAtual =
-                      cabecalhoRef.current?.innerHTML ||
-                      "";
-
-                    setCabecalho(htmlAtual);
-                    setCabecalhoSalvo(false);
-                  }}
-                  className="cabecalho-editor mt-4 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-green-600 focus:ring-2 focus:ring-green-100"
-                  dangerouslySetInnerHTML={{
-                    __html: cabecalho,
-                  }}
-                />
-
-                <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-                  <p
-                    className={`text-xs font-semibold ${
-                      cabecalhoSalvo
-                        ? "text-green-700"
-                        : "text-slate-500"
-                    }`}
-                  >
-                    {cabecalhoSalvo
-                      ? "Cabeçalho salvo. Ele aparecerá nas próximas avaliações."
-                      : "Você pode alterar o cabeçalho desta avaliação antes de baixar."}
-                  </p>
-
-                  <button
-                    type="button"
-                    onClick={salvarCabecalho}
-                    className="flex cursor-pointer items-center gap-2 rounded-lg border border-green-700 px-4 py-2 text-xs font-extrabold text-green-800 transition hover:bg-green-50"
-                  >
-                    <Save size={16} />
-                    Salvar cabeçalho
-                  </button>
-                </div>
-              </div>
+            <div className="mb-5">
+              <CabecalhoEscolar
+                tipo="avaliacao"
+                valor={cabecalho}
+                onChange={(html) => {
+                  setCabecalho(html);
+                  setCabecalhoSalvo(false);
+                }}
+                chaveLocalStorage="cabecalhoAvaliacao"
+                titulo="Cabeçalho da escola"
+                descricao="Cole o cabeçalho usado pela escola e edite antes de salvar."
+                onSalvar={(html) => {
+                  setCabecalho(html);
+                  setCabecalhoSalvo(
+                    Boolean(html.trim())
+                  );
+                }}
+              />
             </div>
 
             <div className="max-h-[760px] overflow-auto rounded-xl border border-slate-200 bg-slate-100 p-4 sm:p-6">
@@ -1314,6 +1280,7 @@ elementoImagem.addEventListener("blur", () => {
                 >
                   {cabecalho.trim() && (
                     <div
+                      ref={cabecalhoRef}
                       className="cabecalho-preview mb-5 w-full shrink-0"
                       dangerouslySetInnerHTML={{
                         __html: cabecalho,
