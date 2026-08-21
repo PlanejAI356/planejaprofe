@@ -290,15 +290,135 @@ export default function CabecalhoEscolar({
         arquivo
       );
 
-    editorRef.current.focus();
+    const editor =
+      editorRef.current;
 
-    document.execCommand(
-      "insertImage",
-      false,
-      dataUrl
+    const primeiraCelula =
+      editor.querySelector<HTMLElement>(
+        "table td, table th"
+      );
+
+    const imagem =
+      document.createElement("img");
+
+    imagem.src = dataUrl;
+    imagem.alt = "Logo da escola";
+    imagem.setAttribute(
+      "draggable",
+      "false"
     );
 
+    imagem.style.display = "block";
+    imagem.style.width = "auto";
+    imagem.style.height = "auto";
+    imagem.style.maxWidth = "120px";
+    imagem.style.maxHeight = "80px";
+    imagem.style.objectFit = "contain";
+    imagem.style.margin = "0 auto";
+
+    if (primeiraCelula) {
+      const imagensExistentes =
+        primeiraCelula.querySelectorAll(
+          "img"
+        );
+
+      imagensExistentes.forEach(
+        (imagemExistente) =>
+          imagemExistente.remove()
+      );
+
+      primeiraCelula.prepend(imagem);
+    } else {
+      editor.prepend(imagem);
+    }
+
     atualizarEstado();
+
+    setMensagem(
+      primeiraCelula
+        ? "Imagem adicionada ao espaço do logo."
+        : "Imagem adicionada. Cole a tabela do cabeçalho para posicioná-la automaticamente."
+    );
+  }
+
+  function moverLogoParaCelula(
+    evento: React.MouseEvent<HTMLDivElement>
+  ) {
+    const editor = editorRef.current;
+
+    if (!editor) {
+      return;
+    }
+
+    const alvo =
+      evento.target as HTMLElement;
+
+    const imagem =
+      alvo.closest("img") as HTMLImageElement | null;
+
+    if (!imagem) {
+      return;
+    }
+
+    imagem.setAttribute(
+      "draggable",
+      "false"
+    );
+
+    imagem.style.outline =
+      "2px solid #059669";
+
+    imagem.style.outlineOffset =
+      "2px";
+
+    const aoClicarDestino = (
+      eventoDestino: MouseEvent
+    ) => {
+      const elementoDestino =
+        eventoDestino.target as HTMLElement;
+
+      const celula =
+        elementoDestino.closest(
+          "td, th"
+        ) as HTMLElement | null;
+
+      if (
+        !celula ||
+        !editor.contains(celula)
+      ) {
+        return;
+      }
+
+      eventoDestino.preventDefault();
+      eventoDestino.stopPropagation();
+
+      celula.prepend(imagem);
+
+      imagem.style.outline = "";
+      imagem.style.outlineOffset = "";
+
+      editor.removeEventListener(
+        "click",
+        aoClicarDestino,
+        true
+      );
+
+      atualizarEstado();
+
+      setMensagem(
+        "Logo movida para o local escolhido."
+      );
+    };
+
+    editor.addEventListener(
+      "click",
+      aoClicarDestino,
+      true
+    );
+
+    setMensagem(
+      "Logo selecionada. Clique na célula onde deseja colocá-la."
+    );
   }
 
   function limparCabecalho() {
@@ -466,7 +586,8 @@ export default function CabecalhoEscolar({
           data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
           onPaste={processarColagem}
           onInput={atualizarEstado}
-          className="cabecalho-escolar-editor mt-4 min-h-[150px] w-full overflow-x-auto rounded-xl border-2 border-dashed border-slate-300 bg-white px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          onClick={moverLogoParaCelula}
+          className="cabecalho-escolar-editor mt-4 h-[220px] w-full overflow-auto rounded-xl border-2 border-dashed border-slate-300 bg-white px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -513,7 +634,8 @@ export default function CabecalhoEscolar({
           width: auto;
           height: auto;
           object-fit: contain;
-          cursor: grab;
+          cursor: pointer;
+          user-select: none;
         }
 
         .cabecalho-escolar-editor:empty::before {
