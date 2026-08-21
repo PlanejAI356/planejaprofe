@@ -126,7 +126,32 @@ export default function CabecalhoEscolar({
           Boolean(arquivo)
       );
 
-    if (htmlColado) {
+    /*
+     * Se o Word trouxe HTML mas não expôs a logo
+     * como arquivo separado, deixamos o navegador
+     * fazer a colagem nativa. Isso preserva melhor
+     * tabela + texto + imagem do cabeçalho.
+     */
+    if (
+      htmlColado &&
+      arquivosImagem.length === 0
+    ) {
+      window.setTimeout(() => {
+        atualizarEstado();
+      }, 0);
+
+      return;
+    }
+
+    /*
+     * Se vier HTML + imagem separada no clipboard,
+     * fazemos a colagem controlada e convertemos
+     * a imagem para base64.
+     */
+    if (
+      htmlColado &&
+      arquivosImagem.length > 0
+    ) {
       evento.preventDefault();
 
       const container =
@@ -161,79 +186,81 @@ export default function CabecalhoEscolar({
       }
 
       if (
-        imagensBase64.length > 0
+        imagensHtml.length > 0
       ) {
-        if (
-          imagensHtml.length > 0
-        ) {
-          imagensHtml.forEach(
-            (
-              imagemHtml,
-              indice
-            ) => {
-              const dataUrl =
-                imagensBase64[
-                  Math.min(
-                    indice,
-                    imagensBase64.length -
-                      1
-                  )
-                ];
+        imagensHtml.forEach(
+          (
+            imagemHtml,
+            indice
+          ) => {
+            const dataUrl =
+              imagensBase64[
+                Math.min(
+                  indice,
+                  imagensBase64.length -
+                    1
+                )
+              ];
 
-              if (dataUrl) {
-                imagemHtml.src =
-                  dataUrl;
-
-                imagemHtml.removeAttribute(
-                  "srcset"
-                );
-              }
-            }
-          );
-        } else {
-          const primeiraCelula =
-            container.querySelector<HTMLElement>(
-              "td, th"
-            );
-
-          const destino =
-            primeiraCelula ||
-            container;
-
-          imagensBase64.forEach(
-            (dataUrl) => {
-              const imagem =
-                document.createElement(
-                  "img"
-                );
-
-              imagem.src =
+            if (dataUrl) {
+              imagemHtml.src =
                 dataUrl;
 
-              imagem.alt =
-                "Imagem do cabeçalho";
-
-              imagem.style.maxWidth =
-                "120px";
-
-              imagem.style.maxHeight =
-                "80px";
-
-              imagem.style.height =
-                "auto";
-
-              imagem.style.display =
-                "block";
-
-              imagem.style.margin =
-                "0 auto";
-
-              destino.prepend(
-                imagem
+              imagemHtml.removeAttribute(
+                "srcset"
               );
             }
+          }
+        );
+      } else {
+        const primeiraCelula =
+          container.querySelector<HTMLElement>(
+            "td, th"
           );
-        }
+
+        const destino =
+          primeiraCelula ||
+          container;
+
+        imagensBase64.forEach(
+          (dataUrl) => {
+            const imagem =
+              document.createElement(
+                "img"
+              );
+
+            imagem.src =
+              dataUrl;
+
+            imagem.alt =
+              "Imagem do cabeçalho";
+
+            imagem.style.maxWidth =
+              "120px";
+
+            imagem.style.maxHeight =
+              "80px";
+
+            imagem.style.width =
+              "auto";
+
+            imagem.style.height =
+              "auto";
+
+            imagem.style.objectFit =
+              "contain";
+
+            imagem.style.display =
+              "block";
+
+            imagem.style.margin =
+              "0 auto";
+
+            destino.prepend(
+              imagem
+            );
+          }
+        );
       }
 
       document.execCommand(
@@ -250,6 +277,10 @@ export default function CabecalhoEscolar({
       return;
     }
 
+    /*
+     * Quando houver somente imagem no clipboard,
+     * convertemos normalmente para base64.
+     */
     if (
       arquivosImagem.length > 0
     ) {
@@ -548,7 +579,7 @@ export default function CabecalhoEscolar({
             className="flex items-center gap-2 rounded-lg border border-emerald-300 bg-white px-3 py-2 text-sm font-bold text-emerald-700 hover:bg-emerald-50"
           >
             <ImagePlus size={16} />
-            Adicionar imagem
+            Adicionar logo
           </button>
 
           <button
