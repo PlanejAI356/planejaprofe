@@ -138,13 +138,13 @@ function ajustarDimensoesImagem(
   modoCabecalho = false
 ) {
   const larguraMaxima = modoCabecalho
-    ? 78
+    ? 105
     : duasColunas
       ? 225
       : 420;
 
   const alturaMaxima = modoCabecalho
-    ? 52
+    ? 82
     : duasColunas
       ? 190
       : 280;
@@ -891,32 +891,82 @@ function limparDocumentoClonado(
     });
 }
 
+
+function textoCabecalhoLimpo(texto: string) {
+  return texto.replace(/\u00a0/g, " ").replace(/\s+/g, " ").trim();
+}
+
+function valorDepoisDoRotulo(
+  texto: string,
+  rotulo: string,
+  proximos: string[] = []
+) {
+  const esc = (v: string) =>
+    v.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+  const fim = proximos.length
+    ? `(?=${proximos.map(esc).join("|")}|$)`
+    : "$";
+
+  return (
+    texto.match(
+      new RegExp(
+        `${esc(rotulo)}\\s*:?\\s*(.*?)\\s*${fim}`,
+        "i"
+      )
+    )?.[1]?.trim() || ""
+  );
+}
+
+function pCabecalho(
+  rotulo: string,
+  valor = "",
+  centro = false,
+  negritoValor = false
+) {
+  return new Paragraph({
+    alignment: centro
+      ? AlignmentType.CENTER
+      : AlignmentType.LEFT,
+    spacing: { before: 0, after: 0, line: 240 },
+    children: [
+      ...(rotulo
+        ? [
+            new TextRun({
+              text: `${rotulo}: `,
+              bold: true,
+              size: TAMANHO_FONTE_CABECALHO,
+              font: "Times New Roman",
+            }),
+          ]
+        : []),
+      new TextRun({
+        text: valor || " ",
+        bold: negritoValor,
+        size: TAMANHO_FONTE_CABECALHO,
+        font: "Times New Roman",
+      }),
+    ],
+  });
+}
+
 async function criarCabecalhoWord(
-  cabecalhoElemento:
-    | HTMLElement
-    | null,
+  cabecalhoElemento: HTMLElement | null,
   _duasColunas: boolean
 ) {
-  const cabecalhoClonado =
-    cabecalhoElemento?.cloneNode(
-      true
-    ) as HTMLElement | undefined;
+  const clone =
+    cabecalhoElemento?.cloneNode(true) as
+      | HTMLElement
+      | undefined;
 
-  if (!cabecalhoClonado) {
+  if (!clone) {
     return new Table({
-      width: {
-        size: 100,
-        type: WidthType.PERCENTAGE,
-      },
+      width: { size: 100, type: WidthType.PERCENTAGE },
       rows: [
         new TableRow({
           children: [
             new TableCell({
-              children: [
-                new Paragraph({
-                  children: [],
-                }),
-              ],
+              children: [new Paragraph({ children: [] })],
             }),
           ],
         }),
@@ -924,90 +974,215 @@ async function criarCabecalhoWord(
     });
   }
 
-  limparDocumentoClonado(
-    cabecalhoClonado
-  );
+  limparDocumentoClonado(clone);
+  removerVaziosDoCabecalho(clone);
 
-  removerVaziosDoCabecalho(
-    cabecalhoClonado
-  );
+  const texto = textoCabecalhoLimpo(clone.innerText);
 
-  cabecalhoClonado.removeAttribute(
-    "data-placeholder"
-  );
+  const componente =
+    valorDepoisDoRotulo(texto, "Componente Curricular", [
+      "Professor(a)", "Professor", "Data", "Turno",
+    ]) ||
+    valorDepoisDoRotulo(texto, "Componente", [
+      "Professor(a)", "Professor", "Data", "Turno",
+    ]);
 
-  const conteudoCabecalho =
-    await converterElementoEmBlocos(
-      cabecalhoClonado,
-      false,
-      false,
-      TAMANHO_FONTE_CABECALHO,
-      true
+  const professor =
+    valorDepoisDoRotulo(texto, "Professor(a)", [
+      "Data", "Turno", "Série", "Serie",
+    ]) ||
+    valorDepoisDoRotulo(texto, "Professor", [
+      "Data", "Turno", "Série", "Serie",
+    ]);
+
+  const turno = valorDepoisDoRotulo(texto, "Turno", [
+    "Série", "Serie", "Objeto(s) de Conhecimento",
+    "Objetos de Conhecimento",
+  ]);
+
+  const serie =
+    valorDepoisDoRotulo(texto, "Série", [
+      "Objeto(s) de Conhecimento",
+      "Objetos de Conhecimento", "Nota",
+    ]) ||
+    valorDepoisDoRotulo(texto, "Serie", [
+      "Objeto(s) de Conhecimento",
+      "Objetos de Conhecimento", "Nota",
+    ]);
+
+  const objeto =
+    valorDepoisDoRotulo(texto, "Objeto(s) de Conhecimento", [
+      "Nota", "Aluno(a)", "Aluno",
+    ]) ||
+    valorDepoisDoRotulo(texto, "Objetos de Conhecimento", [
+      "Nota", "Aluno(a)", "Aluno",
+    ]);
+
+  const aluno =
+    valorDepoisDoRotulo(texto, "Aluno(a)", ["Aluno"]) ||
+    valorDepoisDoRotulo(texto, "Aluno");
+
+  const data =
+    valorDepoisDoRotulo(texto, "Data", [
+      "Turno", "Série", "Serie",
+    ]) || "____/____/______";
+
+  /*
+   * O nome da escola costuma estar no bloco de texto
+   * maior/centralizado do cabeçalho. Primeiro tentamos
+   * seletores semânticos; depois procuramos um texto
+   * que contenha ESCOLA.
+   */
+  const campoEscola =
+    clone.querySelector(
+      "[data-campo='escola'], [data-field='escola']"
+    ) as HTMLElement | null;
+
+  const candidatoEscola =
+    Array.from(
+      clone.querySelectorAll<HTMLElement>(
+        "div, p, td, th, span"
+      )
+    ).find((el) =>
+      /\bESCOLA\b/i.test(el.innerText.trim())
     );
 
-  const semBorda = {
-    top: {
-      style: BorderStyle.NONE,
-      size: 0,
-      color: "FFFFFF",
-    },
-    right: {
-      style: BorderStyle.NONE,
-      size: 0,
-      color: "FFFFFF",
-    },
-    bottom: {
-      style: BorderStyle.NONE,
-      size: 0,
-      color: "FFFFFF",
-    },
-    left: {
-      style: BorderStyle.NONE,
-      size: 0,
-      color: "FFFFFF",
-    },
+  const escola =
+    textoCabecalhoLimpo(
+      campoEscola?.innerText ||
+      candidatoEscola?.innerText ||
+      "ESCOLA"
+    );
+
+  const img =
+    clone.querySelector("img") as
+      | HTMLImageElement
+      | null;
+
+  const logo = img
+    ? await criarParagrafoImagem(img, false, true)
+    : null;
+
+  const b = {
+    style: BorderStyle.SINGLE,
+    size: 4,
+    color: "000000",
   };
 
+  const bordas = {
+    top: b, right: b, bottom: b, left: b,
+  };
+
+  const criarCelula = (
+    children: Array<Paragraph | Table>,
+    largura: number,
+    opts: {
+      columnSpan?: number;
+      rowSpan?: number;
+    } = {}
+  ) =>
+    new TableCell({
+      width: {
+        size: largura,
+        type: WidthType.PERCENTAGE,
+      },
+      columnSpan: opts.columnSpan,
+      rowSpan: opts.rowSpan,
+      verticalAlign: VerticalAlign.CENTER,
+      margins: {
+        top: 15,
+        right: 35,
+        bottom: 15,
+        left: 35,
+      },
+      borders: bordas,
+      children:
+        children.length
+          ? children
+          : [new Paragraph({ children: [] })],
+    });
+
+  /*
+   * Modelo da escola:
+   * logo em coluna vertical à esquerda;
+   * escola no topo;
+   * componente/professor/data;
+   * turno/série/nota;
+   * objeto;
+   * aluno.
+   */
   return new Table({
     width: {
       size: 100,
       type: WidthType.PERCENTAGE,
     },
-    borders: {
-      ...semBorda,
-      insideHorizontal: {
-        style: BorderStyle.NONE,
-        size: 0,
-        color: "FFFFFF",
-      },
-      insideVertical: {
-        style: BorderStyle.NONE,
-        size: 0,
-        color: "FFFFFF",
-      },
-    },
     rows: [
       new TableRow({
         children: [
-          new TableCell({
-            verticalAlign:
-              VerticalAlign.CENTER,
-            margins: {
-              top: 0,
-              right: 10,
-              bottom: 0,
-              left: 10,
-            },
-            borders: semBorda,
-            children:
-              conteudoCabecalho.length > 0
-                ? conteudoCabecalho
-                : [
-                    new Paragraph({
-                      children: [],
-                    }),
-                  ],
-          }),
+          criarCelula(
+            logo ? [logo] : [],
+            18,
+            { rowSpan: 5 }
+          ),
+          criarCelula(
+            [pCabecalho("", escola, true, true)],
+            82,
+            { columnSpan: 3 }
+          ),
+        ],
+      }),
+      new TableRow({
+        children: [
+          criarCelula(
+            [pCabecalho("Componente Curricular", componente)],
+            37
+          ),
+          criarCelula(
+            [pCabecalho("Professor(a)", professor)],
+            30
+          ),
+          criarCelula(
+            [
+              pCabecalho("", "DATA", true),
+              pCabecalho("", data, true),
+            ],
+            15
+          ),
+        ],
+      }),
+      new TableRow({
+        children: [
+          criarCelula(
+            [pCabecalho("Turno", turno)],
+            37
+          ),
+          criarCelula(
+            [pCabecalho("Série", serie)],
+            30
+          ),
+          criarCelula(
+            [pCabecalho("", "NOTA", true, true)],
+            15,
+            { rowSpan: 2 }
+          ),
+        ],
+      }),
+      new TableRow({
+        children: [
+          criarCelula(
+            [pCabecalho("Objeto(s) de Conhecimento", objeto)],
+            67,
+            { columnSpan: 2 }
+          ),
+        ],
+      }),
+      new TableRow({
+        children: [
+          criarCelula(
+            [pCabecalho("Aluno(a)", aluno)],
+            82,
+            { columnSpan: 3 }
+          ),
         ],
       }),
     ],
