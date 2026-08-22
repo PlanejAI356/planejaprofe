@@ -34,6 +34,7 @@ type Usuario = {
 
 type Parceiro = {
   id: string;
+  user_id?: string | null;
   nome?: string | null;
   cupom?: string | null;
   comissao_percentual?: number | null;
@@ -105,9 +106,9 @@ export default function AdminPage() {
     useState("");
 
   const [
-    somenteNaoPremium,
-    setSomenteNaoPremium,
-  ] = useState(true);
+    filtroPlano,
+    setFiltroPlano,
+  ] = useState<"nao-premium" | "premium">("nao-premium");
 
   const [aba, setAba] = useState<
     "usuarios" | "parceiros" | "indicacoes"
@@ -314,9 +315,15 @@ export default function AdminPage() {
               nome.includes(busca) ||
               email.includes(busca);
 
+            const ehPremium =
+              String(
+                usuario.plano || ""
+              ).toLowerCase() === "premium";
+
             const correspondePlano =
-              !somenteNaoPremium ||
-              usuario.plano !== "premium";
+              filtroPlano === "premium"
+                ? ehPremium
+                : !ehPremium;
 
             return (
               correspondeBusca &&
@@ -328,7 +335,7 @@ export default function AdminPage() {
     }, [
       buscaUsuario,
       dados?.usuarios,
-      somenteNaoPremium,
+      filtroPlano,
     ]);
 
   const parceirosPorId =
@@ -423,11 +430,11 @@ export default function AdminPage() {
 
   const cards = [
     {
-      titulo: "Total de cadastrados",
+      titulo: "Total de usuários",
       valor:
         dados.resumo.totalUsuarios,
       descricao:
-        "Contas no PlanejAI",
+        "Clientes sem contar parceiros",
       icone: Users,
     },
     {
@@ -568,7 +575,7 @@ export default function AdminPage() {
                   </p>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    dos cadastrados são Premium
+                    dos usuários são Premium
                   </p>
                 </div>
 
@@ -694,36 +701,17 @@ export default function AdminPage() {
 
         {aba === "usuarios" && (
           <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex flex-col gap-3 border-b border-slate-200 p-5 md:flex-row md:items-center md:justify-between">
-              <div>
-                <h2 className="text-lg font-extrabold text-slate-900">
-                  Usuários cadastrados
-                </h2>
+            <div className="flex flex-col gap-4 border-b border-slate-200 p-5">
+              <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <h2 className="text-lg font-extrabold text-slate-900">
+                    Usuários
+                  </h2>
 
-                <p className="text-sm text-slate-500">
-                  {usuariosFiltrados.length} usuário(s) exibido(s)
-                </p>
-              </div>
-
-              <div className="flex w-full flex-col gap-2 md:w-auto md:flex-row md:items-center">
-                <button
-                  type="button"
-                  onClick={() =>
-                    setSomenteNaoPremium(
-                      (valorAtual) =>
-                        !valorAtual
-                    )
-                  }
-                  className={`cursor-pointer whitespace-nowrap rounded-xl px-4 py-2.5 text-sm font-bold transition ${
-                    somenteNaoPremium
-                      ? "bg-emerald-600 text-white"
-                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
-                  }`}
-                >
-                  {somenteNaoPremium
-                    ? "Mostrando não Premium"
-                    : "Mostrar não Premium"}
-                </button>
+                  <p className="text-sm text-slate-500">
+                    {usuariosFiltrados.length} usuário(s) exibido(s)
+                  </p>
+                </div>
 
                 <div className="relative w-full md:w-80">
                   <Search
@@ -742,6 +730,36 @@ export default function AdminPage() {
                     className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFiltroPlano("nao-premium")
+                  }
+                  className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    filtroPlano === "nao-premium"
+                      ? "bg-slate-900 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Não Premium ({dados.resumo.totalGratuitos})
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFiltroPlano("premium")
+                  }
+                  className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    filtroPlano === "premium"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  Premium ({dados.resumo.totalPremium})
+                </button>
               </div>
             </div>
 
@@ -815,34 +833,58 @@ export default function AdminPage() {
                         "";
 
                       const mensagemWhatsApp =
-                        `Oi${
+                        `Olá${
                           primeiroNome
                             ? `, ${primeiroNome}`
                             : ""
-                        }! 😊 Aqui é a Naiara, do PlanejAI.\n\n` +
-                        `Vi que você já criou sua conta e queria saber se conseguiu conhecer e testar direitinho as ferramentas. 💚\n\n` +
-                        `O PlanejAI conta com geração de planos de aula, avaliações e atividades, tudo pensado para facilitar a rotina do professor e economizar tempo.\n\n` +
-                        `Você pode acessar novamente sua conta por aqui:\n` +
-                        `👉 https://planejaioficial.com.br\n\n` +
-                        `Se tiver alguma dúvida ou dificuldade para usar alguma ferramenta, pode falar comigo por aqui. 😊`;
+                        }! Tudo bem? Aqui é a Naiara, do PlanejAI.
+
+` +
+                        `Vi que você já tem cadastro na plataforma e queria saber como foi sua experiência até agora.
+
+` +
+                        `Também quero liberar um teste grátis para você conhecer novamente as funcionalidades do PlanejAI e ver como ele pode ajudar na preparação das suas aulas.
+
+` +
+                        `Você pode acessar sua conta por aqui:
+` +
+                        `https://planejaioficial.com.br
+
+` +
+                        `Se tiver alguma dificuldade para usar ou quiser me contar o que achou, pode falar comigo por aqui. Seu retorno é muito importante para eu continuar melhorando a plataforma.`;
 
                       const assuntoEmail =
-                        "Conheça melhor o PlanejAI 💚";
+                        "Conheça melhor o PlanejAI";
 
                       const mensagemEmail =
                         `Olá${
                           primeiroNome
                             ? `, ${primeiroNome}`
                             : ""
-                        }!\n\n` +
-                        `Você já criou sua conta no PlanejAI e queremos convidar você a conhecer melhor tudo o que a plataforma pode facilitar na sua rotina.\n\n` +
-                        `Com o PlanejAI, você pode criar planos de aula, avaliações e atividades de forma muito mais prática, economizando tempo no dia a dia. 💚\n\n` +
-                        `O Premium custa R$ 29,90 por mês.\n\n` +
-                        `E tem uma vantagem importante para quem é professor: em dezembro e janeiro não há cobrança, justamente por serem meses de férias e recesso escolar.\n\n` +
-                        `Você pode acessar novamente sua conta por aqui:\n` +
-                        `https://planejaioficial.com.br\n\n` +
-                        `Se tiver alguma dúvida ou dificuldade para utilizar alguma ferramenta, é só responder este e-mail.\n\n` +
-                        `Equipe PlanejAI 💚`;
+                        }!
+
+` +
+                        `Você já criou sua conta no PlanejAI e queremos convidar você a conhecer melhor tudo o que a plataforma pode facilitar na sua rotina.
+
+` +
+                        `Com o PlanejAI, você pode criar planos de aula, avaliações e atividades de forma muito mais prática, economizando tempo no dia a dia.
+
+` +
+                        `O Premium custa R$ 29,90 por mês.
+
+` +
+                        `E tem uma vantagem importante para quem é professor: em dezembro e janeiro não há cobrança, justamente por serem meses de férias e recesso escolar.
+
+` +
+                        `Você pode acessar novamente sua conta por aqui:
+` +
+                        `https://planejaioficial.com.br
+
+` +
+                        `Se tiver alguma dúvida ou dificuldade para utilizar alguma ferramenta, é só responder este e-mail.
+
+` +
+                        `Equipe PlanejAI`;
 
                       return (
                         <tr

@@ -8,21 +8,15 @@ import {
 } from "react";
 
 import {
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
   ArrowLeft,
-  Bold,
   Download,
-  Italic,
-  Save,
-  Underline,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
 
 import { exportarAtividade } from "../utils/exportarAtividade";
 import { exportarAtividadeWord } from "../utils/exportarAtividadeWord";
+import CabecalhoEscolar from "../../componentes/CabecalhoEscolar/CabecalhoEscolar";
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -49,15 +43,7 @@ export default function FinalizarAtividadePage() {
   const [cabecalho, setCabecalho] =
     useState("");
 
-  const [
-    cabecalhoSalvo,
-    setCabecalhoSalvo,
-  ] = useState(false);
-
   const [erro, setErro] =
-    useState("");
-
-  const [mensagem, setMensagem] =
     useState("");
 
   const [carregando, setCarregando] =
@@ -190,11 +176,6 @@ export default function FinalizarAtividadePage() {
         cabecalhoSalvoLocal
       );
 
-      setCabecalhoSalvo(
-        Boolean(
-          cabecalhoSalvoLocal.trim()
-        )
-      );
     } catch (error) {
       console.error(
         "Erro ao carregar a atividade:",
@@ -224,290 +205,6 @@ export default function FinalizarAtividadePage() {
       .filter(Boolean)
       .join(" • ");
   }, [configuracao]);
-
-  function arquivoParaDataUrl(
-    arquivo: File
-  ): Promise<string> {
-    return new Promise((resolve, reject) => {
-      const leitor = new FileReader();
-
-      leitor.onload = () => {
-        if (typeof leitor.result === "string") {
-          resolve(leitor.result);
-          return;
-        }
-
-        reject(
-          new Error(
-            "Não foi possível converter a imagem."
-          )
-        );
-      };
-
-      leitor.onerror = () => {
-        reject(
-          new Error(
-            "Não foi possível ler a imagem."
-          )
-        );
-      };
-
-      leitor.readAsDataURL(arquivo);
-    });
-  }
-
-  async function incorporarImagensDoCabecalho() {
-    const editor = cabecalhoRef.current;
-
-    if (!editor) {
-      return;
-    }
-
-    const imagens = Array.from(
-      editor.querySelectorAll<HTMLImageElement>("img")
-    );
-
-    for (const imagem of imagens) {
-      const origem =
-        imagem.getAttribute("src") || "";
-
-      if (
-        !origem ||
-        origem.startsWith("data:")
-      ) {
-        continue;
-      }
-
-      /*
-       * Imagens coladas do Word/Google Docs podem
-       * usar endereços temporários. Tentamos
-       * incorporá-las como base64 para que não
-       * desapareçam depois de salvar ou exportar.
-       */
-      try {
-        const resposta = await fetch(origem);
-
-        if (!resposta.ok) {
-          continue;
-        }
-
-        const blob = await resposta.blob();
-
-        if (!blob.type.startsWith("image/")) {
-          continue;
-        }
-
-        const arquivo = new File(
-          [blob],
-          "imagem-cabecalho",
-          {
-            type: blob.type,
-          }
-        );
-
-        imagem.src =
-          await arquivoParaDataUrl(arquivo);
-      } catch {
-        /*
-         * Se a origem não puder ser acessada,
-         * mantemos o HTML original sem impedir
-         * que o cabeçalho seja colado.
-         */
-      }
-    }
-  }
-
-  async function processarColagemCabecalho(
-    evento: React.ClipboardEvent<HTMLDivElement>
-  ) {
-    const clipboard =
-      evento.clipboardData;
-
-    if (!clipboard) {
-      return;
-    }
-
-    const itens = Array.from(
-      clipboard.items || []
-    );
-
-    const arquivosImagem = itens
-      .filter(
-        (item) =>
-          item.kind === "file" &&
-          item.type.startsWith("image/")
-      )
-      .map((item) => item.getAsFile())
-      .filter(
-        (arquivo): arquivo is File =>
-          Boolean(arquivo)
-      );
-
-    const htmlColado =
-      clipboard.getData("text/html");
-
-    /*
-     * Quando o cabeçalho vem do Word/Google Docs,
-     * preservamos tabela e formatação e depois
-     * tentamos incorporar as imagens.
-     */
-    if (htmlColado) {
-      window.setTimeout(async () => {
-        await incorporarImagensDoCabecalho();
-
-        const htmlAtual =
-          cabecalhoRef.current
-            ?.innerHTML || "";
-
-        setCabecalho(htmlAtual);
-        setCabecalhoSalvo(false);
-        setMensagem("");
-      }, 0);
-
-      return;
-    }
-
-    /*
-     * Se a área de transferência tiver uma
-     * imagem real, convertemos para base64.
-     */
-    if (arquivosImagem.length > 0) {
-      evento.preventDefault();
-
-      try {
-        for (const arquivo of arquivosImagem) {
-          const dataUrl =
-            await arquivoParaDataUrl(
-              arquivo
-            );
-
-          document.execCommand(
-            "insertImage",
-            false,
-            dataUrl
-          );
-        }
-
-        const htmlAtual =
-          cabecalhoRef.current
-            ?.innerHTML || "";
-
-        setCabecalho(htmlAtual);
-        setCabecalhoSalvo(false);
-        setMensagem("");
-      } catch (error) {
-        console.error(
-          "Erro ao colar imagem no cabeçalho:",
-          error
-        );
-
-        setMensagem(
-          "Não foi possível colar a imagem do cabeçalho."
-        );
-      }
-
-      return;
-    }
-
-    window.setTimeout(() => {
-      const htmlAtual =
-        cabecalhoRef.current
-          ?.innerHTML || "";
-
-      setCabecalho(htmlAtual);
-      setCabecalhoSalvo(false);
-      setMensagem("");
-    }, 0);
-  }
-
-  function executarComando(
-    comando: string,
-    valor?: string
-  ) {
-    document.execCommand(
-      comando,
-      false,
-      valor
-    );
-
-    cabecalhoRef.current?.focus();
-
-    const html =
-      cabecalhoRef.current
-        ?.innerHTML || "";
-
-    setCabecalho(html);
-
-    setCabecalhoSalvo(false);
-
-    setMensagem("");
-  }
-
-  function salvarCabecalho() {
-    const novoCabecalho =
-      cabecalhoRef.current
-        ?.innerHTML || "";
-
-    const somenteTexto =
-      cabecalhoRef.current
-        ?.innerText.trim() || "";
-
-    /*
-     * Permite salvar cabeçalhos que
-     * contenham apenas imagem/logo.
-     */
-    const possuiImagem =
-      Boolean(
-        cabecalhoRef.current?.querySelector(
-          "img"
-        )
-      );
-
-    if (
-      !somenteTexto &&
-      !possuiImagem
-    ) {
-      localStorage.removeItem(
-        "cabecalhoAtividade"
-      );
-
-      setCabecalho("");
-
-      setCabecalhoSalvo(false);
-
-      setMensagem(
-        "Cabeçalho removido."
-      );
-
-      return;
-    }
-
-    try {
-      localStorage.setItem(
-        "cabecalhoAtividade",
-        novoCabecalho
-      );
-
-      setCabecalho(
-        novoCabecalho
-      );
-
-      setCabecalhoSalvo(true);
-
-      setMensagem(
-        "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
-      );
-    } catch (error) {
-      console.error(
-        "Erro ao salvar cabeçalho:",
-        error
-      );
-
-      setMensagem(
-        "Não foi possível salvar o cabeçalho."
-      );
-    }
-  }
 
   async function baixarPDF() {
     if (!imagem) {
@@ -613,41 +310,6 @@ export default function FinalizarAtividadePage() {
   return (
     <main className="min-h-screen bg-slate-50">
       <style jsx global>{`
-        .cabecalho-editor table,
-        .cabecalho-preview table {
-          width: 100% !important;
-          border-collapse: collapse !important;
-        }
-
-        .cabecalho-editor td,
-        .cabecalho-editor th,
-        .cabecalho-preview td,
-        .cabecalho-preview th {
-          border: 1px solid #000;
-        }
-
-        .cabecalho-editor img,
-        .cabecalho-preview img {
-          max-width: 120px;
-          max-height: 80px;
-          object-fit: contain;
-        }
-
-        .cabecalho-editor:empty::before {
-          content: attr(
-            data-placeholder
-          );
-          color: #94a3b8;
-          pointer-events: none;
-        }
-
-        .cabecalho-editor p,
-        .cabecalho-preview p {
-          margin-top: 0;
-          margin-bottom: 4px;
-        }
-
-        .cabecalho-editor,
         .cabecalho-preview {
           display: block !important;
           width: 100% !important;
@@ -655,34 +317,37 @@ export default function FinalizarAtividadePage() {
           box-sizing: border-box;
           float: none !important;
           clear: both !important;
-        }
-
-        .cabecalho-editor {
-          overflow-x: auto;
-        }
-
-        .cabecalho-preview {
           overflow: visible;
         }
 
-        .cabecalho-editor::after,
-        .cabecalho-preview::after {
-          content: "";
-          display: block;
-          clear: both;
-        }
-
-        .cabecalho-editor table,
         .cabecalho-preview table {
           display: table !important;
           width: 100% !important;
           max-width: 100% !important;
+          border-collapse: collapse !important;
           margin-left: 0 !important;
           margin-right: 0 !important;
           float: none !important;
         }
 
-        .cabecalho-editor > *,
+        .cabecalho-preview td,
+        .cabecalho-preview th {
+          border: 1px solid #000;
+        }
+
+        .cabecalho-preview img {
+          max-width: 120px;
+          max-height: 80px;
+          width: auto;
+          height: auto;
+          object-fit: contain;
+        }
+
+        .cabecalho-preview p {
+          margin-top: 0;
+          margin-bottom: 4px;
+        }
+
         .cabecalho-preview > * {
           max-width: 100% !important;
           float: none !important;
@@ -735,169 +400,16 @@ export default function FinalizarAtividadePage() {
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
           <div className="border-b border-slate-200 p-5">
-            <h2 className="font-bold text-slate-950">
-              Cabeçalho da escola
-            </h2>
-
-            <p className="mt-1 text-sm text-slate-500">
-              Copie o cabeçalho usado
-              pela escola e cole na área
-              abaixo. Você pode editar
-              antes de baixar.
-            </p>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2 rounded-xl border border-slate-200 bg-slate-50 p-3">
-              <button
-                type="button"
-                title="Negrito"
-                onClick={() =>
-                  executarComando(
-                    "bold"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <Bold size={18} />
-              </button>
-
-              <button
-                type="button"
-                title="Itálico"
-                onClick={() =>
-                  executarComando(
-                    "italic"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <Italic size={18} />
-              </button>
-
-              <button
-                type="button"
-                title="Sublinhado"
-                onClick={() =>
-                  executarComando(
-                    "underline"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <Underline
-                  size={18}
-                />
-              </button>
-
-              <div className="mx-1 h-7 w-px bg-slate-300" />
-
-              <button
-                type="button"
-                title="Alinhar à esquerda"
-                onClick={() =>
-                  executarComando(
-                    "justifyLeft"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <AlignLeft
-                  size={18}
-                />
-              </button>
-
-              <button
-                type="button"
-                title="Centralizar"
-                onClick={() =>
-                  executarComando(
-                    "justifyCenter"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <AlignCenter
-                  size={18}
-                />
-              </button>
-
-              <button
-                type="button"
-                title="Alinhar à direita"
-                onClick={() =>
-                  executarComando(
-                    "justifyRight"
-                  )
-                }
-                className="cursor-pointer rounded-lg border border-slate-200 bg-white p-2 text-slate-700 hover:bg-slate-100"
-              >
-                <AlignRight
-                  size={18}
-                />
-              </button>
-            </div>
-
-            <div
-              ref={cabecalhoRef}
-              contentEditable
-              suppressContentEditableWarning
-              data-placeholder="COLE AQUI O CABEÇALHO DA SUA ESCOLA"
-              onPaste={
-                processarColagemCabecalho
-              }
-              onInput={() => {
-                setCabecalhoSalvo(
-                  false
-                );
-
-                setMensagem("");
-              }}
-              onBlur={() => {
-                const htmlAtual =
-                  cabecalhoRef
-                    .current
-                    ?.innerHTML || "";
-
-                setCabecalho(
-                  htmlAtual
-                );
-              }}
-              className="cabecalho-editor mt-3 min-h-[130px] w-full overflow-x-auto rounded-lg border border-dashed border-slate-300 px-5 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
-              dangerouslySetInnerHTML={{
-                __html: cabecalho,
-              }}
+            <CabecalhoEscolar
+              storageKey="cabecalhoAtividade"
+              fallbackStorageKeys={[
+                "cabecalhoAvaliacao",
+              ]}
+              titulo="Cabeçalho da escola"
+              descricao="Cole o cabeçalho usado pela escola. Você pode editar, adicionar a logo e salvar para reutilizar nas próximas atividades."
+              valor={cabecalho}
+              onChange={setCabecalho}
             />
-
-            <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
-              <p
-                className={`text-xs font-semibold ${
-                  cabecalhoSalvo
-                    ? "text-emerald-700"
-                    : "text-slate-500"
-                }`}
-              >
-                {cabecalhoSalvo
-                  ? "Cabeçalho salvo. Ele aparecerá nas próximas atividades."
-                  : "Você pode alterar o cabeçalho desta atividade antes de baixar."}
-              </p>
-
-              <button
-                type="button"
-                onClick={
-                  salvarCabecalho
-                }
-                className="flex cursor-pointer items-center gap-2 rounded-lg border border-emerald-700 px-4 py-2 text-xs font-extrabold text-emerald-800 transition hover:bg-emerald-50"
-              >
-                <Save size={16} />
-
-                Salvar cabeçalho
-              </button>
-            </div>
-
-            {mensagem && (
-              <p className="mt-2 text-xs font-semibold text-emerald-700">
-                {mensagem}
-              </p>
-            )}
           </div>
 
           <div className="bg-slate-100 p-4 sm:p-6">

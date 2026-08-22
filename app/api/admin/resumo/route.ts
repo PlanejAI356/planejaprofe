@@ -143,6 +143,10 @@ export async function GET(req: NextRequest) {
 
     /*
      * 5. BUSCA PARCEIROS
+     *
+     * IMPORTANTE:
+     * user_id liga o parceiro ao cadastro
+     * correspondente na tabela profiles.
      */
     const {
       data: parceiros,
@@ -150,7 +154,7 @@ export async function GET(req: NextRequest) {
     } = await supabaseAdmin
       .from("parceiros")
       .select(
-        "id, nome, cupom, comissao_percentual, ativo"
+        "id, user_id, nome, cupom, comissao_percentual, ativo"
       )
       .order("nome", {
         ascending: true,
@@ -174,7 +178,32 @@ export async function GET(req: NextRequest) {
     }
 
     /*
-     * 6. BUSCA INDICAÇÕES
+     * 6. IDENTIFICA QUEM É PARCEIRO
+     */
+    const idsParceiros = new Set(
+      (parceiros || [])
+        .map((parceiro) =>
+          String(
+            parceiro.user_id || ""
+          ).trim()
+        )
+        .filter(Boolean)
+    );
+
+    /*
+     * Perfis que são parceiros deixam de ser
+     * considerados usuários/clientes.
+     */
+    const usuariosClientes =
+      (perfis || []).filter(
+        (perfil) =>
+          !idsParceiros.has(
+            String(perfil.id)
+          )
+      );
+
+    /*
+     * 7. BUSCA INDICAÇÕES
      */
     const {
       data: indicacoes,
@@ -203,7 +232,7 @@ export async function GET(req: NextRequest) {
     }
 
     /*
-     * 7. BUSCA VISITANTES ÚNICOS
+     * 8. BUSCA VISITANTES ÚNICOS
      */
     const {
       data: cliquesParceiros,
@@ -232,7 +261,7 @@ export async function GET(req: NextRequest) {
     }
 
     /*
-     * 8. BUSCA TODOS OS ACESSOS
+     * 9. BUSCA TODOS OS ACESSOS
      *
      * Se houver algum problema,
      * o painel continua funcionando.
@@ -265,31 +294,44 @@ export async function GET(req: NextRequest) {
     }
 
     /*
-     * 9. NÚMEROS GERAIS
+     * 10. NÚMEROS GERAIS
+     *
+     * Aqui entram SOMENTE clientes.
+     * Parceiros ficam fora de:
+     * - total de usuários
+     * - Premium
+     * - gratuitos
+     * - conversão geral
      */
     const totalUsuarios =
-      perfis?.length || 0;
+      usuariosClientes.length;
 
     const totalPremium =
-      perfis?.filter(
+      usuariosClientes.filter(
         (perfil) =>
           String(
             perfil.plano || ""
           ).toLowerCase() ===
           "premium"
-      ).length || 0;
+      ).length;
 
     const totalGratuitos =
-      totalUsuarios - totalPremium;
+      usuariosClientes.filter(
+        (perfil) =>
+          String(
+            perfil.plano || ""
+          ).toLowerCase() !==
+          "premium"
+      ).length;
 
     const parceirosAtivos =
-      parceiros?.filter(
+      (parceiros || []).filter(
         (parceiro) =>
           parceiro.ativo === true
-      ).length || 0;
+      ).length;
 
     /*
-     * 10. INDICADORES DE CADA PARCEIRO
+     * 11. INDICADORES DE CADA PARCEIRO
      */
     const parceirosComIndicadores =
       (parceiros || []).map(
@@ -349,18 +391,17 @@ export async function GET(req: NextRequest) {
           );
 
           /*
-           * CADASTROS
+           * CADASTROS DO PARCEIRO
            *
-           * Junta:
-           * - profiles.cupom_origem
-           * - indicações antigas
-           *
-           * Sem duplicar e-mail.
+           * IMPORTANTE:
+           * usa somente usuários/clientes.
+           * A própria conta do parceiro não
+           * pode contar como cadastro.
            */
           const emailsCadastros =
             new Set<string>();
 
-          (perfis || []).forEach(
+          usuariosClientes.forEach(
             (perfil) => {
               if (
                 normalizarCupom(
@@ -390,7 +431,24 @@ export async function GET(req: NextRequest) {
                   indicacao.email_cliente
                 );
 
-              if (email) {
+              if (!email) {
+                return;
+              }
+
+              /*
+               * Só conta se existir como cliente,
+               * evitando considerar a própria
+               * conta de um parceiro.
+               */
+              const existeComoCliente =
+                usuariosClientes.some(
+                  (perfil) =>
+                    normalizarEmail(
+                      perfil.email
+                    ) === email
+                );
+
+              if (existeComoCliente) {
                 emailsCadastros.add(
                   email
                 );
@@ -440,6 +498,7 @@ export async function GET(req: NextRequest) {
            * Um cliente conta uma única vez.
            *
            * O perfil precisa:
+           * - não ser parceiro;
            * - estar Premium;
            * - pertencer ao parceiro;
            * - ter Mercado Pago ID OU
@@ -455,7 +514,7 @@ export async function GET(req: NextRequest) {
               }
             >();
 
-          (perfis || []).forEach(
+          usuariosClientes.forEach(
             (perfil) => {
               const email =
                 normalizarEmail(
@@ -569,10 +628,7 @@ export async function GET(req: NextRequest) {
           );
 
           /*
-           * Também cobre indicação paga
-           * antiga caso o perfil exista
-           * e esteja Premium, mesmo com
-           * cupom_origem vazio.
+           * INDICAÇÕES PAGAS ANTIGAS
            */
           indicacoesParceiro.forEach(
             (indicacao) => {
@@ -602,8 +658,13 @@ export async function GET(req: NextRequest) {
                 return;
               }
 
+              /*
+               * Procura somente entre clientes.
+               * Parceiro não entra como cliente
+               * Premium.
+               */
               const perfil =
-                (perfis || []).find(
+                usuariosClientes.find(
                   (item) =>
                     normalizarEmail(
                       item.email
@@ -700,7 +761,7 @@ export async function GET(req: NextRequest) {
             );
 
           /*
-           * CONVERSÃO
+           * CONVERSÃO DO PARCEIRO
            */
           const conversao =
             totalCadastros > 0
@@ -735,7 +796,7 @@ export async function GET(req: NextRequest) {
       );
 
     /*
-     * PAGAMENTOS GERAIS DE PARCEIROS
+     * 12. PAGAMENTOS GERAIS DE PARCEIROS
      */
     const pagamentosParceiros =
       parceirosComIndicadores.reduce(
@@ -752,7 +813,11 @@ export async function GET(req: NextRequest) {
       );
 
     /*
-     * 11. RETORNA O PAINEL
+     * 13. RETORNA O PAINEL
+     *
+     * usuarios recebe SOMENTE clientes.
+     * Contas dos parceiros ficam exclusivamente
+     * na área de parceiros.
      */
     return NextResponse.json({
       resumo: {
@@ -764,7 +829,7 @@ export async function GET(req: NextRequest) {
       },
 
       usuarios:
-        perfis || [],
+        usuariosClientes,
 
       parceiros:
         parceirosComIndicadores,
