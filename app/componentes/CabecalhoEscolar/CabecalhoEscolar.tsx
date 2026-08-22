@@ -51,10 +51,7 @@ export default function CabecalhoEscolar({
     storageKey || chaveLocalStorage;
 
   useEffect(() => {
-    if (
-      valor.trim() ||
-      !chaveArmazenamento
-    ) {
+    if (!chaveArmazenamento) {
       return;
     }
 
@@ -63,14 +60,34 @@ export default function CabecalhoEscolar({
       ...fallbackStorageKeys,
     ];
 
+    let cabecalhoSalvo = "";
+
     for (const chave of chaves) {
       const salvoLocal =
         localStorage.getItem(chave);
 
       if (salvoLocal?.trim()) {
-        onChange(salvoLocal);
+        cabecalhoSalvo =
+          sanitizarHtmlCabecalho(
+            salvoLocal
+          );
+
         break;
       }
+    }
+
+    /*
+     * O cabeçalho salvo tem prioridade sobre valores
+     * temporários recebidos por uma nova avaliação.
+     * Assim ele permanece até o usuário clicar
+     * explicitamente em "Limpar cabeçalho".
+     */
+    if (
+      cabecalhoSalvo.trim() &&
+      cabecalhoSalvo !==
+        sanitizarHtmlCabecalho(valor)
+    ) {
+      onChange(cabecalhoSalvo);
     }
   }, [
     valor,
@@ -509,6 +526,14 @@ export default function CabecalhoEscolar({
       localStorage.removeItem(
         chaveArmazenamento
       );
+
+      fallbackStorageKeys.forEach(
+        (chave) => {
+          localStorage.removeItem(
+            chave
+          );
+        }
+      );
     }
 
     setSalvo(false);
@@ -558,6 +583,24 @@ export default function CabecalhoEscolar({
         localStorage.setItem(
           chaveArmazenamento,
           html
+        );
+
+        /*
+         * Depois de salvar na chave principal,
+         * cópias antigas de fallback não devem
+         * voltar a substituir o cabeçalho atual.
+         */
+        fallbackStorageKeys.forEach(
+          (chave) => {
+            if (
+              chave !==
+              chaveArmazenamento
+            ) {
+              localStorage.removeItem(
+                chave
+              );
+            }
+          }
         );
       } else {
         localStorage.removeItem(
