@@ -41,6 +41,9 @@ export default function CabecalhoEscolar({
   const inputImagemRef =
     useRef<HTMLInputElement>(null);
 
+  const cabecalhoCarregadoRef =
+    useRef<string | null>(null);
+
   const [salvo, setSalvo] =
     useState(false);
 
@@ -55,42 +58,52 @@ export default function CabecalhoEscolar({
       return;
     }
 
+    /*
+     * Recupera o cabeçalho salvo apenas UMA VEZ
+     * para cada chave de armazenamento.
+     *
+     * Depois disso, o usuário pode editar livremente
+     * o conteúdo sem o localStorage sobrescrever
+     * o que está sendo digitado.
+     */
+    if (
+      cabecalhoCarregadoRef.current ===
+      chaveArmazenamento
+    ) {
+      return;
+    }
+
+    cabecalhoCarregadoRef.current =
+      chaveArmazenamento;
+
     const chaves = [
       chaveArmazenamento,
       ...fallbackStorageKeys,
     ];
-
-    let cabecalhoSalvo = "";
 
     for (const chave of chaves) {
       const salvoLocal =
         localStorage.getItem(chave);
 
       if (salvoLocal?.trim()) {
-        cabecalhoSalvo =
+        const htmlSalvo =
           sanitizarHtmlCabecalho(
             salvoLocal
           );
 
+        if (htmlSalvo.trim()) {
+          onChange(htmlSalvo);
+
+          setSalvo(true);
+          setMensagem(
+            "Cabeçalho salvo carregado."
+          );
+        }
+
         break;
       }
     }
-
-    /*
-     * O cabeçalho salvo tem prioridade sobre valores
-     * temporários recebidos por uma nova avaliação.
-     * Assim ele permanece até o usuário clicar
-     * explicitamente em "Limpar cabeçalho".
-     */
-    if (
-      cabecalhoSalvo.trim() &&
-      cabecalhoSalvo !==
-        sanitizarHtmlCabecalho(valor)
-    ) {
-      onChange(cabecalhoSalvo);
-    }
   }, [
-    valor,
     chaveArmazenamento,
     fallbackStorageKeys,
     onChange,
@@ -536,6 +549,9 @@ export default function CabecalhoEscolar({
       );
     }
 
+    cabecalhoCarregadoRef.current =
+      chaveArmazenamento || null;
+
     setSalvo(false);
 
     setMensagem(
@@ -610,6 +626,9 @@ export default function CabecalhoEscolar({
     }
 
     onSalvar?.(html);
+
+    cabecalhoCarregadoRef.current =
+      chaveArmazenamento || null;
 
     setSalvo(true);
 
