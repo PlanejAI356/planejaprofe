@@ -138,13 +138,13 @@ function ajustarDimensoesImagem(
   modoCabecalho = false
 ) {
   const larguraMaxima = modoCabecalho
-    ? 95
+    ? 58
     : duasColunas
       ? 225
       : 420;
 
   const alturaMaxima = modoCabecalho
-    ? 65
+    ? 42
     : duasColunas
       ? 190
       : 280;
@@ -210,8 +210,8 @@ async function criarParagrafoImagem(
     return new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: {
-        before: 20,
-        after: 40,
+        before: modoCabecalho ? 0 : 20,
+        after: modoCabecalho ? 0 : 40,
       },
       children: [
         new ImageRun({
@@ -504,10 +504,10 @@ async function converterTabelaHtmlEmWord(
             verticalAlign:
               VerticalAlign.CENTER,
             margins: {
-              top: modoCabecalho ? 20 : 35,
-              right: modoCabecalho ? 40 : 55,
-              bottom: modoCabecalho ? 20 : 35,
-              left: modoCabecalho ? 40 : 55,
+              top: modoCabecalho ? 0 : 35,
+              right: modoCabecalho ? 20 : 55,
+              bottom: modoCabecalho ? 0 : 35,
+              left: modoCabecalho ? 20 : 55,
             },
             children:
               conteudo.length > 0
@@ -922,10 +922,10 @@ async function criarCabecalhoWord(
             verticalAlign:
               VerticalAlign.CENTER,
             margins: {
-              top: 20,
-              right: 30,
-              bottom: 20,
-              left: 30,
+              top: 0,
+              right: 10,
+              bottom: 0,
+              left: 10,
             },
             borders: semBorda,
             children:
@@ -1266,8 +1266,8 @@ export async function exportarAvaliacaoWord(
 
                 new Paragraph({
                   spacing: {
-                    before: 20,
-                    after: 40,
+                    before: 0,
+                    after: 10,
                   },
                   children: [],
                 }),

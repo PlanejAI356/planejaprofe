@@ -203,16 +203,19 @@ export async function exportarAvaliacao(
     "none";
 
   documentoClonado.style.width =
-    "100%";
+    "calc(100% - 0.8mm)";
 
   documentoClonado.style.maxWidth =
-    "100%";
+    "calc(100% - 0.8mm)";
+
+  documentoClonado.style.boxSizing =
+    "border-box";
 
   documentoClonado.style.minHeight =
     "0";
 
   documentoClonado.style.margin =
-    "0";
+    "0 auto";
 
   documentoClonado.style.padding =
     "4mm";
@@ -279,10 +282,10 @@ export async function exportarAvaliacao(
           }
 
           .documento-exportacao > * {
-            width: 100% !important;
-            max-width: 100% !important;
-            margin: 0 !important;
-            border: 1px solid #000000 !important;
+            width: calc(100% - 0.8mm) !important;
+            max-width: calc(100% - 0.8mm) !important;
+            margin: 0 auto !important;
+            box-sizing: border-box !important;
             box-shadow: none !important;
             background: #ffffff !important;
           }
@@ -445,6 +448,14 @@ export async function exportarAvaliacao(
               max-width: 100% !important;
 
               overflow: visible !important;
+            }
+
+            .documento-exportacao > * {
+              width: calc(100% - 0.8mm) !important;
+              max-width: calc(100% - 0.8mm) !important;
+              margin-left: auto !important;
+              margin-right: auto !important;
+              box-sizing: border-box !important;
             }
 
             .cabecalho-avaliacao-exportacao {
