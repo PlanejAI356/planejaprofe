@@ -4,7 +4,6 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
-  HeightRule,
   ImageRun,
   Packer,
   Paragraph,
@@ -135,15 +134,20 @@ async function carregarDimensoesImagem(
 function ajustarDimensoesImagem(
   larguraOriginal: number,
   alturaOriginal: number,
-  duasColunas: boolean
+  duasColunas: boolean,
+  modoCabecalho = false
 ) {
-  const larguraMaxima = duasColunas
-    ? 225
-    : 420;
+  const larguraMaxima = modoCabecalho
+    ? 95
+    : duasColunas
+      ? 225
+      : 420;
 
-  const alturaMaxima = duasColunas
-    ? 190
-    : 280;
+  const alturaMaxima = modoCabecalho
+    ? 65
+    : duasColunas
+      ? 190
+      : 280;
 
   const proporcao = Math.min(
     larguraMaxima / larguraOriginal,
@@ -165,7 +169,8 @@ function ajustarDimensoesImagem(
 
 async function criarParagrafoImagem(
   imagem: HTMLImageElement,
-  duasColunas: boolean
+  duasColunas: boolean,
+  modoCabecalho = false
 ) {
   const origem =
     imagem.currentSrc || imagem.src;
@@ -193,7 +198,8 @@ async function criarParagrafoImagem(
       ajustarDimensoesImagem(
         dimensoesOriginais.largura,
         dimensoesOriginais.altura,
-        duasColunas
+        duasColunas,
+        modoCabecalho
       );
 
     const tipo = obterTipoImagem(
@@ -204,8 +210,8 @@ async function criarParagrafoImagem(
     return new Paragraph({
       alignment: AlignmentType.CENTER,
       spacing: {
-        before: 0,
-        after: 20,
+        before: 20,
+        after: 40,
       },
       children: [
         new ImageRun({
@@ -339,8 +345,8 @@ function criarParagrafoTexto(
   if (ehLinhaResposta) {
     return new Paragraph({
       spacing: {
-        before: 0,
-        after: 0,
+        before: 20,
+        after: 20,
       },
       border: {
         bottom: {
@@ -365,11 +371,11 @@ function criarParagrafoTexto(
       : obterAlinhamento(elemento),
     keepNext: opcoes.titulo || undefined,
     spacing: {
-      before: 0,
+      before: opcoes.titulo ? 80 : 0,
       after:
         opcoes.espacamentoDepois ??
-        0,
-      line: 240,
+        (opcoes.titulo ? 160 : 40),
+      line: 276,
     },
     children:
       runs.length > 0
@@ -382,7 +388,7 @@ function criarParagrafoTexto(
                 text:
                   elemento.innerText.trim(),
                 bold: true,
-                size: TAMANHO_FONTE_AVALIACAO,
+                size: 30,
                 font: "Times New Roman",
               });
             }
@@ -399,10 +405,73 @@ function criarParagrafoTexto(
   });
 }
 
+function elementoTemBorda(
+  elemento: HTMLElement
+) {
+  const estilo = elemento.style;
+
+  return Boolean(
+    estilo.border ||
+    estilo.borderTop ||
+    estilo.borderRight ||
+    estilo.borderBottom ||
+    estilo.borderLeft
+  );
+}
+
+function elementoEhContainerLadoALado(
+  elemento: HTMLElement
+) {
+  const filhos = Array.from(
+    elemento.children
+  ).filter(
+    (item) => item instanceof HTMLElement
+  ) as HTMLElement[];
+
+  if (filhos.length !== 2) {
+    return false;
+  }
+
+  const display =
+    elemento.style.display.toLowerCase();
+
+  const classe =
+    elemento.className || "";
+
+  return (
+    display === "grid" ||
+    display === "flex" ||
+    Boolean(
+      elemento.style.gridTemplateColumns
+    ) ||
+    /\bgrid\b/.test(classe) ||
+    /\bflex\b/.test(classe)
+  );
+}
+
+function elementoTemFilhosDeBloco(
+  elemento: HTMLElement
+) {
+  return Array.from(
+    elemento.children
+  ).some((filho) =>
+    [
+      "DIV",
+      "P",
+      "TABLE",
+      "UL",
+      "OL",
+      "SECTION",
+      "ARTICLE",
+    ].includes(filho.tagName)
+  );
+}
+
 async function converterTabelaHtmlEmWord(
   tabelaHtml: HTMLTableElement,
   duasColunas: boolean,
-  tamanhoFonte: number
+  tamanhoFonte: number,
+  modoCabecalho = false
 ): Promise<Table> {
   const linhasHtml = Array.from(
     tabelaHtml.querySelectorAll(
@@ -422,34 +491,30 @@ async function converterTabelaHtmlEmWord(
 
       const celulas = await Promise.all(
         celulasHtml.map(async (celulaHtml) => {
-          const conteudoCelula =
+          const conteudo =
             await converterElementoEmBlocos(
               celulaHtml,
               duasColunas,
               false,
-              tamanhoFonte
+              tamanhoFonte,
+              modoCabecalho
             );
 
           return new TableCell({
-            verticalAlign: VerticalAlign.CENTER,
+            verticalAlign:
+              VerticalAlign.CENTER,
             margins: {
-              top: 40,
-              right: 60,
-              bottom: 40,
-              left: 60,
+              top: modoCabecalho ? 20 : 35,
+              right: modoCabecalho ? 40 : 55,
+              bottom: modoCabecalho ? 20 : 35,
+              left: modoCabecalho ? 40 : 55,
             },
             children:
-              conteudoCelula.length > 0
-                ? conteudoCelula
+              conteudo.length > 0
+                ? conteudo
                 : [
                     new Paragraph({
-                      children: [
-                        new TextRun({
-                          text: " ",
-                          size: tamanhoFonte,
-                          font: "Times New Roman",
-                        }),
-                      ],
+                      children: [],
                     }),
                   ],
           });
@@ -471,144 +536,265 @@ async function converterTabelaHtmlEmWord(
   });
 }
 
+async function converterContainerLadoALado(
+  elemento: HTMLElement,
+  duasColunas: boolean,
+  tamanhoFonte: number,
+  modoCabecalho = false
+): Promise<Table> {
+  const filhos = Array.from(
+    elemento.children
+  ).filter(
+    (item) => item instanceof HTMLElement
+  ) as HTMLElement[];
+
+  const semBordaCelula = {
+    top: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    right: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    bottom: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    left: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+  };
+
+  const celulas = await Promise.all(
+    filhos.slice(0, 2).map(
+      async (filho) => {
+        const blocos =
+          await converterElementoEmBlocos(
+            filho,
+            duasColunas,
+            false,
+            tamanhoFonte,
+            modoCabecalho
+          );
+
+        return new TableCell({
+          width: {
+            size: 50,
+            type: WidthType.PERCENTAGE,
+          },
+          verticalAlign:
+            VerticalAlign.TOP,
+          margins: {
+            top: 0,
+            right: 45,
+            bottom: 0,
+            left: 45,
+          },
+          borders: semBordaCelula,
+          children:
+            blocos.length > 0
+              ? blocos
+              : [
+                  new Paragraph({
+                    children: [],
+                  }),
+                ],
+        });
+      }
+    )
+  );
+
+  return new Table({
+    width: {
+      size: 100,
+      type: WidthType.PERCENTAGE,
+    },
+    borders: {
+      ...semBordaCelula,
+      insideHorizontal: {
+        style: BorderStyle.NONE,
+        size: 0,
+        color: "FFFFFF",
+      },
+      insideVertical: {
+        style: BorderStyle.NONE,
+        size: 0,
+        color: "FFFFFF",
+      },
+    },
+    rows: [
+      new TableRow({
+        children: celulas,
+      }),
+    ],
+  });
+}
+
 async function converterElementoEmBlocos(
   elemento: HTMLElement,
   duasColunas: boolean,
   titulo = false,
-  tamanhoFonte = TAMANHO_FONTE_AVALIACAO
-): Promise<
-  Array<Paragraph | Table>
-> {
+  tamanhoFonte = TAMANHO_FONTE_AVALIACAO,
+  modoCabecalho = false
+): Promise<Array<Paragraph | Table>> {
   const blocos: Array<
     Paragraph | Table
   > = [];
 
-  const filhosElementos =
-    Array.from(elemento.children);
-
-  if (filhosElementos.length === 0) {
-    blocos.push(
-      criarParagrafoTexto(elemento, {
-        titulo,
+  if (elemento.tagName === "TABLE") {
+    return [
+      await converterTabelaHtmlEmWord(
+        elemento as HTMLTableElement,
+        duasColunas,
         tamanhoFonte,
-      })
-    );
+        modoCabecalho
+      ),
+    ];
+  }
+
+  if (elemento.tagName === "IMG") {
+    const imagem =
+      await criarParagrafoImagem(
+        elemento as HTMLImageElement,
+        duasColunas,
+        modoCabecalho
+      );
+
+    return imagem ? [imagem] : [];
+  }
+
+  if (
+    elementoEhContainerLadoALado(
+      elemento
+    )
+  ) {
+    return [
+      await converterContainerLadoALado(
+        elemento,
+        duasColunas,
+        tamanhoFonte,
+        modoCabecalho
+      ),
+    ];
+  }
+
+  /*
+   * Caixas simples (por exemplo, banco de palavras)
+   * ficam inteiras para não perder palavras.
+   */
+  if (
+    elementoTemBorda(elemento) &&
+    !elementoTemFilhosDeBloco(elemento)
+  ) {
+    return [
+      new Table({
+        width: {
+          size: 100,
+          type: WidthType.PERCENTAGE,
+        },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                margins: {
+                  top: 35,
+                  right: 55,
+                  bottom: 35,
+                  left: 55,
+                },
+                children: [
+                  criarParagrafoTexto(
+                    elemento,
+                    {
+                      titulo,
+                      tamanhoFonte,
+                      espacamentoDepois: 0,
+                    }
+                  ),
+                ],
+              }),
+            ],
+          }),
+        ],
+      }),
+    ];
+  }
+
+  const filhos =
+    Array.from(elemento.children)
+      .filter(
+        (item) =>
+          item instanceof HTMLElement
+      ) as HTMLElement[];
+
+  /*
+   * Conteúdo inline permanece em um único parágrafo.
+   * Isso evita duplicar COLUNA A/COLUNA B e evita
+   * que o banco de palavras seja achatado.
+   */
+  if (
+    filhos.length === 0 ||
+    !elementoTemFilhosDeBloco(elemento)
+  ) {
+    const temTexto =
+      Boolean(elemento.innerText.trim());
+
+    if (temTexto) {
+      blocos.push(
+        criarParagrafoTexto(elemento, {
+          titulo,
+          tamanhoFonte,
+          espacamentoDepois: 20,
+        })
+      );
+    }
+
+    const imagens =
+      Array.from(
+        elemento.querySelectorAll(
+          ":scope > img"
+        )
+      ) as HTMLImageElement[];
+
+    for (const imagem of imagens) {
+      const paragrafoImagem =
+        await criarParagrafoImagem(
+          imagem,
+          duasColunas,
+          modoCabecalho
+        );
+
+      if (paragrafoImagem) {
+        blocos.push(paragrafoImagem);
+      }
+    }
 
     return blocos;
   }
 
   for (
     let indice = 0;
-    indice < filhosElementos.length;
+    indice < filhos.length;
     indice += 1
   ) {
-    const filho =
-      filhosElementos[indice] as HTMLElement;
+    const filho = filhos[indice];
 
-    if (filho.tagName === "TABLE") {
-      blocos.push(
-        await converterTabelaHtmlEmWord(
-          filho as HTMLTableElement,
-          duasColunas,
-          tamanhoFonte
-        )
-      );
-      continue;
-    }
-
-    if (filho.tagName === "IMG") {
-      const paragrafoImagem =
-        await criarParagrafoImagem(
-          filho as HTMLImageElement,
-          duasColunas
-        );
-
-      if (paragrafoImagem) {
-        blocos.push(paragrafoImagem);
-      }
-
-      continue;
-    }
-
-    const imagensDiretas =
-      Array.from(
-        filho.querySelectorAll(":scope > img")
-      ) as HTMLImageElement[];
-
-    if (
-      filho.tagName === "P" ||
-      filho.tagName === "DIV" ||
-      filho.tagName === "SPAN"
-    ) {
-      const possuiSomenteImagem =
-        imagensDiretas.length > 0 &&
-        !filho.innerText.trim();
-
-      if (!possuiSomenteImagem) {
-        blocos.push(
-          criarParagrafoTexto(filho, {
-            titulo:
-              titulo && indice === 0,
-            espacamentoDepois:
-              indice ===
-              filhosElementos.length - 1
-                ? 0
-                : 0,
-            tamanhoFonte,
-          })
-        );
-      }
-
-      for (const imagem of imagensDiretas) {
-        const paragrafoImagem =
-          await criarParagrafoImagem(
-            imagem,
-            duasColunas
-          );
-
-        if (paragrafoImagem) {
-          blocos.push(paragrafoImagem);
-        }
-      }
-
-      const subBlocos =
-        Array.from(
-          filho.children
-        ).filter(
-          (item) =>
-            item.tagName !== "IMG"
-        ) as HTMLElement[];
-
-      for (const subBloco of subBlocos) {
-        if (
-          subBloco.tagName === "P" ||
-          subBloco.tagName === "DIV"
-        ) {
-          blocos.push(
-            criarParagrafoTexto(
-              subBloco,
-              {
-                espacamentoDepois: 0,
-                tamanhoFonte,
-              }
-            )
-          );
-        }
-      }
-
-      continue;
-    }
-
-    blocos.push(
-      criarParagrafoTexto(filho, {
-        espacamentoDepois:
-          indice ===
-          filhosElementos.length - 1
-            ? 0
-            : 0,
+    const subBlocos =
+      await converterElementoEmBlocos(
+        filho,
+        duasColunas,
+        titulo && indice === 0,
         tamanhoFonte,
-      })
-    );
+        modoCabecalho
+      );
+
+    blocos.push(...subBlocos);
   }
 
   return blocos;
@@ -642,15 +828,33 @@ async function criarCabecalhoWord(
   cabecalhoElemento:
     | HTMLElement
     | null,
-  duasColunas: boolean
-): Promise<Array<Paragraph | Table>> {
+  _duasColunas: boolean
+) {
   const cabecalhoClonado =
     cabecalhoElemento?.cloneNode(
       true
     ) as HTMLElement | undefined;
 
   if (!cabecalhoClonado) {
-    return [];
+    return new Table({
+      width: {
+        size: 100,
+        type: WidthType.PERCENTAGE,
+      },
+      rows: [
+        new TableRow({
+          children: [
+            new TableCell({
+              children: [
+                new Paragraph({
+                  children: [],
+                }),
+              ],
+            }),
+          ],
+        }),
+      ],
+    });
   }
 
   limparDocumentoClonado(
@@ -661,21 +865,82 @@ async function criarCabecalhoWord(
     "data-placeholder"
   );
 
-  const possuiConteudo = Boolean(
-    cabecalhoClonado.innerText.trim() ||
-      cabecalhoClonado.querySelector("img")
-  );
+  const conteudoCabecalho =
+    await converterElementoEmBlocos(
+      cabecalhoClonado,
+      false,
+      false,
+      TAMANHO_FONTE_CABECALHO,
+      true
+    );
 
-  if (!possuiConteudo) {
-    return [];
-  }
+  const semBorda = {
+    top: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    right: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    bottom: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+    left: {
+      style: BorderStyle.NONE,
+      size: 0,
+      color: "FFFFFF",
+    },
+  };
 
-  return converterElementoEmBlocos(
-    cabecalhoClonado,
-    duasColunas,
-    false,
-    TAMANHO_FONTE_CABECALHO
-  );
+  return new Table({
+    width: {
+      size: 100,
+      type: WidthType.PERCENTAGE,
+    },
+    borders: {
+      ...semBorda,
+      insideHorizontal: {
+        style: BorderStyle.NONE,
+        size: 0,
+        color: "FFFFFF",
+      },
+      insideVertical: {
+        style: BorderStyle.NONE,
+        size: 0,
+        color: "FFFFFF",
+      },
+    },
+    rows: [
+      new TableRow({
+        children: [
+          new TableCell({
+            verticalAlign:
+              VerticalAlign.CENTER,
+            margins: {
+              top: 20,
+              right: 30,
+              bottom: 20,
+              left: 30,
+            },
+            borders: semBorda,
+            children:
+              conteudoCabecalho.length > 0
+                ? conteudoCabecalho
+                : [
+                    new Paragraph({
+                      children: [],
+                    }),
+                  ],
+          }),
+        ],
+      }),
+    ],
+  });
 }
 
 export async function exportarAvaliacaoWord(
@@ -703,49 +968,50 @@ export async function exportarAvaliacaoWord(
     avaliacaoClonada
   );
 
-  const blocosCabecalhoWord =
+  const cabecalhoWord =
     await criarCabecalhoWord(
       cabecalhoElemento,
       duasColunas
     );
 
-  const filhosAvaliacao =
+  const filhosOriginais =
+    Array.from(
+      avaliacaoElemento.children
+    ) as HTMLElement[];
+
+  const filhosClonados =
     Array.from(
       avaliacaoClonada.children
     ) as HTMLElement[];
 
-  const conteudoWord: Array<
-    Paragraph | Table
-  > = [];
-
-  for (
-    let indice = 0;
-    indice < filhosAvaliacao.length;
-    indice += 1
+  async function converterIndices(
+    indices: number[]
   ) {
-    const filho =
-      filhosAvaliacao[indice];
+    const resultado: Array<
+      Paragraph | Table
+    > = [];
 
-    const blocos =
-      await converterElementoEmBlocos(
-        filho,
-        duasColunas,
-        indice === 0,
-        TAMANHO_FONTE_AVALIACAO
-      );
+    for (const indice of indices) {
+      const filho =
+        filhosClonados[indice];
 
-    conteudoWord.push(...blocos);
-  }
+      if (!filho) {
+        continue;
+      }
 
-  if (conteudoWord.length === 0) {
-    conteudoWord.push(
-      criarParagrafoTexto(
-        avaliacaoClonada,
-        {
-          titulo: true,
-        }
-      )
-    );
+      const blocos =
+        await converterElementoEmBlocos(
+          filho,
+          duasColunas,
+          indice === 0,
+          TAMANHO_FONTE_AVALIACAO,
+          false
+        );
+
+      resultado.push(...blocos);
+    }
+
+    return resultado;
   }
 
   const semBordas = {
@@ -781,26 +1047,77 @@ export async function exportarAvaliacaoWord(
     },
   };
 
-  /*
-   * Quando "Duas colunas" estiver marcado,
-   * o cabeçalho continua em largura inteira
-   * e somente as questões ficam em duas colunas.
-   */
   let conteudoAvaliacaoWord:
-    | Array<Paragraph | Table>
-    = conteudoWord;
+    Array<Paragraph | Table> = [];
 
-  if (duasColunas) {
-    const metade =
-      Math.ceil(
-        conteudoWord.length / 2
+  if (
+    duasColunas &&
+    filhosOriginais.length > 0
+  ) {
+    const centros =
+      filhosOriginais.map((filho) => {
+        const rect =
+          filho.getBoundingClientRect();
+
+        return (
+          rect.left +
+          rect.width / 2
+        );
+      });
+
+    const minimo =
+      Math.min(...centros);
+
+    const maximo =
+      Math.max(...centros);
+
+    const meio =
+      minimo + (maximo - minimo) / 2;
+
+    let esquerda: number[] = [];
+    let direita: number[] = [];
+
+    if (maximo - minimo >= 20) {
+      centros.forEach(
+        (centro, indice) => {
+          if (centro <= meio) {
+            esquerda.push(indice);
+          } else {
+            direita.push(indice);
+          }
+        }
       );
+    }
+
+    /*
+     * Fallback para layouts em que o navegador
+     * não informa posições horizontais distintas.
+     */
+    if (direita.length === 0) {
+      const metade =
+        Math.ceil(
+          filhosClonados.length / 2
+        );
+
+      esquerda =
+        filhosClonados
+          .slice(0, metade)
+          .map((_, indice) => indice);
+
+      direita =
+        filhosClonados
+          .slice(metade)
+          .map(
+            (_, indice) =>
+              indice + metade
+          );
+    }
 
     const colunaEsquerda =
-      conteudoWord.slice(0, metade);
+      await converterIndices(esquerda);
 
     const colunaDireita =
-      conteudoWord.slice(metade);
+      await converterIndices(direita);
 
     conteudoAvaliacaoWord = [
       new Table({
@@ -822,7 +1139,7 @@ export async function exportarAvaliacaoWord(
                   VerticalAlign.TOP,
                 margins: {
                   top: 0,
-                  right: 90,
+                  right: 70,
                   bottom: 0,
                   left: 0,
                 },
@@ -844,7 +1161,6 @@ export async function exportarAvaliacaoWord(
                         }),
                       ],
               }),
-
               new TableCell({
                 width: {
                   size: 50,
@@ -857,7 +1173,7 @@ export async function exportarAvaliacaoWord(
                   top: 0,
                   right: 0,
                   bottom: 0,
-                  left: 90,
+                  left: 70,
                 },
                 borders: semBordas,
                 children:
@@ -874,7 +1190,28 @@ export async function exportarAvaliacaoWord(
         ],
       }),
     ];
+  } else {
+    conteudoAvaliacaoWord =
+      await converterIndices(
+        filhosClonados.map(
+          (_, indice) => indice
+        )
+      );
   }
+
+  if (
+    conteudoAvaliacaoWord.length === 0
+  ) {
+    conteudoAvaliacaoWord.push(
+      criarParagrafoTexto(
+        avaliacaoClonada,
+        {
+          titulo: true,
+        }
+      )
+    );
+  }
+
 
   /*
    * Uma única borda externa envolve:
@@ -893,10 +1230,10 @@ export async function exportarAvaliacaoWord(
               verticalAlign:
                 VerticalAlign.TOP,
               margins: {
-                top: 80,
-                right: 80,
-                bottom: 80,
-                left: 80,
+                top: 100,
+                right: 110,
+                bottom: 100,
+                left: 110,
               },
               borders: {
                 top: {
@@ -925,11 +1262,11 @@ export async function exportarAvaliacaoWord(
                 },
               },
               children: [
-                ...blocosCabecalhoWord,
+                cabecalhoWord,
 
                 new Paragraph({
                   spacing: {
-                    before: 0,
+                    before: 20,
                     after: 40,
                   },
                   children: [],

@@ -82,39 +82,53 @@ export function gerarPromptProva(body: any) {
     ehQuartoAno ||
     ehQuintoAno;
 
-  const regrasEspecificasSerie = ehPrimeiroOuSegundoAno
-    ? `
-REGRAS ESPECÍFICAS PARA O 1º E 2º ANO:
+  const ehPrimeiroAoTerceiroAno =
+    ehPrimeiroAno ||
+    ehSegundoAno ||
+    ehTerceiroAno;
 
-- ESCREVER TODO O CONTEÚDO DA AVALIAÇÃO EM LETRA DE FORMA, UTILIZANDO CAIXA ALTA.
-- ESCREVER EM CAIXA ALTA O TÍTULO, AS INSTRUÇÕES, OS ENUNCIADOS, AS ALTERNATIVAS, AS AFIRMATIVAS E OS ITENS.
+  const regrasEspecificasSerie =
+    ehPrimeiroAoTerceiroAno
+      ? `
+REGRAS ESPECÍFICAS PARA O 1º AO 3º ANO:
+
+- ESCREVER OS COMANDOS, ENUNCIADOS, ALTERNATIVAS, AFIRMATIVAS E ITENS DAS QUESTÕES EM LETRA DE FORMA, UTILIZANDO CAIXA ALTA.
+- OS TÍTULOS TAMBÉM PODEM SER ESCRITOS EM CAIXA ALTA.
 - NÃO UTILIZAR LETRA CURSIVA.
-- UTILIZAR FRASES CURTAS, CLARAS E DE FÁCIL COMPREENSÃO.
-- UTILIZAR VOCABULÁRIO COMPATÍVEL COM A FASE DE ALFABETIZAÇÃO.
-- EVITAR TEXTOS LONGOS E ENUNCIADOS COMPLICADOS.
-- PRIORIZAR OBSERVAÇÃO, IDENTIFICAÇÃO, ASSOCIAÇÃO, COMPARAÇÃO, LIGAÇÃO, MARCAÇÃO E COMPLEMENTAÇÃO.
-- UTILIZAR IMAGENS EM VÁRIAS QUESTÕES, SEMPRE QUE O CONTEÚDO PERMITIR.
-- AS IMAGENS DEVEM AJUDAR O ESTUDANTE A COMPREENDER E RESPONDER À QUESTÃO.
+- UTILIZAR FRASES CLARAS E VOCABULÁRIO COMPATÍVEL COM A FASE DE ALFABETIZAÇÃO.
+- PARA O 1º E 2º ANO, PRIORIZAR TEXTOS MAIS CURTOS E ACESSÍVEIS, SEM PREJUDICAR O SENTIDO.
+- PARA O 3º ANO, OS TEXTOS PODEM SER MAIS DESENVOLVIDOS, MAS DEVEM CONTINUAR ADEQUADOS À FLUÊNCIA LEITORA ESPERADA.
+- PRIORIZAR OBSERVAÇÃO, IDENTIFICAÇÃO, ASSOCIAÇÃO, COMPARAÇÃO, INTERPRETAÇÃO, MARCAÇÃO E COMPLEMENTAÇÃO.
+- UTILIZAR IMAGENS EM VÁRIAS QUESTÕES, SEMPRE QUE O CONTEÚDO PERMITIR E A IMAGEM TIVER FUNÇÃO PEDAGÓGICA.
 - NÃO INFANTILIZAR EXCESSIVAMENTE O CONTEÚDO.
 - NÃO CRIAR QUESTÕES DIFÍCEIS DEMAIS PARA A SÉRIE.
 `
-    : ehAnosIniciais
-      ? `
-REGRAS ESPECÍFICAS PARA O 3º AO 5º ANO:
+      : ehAnosIniciais
+        ? `
+REGRAS ESPECÍFICAS PARA O 4º E 5º ANO:
 
+- Utilizar escrita normal, respeitando as regras ortográficas do português.
+- Não escrever enunciados, alternativas, afirmativas ou textos inteiros em caixa alta.
+- Utilizar maiúsculas apenas no início das frases, em nomes próprios, siglas e demais casos previstos pela norma.
+- Os títulos podem permanecer em caixa alta.
 - Utilizar linguagem clara e adequada à faixa etária.
-- Elaborar questões completas, mas sem enunciados desnecessariamente longos.
-- Estimular observação, interpretação, comparação, associação e aplicação dos conhecimentos.
-- Utilizar imagens, ilustrações, mapas, tabelas, gráficos simples, tirinhas ou esquemas sempre que forem pedagogicamente úteis.
-- Distribuir questões visuais ao longo da avaliação sempre que o conteúdo permitir.
+- Elaborar questões completas, interpretativas e pedagogicamente relevantes.
+- Utilizar textos mais desenvolvidos, com informações suficientes para sustentar questões de compreensão e interpretação.
+- Estimular observação, interpretação, comparação, associação, inferência e aplicação dos conhecimentos.
+- Utilizar imagens, ilustrações, mapas, tabelas, gráficos simples, tirinhas ou esquemas quando forem pedagogicamente úteis.
 - Não criar questões acima do nível de aprendizagem esperado para a série.
 - Não produzir perguntas excessivamente simples ou com respostas óbvias.
 `
-      : `
+        : `
 REGRAS ESPECÍFICAS PARA ESTA ETAPA:
 
+- Utilizar escrita normal, respeitando as regras ortográficas do português.
+- Não escrever enunciados, alternativas, afirmativas ou textos inteiros em caixa alta.
+- Utilizar maiúsculas apenas no início das frases, em nomes próprios, siglas e demais casos previstos pela norma.
+- Os títulos podem permanecer em caixa alta.
 - Utilizar linguagem adequada à etapa de ensino e à série informada.
-- Elaborar questões que estimulem interpretação, análise, comparação e aplicação dos conhecimentos.
+- Elaborar questões que estimulem interpretação, análise, comparação, inferência e aplicação dos conhecimentos.
+- Quando houver texto-base, utilizar textos mais desenvolvidos, informativos e compatíveis com a complexidade da série.
 - Utilizar imagens, mapas, gráficos, tabelas, esquemas, charges ou outros recursos visuais quando contribuírem para a avaliação.
 - Evitar questões superficiais ou incompatíveis com o nível de exigência da turma.
 `;
@@ -175,6 +189,32 @@ REGRAS GERAIS OBRIGATÓRIAS:
 - Não escrever comentários antes ou depois da avaliação.
 
 ${regrasEspecificasSerie}
+
+
+REGRAS OBRIGATÓRIAS PARA TEXTOS E QUESTÕES BASEADAS EM TEXTO:
+
+- Sempre que utilizar um texto na avaliação, criar um TÍTULO PRÓPRIO, significativo e diretamente relacionado ao assunto do texto.
+- NUNCA utilizar “TEXTO DE APOIO”, “TEXTO BASE”, “TEXTO PARA AS QUESTÕES” ou expressões semelhantes como título do texto.
+- Apresentar primeiro o título próprio e, logo abaixo, o texto.
+- O título deve parecer um título real de texto, e não uma instrução ao aluno.
+- O texto deve possuir começo, desenvolvimento e conclusão ou fechamento coerente, conforme o gênero textual e a série.
+- Não gerar textos excessivamente curtos, genéricos ou formados apenas por poucas frases soltas.
+- Para o 1º e 2º ano, manter textos curtos, claros e adequados à alfabetização.
+- Para o 3º ano, produzir textos de extensão moderada e com informações suficientes para interpretação.
+- A partir do 4º ano, quando houver texto-base, produzir textos substanciais e bem desenvolvidos, preferencialmente com vários parágrafos quando o gênero permitir.
+- Para os anos finais do Ensino Fundamental, Ensino Médio e EJA, aumentar progressivamente a densidade de informações, o vocabulário e a profundidade do texto, sempre respeitando a etapa.
+- O texto deve conter informações suficientes para permitir questões de localização de informação, compreensão, interpretação, inferência, vocabulário em contexto, relação entre ideias e compreensão global, conforme a série.
+- Não alongar o texto artificialmente com repetições ou informações irrelevantes.
+- Quando várias questões utilizarem o mesmo texto, apresentar o texto apenas uma vez e fazer referência natural a ele nas questões seguintes.
+- Toda questão apresentada como baseada em um texto deve poder ser respondida a partir das informações, ideias ou inferências legitimamente sustentadas por esse texto.
+- Não criar questões supostamente relacionadas ao texto cuja resposta dependa de informação que o texto não apresenta.
+- Variar o nível das questões sobre o texto: algumas podem localizar informações explícitas e outras podem exigir interpretação ou inferência, conforme a faixa etária.
+- Não fornecer no enunciado da questão a própria resposta encontrada no texto.
+- Se o professor COLAR ou FORNECER integralmente um texto nos conteúdos ou nas orientações, preservar esse texto e utilizá-lo como base das questões, sem reescrevê-lo desnecessariamente.
+- Se o professor fornecer apenas o título ou o nome de uma obra/texto específico, sem fornecer seu conteúdo, NÃO inventar trechos e NÃO afirmar que está reproduzindo o original.
+- Quando apenas o título de uma obra protegida for informado sem o texto, criar, quando pedagogicamente adequado, um texto ORIGINAL sobre o mesmo tema ou contexto, sem copiar ou imitar trechos da obra, e deixar as questões baseadas somente no texto original gerado.
+- Se o texto solicitado for claramente de domínio público e seu conteúdo for conhecido com segurança, ele poderá ser utilizado; se houver dúvida, preferir um texto original.
+- Não atribuir a autores reais textos inventados pelo sistema.
 
 REGRAS PARA O USO DE IMAGENS:
 
@@ -285,7 +325,7 @@ REGRAS PARA COMPLETE:
 - Quando houver mais de três lacunas, dividir a atividade em frases ou itens menores.
 - Evitar textos longos com muitas lacunas seguidas.
 - Preferir frases independentes e visualmente organizadas.
-- Para o 1º e 2º ano, utilizar banco de palavras curto ou apoio visual.
+- Para o 1º ao 3º ano, utilizar banco de palavras curto ou apoio visual quando isso for adequado à habilidade avaliada.
 
 REGRAS PARA RELACIONAR COLUNAS:
 
@@ -295,7 +335,7 @@ REGRAS PARA RELACIONAR COLUNAS:
 - Criar correspondências claras e sem ambiguidade.
 - Não colocar as respostas na mesma ordem.
 - Utilizar entre quatro e seis itens em cada questão.
-- Para o 1º e 2º ano, utilizar no máximo quatro itens.
+- Para o 1º ao 3º ano, utilizar no máximo quatro itens quando a complexidade da atividade exigir maior apoio ao estudante.
 - Manter textos curtos em cada item.
 - Evitar itens muito longos que dificultem a organização em colunas.
 - Não utilizar tabelas em formato Markdown.
@@ -365,10 +405,14 @@ Antes de concluir, conferir silenciosamente se:
 - Nenhuma afirmativa de verdadeiro ou falso utiliza letras ou sublinhado no final.
 - As questões discursivas possuem quantidade de linhas proporcional à resposta esperada.
 - As questões de completar não possuem textos excessivamente longos.
+- Todo texto utilizado possui título próprio e significativo.
+- Nenhum texto utiliza “TEXTO DE APOIO” ou expressão semelhante como título.
+- Os textos possuem extensão e profundidade adequadas à série.
+- As questões baseadas em texto podem ser respondidas ou inferidas legitimamente a partir do próprio texto.
 ${
-  ehPrimeiroOuSegundoAno
-    ? "- Todo o conteúdo da avaliação está escrito em LETRA DE FORMA, utilizando CAIXA ALTA."
-    : ""
+  ehPrimeiroAoTerceiroAno
+    ? "- Os comandos, enunciados, alternativas, afirmativas e itens das questões estão em LETRA DE FORMA e CAIXA ALTA, conforme a regra do 1º ao 3º ano."
+    : "- Os enunciados, alternativas, afirmativas e textos estão em escrita normal, sem uso indevido de caixa alta."
 }
 ${
   ehAnosIniciais
