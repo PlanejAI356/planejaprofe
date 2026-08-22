@@ -138,13 +138,13 @@ function ajustarDimensoesImagem(
   modoCabecalho = false
 ) {
   const larguraMaxima = modoCabecalho
-    ? 58
+    ? 78
     : duasColunas
       ? 225
       : 420;
 
   const alturaMaxima = modoCabecalho
-    ? 42
+    ? 52
     : duasColunas
       ? 190
       : 280;
@@ -245,7 +245,7 @@ function criarRunsDoNo(
       no.textContent?.replace(/\u00a0/g, " ") ||
       "";
 
-    if (!texto) {
+    if (!texto.trim()) {
       return [];
     }
 
@@ -636,6 +636,65 @@ async function converterContainerLadoALado(
   });
 }
 
+function elementoPossuiConteudoReal(
+  elemento: HTMLElement
+) {
+  const temTexto =
+    Boolean(elemento.innerText.trim());
+
+  const temImagem =
+    Boolean(
+      elemento.querySelector("img")
+    );
+
+  const temTabela =
+    Boolean(
+      elemento.querySelector("table")
+    );
+
+  return (
+    temTexto ||
+    temImagem ||
+    temTabela
+  );
+}
+
+function removerVaziosDoCabecalho(
+  raiz: HTMLElement
+) {
+  const elementos =
+    Array.from(
+      raiz.querySelectorAll<HTMLElement>(
+        "div, p, span, section, article"
+      )
+    ).reverse();
+
+  elementos.forEach((elemento) => {
+    if (
+      !elementoPossuiConteudoReal(
+        elemento
+      )
+    ) {
+      elemento.remove();
+    }
+  });
+
+  raiz
+    .querySelectorAll("br")
+    .forEach((br) => {
+      const pai =
+        br.parentElement;
+
+      if (
+        pai &&
+        !pai.innerText.trim() &&
+        !pai.querySelector("img")
+      ) {
+        br.remove();
+      }
+    });
+}
+
 async function converterElementoEmBlocos(
   elemento: HTMLElement,
   duasColunas: boolean,
@@ -744,6 +803,14 @@ async function converterElementoEmBlocos(
   ) {
     const temTexto =
       Boolean(elemento.innerText.trim());
+
+    if (
+      modoCabecalho &&
+      !temTexto &&
+      !elemento.querySelector("img")
+    ) {
+      return [];
+    }
 
     if (temTexto) {
       blocos.push(
@@ -858,6 +925,10 @@ async function criarCabecalhoWord(
   }
 
   limparDocumentoClonado(
+    cabecalhoClonado
+  );
+
+  removerVaziosDoCabecalho(
     cabecalhoClonado
   );
 
