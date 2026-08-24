@@ -17,7 +17,10 @@ import {
   Users,
 } from "lucide-react";
 import TopoAvaliacoes from "./componentes/TopoAvaliacoes";
-import { usarPlanejamentoGratis } from "@/app/lib/profile";
+import {
+  consumirTestePromocional,
+  usarPlanejamentoGratis,
+} from "@/app/lib/profile";
 
 const etapasEnsino = [
   "Ensino Fundamental - Anos Iniciais",
@@ -434,6 +437,18 @@ if (
   "avaliacaoJson",
   JSON.stringify(avaliacao)
 );
+
+      if (permissao.usaTestePromocional) {
+        const resultadoTeste =
+          await consumirTestePromocional();
+
+        if (!resultadoTeste.consumido) {
+          console.warn(
+            "A avaliação foi gerada, mas o teste promocional não pôde ser descontado:",
+            resultadoTeste.mensagem
+          );
+        }
+      }
 
       localStorage.setItem(
         "configuracaoAvaliacao",

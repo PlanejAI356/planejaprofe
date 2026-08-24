@@ -9,7 +9,10 @@ import PlanoCompleto from "./componentes/PlanoCompleto";
 import Exportacao from "./componentes/Exportacao";
 import TopoProfessor from "./componentes/TopoProfessor";
 import { supabase } from "./lib/supabase";
-import { usarPlanejamentoGratis } from "./lib/profile";
+import {
+  consumirTestePromocional,
+  usarPlanejamentoGratis,
+} from "./lib/profile";
 
 type DataAula = {
   data: string;
@@ -163,6 +166,7 @@ export default function Home() {
       "mesSelecionado",
       "nomeMes",
       "planoAtualContabilizado",
+      "planoAtualTestePromocionalConsumido",
     ];
 
     chaves.forEach((chave) => {
@@ -288,9 +292,28 @@ export default function Home() {
     setEtapa("configuracao");
   }
 
-  function abrirPlanoCompleto() {
+  async function abrirPlanoCompleto() {
     if (!usuarioLogado) {
       localStorage.setItem("testeGratisConcluido", "true");
+      setEtapa("planoCompleto");
+      return;
+    }
+
+    const testeJaConsumido =
+      localStorage.getItem(
+        "planoAtualTestePromocionalConsumido"
+      ) === "true";
+
+    if (!testeJaConsumido) {
+      const resultadoTeste =
+        await consumirTestePromocional();
+
+      if (resultadoTeste.consumido) {
+        localStorage.setItem(
+          "planoAtualTestePromocionalConsumido",
+          "true"
+        );
+      }
     }
 
     setEtapa("planoCompleto");

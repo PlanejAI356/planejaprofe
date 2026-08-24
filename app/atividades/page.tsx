@@ -11,7 +11,10 @@ import {
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
-import { usarPlanejamentoGratis } from "@/app/lib/profile";
+import {
+  consumirTestePromocional,
+  usarPlanejamentoGratis,
+} from "@/app/lib/profile";
 
 const seriesPorEtapa: Record<string, string[]> = {
   "Educação Infantil": ["Creche", "Pré I", "Pré II"],
@@ -184,6 +187,8 @@ export default function AtividadesPage() {
   async function gerarAtividade() {
     setErro("");
 
+    let usarTestePromocional = false;
+
     const testeGratisAtivo =
       localStorage.getItem("testeGratisAtivo") === "true";
 
@@ -195,6 +200,9 @@ export default function AtividadesPage() {
         router.push("/assinatura");
         return;
       }
+
+      usarTestePromocional =
+        permissao.usaTestePromocional === true;
     }
 
     if (!etapaEnsino || !serie || !disciplina) {
@@ -326,6 +334,18 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
         throw new Error(
           "A imagem da atividade não foi retornada corretamente."
         );
+      }
+
+      if (usarTestePromocional) {
+        const resultadoTeste =
+          await consumirTestePromocional();
+
+        if (!resultadoTeste.consumido) {
+          console.warn(
+            "A atividade foi gerada, mas o teste promocional não pôde ser descontado:",
+            resultadoTeste.mensagem
+          );
+        }
       }
 
       /*

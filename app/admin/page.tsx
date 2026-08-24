@@ -837,53 +837,29 @@ export default function AdminPage() {
                           primeiroNome
                             ? `, ${primeiroNome}`
                             : ""
-                        }! Tudo bem? Aqui é a Naiara, do PlanejAI.
-
-` +
-                        `Vi que você já tem cadastro na plataforma e queria saber como foi sua experiência até agora.
-
-` +
-                        `Também quero liberar um teste grátis para você conhecer novamente as funcionalidades do PlanejAI e ver como ele pode ajudar na preparação das suas aulas.
-
-` +
-                        `Você pode acessar sua conta por aqui:
-` +
-                        `https://planejaioficial.com.br
-
-` +
-                        `Se tiver alguma dificuldade para usar ou quiser me contar o que achou, pode falar comigo por aqui. Seu retorno é muito importante para eu continuar melhorando a plataforma.`;
+                        }! Tudo bem? Aqui é a Naiara, do PlanejAI.\n\n` +
+                        `Hoje liberei uma condição especial para quem já tem cadastro: você terá 3 testes gratuitos para usar no PlanejAI durante as próximas 24 horas.\n\n` +
+                        `É uma oportunidade para voltar à plataforma e testar com calma a criação de planos, avaliações e atividades.\n\n` +
+                        `A liberação é válida somente durante esse período.\n\n` +
+                        `Acesse sua conta por aqui:\n` +
+                        `https://planejaioficial.com.br\n\n` +
+                        `Depois me conta o que achou. Seu retorno também vai me ajudar a continuar melhorando o PlanejAI.`;
 
                       const assuntoEmail =
-                        "Conheça melhor o PlanejAI";
+                        "3 testes gratuitos liberados por 24 horas";
 
                       const mensagemEmail =
                         `Olá${
                           primeiroNome
                             ? `, ${primeiroNome}`
                             : ""
-                        }!
-
-` +
-                        `Você já criou sua conta no PlanejAI e queremos convidar você a conhecer melhor tudo o que a plataforma pode facilitar na sua rotina.
-
-` +
-                        `Com o PlanejAI, você pode criar planos de aula, avaliações e atividades de forma muito mais prática, economizando tempo no dia a dia.
-
-` +
-                        `O Premium custa R$ 29,90 por mês.
-
-` +
-                        `E tem uma vantagem importante para quem é professor: em dezembro e janeiro não há cobrança, justamente por serem meses de férias e recesso escolar.
-
-` +
-                        `Você pode acessar novamente sua conta por aqui:
-` +
-                        `https://planejaioficial.com.br
-
-` +
-                        `Se tiver alguma dúvida ou dificuldade para utilizar alguma ferramenta, é só responder este e-mail.
-
-` +
+                        }!\n\n` +
+                        `Hoje liberamos uma condição especial para quem já tem cadastro no PlanejAI: você terá 3 testes gratuitos para usar durante as próximas 24 horas.\n\n` +
+                        `Nesse período, você poderá voltar à plataforma e testar com calma a criação de planos de aula, avaliações e atividades.\n\n` +
+                        `A liberação é válida somente durante essas 24 horas.\n\n` +
+                        `Acesse sua conta por aqui:\n` +
+                        `https://planejaioficial.com.br\n\n` +
+                        `Depois, se puder, conte para nós como foi sua experiência. Seu retorno é muito importante para continuarmos melhorando o PlanejAI.\n\n` +
                         `Equipe PlanejAI`;
 
                       return (

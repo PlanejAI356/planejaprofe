@@ -1,5 +1,43 @@
 import { supabase } from "./supabase";
 
+type ResultadoPermissao = {
+  permitido: boolean;
+  mensagem: string;
+  usaTestePromocional?: boolean;
+  testesRestantes?: number;
+};
+
+type ResultadoConsumoTeste = {
+  consumido: boolean;
+  mensagem: string;
+  testesRestantes?: number;
+};
+
+function promocaoEstaAtiva(perfil: any) {
+  const agora = new Date();
+
+  const inicio = perfil?.testes_promocionais_inicio_em
+    ? new Date(perfil.testes_promocionais_inicio_em)
+    : null;
+
+  const fim = perfil?.testes_promocionais_expiram_em
+    ? new Date(perfil.testes_promocionais_expiram_em)
+    : null;
+
+  if (!inicio || !fim) {
+    return false;
+  }
+
+  if (
+    Number.isNaN(inicio.getTime()) ||
+    Number.isNaN(fim.getTime())
+  ) {
+    return false;
+  }
+
+  return agora >= inicio && agora <= fim;
+}
+
 export async function buscarPerfil() {
   try {
     const {
@@ -120,7 +158,7 @@ export async function buscarPerfil() {
   }
 }
 
-export async function usarPlanejamentoGratis() {
+export async function usarPlanejamentoGratis(): Promise<ResultadoPermissao> {
   const perfil = await buscarPerfil();
 
   if (!perfil) {
@@ -132,23 +170,199 @@ export async function usarPlanejamentoGratis() {
   }
 
   /*
-   * Usuário Premium tem acesso liberado.
+   * Usuário Premium continua com acesso normal
+   * e não consome teste promocional.
    */
   if (perfil.plano === "premium") {
     return {
       permitido: true,
       mensagem: "Plano Premium ativo.",
+      usaTestePromocional: false,
+    };
+  }
+
+  const testesRestantes = Math.max(
+    0,
+    Number(
+      perfil.testes_promocionais_restantes ?? 0
+    )
+  );
+
+  /*
+   * Usuário gratuito com promoção ativa:
+   * pode gerar enquanto houver saldo.
+   */
+  if (
+    promocaoEstaAtiva(perfil) &&
+    testesRestantes > 0
+  ) {
+    return {
+      permitido: true,
+      mensagem:
+        `Você tem ${testesRestantes} teste(s) promocional(is) disponível(is).`,
+      usaTestePromocional: true,
+      testesRestantes,
     };
   }
 
   /*
-   * Usuário gratuito entra normalmente na conta,
-   * mas para criar novos planejamentos recebe
-   * o convite para assinar o Premium.
+   * Fora do período, sem promoção configurada
+   * ou sem testes restantes, volta ao bloqueio
+   * normal do Plano Premium.
    */
   return {
     permitido: false,
     mensagem:
-      "Para criar novos planejamentos, assine o Plano Premium.",
+      "Para continuar criando no PlanejAI, assine o Plano Premium.",
+    usaTestePromocional: false,
+    testesRestantes: 0,
   };
+}
+
+export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste> {
+  try {
+    const {
+      data: { user },
+      error: erroUsuario,
+    } = await supabase.auth.getUser();
+
+    if (erroUsuario || !user) {
+      return {
+        consumido: false,
+        mensagem:
+          "Não foi possível identificar sua conta para descontar o teste promocional.",
+      };
+    }
+
+    /*
+     * Faz até 3 tentativas para evitar descontar
+     * um valor desatualizado caso duas ações ocorram
+     * quase ao mesmo tempo.
+     */
+    for (let tentativa = 0; tentativa < 3; tentativa += 1) {
+      const {
+        data: perfil,
+        error: erroPerfil,
+      } = await supabase
+        .from("profiles")
+        .select(
+          "id, plano, testes_promocionais_restantes, testes_promocionais_inicio_em, testes_promocionais_expiram_em"
+        )
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (erroPerfil || !perfil) {
+        console.error(
+          "Erro ao buscar perfil para consumir teste promocional:",
+          erroPerfil
+        );
+
+        return {
+          consumido: false,
+          mensagem:
+            "Não foi possível verificar seus testes promocionais.",
+        };
+      }
+
+      /*
+       * Premium nunca consome teste promocional.
+       */
+      if (perfil.plano === "premium") {
+        return {
+          consumido: false,
+          mensagem: "Usuário Premium: nenhum teste promocional foi consumido.",
+        };
+      }
+
+      const testesAtuais = Math.max(
+        0,
+        Number(
+          perfil.testes_promocionais_restantes ?? 0
+        )
+      );
+
+      if (
+        !promocaoEstaAtiva(perfil) ||
+        testesAtuais <= 0
+      ) {
+        return {
+          consumido: false,
+          mensagem:
+            "Não há teste promocional ativo para descontar.",
+          testesRestantes: testesAtuais,
+        };
+      }
+
+      const novoSaldo = testesAtuais - 1;
+
+      const {
+        data: perfilAtualizado,
+        error: erroAtualizacao,
+      } = await supabase
+        .from("profiles")
+        .update({
+          testes_promocionais_restantes:
+            novoSaldo,
+        })
+        .eq("id", user.id)
+        .eq(
+          "testes_promocionais_restantes",
+          testesAtuais
+        )
+        .select(
+          "id, testes_promocionais_restantes"
+        )
+        .maybeSingle();
+
+      if (erroAtualizacao) {
+        console.error(
+          "Erro ao consumir teste promocional:",
+          erroAtualizacao
+        );
+
+        return {
+          consumido: false,
+          mensagem:
+            "Não foi possível descontar o teste promocional.",
+        };
+      }
+
+      /*
+       * Se nenhuma linha foi atualizada, o saldo pode
+       * ter mudado entre a leitura e a atualização.
+       * Nesse caso, tenta novamente.
+       */
+      if (!perfilAtualizado) {
+        continue;
+      }
+
+      return {
+        consumido: true,
+        mensagem:
+          "Teste promocional utilizado com sucesso.",
+        testesRestantes:
+          Number(
+            perfilAtualizado.testes_promocionais_restantes ??
+              novoSaldo
+          ),
+      };
+    }
+
+    return {
+      consumido: false,
+      mensagem:
+        "Não foi possível atualizar o saldo dos testes promocionais. Tente novamente.",
+    };
+  } catch (error) {
+    console.error(
+      "Erro inesperado ao consumir teste promocional:",
+      error
+    );
+
+    return {
+      consumido: false,
+      mensagem:
+        "Ocorreu um erro ao descontar o teste promocional.",
+    };
+  }
 }

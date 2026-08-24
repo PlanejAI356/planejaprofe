@@ -211,7 +211,7 @@ export async function GET(req: NextRequest) {
     } = await supabaseAdmin
       .from("indicacoes")
       .select(
-        "id, parceiro_id, cupom, email_cliente, status, valor_assinatura, valor_comissao, mercado_pago_id"
+        "id, parceiro_id, cupom, email_cliente, status, valor_assinatura, valor_comissao, mercado_pago_id, comissao_paga"
       );
 
     if (erroIndicacoes) {
@@ -511,6 +511,7 @@ export async function GET(req: NextRequest) {
                 email: string;
                 valorAssinatura: number;
                 valorComissao: number;
+                comissaoPaga: boolean;
               }
             >();
 
@@ -574,6 +575,13 @@ export async function GET(req: NextRequest) {
                   ).trim()
                 );
 
+              const comissaoJaPaga =
+                indicacoesEmail.some(
+                  (indicacao) =>
+                    indicacao.comissao_paga ===
+                    true
+                );
+
               /*
                * Evita contar Premium
                * liberado manualmente como venda.
@@ -622,6 +630,8 @@ export async function GET(req: NextRequest) {
                   email,
                   valorAssinatura,
                   valorComissao,
+                  comissaoPaga:
+                    comissaoJaPaga,
                 }
               );
             }
@@ -719,6 +729,9 @@ export async function GET(req: NextRequest) {
                   email,
                   valorAssinatura,
                   valorComissao,
+                  comissaoPaga:
+                    indicacao.comissao_paga ===
+                    true,
                 }
               );
             }
@@ -747,7 +760,11 @@ export async function GET(req: NextRequest) {
             );
 
           /*
-           * COMISSÃO TOTAL
+           * COMISSÃO PENDENTE
+           *
+           * Mantém o histórico de pagamentos,
+           * mas soma somente as comissões que
+           * ainda não foram repassadas ao parceiro.
            */
           const comissaoTotal =
             pagamentos.reduce(
@@ -755,8 +772,10 @@ export async function GET(req: NextRequest) {
                 total,
                 pagamento
               ) =>
-                total +
-                pagamento.valorComissao,
+                pagamento.comissaoPaga
+                  ? total
+                  : total +
+                    pagamento.valorComissao,
               0
             );
 
