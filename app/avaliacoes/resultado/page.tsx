@@ -1,4 +1,4 @@
-"use client";
+
 
 import {
   useEffect,
@@ -211,12 +211,31 @@ export default function ResultadoAvaliacaoPage() {
     useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const provaEditada =
-      localStorage.getItem("provaGeradaEditada") ||
-      "";
-
     const provaGerada =
       localStorage.getItem("provaGerada") || "";
+
+    let provaEditada = "";
+
+    try {
+      const provaSalva = provaGerada
+        ? JSON.parse(provaGerada)
+        : null;
+
+      const avaliacaoId =
+        provaSalva &&
+        typeof provaSalva === "object"
+          ? provaSalva.id
+          : null;
+
+      if (avaliacaoId) {
+        provaEditada =
+          localStorage.getItem(
+            `provaGeradaEditada:${avaliacaoId}`
+          ) || "";
+      }
+    } catch {
+      provaEditada = "";
+    }
 
     const cabecalhoBruto =
       localStorage.getItem(
@@ -640,10 +659,26 @@ export default function ResultadoAvaliacaoPage() {
       editorRef.current?.innerHTML || "";
 
     try {
-      localStorage.setItem(
-        "provaGeradaEditada",
-        provaEditada
-      );
+      const provaGerada =
+        localStorage.getItem("provaGerada") || "";
+
+      const provaSalva = provaGerada
+        ? JSON.parse(provaGerada)
+        : null;
+
+      const avaliacaoId =
+        provaSalva &&
+        typeof provaSalva === "object"
+          ? provaSalva.id
+          : null;
+
+      if (avaliacaoId) {
+        localStorage.setItem(
+          `provaGeradaEditada:${avaliacaoId}`,
+          provaEditada
+        );
+      }
+
       return true;
     } catch {
       setMensagemImagens(

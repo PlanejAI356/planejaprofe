@@ -1,7 +1,6 @@
 "use client";
 
 import {
-  useEffect,
   useMemo,
   useState,
 } from "react";
@@ -193,79 +192,6 @@ export default function AvaliacoesPage() {
 
   const [gerando, setGerando] = useState(false);
   const [erro, setErro] = useState("");
-  useEffect(() => {
-  const configuracaoSalva =
-    localStorage.getItem(
-      "configuracaoAvaliacao"
-    );
-
-  if (!configuracaoSalva) {
-    return;
-  }
-
-  try {
-    const configuracao =
-      JSON.parse(configuracaoSalva);
-
-    setEtapaEnsino(
-      configuracao.etapaEnsino || ""
-    );
-    setSerie(configuracao.serie || "");
-    setDisciplina(
-      configuracao.disciplina || ""
-    );
-    setTipoAvaliacao(
-      configuracao.tipoAvaliacao || ""
-    );
-    setConteudos(
-      configuracao.conteudos || ""
-    );
-    setDificuldade(
-      configuracao.dificuldade || "Misto"
-    );
-
-    setQuantidadeMultiplaEscolha(
-      configuracao.quantidadeMultiplaEscolha ||
-        "5"
-    );
-
-    setQuantidadeDiscursivas(
-      configuracao.quantidadeDiscursivas ||
-        "3"
-    );
-
-    setQuantidadeMistas(
-      configuracao.quantidadeMistas || "2"
-    );
-
-    setIncluirBncc(
-      Boolean(configuracao.incluirBncc)
-    );
-
-    setHabilidadeBncc(
-      configuracao.habilidadeBncc || ""
-    );
-
-    setIncluirTextoApoio(
-      Boolean(
-        configuracao.incluirTextoApoio
-      )
-    );
-
-    setUsoImagens(
-      configuracao.usoImagens === "parcial" ||
-      configuracao.usoImagens === "total"
-        ? configuracao.usoImagens
-        : ""
-    );
-  } catch (error) {
-    console.error(
-      "Erro ao carregar configuração:",
-      error
-    );
-  }
-}, []);
-
   const seriesDisponiveis =
     seriesPorEtapa[etapaEnsino] || [];
 
