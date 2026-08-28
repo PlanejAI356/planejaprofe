@@ -41,6 +41,9 @@ export default function CabecalhoEscolar({
   const inputImagemRef =
     useRef<HTMLInputElement>(null);
 
+  const carregouCabecalhoRef =
+    useRef(false);
+
   const [salvo, setSalvo] =
     useState(false);
 
@@ -51,6 +54,12 @@ export default function CabecalhoEscolar({
     storageKey || chaveLocalStorage;
 
   useEffect(() => {
+    if (carregouCabecalhoRef.current) {
+      return;
+    }
+
+    carregouCabecalhoRef.current = true;
+
     if (!chaveArmazenamento) {
       return;
     }
@@ -77,24 +86,15 @@ export default function CabecalhoEscolar({
     }
 
     /*
-     * O cabeçalho salvo tem prioridade sobre valores
-     * temporários recebidos por uma nova avaliação.
-     * Assim ele permanece até o usuário clicar
-     * explicitamente em "Limpar cabeçalho".
+     * O cabeçalho salvo é carregado apenas uma vez
+     * quando o componente é aberto. Depois disso,
+     * o conteúdo só muda pela edição do usuário,
+     * pelo botão Salvar ou pelo botão Limpar.
      */
-    if (
-      cabecalhoSalvo.trim() &&
-      cabecalhoSalvo !==
-        sanitizarHtmlCabecalho(valor)
-    ) {
+    if (cabecalhoSalvo.trim()) {
       onChange(cabecalhoSalvo);
     }
-  }, [
-    valor,
-    chaveArmazenamento,
-    fallbackStorageKeys,
-    onChange,
-  ]);
+  }, []);
 
   useEffect(() => {
     if (!editorRef.current) {

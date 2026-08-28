@@ -99,6 +99,61 @@ export default function CadastroPage() {
     }
   }
 
+  async function liberarTestesIniciais(userId: string) {
+    if (!userId) {
+      return;
+    }
+
+    try {
+      /*
+       * Novos cadastros recebem 3 testes gratuitos.
+       * Pequena repetição de tentativa para o caso de a linha
+       * em profiles ser criada alguns instantes depois do Auth.
+       */
+      for (let tentativa = 1; tentativa <= 3; tentativa++) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .update({
+            plano: "gratuito",
+            planos_restantes: 3,
+          })
+          .eq("id", userId)
+          .select("id, plano, planos_restantes")
+          .maybeSingle();
+
+        if (!error && data) {
+          console.log(
+            "3 testes gratuitos liberados:",
+            data
+          );
+          return;
+        }
+
+        if (error) {
+          console.error(
+            `Tentativa ${tentativa} ao liberar testes:`,
+            error
+          );
+        }
+
+        if (tentativa < 3) {
+          await new Promise((resolve) =>
+            setTimeout(resolve, 500)
+          );
+        }
+      }
+
+      console.error(
+        "A conta foi criada, mas não foi possível confirmar a liberação dos 3 testes gratuitos."
+      );
+    } catch (error) {
+      console.error(
+        "Erro inesperado ao liberar os 3 testes gratuitos:",
+        error
+      );
+    }
+  }
+
   async function criarConta(e: React.FormEvent) {
     e.preventDefault();
 
@@ -232,7 +287,13 @@ export default function CadastroPage() {
       console.log("Cadastro criado:", data.user.id);
 
       /*
-       * 3. SE HOUVER PARCEIRO, TENTA SALVAR TAMBÉM
+       * 3. LIBERA OS 3 TESTES GRATUITOS
+       * SOMENTE PARA O NOVO CADASTRO.
+       */
+      await liberarTestesIniciais(data.user.id);
+
+      /*
+       * 4. SE HOUVER PARCEIRO, TENTA SALVAR TAMBÉM
        * NA COLUNA profiles.cupom_origem.
        *
        * A condição .is(..., null) evita sobrescrever uma
@@ -245,7 +306,7 @@ export default function CadastroPage() {
         );
 
         /*
-         * 4. REGISTRA O CADASTRO NA TABELA indicacoes.
+         * 5. REGISTRA O CADASTRO NA TABELA indicacoes.
          */
         await registrarIndicacaoCadastro(
           emailNormalizado,
@@ -254,7 +315,7 @@ export default function CadastroPage() {
       }
 
       alert(
-        "Cadastro realizado com sucesso! Agora faça login para acessar o PlanejAI."
+        "Cadastro realizado com sucesso! Você ganhou 3 testes gratuitos. Agora faça login para acessar o PlanejAI."
       );
 
       window.location.href = "/login";
@@ -280,7 +341,7 @@ export default function CadastroPage() {
         </h1>
 
         <p className="mb-6 text-center text-slate-500">
-          Cadastre-se para usar o PlanejAI.
+          Cadastre-se e ganhe 3 testes gratuitos para conhecer o PlanejAI.
         </p>
 
         <form

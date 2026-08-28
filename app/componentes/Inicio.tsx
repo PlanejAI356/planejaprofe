@@ -1,36 +1,6 @@
 "use client";
 
-type InicioProps = {
-  onComecar: () => void;
-};
-
-export default function Inicio({ onComecar }: InicioProps) {
-  function limparPlanejamentoAnterior() {
-    const chaves = [
-      "temasPlano",
-      "objetivosPlano",
-      "recursosPlano",
-      "metodologiaPlano",
-      "avaliacaoPlano",
-      "referenciasPlano",
-      "atividadePlano",
-      "temasGerados",
-      "conteudosMensais",
-      "serieSelecionada",
-      "disciplinaSelecionada",
-      "etapaEnsino",
-      "tipoPlanejamento",
-      "turmaInfantilDetalhe",
-    ];
-
-    chaves.forEach((chave) => localStorage.removeItem(chave));
-  }
-
-  function iniciarTeste() {
-    limparPlanejamentoAnterior();
-    onComecar();
-  }
-
+export default function Inicio() {
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#fbfefc]">
       {/* FUNDO DECORATIVO */}
@@ -43,7 +13,7 @@ export default function Inicio({ onComecar }: InicioProps) {
 
       <div className="pointer-events-none absolute -bottom-56 right-[-120px] h-[420px] w-[760px] rounded-[50%] bg-gradient-to-r from-green-50/50 to-green-100/70 blur-2xl" />
 
-      {/* Pontinhos decorativos */}
+      {/* PONTINHOS DECORATIVOS */}
 
       <div className="pointer-events-none absolute left-8 top-48 grid grid-cols-4 gap-3 opacity-40">
         {Array.from({ length: 12 }).map((_, index) => (
@@ -63,7 +33,7 @@ export default function Inicio({ onComecar }: InicioProps) {
         ))}
       </div>
 
-      {/* Brilhos */}
+      {/* BRILHOS */}
 
       <span className="pointer-events-none absolute left-[15%] top-[42%] text-2xl text-green-500">
         ✦
@@ -73,14 +43,14 @@ export default function Inicio({ onComecar }: InicioProps) {
         ✦
       </span>
 
-      <span className="pointer-events-none absolute right-[18%] bottom-[23%] text-2xl text-blue-500">
+      <span className="pointer-events-none absolute bottom-[23%] right-[18%] text-2xl text-blue-500">
         ✦
       </span>
 
       <div className="relative z-10 mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-4">
         {/* CABEÇALHO */}
 
-        <header className="flex h-16 shrink-0 items-center justify-between">
+        <header className="flex h-16 shrink-0 items-center">
           <div className="flex items-center gap-2">
             <img
               src="/logo-planejai-nova.png"
@@ -92,16 +62,6 @@ export default function Inicio({ onComecar }: InicioProps) {
               Planej<span className="text-green-600">AI</span>
             </span>
           </div>
-
-          <button
-            type="button"
-            onClick={() => {
-              window.location.href = "/login";
-            }}
-            className="rounded-xl border border-green-600 bg-white/90 px-5 py-2.5 text-sm font-bold text-green-700 shadow-sm transition hover:bg-green-50 hover:shadow-md"
-          >
-            Já tenho uma conta
-          </button>
         </header>
 
         {/* CONTEÚDO PRINCIPAL */}
@@ -149,9 +109,11 @@ export default function Inicio({ onComecar }: InicioProps) {
             <div className="relative mx-auto max-w-3xl rounded-[32px] border border-slate-200/80 bg-white/90 px-6 py-8 text-center shadow-[0_25px_70px_rgba(15,23,42,0.10)] backdrop-blur-sm sm:px-10 md:py-10">
               <h1 className="mx-auto max-w-2xl text-3xl font-extrabold leading-[1.1] tracking-tight text-slate-950 sm:text-4xl md:text-5xl">
                 Crie seus materiais
+
                 <span className="block">
                   pedagógicos
                 </span>
+
                 <span className="block text-green-600">
                   do seu jeito.
                 </span>
@@ -165,30 +127,45 @@ export default function Inicio({ onComecar }: InicioProps) {
               {/* BOTÕES */}
 
               <div className="mx-auto mt-6 flex max-w-xl flex-col gap-4 sm:flex-row">
-                <button
-                  type="button"
-                  onClick={iniciarTeste}
-                  className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:scale-[1.02] hover:shadow-xl"
-                >
-                  🚀 Testar grátis
-                </button>
+                {/* CRIAR CONTA */}
 
                 <button
                   type="button"
                   onClick={() => {
                     window.location.href = "/cadastro";
                   }}
-                  className="flex-1 rounded-2xl border-2 border-blue-500 bg-white px-6 py-4 text-base font-bold text-blue-600 shadow-sm transition duration-200 hover:bg-blue-50 hover:shadow-md"
+                  className="flex-1 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:scale-[1.02] hover:shadow-xl"
                 >
                   Criar conta
                 </button>
+
+                {/* JÁ TENHO UMA CONTA */}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    window.location.href = "/login";
+                  }}
+                  className="flex-1 rounded-2xl border-2 border-blue-500 bg-white px-6 py-4 text-base font-bold text-blue-600 shadow-sm transition duration-200 hover:bg-blue-50 hover:shadow-md"
+                >
+                  Já tenho uma conta
+                </button>
               </div>
+
+              {/* AVISO DOS 3 TESTES */}
 
               <p className="mt-5 flex items-center justify-center gap-2 text-sm font-medium text-slate-500">
                 <span className="flex h-6 w-6 items-center justify-center rounded-full border-2 border-green-500 text-xs font-bold text-green-600">
                   ✓
                 </span>
-                Experimente gratuitamente, sem cadastro.
+
+                <span>
+                  Ao se cadastrar, você ganha{" "}
+                  <strong className="font-bold text-green-600">
+                    3 testes gratuitos
+                  </strong>{" "}
+                  para conhecer o PlanejAI.
+                </span>
               </p>
             </div>
 
