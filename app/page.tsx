@@ -389,94 +389,85 @@ export default function Home() {
       )}
 
       {etapa === "painel" && (
-        <section className="mx-auto flex min-h-[calc(100vh-70px)] max-w-6xl flex-col justify-center px-4 py-8">
-          <div className="mb-8 text-center">
-            <h1 className="text-2xl font-extrabold text-slate-900 sm:text-3xl">
-              O que você deseja criar hoje?
-            </h1>
+        <section className="relative flex min-h-[calc(100vh-70px)] items-center overflow-hidden px-4 py-8">
+          <div className="pointer-events-none absolute -left-40 top-10 h-80 w-[520px] rounded-[50%] bg-green-100/60 blur-3xl" />
+          <div className="pointer-events-none absolute -right-44 top-24 h-96 w-[580px] rounded-[50%] bg-emerald-100/50 blur-3xl" />
+          <div className="pointer-events-none absolute bottom-[-180px] left-[20%] h-80 w-[650px] rounded-[50%] bg-blue-50/70 blur-3xl" />
 
-            <p className="mt-2 text-sm text-slate-600 sm:text-base">
-              Escolha uma das ferramentas do PlanejAI.
-            </p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            <button
-              type="button"
-              onClick={() => {
-  if (usuarioLogado) {
-    iniciarNovoPlanejamento();
-  } else {
-    limparPlanoAnterior();
-    setEtapa("configuracao");
-  }
-}}
-              className="group cursor-pointer rounded-2xl border border-green-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-green-400 hover:shadow-lg"
-            >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-3xl">
-                📚
-              </div>
-
-              <h2 className="text-xl font-extrabold text-slate-900">
-                Planejamento de Aula
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Crie planos de aula completos, mensais ou organizados por aula.
+          <div className="relative z-10 mx-auto w-full max-w-6xl">
+            <div className="mb-9 text-center">
+              <p className="mb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-green-600">
+                PlanejAI
               </p>
-
-              <div className="mt-5 font-bold text-green-700">
-                Criar planejamento →
-              </div>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "/avaliacoes";
-              }}className="group cursor-pointer rounded-2xl border border-blue-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-blue-400 hover:shadow-lg"
-              
-            >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-3xl">
-                📝
-              </div>
-
-              <h2 className="text-xl font-extrabold text-slate-900">
-                Avaliações
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Crie provas, simulados, avaliações diagnósticas e recuperações.
+              <h1 className="text-3xl font-black tracking-[-0.035em] text-[#071c4d] sm:text-4xl md:text-5xl">
+                O que você deseja <span className="text-green-600">criar hoje?</span>
+              </h1>
+              <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-green-500" />
+              <p className="mt-4 text-sm text-slate-600 sm:text-base">
+                Escolha uma das ferramentas e comece a criar.
               </p>
+            </div>
 
-              <div className="mt-5 font-bold text-blue-700">
-                Criar avaliação →
-              </div>
-            </button>
+            <div className="grid gap-5 md:grid-cols-3">
+              <button
+                type="button"
+                onClick={() => {
+                  if (usuarioLogado) {
+                    iniciarNovoPlanejamento();
+                  } else {
+                    limparPlanoAnterior();
+                    setEtapa("configuracao");
+                  }
+                }}
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
+              >
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-green-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">📚</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Planejamento de Aula</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie planos de aula completos, mensais ou organizados por aula.
+                </p>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-green-700">
+                  Criar planejamento <span className="transition group-hover:translate-x-1">→</span>
+                </div>
+              </button>
 
-            <button
-              type="button"
-              onClick={() => {
-                window.location.href = "/atividades";
-              }}
-              className="group cursor-pointer rounded-2xl border border-amber-200 bg-white p-6 text-left shadow-sm transition hover:-translate-y-1 hover:border-amber-400 hover:shadow-lg"
-            >
-              <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl">
-                📄
-              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/avaliacoes";
+                }}
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-blue-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
+              >
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-blue-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-4xl shadow-sm">📝</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Avaliações</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie provas, simulados, avaliações diagnósticas e recuperações.
+                </p>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-blue-700">
+                  Criar avaliação <span className="transition group-hover:translate-x-1">→</span>
+                </div>
+              </button>
 
-              <h2 className="text-xl font-extrabold text-slate-900">
-                Atividades
-              </h2>
-
-              <p className="mt-2 text-sm leading-6 text-slate-600">
-                Crie exercícios, revisões e atividades personalizadas.
-              </p>
-
-              <div className="mt-5 font-bold text-amber-700">
-                Criar atividade →
-              </div>
-            </button>
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href = "/atividades";
+                }}
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-amber-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
+              >
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-amber-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">✏️</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Atividades</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie exercícios, revisões e atividades personalizadas.
+                </p>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-amber-700">
+                  Criar atividade <span className="transition group-hover:translate-x-1">→</span>
+                </div>
+              </button>
+            </div>
           </div>
         </section>
       )}

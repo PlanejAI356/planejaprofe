@@ -423,6 +423,7 @@ export default function FinalizarAtividadePage() {
               <div className="flex min-h-0 flex-1 flex-col overflow-hidden border border-black bg-white">
                 {cabecalho.trim() && (
                   <div
+                    ref={cabecalhoRef}
                     className="cabecalho-preview w-full shrink-0"
                     dangerouslySetInnerHTML={{
                       __html:
