@@ -339,7 +339,7 @@ export default function Home() {
   }
 
   if (etapa === "inicio" && !usuarioLogado) {
-    return <Inicio onComecar={iniciarTesteGratis} />;
+   return <Inicio />;
   }
 
   return (
