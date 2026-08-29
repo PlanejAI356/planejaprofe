@@ -708,7 +708,7 @@ export default function CabecalhoEscolar({
           onPaste={processarColagem}
           onInput={atualizarEstado}
           onClick={moverLogoParaCelula}
-          className="cabecalho-escolar-editor mt-4 h-[220px] w-full overflow-auto rounded-xl border-2 border-dashed border-slate-300 bg-white px-4 py-4 text-sm leading-6 text-slate-900 outline-none transition focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="cabecalho-escolar-editor mt-4 h-[220px] w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-dashed border-slate-300 bg-white px-2 py-3 text-sm leading-6 text-slate-900 outline-none transition sm:px-4 sm:py-4 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
@@ -737,16 +737,27 @@ export default function CabecalhoEscolar({
       </div>
 
       <style jsx global>{`
+        .cabecalho-escolar-editor {
+          max-width: 100%;
+          min-width: 0;
+          box-sizing: border-box;
+        }
+
         .cabecalho-escolar-editor table {
           width: 100% !important;
           max-width: 100% !important;
           border-collapse: collapse !important;
+          box-sizing: border-box !important;
         }
 
         .cabecalho-escolar-editor td,
         .cabecalho-escolar-editor th {
           border: 1px solid #000;
           box-sizing: border-box;
+          max-width: 100%;
+          overflow-wrap: anywhere;
+          word-break: normal;
+          white-space: normal;
         }
 
         .cabecalho-escolar-editor img {
@@ -757,6 +768,62 @@ export default function CabecalhoEscolar({
           object-fit: contain;
           cursor: pointer;
           user-select: none;
+        }
+
+        /*
+         * VISUALIZAÇÃO NO CELULAR
+         *
+         * O cabeçalho continua sendo salvo com o HTML original.
+         * Estas regras alteram somente a forma como ele aparece
+         * dentro do editor em telas pequenas.
+         */
+        @media (max-width: 640px) {
+          .cabecalho-escolar-editor {
+            font-size: 10px !important;
+            line-height: 1.15 !important;
+          }
+
+          .cabecalho-escolar-editor table {
+            width: 100% !important;
+            max-width: 100% !important;
+            min-width: 0 !important;
+            table-layout: fixed !important;
+            margin-left: 0 !important;
+            margin-right: 0 !important;
+          }
+
+          .cabecalho-escolar-editor col,
+          .cabecalho-escolar-editor colgroup {
+            max-width: 100% !important;
+          }
+
+          .cabecalho-escolar-editor td,
+          .cabecalho-escolar-editor th {
+            min-width: 0 !important;
+            max-width: none !important;
+            padding: 2px 3px !important;
+            font-size: 10px !important;
+            line-height: 1.15 !important;
+            overflow-wrap: anywhere !important;
+            word-break: break-word !important;
+            white-space: normal !important;
+          }
+
+          .cabecalho-escolar-editor p,
+          .cabecalho-escolar-editor div,
+          .cabecalho-escolar-editor span {
+            max-width: 100% !important;
+            white-space: normal !important;
+            overflow-wrap: anywhere !important;
+          }
+
+          .cabecalho-escolar-editor img {
+            max-width: 64px !important;
+            max-height: 48px !important;
+            width: auto !important;
+            height: auto !important;
+            object-fit: contain !important;
+          }
         }
 
         .cabecalho-escolar-editor:empty::before {
