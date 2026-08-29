@@ -345,7 +345,7 @@ export default function CadastroPage() {
         ✦
       </span>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-5 sm:px-8 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-2 sm:px-8 lg:px-12">
         {/* CABEÇALHO */}
         <header className="flex shrink-0 items-center justify-between gap-4">
           <button
@@ -358,15 +358,15 @@ export default function CadastroPage() {
             <img
               src="/logo-planejai-nova.png"
               alt="PlanejAI"
-              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+              className="h-10 w-10 object-contain sm:h-11 sm:w-11"
             />
 
-            <span className="text-3xl font-black tracking-tight text-[#071c4d] sm:text-4xl">
+            <span className="text-2xl font-black tracking-tight text-[#071c4d] sm:text-3xl">
               Planej<span className="text-green-600">AI</span>
             </span>
           </button>
 
-          <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-5 py-3 shadow-sm md:flex">
+          <div className="hidden items-center gap-2 rounded-xl border border-slate-200 bg-white/90 px-4 py-2 shadow-sm md:flex">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
               <ShieldCheck size={22} />
             </div>
@@ -384,11 +384,11 @@ export default function CadastroPage() {
         </header>
 
         {/* CONTEÚDO */}
-        <section className="relative flex flex-1 items-center justify-center py-5">
+        <section className="relative flex flex-1 items-center justify-center py-1">
           <div className="relative w-full max-w-6xl">
             {/* CARDS LATERAIS */}
-            <div className="absolute -left-2 top-20 z-20 hidden rotate-[-5deg] rounded-[28px] border border-green-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 text-4xl">
+            <div className="absolute -left-2 top-20 z-20 hidden rotate-[-5deg] rounded-[22px] border border-green-100 bg-white/95 px-4 py-3 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-green-50 text-2xl">
                 📚
               </div>
 
@@ -397,8 +397,8 @@ export default function CadastroPage() {
               </p>
             </div>
 
-            <div className="absolute left-0 bottom-28 z-20 hidden rotate-[3deg] rounded-[28px] border border-blue-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-4xl">
+            <div className="absolute left-0 bottom-28 z-20 hidden rotate-[3deg] rounded-[22px] border border-blue-100 bg-white/95 px-4 py-3 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-blue-50 text-2xl">
                 📝
               </div>
 
@@ -407,8 +407,8 @@ export default function CadastroPage() {
               </p>
             </div>
 
-            <div className="absolute -right-1 top-48 z-20 hidden rotate-[5deg] rounded-[28px] border border-orange-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-4xl">
+            <div className="absolute -right-1 top-48 z-20 hidden rotate-[5deg] rounded-[22px] border border-orange-100 bg-white/95 px-4 py-3 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-xl bg-orange-50 text-2xl">
                 ✏️
               </div>
 
@@ -418,22 +418,22 @@ export default function CadastroPage() {
             </div>
 
             {/* BLOCO CENTRAL */}
-            <div className="mx-auto w-full max-w-2xl">
-              <div className="mb-5 text-center">
-                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
+            <div className="mx-auto w-full max-w-xl">
+              <div className="mb-2 text-center">
+                <div className="mx-auto mb-1.5 flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
                   <Gift size={30} strokeWidth={2.3} />
                 </div>
 
-                <h1 className="text-4xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-5xl md:text-6xl">
+                <h1 className="text-3xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-4xl md:text-[2.55rem]">
                   Crie sua{" "}
                   <span className="text-green-600">
                     conta
                   </span>
                 </h1>
 
-                <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-green-500" />
+                <div className="mx-auto mt-1.5 h-1 w-14 rounded-full bg-green-500" />
 
-                <p className="mx-auto mt-5 max-w-xl text-base leading-relaxed text-slate-600 sm:text-lg">
+                <p className="mx-auto mt-2 max-w-xl text-xs leading-relaxed text-slate-600 sm:text-sm">
                   Cadastre-se e ganhe{" "}
                   <strong className="font-extrabold text-green-600">
                     3 testes gratuitos
@@ -442,16 +442,16 @@ export default function CadastroPage() {
                 </p>
               </div>
 
-              <div className="rounded-[30px] border border-slate-200 bg-white/95 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.12)] sm:p-7">
+              <div className="rounded-[24px] border border-slate-200 bg-white/95 p-3.5 shadow-[0_24px_70px_rgba(15,23,42,0.12)] sm:p-4">
                 <form
                   onSubmit={criarConta}
-                  className="space-y-4"
+                  className="space-y-2.5"
                 >
                   {/* NOME */}
                   <div className="relative">
                     <User
                       size={21}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-green-600"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-green-600"
                     />
 
                     <input
@@ -461,7 +461,7 @@ export default function CadastroPage() {
                       onChange={(e) =>
                         setNome(e.target.value)
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
                   </div>
@@ -470,7 +470,7 @@ export default function CadastroPage() {
                   <div className="relative">
                     <Mail
                       size={21}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-green-600"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-green-600"
                     />
 
                     <input
@@ -480,7 +480,7 @@ export default function CadastroPage() {
                       onChange={(e) =>
                         setEmail(e.target.value)
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
                   </div>
@@ -489,7 +489,7 @@ export default function CadastroPage() {
                   <div className="relative">
                     <Phone
                       size={21}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-green-600"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-green-600"
                     />
 
                     <input
@@ -499,7 +499,7 @@ export default function CadastroPage() {
                       onChange={(e) =>
                         setWhatsapp(e.target.value)
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
                   </div>
@@ -508,7 +508,7 @@ export default function CadastroPage() {
                   <div className="relative">
                     <LockKeyhole
                       size={21}
-                      className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-green-600"
+                      className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-green-600"
                     />
 
                     <input
@@ -522,7 +522,7 @@ export default function CadastroPage() {
                       onChange={(e) =>
                         setSenha(e.target.value)
                       }
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-12 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-2.5 pl-11 pr-11 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
 
@@ -531,7 +531,7 @@ export default function CadastroPage() {
                       onClick={() =>
                         setMostrarSenha(!mostrarSenha)
                       }
-                      className="absolute right-4 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
+                      className="absolute right-3.5 top-1/2 -translate-y-1/2 cursor-pointer text-slate-500 transition hover:text-slate-700"
                       aria-label={
                         mostrarSenha
                           ? "Ocultar senha"
@@ -550,7 +550,7 @@ export default function CadastroPage() {
                   <button
                     type="submit"
                     disabled={carregando}
-                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-5 py-2.5 text-base font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <UserPlus size={23} />
 
@@ -561,12 +561,12 @@ export default function CadastroPage() {
                 </form>
 
                 {/* 3 TESTES */}
-                <div className="mt-5 flex items-center gap-3 rounded-2xl border border-green-100 bg-green-50/70 px-4 py-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
+                <div className="mt-3 flex items-center gap-2.5 rounded-xl border border-green-100 bg-green-50/70 px-3.5 py-2.5">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
                     ✓
                   </div>
 
-                  <p className="text-sm leading-relaxed text-slate-600 sm:text-base">
+                  <p className="text-xs leading-relaxed text-slate-600 sm:text-sm">
                     Ao se cadastrar, você ganha{" "}
                     <strong className="font-extrabold text-green-600">
                       3 testes gratuitos
@@ -576,7 +576,7 @@ export default function CadastroPage() {
                 </div>
 
                 {/* LOGIN */}
-                <div className="mt-6 flex items-center gap-4">
+                <div className="mt-3 flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
                   <p className="text-sm text-slate-600">
                     Já possui uma conta?
@@ -589,7 +589,7 @@ export default function CadastroPage() {
                   onClick={() => {
                     window.location.href = "/login";
                   }}
-                  className="mx-auto mt-4 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
+                  className="mx-auto mt-2 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
                 >
                   <LogIn size={19} />
                   Entrar

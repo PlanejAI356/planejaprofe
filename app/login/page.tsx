@@ -220,7 +220,7 @@ export default function LoginPage() {
         ✦
       </span>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-5 sm:px-8 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 py-3 sm:px-8 lg:px-12">
         {/* CABEÇALHO */}
         <header className="flex shrink-0 items-center justify-between gap-4">
           <button
@@ -233,15 +233,15 @@ export default function LoginPage() {
             <img
               src="/logo-planejai-nova.png"
               alt="PlanejAI"
-              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+              className="h-11 w-11 object-contain sm:h-12 sm:w-12"
             />
 
-            <span className="text-3xl font-black tracking-tight text-[#071c4d] sm:text-4xl">
+            <span className="text-2xl font-black tracking-tight text-[#071c4d] sm:text-3xl">
               Planej<span className="text-green-600">AI</span>
             </span>
           </button>
 
-          <div className="hidden items-center gap-3 rounded-2xl border border-slate-200 bg-white/90 px-5 py-3 shadow-sm md:flex">
+          <div className="hidden items-center gap-2.5 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 shadow-sm md:flex">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
               <ShieldCheck size={22} />
             </div>
@@ -259,11 +259,11 @@ export default function LoginPage() {
         </header>
 
         {/* CONTEÚDO */}
-        <section className="relative flex flex-1 items-center justify-center py-6">
+        <section className="relative flex flex-1 items-center justify-center py-2">
           <div className="relative w-full max-w-6xl">
             {/* CARDS LATERAIS */}
-            <div className="absolute -left-2 top-16 z-20 hidden rotate-[-5deg] rounded-[28px] border border-green-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-50 text-4xl">
+            <div className="absolute -left-2 top-16 z-20 hidden rotate-[-5deg] rounded-[24px] border border-green-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-green-50 text-3xl">
                 📚
               </div>
 
@@ -272,8 +272,8 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <div className="absolute left-0 bottom-20 z-20 hidden rotate-[3deg] rounded-[28px] border border-blue-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-50 text-4xl">
+            <div className="absolute left-0 bottom-20 z-20 hidden rotate-[3deg] rounded-[24px] border border-blue-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
                 📝
               </div>
 
@@ -282,8 +282,8 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <div className="absolute -right-1 top-40 z-20 hidden rotate-[5deg] rounded-[28px] border border-orange-100 bg-white/95 px-6 py-5 text-center shadow-xl lg:block">
-              <div className="mx-auto mb-2 flex h-16 w-16 items-center justify-center rounded-2xl bg-orange-50 text-4xl">
+            <div className="absolute -right-1 top-40 z-20 hidden rotate-[5deg] rounded-[24px] border border-orange-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
+              <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50 text-3xl">
                 ✏️
               </div>
 
@@ -293,30 +293,30 @@ export default function LoginPage() {
             </div>
 
             {/* BLOCO CENTRAL */}
-            <div className="mx-auto w-full max-w-xl">
-              <div className="mb-6 text-center">
-                <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
+            <div className="mx-auto w-full max-w-lg">
+              <div className="mb-3 text-center">
+                <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
                   <LogIn size={30} strokeWidth={2.3} />
                 </div>
 
-                <h1 className="text-4xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-5xl md:text-6xl">
+                <h1 className="text-3xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-4xl md:text-[2.7rem]">
                   Acesse sua{" "}
                   <span className="text-green-600">
                     conta
                   </span>
                 </h1>
 
-                <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-green-500" />
+                <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-green-500" />
 
-                <p className="mx-auto mt-5 max-w-lg text-base leading-relaxed text-slate-600 sm:text-lg">
+                <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-600 sm:text-base">
                   Entre para continuar criando seus materiais no PlanejAI.
                 </p>
               </div>
 
-              <div className="rounded-[30px] border border-slate-200 bg-white/95 p-5 shadow-[0_24px_70px_rgba(15,23,42,0.12)] sm:p-7">
+              <div className="rounded-[26px] border border-slate-200 bg-white/95 p-4 shadow-[0_24px_70px_rgba(15,23,42,0.12)] sm:p-5">
                 <form
                   onSubmit={entrar}
-                  className="space-y-4"
+                  className="space-y-3"
                 >
                   {/* E-MAIL */}
                   <div className="relative">
@@ -335,7 +335,7 @@ export default function LoginPage() {
                         )
                       }
                       autoComplete="email"
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-4 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
                   </div>
@@ -361,7 +361,7 @@ export default function LoginPage() {
                         )
                       }
                       autoComplete="current-password"
-                      className="w-full rounded-2xl border border-slate-200 bg-white py-4 pl-12 pr-12 text-base outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
+                      className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-12 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
                     />
 
@@ -408,7 +408,7 @@ export default function LoginPage() {
                   <button
                     type="submit"
                     disabled={carregando}
-                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
+                    className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-5 py-3 text-base font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                   >
                     <LogIn size={23} />
 
@@ -419,7 +419,7 @@ export default function LoginPage() {
                 </form>
 
                 {/* CRIAR CONTA */}
-                <div className="mt-6 flex items-center gap-4">
+                <div className="mt-4 flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
                   <p className="text-sm text-slate-600">
                     Ainda não possui uma conta?
@@ -432,7 +432,7 @@ export default function LoginPage() {
                   onClick={() => {
                     window.location.href = "/cadastro";
                   }}
-                  className="mx-auto mt-4 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
+                  className="mx-auto mt-2.5 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
                 >
                   Criar conta
                 </button>

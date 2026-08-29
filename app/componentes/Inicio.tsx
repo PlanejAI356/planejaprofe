@@ -1,5 +1,3 @@
-
-
 import {
   BadgeCheck,
   Clock3,
@@ -40,15 +38,15 @@ export default function Inicio() {
       <span className="pointer-events-none absolute right-[7%] top-[43%] text-4xl text-green-500">✦</span>
       <span className="pointer-events-none absolute bottom-[19%] right-[11%] text-3xl text-blue-500">✦</span>
 
-      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 pb-8 pt-5 sm:px-8 lg:px-12">
+      <div className="relative z-10 mx-auto flex min-h-screen max-w-[1500px] flex-col px-5 pb-4 pt-3 sm:px-8 lg:px-12">
         <header className="flex shrink-0 flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <img
               src="/logo-planejai-nova.png"
               alt="PlanejAI"
-              className="h-14 w-14 object-contain sm:h-16 sm:w-16"
+              className="h-11 w-11 object-contain sm:h-12 sm:w-12"
             />
-            <span className="text-3xl font-black tracking-tight text-[#071c4d] sm:text-4xl">
+            <span className="text-2xl font-black tracking-tight text-[#071c4d] sm:text-3xl">
               Planej<span className="text-green-600">AI</span>
             </span>
           </div>
@@ -64,28 +62,28 @@ export default function Inicio() {
           </div>
         </header>
 
-        <section className="relative mt-8 flex flex-1 items-center justify-center lg:mt-6">
+        <section className="relative mt-3 flex flex-1 items-center justify-center lg:mt-2">
           <div className="relative w-full max-w-6xl">
-            <div className="absolute -left-2 top-24 z-20 hidden rotate-[-5deg] rounded-[28px] border border-green-100 bg-white/95 px-7 py-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
-              <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-green-50 text-5xl">📚</div>
-              <p className="text-lg font-extrabold text-green-700">Planejamentos</p>
+            <div className="absolute -left-2 top-24 z-20 hidden rotate-[-5deg] rounded-[28px] border border-green-100 bg-white/95 px-5 py-4 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-green-50 text-3xl">📚</div>
+              <p className="text-base font-extrabold text-green-700">Planejamentos</p>
             </div>
 
-            <div className="absolute left-1 bottom-24 z-20 hidden rotate-[3deg] rounded-[28px] border border-blue-100 bg-white/95 px-7 py-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
-              <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-blue-50 text-5xl">📝</div>
-              <p className="text-lg font-extrabold text-blue-700">Avaliações</p>
+            <div className="absolute left-1 bottom-24 z-20 hidden rotate-[3deg] rounded-[28px] border border-blue-100 bg-white/95 px-5 py-4 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 text-3xl">📝</div>
+              <p className="text-base font-extrabold text-blue-700">Avaliações</p>
             </div>
 
-            <div className="absolute -right-1 top-44 z-20 hidden rotate-[5deg] rounded-[28px] border border-orange-100 bg-white/95 px-7 py-6 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
-              <div className="mx-auto mb-3 flex h-20 w-20 items-center justify-center rounded-2xl bg-orange-50 text-5xl">✏️</div>
-              <p className="text-lg font-extrabold text-orange-600">Atividades</p>
+            <div className="absolute -right-1 top-44 z-20 hidden rotate-[5deg] rounded-[28px] border border-orange-100 bg-white/95 px-5 py-4 text-center shadow-[0_18px_45px_rgba(15,23,42,0.14)] lg:block">
+              <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 text-3xl">✏️</div>
+              <p className="text-base font-extrabold text-orange-600">Atividades</p>
             </div>
 
-            <div className="relative mx-auto max-w-4xl rounded-[38px] border border-slate-200/80 bg-white/92 px-6 py-10 text-center shadow-[0_30px_90px_rgba(15,23,42,0.11)] backdrop-blur-sm sm:px-10 md:px-14 md:py-12 lg:px-20">
-              <h1 className="mx-auto max-w-3xl text-[2.7rem] font-black leading-[0.98] tracking-[-0.045em] text-[#071c4d] sm:text-6xl lg:text-7xl">
+            <div className="relative mx-auto max-w-4xl rounded-[34px] border border-slate-200/80 bg-white/92 px-6 py-6 text-center shadow-[0_30px_90px_rgba(15,23,42,0.11)] backdrop-blur-sm sm:px-10 md:px-14 md:py-7 lg:px-20">
+              <h1 className="mx-auto max-w-3xl text-[2.25rem] font-black leading-[0.98] tracking-[-0.045em] text-[#071c4d] sm:text-5xl lg:text-[3.55rem]">
                 <span className="block">Crie seus</span>
                 <span
-                  className="mt-3 block text-green-600"
+                  className="mt-1.5 block text-green-600"
                   style={{
                     fontFamily: '"Segoe Print", "Comic Sans MS", cursive',
                     fontWeight: 700,
@@ -94,7 +92,7 @@ export default function Inicio() {
                 >
                   materiais pedagógicos
                 </span>
-                <span className="mt-2 block">
+                <span className="mt-1 block">
                   do seu{" "}
                   <span
                     className="relative inline-block"
@@ -109,18 +107,18 @@ export default function Inicio() {
                 </span>
               </h1>
 
-              <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-slate-600 sm:text-lg md:text-xl">
+              <p className="mx-auto mt-4 max-w-2xl text-sm leading-relaxed text-slate-600 sm:text-base md:text-lg">
                 Planejamentos, avaliações e atividades personalizadas
                 <span className="block">para facilitar o seu dia a dia.</span>
               </p>
 
-              <div className="mx-auto mt-8 flex max-w-3xl flex-col gap-4 sm:flex-row">
+              <div className="mx-auto mt-5 flex max-w-3xl flex-col gap-3 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => {
                     window.location.href = "/cadastro";
                   }}
-                  className="group flex flex-1 items-center justify-center gap-4 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-6 py-4 text-left text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-xl"
+                  className="group flex flex-1 items-center justify-center gap-4 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-5 py-3 text-left text-white shadow-lg transition duration-200 hover:-translate-y-0.5 hover:shadow-xl"
                 >
                   <UserPlus size={28} className="shrink-0 transition group-hover:scale-105" />
                   <span>
@@ -134,7 +132,7 @@ export default function Inicio() {
                   onClick={() => {
                     window.location.href = "/login";
                   }}
-                  className="group flex flex-1 items-center justify-center gap-4 rounded-2xl border-2 border-blue-500 bg-white px-6 py-4 text-left text-blue-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md"
+                  className="group flex flex-1 items-center justify-center gap-4 rounded-2xl border-2 border-blue-500 bg-white px-5 py-3 text-left text-blue-600 shadow-sm transition duration-200 hover:-translate-y-0.5 hover:bg-blue-50 hover:shadow-md"
                 >
                   <LogIn size={28} className="shrink-0 transition group-hover:scale-105" />
                   <span>
@@ -144,7 +142,7 @@ export default function Inicio() {
                 </button>
               </div>
 
-              <div className="mx-auto mt-7 flex max-w-3xl items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-4 text-left shadow-sm">
+              <div className="mx-auto mt-4 flex max-w-3xl items-center justify-center gap-3 rounded-2xl border border-slate-200 bg-slate-50/80 px-4 py-2.5 text-left shadow-sm">
                 <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-green-100 text-green-600">
                   <Gift size={22} strokeWidth={2.5} />
                 </div>
@@ -161,9 +159,9 @@ export default function Inicio() {
           </div>
         </section>
 
-        <section className="mx-auto mt-9 grid w-full max-w-6xl gap-4 md:grid-cols-3">
-          <div className="flex items-start gap-4 rounded-2xl px-4 py-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
+        <section className="mx-auto mt-3 grid w-full max-w-6xl gap-3 md:grid-cols-3">
+          <div className="flex items-start gap-3 rounded-2xl px-4 py-2">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
               <Target size={26} strokeWidth={2.4} />
             </div>
             <div>
@@ -172,8 +170,8 @@ export default function Inicio() {
             </div>
           </div>
 
-          <div className="flex items-start gap-4 rounded-2xl px-4 py-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
+          <div className="flex items-start gap-3 rounded-2xl px-4 py-2">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
               <Clock3 size={26} strokeWidth={2.4} />
             </div>
             <div>
@@ -182,8 +180,8 @@ export default function Inicio() {
             </div>
           </div>
 
-          <div className="flex items-start gap-4 rounded-2xl px-4 py-3">
-            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
+          <div className="flex items-start gap-3 rounded-2xl px-4 py-2">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border-2 border-green-500 text-green-600">
               <BadgeCheck size={26} strokeWidth={2.4} />
             </div>
             <div>
