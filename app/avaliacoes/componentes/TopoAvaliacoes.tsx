@@ -134,7 +134,7 @@ export default function TopoAvaliacoes({
           </button>
 
           <Link
-            href="/avaliacoes/minhas-atividades"
+            href="/avaliacoes/minhas-atividades-atividades"
             className="flex cursor-pointer shrink-0 items-center gap-2 rounded-xl border border-white/80 bg-white/90 px-4 py-2.5 font-bold text-emerald-700 shadow-md transition-all hover:-translate-y-0.5 hover:bg-white hover:shadow-lg"
           >
             <ClipboardList size={19} />
