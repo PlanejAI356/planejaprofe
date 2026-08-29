@@ -100,7 +100,7 @@ export default function TopoProfessor() {
             <span className="md:hidden">Planos</span>
           </Link>
 
-          <Link href="/avaliacoes/minhas" className={`${botao} border-blue-200 text-blue-700 hover:bg-blue-50`}>
+          <Link href="/avaliacoes/minhas-atividades" className={`${botao} border-blue-200 text-blue-700 hover:bg-blue-50`}>
             <ClipboardList size={18} />
             <span className="hidden md:inline">Minhas Avaliações</span>
             <span className="md:hidden">Avaliações</span>
