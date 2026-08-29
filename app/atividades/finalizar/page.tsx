@@ -17,6 +17,7 @@ import { useRouter } from "next/navigation";
 import { exportarAtividade } from "../utils/exportarAtividade";
 import { exportarAtividadeWord } from "../utils/exportarAtividadeWord";
 import CabecalhoEscolar from "../../componentes/CabecalhoEscolar/CabecalhoEscolar";
+import { supabase } from "../../lib/supabase";
 
 type ConfiguracaoAtividadeImagem = {
   etapaEnsino?: string;
@@ -24,6 +25,7 @@ type ConfiguracaoAtividadeImagem = {
   disciplina?: string;
   pedido?: string;
   quantidadeQuestoes?: number;
+  tipoAtividade?: string;
 };
 
 export default function FinalizarAtividadePage() {
@@ -189,6 +191,141 @@ export default function FinalizarAtividadePage() {
       setCarregando(false);
     }
   }, []);
+
+  /*
+   * Salva automaticamente a atividade no Supabase
+   * quando a tela de finalização é aberta.
+   *
+   * A impressão/Word continuam independentes.
+   * O fingerprint evita criar cópias duplicadas
+   * ao voltar para esta mesma atividade.
+   */
+  useEffect(() => {
+    async function salvarAtividade() {
+      if (!configuracao) return;
+
+      const imagemAluno =
+        localStorage.getItem("atividadeImagem");
+
+      if (
+        !imagemAluno ||
+        !imagemAluno.startsWith("data:image/")
+      ) {
+        return;
+      }
+
+      const fingerprint = [
+        imagemAluno.length,
+        imagemAluno.slice(0, 80),
+        imagemAluno.slice(-80),
+      ].join("|");
+
+      const fingerprintSalvo =
+        localStorage.getItem(
+          "atividadeSalvaFingerprint"
+        );
+
+      const idSalvo =
+        localStorage.getItem(
+          "atividadeSalvaId"
+        );
+
+      /*
+       * Se esta mesma atividade já foi salva,
+       * não cria outra cópia no banco.
+       */
+      if (
+        idSalvo &&
+        fingerprintSalvo === fingerprint
+      ) {
+        return;
+      }
+
+      try {
+        const {
+          data: { user },
+          error: erroUsuario,
+        } = await supabase.auth.getUser();
+
+        if (erroUsuario) {
+          console.error(
+            "Erro ao identificar usuário para salvar atividade:",
+            erroUsuario
+          );
+          return;
+        }
+
+        if (!user) {
+          return;
+        }
+
+        const pedido =
+          configuracao.pedido?.trim() || "";
+
+        const tituloAtividade =
+          pedido.length > 70
+            ? `${pedido.slice(0, 70)}...`
+            : pedido;
+
+        const {
+          data: atividadeSalva,
+          error: erroSalvar,
+        } = await supabase
+          .from("atividades")
+          .insert({
+            usuario_id: user.id,
+            titulo:
+              tituloAtividade ||
+              `${configuracao.disciplina || "Atividade"} - ${
+                configuracao.serie || ""
+              }`.trim(),
+            etapa_ensino:
+              configuracao.etapaEnsino || null,
+            serie:
+              configuracao.serie || null,
+            disciplina:
+              configuracao.disciplina || null,
+            pedido:
+              pedido || null,
+            tipo_atividade:
+              configuracao.tipoAtividade || null,
+            quantidade_questoes:
+              configuracao.quantidadeQuestoes || null,
+            imagem:
+              imagemAluno,
+          })
+          .select("id")
+          .single();
+
+        if (erroSalvar) {
+          console.error(
+            "Erro ao salvar atividade:",
+            erroSalvar
+          );
+          return;
+        }
+
+        if (atividadeSalva?.id) {
+          localStorage.setItem(
+            "atividadeSalvaId",
+            atividadeSalva.id
+          );
+
+          localStorage.setItem(
+            "atividadeSalvaFingerprint",
+            fingerprint
+          );
+        }
+      } catch (error) {
+        console.error(
+          "Erro inesperado ao salvar atividade:",
+          error
+        );
+      }
+    }
+
+    salvarAtividade();
+  }, [configuracao]);
 
   const resumo = useMemo(() => {
     if (!configuracao) {
