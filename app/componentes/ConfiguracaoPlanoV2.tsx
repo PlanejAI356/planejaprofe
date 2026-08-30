@@ -47,6 +47,7 @@ export default function ConfiguracaoPlano({
   const [turmaSelecionada, setTurmaSelecionada] = useState("");
   const [turmaInfantilDetalhe, setTurmaInfantilDetalhe] = useState("");
   const [disciplinaSelecionada, setDisciplinaSelecionada] = useState("");
+  const [camposExperienciaSelecionados, setCamposExperienciaSelecionados] = useState<string[]>([]);
   const [bimestreSelecionado, setBimestreSelecionado] = useState("");
   const [mostrarAnoLetivo, setMostrarAnoLetivo] = useState(false);
   const [mostrarPeriodo, setMostrarPeriodo] = useState(false);
@@ -257,9 +258,11 @@ export default function ConfiguracaoPlano({
                   setTurmaSelecionada("");
                   setTurmaInfantilDetalhe("");
                   setDisciplinaSelecionada("");
+                  setCamposExperienciaSelecionados([]);
                   localStorage.removeItem("serieSelecionada");
                   localStorage.removeItem("turmaInfantilDetalhe");
                   localStorage.removeItem("disciplinaSelecionada");
+                  localStorage.removeItem("camposExperienciaSelecionados");
                 }}
                 className={`${card} min-h-[96px] px-3 py-2 text-center ${estiloEtapa(etapa)}`}
               >
@@ -328,6 +331,9 @@ export default function ConfiguracaoPlano({
                     setTurmaInfantilDetalhe("");
                     localStorage.removeItem("turmaInfantilDetalhe");
                     setDisciplinaSelecionada("");
+                    setCamposExperienciaSelecionados([]);
+                    localStorage.removeItem("disciplinaSelecionada");
+                    localStorage.removeItem("camposExperienciaSelecionados");
                   }}
                   className={`${card} min-w-[115px] py-2 ${
                     turmaSelecionada === turma ? selecionado : normal + " bg-white"
@@ -364,7 +370,9 @@ export default function ConfiguracaoPlano({
                       localStorage.setItem("turmaInfantilDetalhe", turma);
                       localStorage.setItem("serieSelecionada", turma);
                       setDisciplinaSelecionada("");
+                      setCamposExperienciaSelecionados([]);
                       localStorage.removeItem("disciplinaSelecionada");
+                      localStorage.removeItem("camposExperienciaSelecionados");
                     }}
                     className={`${card} min-w-[115px] py-2 ${
                       turmaInfantilDetalhe === turma
@@ -388,37 +396,129 @@ export default function ConfiguracaoPlano({
 
         {podeMostrarCampoOuDisciplina && (
           <section className="mb-4 rounded-2xl border border-emerald-100 bg-emerald-50/40 p-3">
-            <h2 className="mb-2 flex items-center gap-2 font-bold text-slate-800">
-              <Sprout size={19} className="text-emerald-600" />
-              {etapaEnsino === "Educação Infantil"
-                ? "Área de Aprendizagem / Campo de Experiência"
-                : "Disciplina"}
-            </h2>
+            <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
+              <h2 className="flex items-center gap-2 font-bold text-slate-800">
+                <Sprout size={19} className="text-emerald-600" />
+                {etapaEnsino === "Educação Infantil"
+                  ? "Área de Aprendizagem / Campo de Experiência"
+                  : "Disciplina"}
+              </h2>
+
+              {etapaEnsino === "Educação Infantil" && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-xs font-semibold text-slate-500">
+                    {camposExperienciaSelecionados.length} de {camposExperiencia.length} selecionados
+                  </span>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const todos = [...camposExperiencia];
+                      const valorSalvo = todos.join("; ");
+
+                      setCamposExperienciaSelecionados(todos);
+                      setDisciplinaSelecionada(valorSalvo);
+                      localStorage.setItem(
+                        "camposExperienciaSelecionados",
+                        JSON.stringify(todos)
+                      );
+                      localStorage.setItem("disciplinaSelecionada", valorSalvo);
+                    }}
+                    className="rounded-xl border border-emerald-200 bg-white px-3 py-2 text-xs font-bold text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-50"
+                  >
+                    Selecionar todos
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setCamposExperienciaSelecionados([]);
+                      setDisciplinaSelecionada("");
+                      localStorage.removeItem("camposExperienciaSelecionados");
+                      localStorage.removeItem("disciplinaSelecionada");
+                    }}
+                    disabled={camposExperienciaSelecionados.length === 0}
+                    className="rounded-xl border border-slate-200 bg-white px-3 py-2 text-xs font-bold text-slate-600 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                  >
+                    Limpar
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {etapaEnsino === "Educação Infantil" && (
+              <p className="mb-3 text-xs font-medium text-slate-500">
+                Selecione um ou mais campos de experiência. Você também pode usar todos no mesmo planejamento.
+              </p>
+            )}
 
             <div className="grid grid-cols-2 gap-2 lg:grid-cols-4">
-              {opcoesDisciplina.map((disciplina) => (
-                <button
-                  key={disciplina}
-                  type="button"
-                  onClick={() => {
-                    setDisciplinaSelecionada(disciplina);
-                    localStorage.setItem("disciplinaSelecionada", disciplina);
-                  }}
-                  className={`${card} min-h-[52px] py-2 ${
-                    disciplinaSelecionada === disciplina
-                      ? selecionado
-                      : normal + " bg-white"
-                  }`}
-                >
-                  {disciplina}
-                  {disciplinaSelecionada === disciplina && (
-                    <CheckCircle2
-                      size={19}
-                      className="absolute right-3 top-2.5 text-emerald-600"
-                    />
-                  )}
-                </button>
-              ))}
+              {opcoesDisciplina.map((disciplina) => {
+                const estaSelecionada =
+                  etapaEnsino === "Educação Infantil"
+                    ? camposExperienciaSelecionados.includes(disciplina)
+                    : disciplinaSelecionada === disciplina;
+
+                return (
+                  <button
+                    key={disciplina}
+                    type="button"
+                    onClick={() => {
+                      if (etapaEnsino === "Educação Infantil") {
+                        const novosCampos = camposExperienciaSelecionados.includes(
+                          disciplina
+                        )
+                          ? camposExperienciaSelecionados.filter(
+                              (campo) => campo !== disciplina
+                            )
+                          : [...camposExperienciaSelecionados, disciplina];
+
+                        const valorSalvo = novosCampos.join("; ");
+
+                        setCamposExperienciaSelecionados(novosCampos);
+                        setDisciplinaSelecionada(valorSalvo);
+
+                        if (novosCampos.length > 0) {
+                          localStorage.setItem(
+                            "camposExperienciaSelecionados",
+                            JSON.stringify(novosCampos)
+                          );
+                          localStorage.setItem(
+                            "disciplinaSelecionada",
+                            valorSalvo
+                          );
+                        } else {
+                          localStorage.removeItem(
+                            "camposExperienciaSelecionados"
+                          );
+                          localStorage.removeItem("disciplinaSelecionada");
+                        }
+
+                        return;
+                      }
+
+                      setDisciplinaSelecionada(disciplina);
+                      localStorage.setItem(
+                        "disciplinaSelecionada",
+                        disciplina
+                      );
+                    }}
+                    className={`${card} min-h-[52px] py-2 ${
+                      estaSelecionada
+                        ? selecionado
+                        : normal + " bg-white"
+                    }`}
+                  >
+                    {disciplina}
+                    {estaSelecionada && (
+                      <CheckCircle2
+                        size={19}
+                        className="absolute right-3 top-2.5 text-emerald-600"
+                      />
+                    )}
+                  </button>
+                );
+              })}
             </div>
           </section>
         )}

@@ -31,6 +31,28 @@ const tipoPlanejamento =
     const etapaEnsino = body.etapa || body.etapaEnsino || "";
     const serie = body.serie || "";
     const disciplina = body.disciplina || "";
+
+    const camposExperienciaSelecionados = String(disciplina)
+      .split(";")
+      .map((campo) => campo.trim())
+      .filter(Boolean);
+
+    const possuiMultiplosCamposExperiencia =
+      etapaEnsino === "Educação Infantil" &&
+      camposExperienciaSelecionados.length > 1;
+
+    const regrasCamposExperiencia =
+      etapaEnsino === "Educação Infantil"
+        ? `
+REGRAS PARA CAMPO(S) DE EXPERIÊNCIA:
+- Considere todos os campos de experiência selecionados pelo professor.
+- Quando houver mais de um campo selecionado, integre todos de forma coerente no planejamento.
+- Não ignore nenhum dos campos selecionados.
+- Evite repetir o mesmo objetivo, experiência, recurso, metodologia ou critério de avaliação apenas para contemplar campos diferentes.
+- Faça relações pedagógicas naturais entre os campos, respeitando a idade e a turma.
+${possuiMultiplosCamposExperiencia ? "- Há mais de um campo de experiência selecionado neste planejamento." : ""}
+`
+        : "";
     const estiloAula =
       body.estiloAula || body.sugestoesMetodologia || "";
 
@@ -119,7 +141,7 @@ Destrinche o tema geral em temas por aula, respeitando a turma informada.
 Tema geral: ${tema}
 Etapa: ${etapaEnsino}
 Turma/Série: ${serie}
-Disciplina/Campo de experiência: ${disciplina}
+Disciplina/Campo(s) de experiência selecionado(s): ${disciplina}
 
 ${regrasEJA}
 ${regrasEtapaEJA}
@@ -161,9 +183,10 @@ ${etapaEnsino}
 Série:
 ${serie}
 
-Disciplina:
+Disciplina/Campo(s) de experiência:
 ${disciplina}
 
+${regrasCamposExperiencia}
 ${regrasEJA}
 ${regrasEtapaEJA}
 
@@ -202,7 +225,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie objetivos de aprendizagem adequados para Creche.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -230,7 +255,9 @@ Você é um assistente pedagógico especialista em Educação Infantil.
 Crie objetivos de aprendizagem para as aulas abaixo.
 
 Turma: ${serie}
-Campo de experiência ou área de aprendizagem: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -360,7 +387,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie recursos e materiais para cada conteúdo mensal informado.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -392,7 +421,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie recursos e materiais para cada aula.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -498,7 +529,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie a metodologia de desenvolvimento para cada conteúdo mensal informado.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -536,7 +569,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie a metodologia de desenvolvimento para cada aula abaixo.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -671,7 +706,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie uma avaliação formativa para cada conteúdo mensal informado.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
@@ -706,7 +743,9 @@ Você é um assistente pedagógico especializado em Educação Infantil - Creche
 Crie uma avaliação formativa para cada aula abaixo.
 
 Turma: ${serie}
-Campo de experiência: ${disciplina}
+Campo(s) de experiência selecionado(s): ${disciplina}
+
+${regrasCamposExperiencia}
 
 Meu estilo de aula:
 ${estiloAula}
