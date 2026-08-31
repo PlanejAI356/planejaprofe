@@ -108,7 +108,9 @@ export default function AdminPage() {
   const [
     filtroPlano,
     setFiltroPlano,
-  ] = useState<"nao-premium" | "premium">("nao-premium");
+  ] = useState<
+    "nao-premium" | "premium" | "ayanne"
+  >("nao-premium");
 
   const [aba, setAba] = useState<
     "usuarios" | "parceiros" | "indicacoes"
@@ -320,14 +322,27 @@ export default function AdminPage() {
                 usuario.plano || ""
               ).toLowerCase() === "premium";
 
+            const cupomOrigem =
+              String(
+                usuario.cupom_origem || ""
+              )
+                .trim()
+                .toUpperCase();
+
             const correspondePlano =
               filtroPlano === "premium"
                 ? ehPremium
                 : !ehPremium;
 
+            const correspondeOrigem =
+              filtroPlano === "ayanne"
+                ? cupomOrigem === "AYANNE"
+                : true;
+
             return (
               correspondeBusca &&
-              correspondePlano
+              correspondePlano &&
+              correspondeOrigem
             );
           }
         ) || []
@@ -760,6 +775,20 @@ export default function AdminPage() {
                 >
                   Premium ({dados.resumo.totalPremium})
                 </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setFiltroPlano("ayanne")
+                  }
+                  className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    filtroPlano === "ayanne"
+                      ? "bg-violet-600 text-white"
+                      : "border border-violet-300 bg-white text-violet-700 hover:bg-violet-50"
+                  }`}
+                >
+                  Somente AYANNE
+                </button>
               </div>
             </div>
 
@@ -833,20 +862,18 @@ export default function AdminPage() {
                         "";
 
                       const mensagemWhatsApp =
-                        `Olá${
+                        `Oi${
                           primeiroNome
                             ? `, ${primeiroNome}`
                             : ""
-                        }! Tudo bem? Aqui é a Naiara, do PlanejAI.\n\n` +
-                        `Hoje liberei uma condição especial para quem já tem cadastro: você terá 3 testes gratuitos para usar no PlanejAI durante as próximas 24 horas.\n\n` +
-                        `É uma oportunidade para voltar à plataforma e testar com calma a criação de planos, avaliações e atividades.\n\n` +
-                        `A liberação é válida somente durante esse período.\n\n` +
-                        `Acesse sua conta por aqui:\n` +
-                        `https://planejaioficial.com.br\n\n` +
-                        `Depois me conta o que achou. Seu retorno também vai me ajudar a continuar melhorando o PlanejAI.`;
+                        }! Vi que você se cadastrou no PlanejAI através do cupom AYANNE e estou passando para te avisar que estamos nas últimas oportunidades de testar a plataforma gratuitamente.\n\n` +
+                        `Se você ainda não chegou a experimentar de verdade, aproveite para entrar e criar algo que esteja precisando para suas aulas — pode ser um planejamento, uma avaliação ou uma atividade.\n\n` +
+                        `A ideia é você conhecer o PlanejAI na prática e ver se ele realmente pode facilitar sua rotina.\n\n` +
+                        `Acesse: https://planejaioficial.com.br\n\n` +
+                        `Aproveite essa oportunidade para testar antes de decidir se quer continuar.`;
 
                       const assuntoEmail =
-                        "3 testes gratuitos liberados por 24 horas";
+                        "Cupom AYANNE: últimas oportunidades para testar o PlanejAI";
 
                       const mensagemEmail =
                         `Olá${
@@ -854,12 +881,13 @@ export default function AdminPage() {
                             ? `, ${primeiroNome}`
                             : ""
                         }!\n\n` +
-                        `Hoje liberamos uma condição especial para quem já tem cadastro no PlanejAI: você terá 3 testes gratuitos para usar durante as próximas 24 horas.\n\n` +
-                        `Nesse período, você poderá voltar à plataforma e testar com calma a criação de planos de aula, avaliações e atividades.\n\n` +
-                        `A liberação é válida somente durante essas 24 horas.\n\n` +
-                        `Acesse sua conta por aqui:\n` +
-                        `https://planejaioficial.com.br\n\n` +
-                        `Depois, se puder, conte para nós como foi sua experiência. Seu retorno é muito importante para continuarmos melhorando o PlanejAI.\n\n` +
+                        `Você se cadastrou no PlanejAI utilizando o cupom AYANNE e queremos te fazer um lembrete importante.\n\n` +
+                        `Estamos entrando nas últimas oportunidades para experimentar o PlanejAI gratuitamente.\n\n` +
+                        `Se você ainda não testou a plataforma ou entrou apenas para conhecer, aproveite para experimentar agora com algo que realmente precisa preparar para suas aulas.\n\n` +
+                        `No PlanejAI, você pode criar planejamentos de aula, avaliações personalizadas e atividades pedagógicas com auxílio da inteligência artificial.\n\n` +
+                        `Comece a semana colocando o PlanejAI à prova. Escolha algo que você precisa preparar e veja, na prática, se ele pode economizar seu tempo.\n\n` +
+                        `Acesse sua conta: https://planejaioficial.com.br\n\n` +
+                        `Você não precisa decidir nada agora. Primeiro experimente.\n\n` +
                         `Equipe PlanejAI`;
 
                       return (
