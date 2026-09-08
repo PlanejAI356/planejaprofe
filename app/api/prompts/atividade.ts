@@ -328,11 +328,25 @@ PINTE / CIRCULE FIGURAS:
 - O comando deve informar claramente o critério.
 
 DITADO ILUSTRADO / ESCREVA O NOME DAS FIGURAS:
-- Criar um item para cada figura.
-- "texto" deve conter a palavra-alvo.
-- "resposta" deve conter a resposta correta.
+- Tratar "ditado ilustrado", "autoditado" e "escreva o nome das figuras" como atividade visual de identificação e escrita.
+- Criar EXATAMENTE um item para cada figura solicitada pelo professor.
+- Se o professor pedir uma quantidade específica de figuras ou imagens, essa quantidade vale para os itens internos do exercício e deve ser obedecida exatamente.
+- A quantidade de figuras NÃO deve ser confundida com a quantidade de questões principais da atividade.
+- Cada item deve representar UMA única figura.
+- NÃO numerar visualmente as figuras.
+- NÃO escrever "1", "2", "3", "FIGURA 1", "IMAGEM 1" ou qualquer marcador numérico no conteúdo destinado ao aluno.
+- "texto" deve conter somente a palavra-alvo para controle interno do sistema; essa palavra NÃO deve aparecer impressa ao aluno no autoditado.
+- "resposta" deve conter a resposta correta para uso interno/gabarito.
 - "imagemNecessaria" deve ser true em cada item.
-- "imagemDescricao" deve solicitar uma única figura pequena, isolada, nítida, sem texto e com fundo branco ou transparente.
+- "imagemDescricao" deve solicitar UMA única figura pequena, isolada, nítida, facilmente reconhecível, sem letras, sem números, sem legenda, sem borda escrita e com fundo branco ou transparente.
+- Nunca colocar o nome do objeto dentro da imagem.
+- Cada figura deve possuir abaixo dela uma ÁREA RETANGULAR VAZIA para escrita do aluno.
+- Usar retângulo horizontal com borda simples em vez de linha, sublinhado ou pontilhado.
+- O retângulo de resposta deve ser largo e alto o suficiente para a criança escrever confortavelmente o nome da figura.
+- Priorizar o espaço de escrita; se houver muitas figuras, reduzir moderadamente o tamanho das ilustrações antes de reduzir o campo de resposta.
+- Distribuir os itens de forma equilibrada e sem cortar figuras ou campos de escrita.
+- Organizar a grade de acordo com a quantidade solicitada, distribuindo as figuras de forma equilibrada e mantendo espaço confortável para escrita em todos os itens.
+- Antes de finalizar o JSON, conferir internamente: quantidade exata de figuras, nenhuma numeração visual, uma imagem por item, nenhuma resposta visível e espaço de escrita previsto para todos os itens.
 
 LIGUE COLUNAS / RELACIONE:
 - Para ligar texto a texto, cada item deve usar "colunaA" e "colunaB".
@@ -349,17 +363,106 @@ COMPLETE PALAVRAS / COMPLETE FRASES:
 - Não criar mais de uma resposta possível.
 
 CAÇA-PALAVRAS:
-- "palavras" deve conter todas as palavras procuradas.
+- Criar um caça-palavras realmente solucionável e pedagogicamente adequado à série.
+- "palavras" deve conter TODAS as palavras que o aluno deverá encontrar.
 - "grade" deve ser uma lista de linhas com letras separadas por espaço.
-- Todas as palavras precisam realmente estar na grade.
+- TODAS as palavras presentes em "palavras" devem existir integralmente na "grade".
+- É proibido listar qualquer palavra que não esteja realmente posicionada na grade.
+- Cada palavra deve ser formada por letras consecutivas, sem pular casas.
+- Nunca quebrar uma palavra entre linhas.
+- Nunca trocar, omitir, acrescentar ou reorganizar letras apenas para fazer a palavra caber.
+- A palavra escrita em "palavras" e a palavra posicionada na grade devem corresponder exatamente.
+- Primeiro definir a lista final de palavras.
+- Depois posicionar TODAS as palavras na grade.
+- Somente depois preencher as casas vazias com letras aleatórias.
+- Nunca preencher a grade com letras aleatórias antes de garantir a posição de todas as palavras.
+- Se a grade ficar pequena, aumentar a quantidade de linhas e colunas.
+- Nunca remover silenciosamente uma palavra por falta de espaço.
+- Nunca devolver uma grade parcialmente construída.
+- Conferir internamente palavra por palavra antes de finalizar o JSON.
+- Se UMA palavra não puder ser localizada integralmente, corrigir a grade antes de responder.
 - Não usar imagem para representar a grade.
 
+CAÇA-PALAVRAS SIMPLES / FÁCIL:
+- Usar grade pequena ou média.
+- Usar palavras curtas e adequadas à série.
+- Posicionar palavras somente da esquerda para a direita e de cima para baixo.
+- NÃO usar palavras invertidas.
+- NÃO usar diagonais.
+- Evitar cruzamentos excessivos.
+- Evitar esconder uma palavra dentro de outra de forma confusa.
+- Manter letras e espaçamento visual confortáveis para leitura.
+- Para 1º e 2º ano, priorizar poucas palavras, grade menor e localização fácil.
+
+CAÇA-PALAVRAS COMPLEXO:
+- Pode usar grade maior e maior quantidade de palavras.
+- Pode utilizar horizontal, vertical e diagonal.
+- Pode utilizar sentidos invertidos quando isso for adequado à série e à dificuldade solicitada.
+- Permitir cruzamentos somente quando a letra compartilhada for exatamente a mesma.
+- Nunca sobrepor letras incompatíveis.
+- Mesmo no nível complexo, todas as palavras devem continuar completamente encontráveis.
+- Não tornar a grade confusa a ponto de prejudicar a leitura ou a resolução.
+
+PROCESSO OBRIGATÓRIO DE CONSTRUÇÃO DO CAÇA-PALAVRAS:
+1. Definir a lista final de palavras.
+2. Escolher uma grade grande o suficiente.
+3. Posicionar cada palavra completamente.
+4. Verificar os limites da grade.
+5. Conferir todos os cruzamentos e direções.
+6. Confirmar que todas as palavras podem ser encontradas do início ao fim.
+7. Somente depois preencher as células vazias.
+8. Fazer uma segunda conferência palavra por palavra.
+9. Só devolver o JSON se TODAS as palavras estiverem presentes e corretas.
+
 CRUZADINHA:
-- "palavras" deve conter as respostas.
-- "pistas" deve conter pistas na mesma ordem.
-- "grade" deve representar a estrutura.
-- As palavras devem cruzar quando possível.
+- Criar uma cruzadinha realmente resolvível e com tamanho visual adequado à série.
+- "palavras" deve conter todas as respostas da cruzadinha.
+- "pistas" deve conter uma pista correspondente para cada palavra, na mesma ordem.
+- "grade" deve representar a estrutura completa da cruzadinha.
+- Todas as palavras de "palavras" devem aparecer integralmente na grade.
+- As palavras devem ser posicionadas somente na HORIZONTAL ou na VERTICAL.
+- NÃO usar palavras na diagonal.
+- As palavras devem se cruzar sempre que houver uma combinação adequada de letras em comum.
+- Um cruzamento só pode acontecer quando a letra compartilhada for exatamente a mesma.
+- Nunca sobrepor letras diferentes.
+- Nunca cortar palavras nas bordas da grade.
+- Nunca deixar palavras parcialmente fora da grade.
+- Evitar palavras isoladas sem necessidade.
 - Não usar imagem para representar a grade.
+
+REGRAS VISUAIS DA CRUZADINHA:
+- Adequar o tamanho da grade à quantidade e ao comprimento das palavras.
+- As casas devem ficar grandes o suficiente para escrita manual confortável.
+- Não criar uma grade excessivamente larga ou alta que precise ser reduzida demais na folha.
+- Não comprimir a cruzadinha apenas para encaixar mais palavras.
+- Priorizar menos palavras bem distribuídas em vez de muitas palavras apertadas.
+- Para Educação Infantil, 1º, 2º e 3º ano, usar casas visualmente maiores e estrutura mais simples.
+- Para anos iniciais, evitar cruzadinhas com letras pequenas ou grade muito densa.
+- Manter a cruzadinha proporcional, centralizada e fácil de ler.
+
+CRUZADINHA SIMPLES:
+- Usar poucas palavras, preferencialmente curtas ou médias.
+- Criar poucos cruzamentos bem distribuídos.
+- Evitar estrutura muito larga, muito alta ou com muitos blocos vazios.
+- Priorizar leitura fácil e espaço amplo para escrita.
+
+CRUZADINHA COMPLEXA:
+- Pode usar mais palavras e maior número de cruzamentos.
+- Manter sempre palavras somente na horizontal e vertical.
+- Pode usar uma grade maior, desde que as casas continuem legíveis e confortáveis.
+- Evitar densidade excessiva que obrigue o sistema a reduzir demais o tamanho visual.
+
+PROCESSO OBRIGATÓRIO DE CONSTRUÇÃO DA CRUZADINHA:
+1. Definir a lista final de palavras e pistas.
+2. Escolher uma palavra principal para iniciar a grade.
+3. Posicionar essa palavra na horizontal.
+4. Posicionar as demais palavras na horizontal ou vertical, buscando cruzamentos corretos.
+5. Conferir se cada cruzamento usa exatamente a mesma letra.
+6. Verificar se nenhuma palavra ultrapassa os limites.
+7. Ajustar a grade ao conteúdo sem deixar casas pequenas demais.
+8. Confirmar que todas as palavras aparecem completas.
+9. Fazer uma revisão final da correspondência entre palavras, pistas e grade.
+10. Só devolver o JSON quando a cruzadinha estiver válida, completa e legível.
 
 MÚLTIPLA ESCOLHA:
 - Um item para cada pergunta.
@@ -489,7 +592,9 @@ REGRAS DE INTERPRETAÇÃO DO PEDIDO:
 - Criar EXATAMENTE ${quantidadeQuestoes} questões principais.
 - Cada questão principal deve corresponder a um objeto do array "exercicios".
 - Não transformar os itens internos de uma única questão em questões adicionais.
-- Se o professor mencionar outra quantidade no texto, prevalece a quantidade selecionada no sistema: ${quantidadeQuestoes}.
+- Se o professor mencionar outra quantidade de QUESTÕES PRINCIPAIS no texto, prevalece a quantidade selecionada no sistema: ${quantidadeQuestoes}.
+- EXCEÇÃO: quando o professor informar uma quantidade de imagens, figuras, palavras ou itens DENTRO de um exercício, essa quantidade deve ser respeitada exatamente como quantidade de itens internos e não deve ser interpretada como quantidade de questões principais.
+- Exemplo: se o professor pedir "autoditado com X imagens", o exercício deve conter exatamente X itens/figuras, e esse número não deve ser interpretado como quantidade de questões principais.
 - Quando o pedido for genérico, escolher automaticamente uma sequência pedagógica variada.
 - Quando o pedido indicar um formato específico, respeitar esse formato e completar a folha com coerência.
 - Entregar todos os textos, palavras, alternativas, pares, lacunas, pistas, grades e respostas necessários.

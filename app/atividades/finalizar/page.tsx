@@ -10,6 +10,7 @@ import {
 import {
   ArrowLeft,
   Download,
+  FileCheck2,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -499,17 +500,26 @@ export default function FinalizarAtividadePage() {
         }
       `}</style>
 
-      <header className="border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
-          <div>
-            <h1 className="text-xl font-bold text-emerald-900">
-              Finalizar atividade
-            </h1>
+      <header className="border-b border-slate-200 bg-white shadow-sm">
+        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-sm">
+              <FileCheck2 size={23} strokeWidth={2.2} />
+            </div>
 
-            <p className="text-sm text-slate-700">
-              Edite o cabeçalho e baixe
-              a atividade em Word ou PDF.
-            </p>
+            <div>
+              <div className="mb-0.5 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-600">
+                PlanejAI
+              </div>
+
+              <h1 className="text-xl font-extrabold leading-tight text-slate-950">
+                Finalizar atividade
+              </h1>
+
+              <p className="mt-0.5 text-sm text-slate-500">
+                Edite o cabeçalho e baixe a atividade em Word ou PDF.
+              </p>
+            </div>
           </div>
 
           <button
@@ -519,10 +529,9 @@ export default function FinalizarAtividadePage() {
                 "/atividades/resultado"
               )
             }
-            className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 font-bold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
           >
-            <ArrowLeft size={19} />
-
+            <ArrowLeft size={18} />
             Voltar para a atividade
           </button>
         </div>
@@ -530,8 +539,10 @@ export default function FinalizarAtividadePage() {
 
       <section className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
         {resumo && (
-          <div className="mb-4 rounded-xl bg-emerald-50 px-4 py-3 text-center text-sm font-semibold text-emerald-700">
-            {resumo}
+          <div className="mb-4 flex justify-center">
+            <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+              {resumo}
+            </div>
           </div>
         )}
 
@@ -551,7 +562,7 @@ export default function FinalizarAtividadePage() {
 
           <div className="bg-slate-100 p-4 sm:p-6">
             <div
-              className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white px-[4.76%] py-[3.37%] shadow-md"
+              className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white shadow-md"
               style={{
                 boxSizing:
                   "border-box",
@@ -569,7 +580,7 @@ export default function FinalizarAtividadePage() {
                   />
                 )}
 
-                <div className="conteudo-atividade-tela flex min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]">
+                <div className="conteudo-atividade-tela flex min-h-0 flex-1 overflow-hidden bg-white px-[4.76%] pb-[3.37%] pt-[1.5%]">
                   <img
                     src={imagem}
                     alt={
@@ -582,10 +593,7 @@ export default function FinalizarAtividadePage() {
                     style={{
                       filter:
                         "brightness(1.02) contrast(1.01)",
-                      transform:
-                        "scale(1.08)",
-                      transformOrigin:
-                        "top center",
+                    
                     }}
                   />
                 </div>

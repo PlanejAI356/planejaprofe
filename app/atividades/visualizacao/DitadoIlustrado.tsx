@@ -51,22 +51,30 @@ function ImagemPequena({
 export default function DitadoIlustrado({
   exercicio,
 }: Props) {
+  const quantidade = exercicio.itens.length;
+
+  const colunas =
+    quantidade >= 16
+      ? "grid-cols-4"
+      : quantidade >= 9
+      ? "grid-cols-3"
+      : quantidade >= 5
+      ? "grid-cols-2 sm:grid-cols-3"
+      : "grid-cols-2";
+
   return (
-    <div className="mt-4 grid gap-4 sm:grid-cols-2 md:grid-cols-3">
-      {exercicio.itens.map((item, indice) => (
+    <div className={`mt-4 grid gap-4 ${colunas}`}>
+      {exercicio.itens.map((item) => (
         <div
           key={item.id}
-          className="rounded-2xl border border-slate-200 bg-slate-50 p-4"
+          className="flex flex-col items-center rounded-2xl border border-slate-200 bg-slate-50 p-3"
         >
-          <div className="flex justify-center">
-            <ImagemPequena item={item} />
-          </div>
+          <ImagemPequena item={item} />
 
-          <p className="mt-3 text-center text-sm font-semibold text-slate-500">
-            {indice + 1}
-          </p>
-
-          <div className="mt-3 h-7 border-b border-slate-500" />
+          <div
+            className="mt-3 h-11 w-full rounded-md border-2 border-slate-500 bg-white"
+            aria-label="Espaço para escrever o nome da imagem"
+          />
         </div>
       ))}
     </div>

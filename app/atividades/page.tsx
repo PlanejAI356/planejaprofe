@@ -8,6 +8,17 @@ import {
   LogOut,
   MessageSquareText,
   Sparkles,
+  Shapes,
+  Search,
+  Grid3X3,
+  Image,
+  Pencil,
+  Link2,
+  ListChecks,
+  BadgeCheck,
+  BookOpenText,
+  ListOrdered,
+  Check,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
@@ -730,58 +741,162 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
 
           <div className="mt-6">
             <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-              <label className="block text-lg font-bold text-slate-950">
-                Tipo de atividade
-              </label>
+              <div>
+                <label className="block text-lg font-bold text-slate-950">
+                  Tipo de atividade
+                </label>
+                <p className="mt-0.5 text-sm text-slate-500">
+                  Escolha um formato ou deixe o PlanejAI decidir.
+                </p>
+              </div>
 
-              <span className="text-sm text-slate-500">
+              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
                 Opcional
               </span>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
               {[
-                ["mista", "🧩", "Atividade mista"],
-                ["caca_palavras", "🔎", "Caça-palavras"],
-                ["cruzadinha", "🔲", "Cruzadinha"],
-                ["autoditado", "🖼️", "Autoditado"],
-                ["complete", "✏️", "Complete"],
-                ["ligue", "🔗", "Ligue"],
-                ["multipla_escolha", "☑️", "Múltipla escolha"],
-                ["verdadeiro_falso", "✅", "Verdadeiro ou falso"],
-                ["leitura_escrita", "📖", "Leitura e escrita"],
-                ["ordene", "🔢", "Ordene"],
-              ].map(([valor, icone, rotulo]) => (
-                <button
-                  key={valor}
-                  type="button"
-                  onClick={() => {
-                    /*
-                     * Se clicar novamente no tipo selecionado,
-                     * ele desmarca. Assim o campo permanece opcional.
-                     */
-                    setTipoAtividade((atual) =>
-                      atual === valor ? "" : valor
-                    );
-                    setErro("");
-                  }}
-                  className={`cursor-pointer rounded-2xl border px-3 py-4 text-center transition ${
-                    tipoAtividade === valor
-                      ? "border-emerald-600 bg-emerald-50 text-emerald-800 shadow-sm ring-2 ring-emerald-100"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-emerald-400 hover:bg-emerald-50/60"
-                  }`}
-                >
-                  <div className="mb-2 text-2xl">
-                    {icone}
-                  </div>
-                  <div className="text-sm font-bold">
-                    {rotulo}
-                  </div>
-                </button>
-              ))}
+                {
+                  valor: "mista",
+                  rotulo: "Atividade mista",
+                  Icone: Shapes,
+                  borda: "border-emerald-200",
+                  fundoIcone: "bg-emerald-100",
+                  corIcone: "text-emerald-700",
+                  selecionado: "border-emerald-500 bg-emerald-50 ring-2 ring-emerald-100",
+                },
+                {
+                  valor: "caca_palavras",
+                  rotulo: "Caça-palavras",
+                  Icone: Search,
+                  borda: "border-blue-200",
+                  fundoIcone: "bg-blue-100",
+                  corIcone: "text-blue-700",
+                  selecionado: "border-blue-500 bg-blue-50 ring-2 ring-blue-100",
+                },
+                {
+                  valor: "cruzadinha",
+                  rotulo: "Cruzadinha",
+                  Icone: Grid3X3,
+                  borda: "border-violet-200",
+                  fundoIcone: "bg-violet-100",
+                  corIcone: "text-violet-700",
+                  selecionado: "border-violet-500 bg-violet-50 ring-2 ring-violet-100",
+                },
+                {
+                  valor: "autoditado",
+                  rotulo: "Autoditado",
+                  Icone: Image,
+                  borda: "border-amber-200",
+                  fundoIcone: "bg-amber-100",
+                  corIcone: "text-amber-700",
+                  selecionado: "border-amber-500 bg-amber-50 ring-2 ring-amber-100",
+                },
+                {
+                  valor: "complete",
+                  rotulo: "Complete",
+                  Icone: Pencil,
+                  borda: "border-orange-200",
+                  fundoIcone: "bg-orange-100",
+                  corIcone: "text-orange-700",
+                  selecionado: "border-orange-500 bg-orange-50 ring-2 ring-orange-100",
+                },
+                {
+                  valor: "ligue",
+                  rotulo: "Ligue",
+                  Icone: Link2,
+                  borda: "border-cyan-200",
+                  fundoIcone: "bg-cyan-100",
+                  corIcone: "text-cyan-700",
+                  selecionado: "border-cyan-500 bg-cyan-50 ring-2 ring-cyan-100",
+                },
+                {
+                  valor: "multipla_escolha",
+                  rotulo: "Múltipla escolha",
+                  Icone: ListChecks,
+                  borda: "border-indigo-200",
+                  fundoIcone: "bg-indigo-100",
+                  corIcone: "text-indigo-700",
+                  selecionado: "border-indigo-500 bg-indigo-50 ring-2 ring-indigo-100",
+                },
+                {
+                  valor: "verdadeiro_falso",
+                  rotulo: "Verdadeiro ou falso",
+                  Icone: BadgeCheck,
+                  borda: "border-teal-200",
+                  fundoIcone: "bg-teal-100",
+                  corIcone: "text-teal-700",
+                  selecionado: "border-teal-500 bg-teal-50 ring-2 ring-teal-100",
+                },
+                {
+                  valor: "leitura_escrita",
+                  rotulo: "Leitura e escrita",
+                  Icone: BookOpenText,
+                  borda: "border-fuchsia-200",
+                  fundoIcone: "bg-fuchsia-100",
+                  corIcone: "text-fuchsia-700",
+                  selecionado: "border-fuchsia-500 bg-fuchsia-50 ring-2 ring-fuchsia-100",
+                },
+                {
+                  valor: "ordene",
+                  rotulo: "Ordene",
+                  Icone: ListOrdered,
+                  borda: "border-rose-200",
+                  fundoIcone: "bg-rose-100",
+                  corIcone: "text-rose-700",
+                  selecionado: "border-rose-500 bg-rose-50 ring-2 ring-rose-100",
+                },
+              ].map(
+                ({
+                  valor,
+                  rotulo,
+                  Icone,
+                  borda,
+                  fundoIcone,
+                  corIcone,
+                  selecionado,
+                }) => {
+                  const estaSelecionado = tipoAtividade === valor;
+
+                  return (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() => {
+                        setTipoAtividade((atual) =>
+                          atual === valor ? "" : valor
+                        );
+                        setErro("");
+                      }}
+                      className={`group relative min-h-[104px] cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                        estaSelecionado
+                          ? selecionado
+                          : `${borda} hover:bg-slate-50`
+                      }`}
+                    >
+                      <div
+                        className={`flex h-10 w-10 items-center justify-center rounded-xl ${fundoIcone} ${corIcone}`}
+                      >
+                        <Icone size={21} strokeWidth={2.2} />
+                      </div>
+
+                      {estaSelecionado && (
+                        <div className="absolute right-2.5 top-2.5 flex h-6 w-6 items-center justify-center rounded-full bg-emerald-600 text-white shadow-sm">
+                          <Check size={14} strokeWidth={3} />
+                        </div>
+                      )}
+
+                      <div className="mt-3 text-sm font-extrabold leading-tight text-slate-900">
+                        {rotulo}
+                      </div>
+                    </button>
+                  );
+                }
+              )}
             </div>
 
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-3 text-sm text-slate-500">
               Se preferir, não selecione nenhum tipo e descreva
               livremente a atividade abaixo.
             </p>
