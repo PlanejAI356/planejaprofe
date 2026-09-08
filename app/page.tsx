@@ -1,4 +1,4 @@
-"use client";
+
 
 import { useEffect, useState } from "react";
 import Inicio from "./componentes/Inicio";
@@ -418,13 +418,29 @@ export default function Home() {
 
       {/* PAINEL PRINCIPAL */}
       {etapa === "painel" && (
-        <section className="relative flex min-h-[calc(100vh-70px)] items-center overflow-hidden px-4 py-8">
+        <section className="relative flex min-h-[calc(100vh-70px)] items-start overflow-hidden px-4 py-7 sm:py-9">
           <div className="pointer-events-none absolute -left-40 top-10 h-80 w-[520px] rounded-[50%] bg-green-100/60 blur-3xl" />
           <div className="pointer-events-none absolute -right-44 top-24 h-96 w-[580px] rounded-[50%] bg-emerald-100/50 blur-3xl" />
           <div className="pointer-events-none absolute bottom-[-180px] left-[20%] h-80 w-[650px] rounded-[50%] bg-blue-50/70 blur-3xl" />
 
+          <div className="pointer-events-none absolute left-5 top-28 hidden rotate-[-8deg] text-center text-sm font-medium italic leading-6 text-emerald-700/55 2xl:block">
+            Ideias de hoje,<br />
+            grandes conquistas<br />
+            amanhã. ♡
+          </div>
+
+          <div className="pointer-events-none absolute right-7 top-32 hidden rotate-[5deg] text-center text-sm font-medium italic leading-6 text-emerald-700/55 2xl:block">
+            Professores<br />
+            que inspiram ♡
+          </div>
+
+          <div className="pointer-events-none absolute bottom-8 right-8 hidden rotate-[-4deg] text-center text-sm font-medium italic leading-6 text-emerald-700/45 2xl:block">
+            Planejamento também é<br />
+            cuidar de pessoas. ♡
+          </div>
+
           <div className="relative z-10 mx-auto w-full max-w-7xl">
-            <div className="mb-9 text-center">
+            <div className="mb-7 text-center">
               <p className="mb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-green-600">
                 PlanejAI
               </p>
@@ -445,7 +461,7 @@ export default function Home() {
             </div>
 
             {/* QUATRO CARDS */}
-            <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
+            <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
               {/* PLANEJAMENTO */}
               <button
                 type="button"
@@ -457,24 +473,24 @@ export default function Home() {
                     setEtapa("configuracao");
                   }
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-green-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-green-100/60" />
+                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-green-100/60" />
 
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">
+                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-3xl shadow-sm">
                   📚
                 </div>
 
-                <h2 className="relative text-2xl font-black text-[#071c4d]">
+                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
                   Planejamento de Aula
                 </h2>
 
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
                   Crie planos de aula completos,
                   mensais ou organizados por aula.
                 </p>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-green-700">
+                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-green-700">
                   Criar planejamento
                   <span className="transition group-hover:translate-x-1">
                     →
@@ -489,25 +505,25 @@ export default function Home() {
                   window.location.href =
                     "/avaliacoes";
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-blue-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-blue-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-blue-100/60" />
+                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-blue-100/60" />
 
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-4xl shadow-sm">
+                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-3xl shadow-sm">
                   📝
                 </div>
 
-                <h2 className="relative text-2xl font-black text-[#071c4d]">
+                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
                   Avaliações
                 </h2>
 
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
                   Crie provas, simulados,
                   avaliações diagnósticas e
                   recuperações.
                 </p>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-blue-700">
+                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-blue-700">
                   Criar avaliação
                   <span className="transition group-hover:translate-x-1">
                     →
@@ -522,24 +538,24 @@ export default function Home() {
                   window.location.href =
                     "/atividades";
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-amber-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-amber-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-amber-100/60" />
+                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-amber-100/60" />
 
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">
+                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-3xl shadow-sm">
                   ✏️
                 </div>
 
-                <h2 className="relative text-2xl font-black text-[#071c4d]">
+                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
                   Atividades
                 </h2>
 
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
                   Crie exercícios, revisões e
                   atividades personalizadas.
                 </p>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-amber-700">
+                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-amber-700">
                   Criar atividade
                   <span className="transition group-hover:translate-x-1">
                     →
@@ -554,25 +570,25 @@ export default function Home() {
                   window.location.href =
                     "/biblioteca";
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-violet-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-violet-100/60" />
+                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-violet-100/60" />
 
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-4xl shadow-sm">
+                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-3xl shadow-sm">
                   📂
                 </div>
 
-                <h2 className="relative text-2xl font-black text-[#071c4d]">
+                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
                   Biblioteca de Materiais
                 </h2>
 
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
                   Encontre planejamentos,
                   atividades e avaliações prontas
                   para usar.
                 </p>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-violet-700">
+                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-violet-700">
                   Explorar biblioteca
                   <span className="transition group-hover:translate-x-1">
                     →
@@ -694,7 +710,7 @@ export default function Home() {
               ×
             </button>
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-3xl shadow-sm">
               🎉
             </div>
 
@@ -756,7 +772,7 @@ export default function Home() {
               ×
             </button>
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-3xl shadow-sm">
               👑
             </div>
 
