@@ -9,7 +9,9 @@ import {
 import { useRouter } from "next/navigation";
 import {
   BadgeDollarSign,
+  BookOpen,
   Crown,
+  Eye,
   Handshake,
   LayoutDashboard,
   LoaderCircle,
@@ -58,6 +60,20 @@ type Indicacao = {
   valor_assinatura?: number | null;
   valor_comissao?: number | null;
   mercado_pago_id?: string | null;
+};
+
+type AtividadeBiblioteca = {
+  id: string;
+  titulo?: string | null;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  pedido?: string | null;
+  tipo_atividade?: string | null;
+  quantidade_questoes?: number | null;
+  imagem?: string | null;
+  created_at?: string | null;
+  publicar_biblioteca?: boolean | null;
 };
 
 type Resumo = {
@@ -113,8 +129,45 @@ export default function AdminPage() {
   >("nao-premium");
 
   const [aba, setAba] = useState<
-    "usuarios" | "parceiros" | "indicacoes"
+    "usuarios" | "parceiros" | "indicacoes" | "biblioteca"
   >("usuarios");
+
+  const [
+    atividadesBiblioteca,
+    setAtividadesBiblioteca,
+  ] = useState<AtividadeBiblioteca[]>([]);
+
+  const [
+    carregandoBiblioteca,
+    setCarregandoBiblioteca,
+  ] = useState(false);
+
+  const [
+    buscaBiblioteca,
+    setBuscaBiblioteca,
+  ] = useState("");
+
+  const [
+    filtroBiblioteca,
+    setFiltroBiblioteca,
+  ] = useState<
+    "todas" | "publicadas" | "nao-publicadas"
+  >("todas");
+
+  const [
+    atividadeSelecionada,
+    setAtividadeSelecionada,
+  ] = useState<AtividadeBiblioteca | null>(null);
+
+  const [
+    carregandoPreview,
+    setCarregandoPreview,
+  ] = useState(false);
+
+  const [
+    alterandoBiblioteca,
+    setAlterandoBiblioteca,
+  ] = useState<string | null>(null);
 
   const [
     usuarioSelecionado,
@@ -189,13 +242,256 @@ export default function AdminPage() {
       }
     }, []);
 
+  const carregarBiblioteca =
+    useCallback(async () => {
+      try {
+        setCarregandoBiblioteca(true);
+
+        const {
+          data: { session },
+          error: erroSessao,
+        } = await supabase.auth.getSession();
+
+        if (
+          erroSessao ||
+          !session?.access_token
+        ) {
+          throw new Error(
+            "Sua sessão expirou. Entre novamente."
+          );
+        }
+
+        const resposta = await fetch(
+          "/api/admin/biblioteca",
+          {
+            method: "GET",
+            headers: {
+              Authorization:
+                `Bearer ${session.access_token}`,
+            },
+            cache: "no-store",
+          }
+        );
+
+        const resultado = await resposta
+          .json()
+          .catch(() => null);
+
+        if (!resposta.ok) {
+          throw new Error(
+            resultado?.erro ||
+              "Não foi possível carregar as atividades."
+          );
+        }
+
+        setAtividadesBiblioteca(
+          resultado?.atividades || []
+        );
+      } catch (error) {
+        console.error(
+          "Erro ao carregar biblioteca no admin:",
+          error
+        );
+
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a biblioteca."
+        );
+      } finally {
+        setCarregandoBiblioteca(false);
+      }
+    }, []);
+
   useEffect(() => {
     carregarPainel();
   }, [carregarPainel]);
 
+  useEffect(() => {
+    if (
+      aba === "biblioteca" &&
+      atividadesBiblioteca.length === 0
+    ) {
+      carregarBiblioteca();
+    }
+  }, [
+    aba,
+    atividadesBiblioteca.length,
+    carregarBiblioteca,
+  ]);
+
   async function atualizar() {
     setAtualizando(true);
     await carregarPainel();
+
+    if (aba === "biblioteca") {
+      await carregarBiblioteca();
+    }
+  }
+
+  async function visualizarAtividade(
+    atividade: AtividadeBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?id=${encodeURIComponent(
+          atividade.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir a atividade."
+        );
+      }
+
+      setAtividadeSelecionada(
+        resultado?.atividade || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar atividade:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar a atividade."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoBiblioteca(
+    atividade: AtividadeBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar esta atividade na Biblioteca"
+      : "retirar esta atividade da Biblioteca";
+
+    const confirmou = window.confirm(
+      `Tem certeza que deseja ${acao}?`
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === atividade.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+              }
+            : item
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Atividade publicada na Biblioteca!"
+          : "Atividade retirada da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
   }
 
   async function alterarPlanoUsuario(
@@ -351,6 +647,48 @@ export default function AdminPage() {
       buscaUsuario,
       dados?.usuarios,
       filtroPlano,
+    ]);
+
+  const atividadesBibliotecaFiltradas =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return atividadesBiblioteca.filter(
+        (atividade) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? atividade.publicar_biblioteca === true
+                : atividade.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          return [
+            atividade.titulo,
+            atividade.pedido,
+            atividade.disciplina,
+            atividade.serie,
+            atividade.etapa_ensino,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      atividadesBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
     ]);
 
   const parceirosPorId =
@@ -711,6 +1049,21 @@ export default function AdminPage() {
             }`}
           >
             Indicações
+          </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setAba("biblioteca")
+            }
+            className={`flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition ${
+              aba === "biblioteca"
+                ? "bg-emerald-600 text-white"
+                : "border border-slate-300 bg-white text-slate-700"
+            }`}
+          >
+            <BookOpen size={17} />
+            Biblioteca
           </button>
         </div>
 
@@ -1246,6 +1599,243 @@ export default function AdminPage() {
           </div>
         )}
 
+        {aba === "biblioteca" && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+                    <BookOpen
+                      size={21}
+                      className="text-emerald-600"
+                    />
+                    Biblioteca de Materiais
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Escolha quais atividades já geradas no PlanejAI ficarão disponíveis na Biblioteca.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={carregarBiblioteca}
+                  disabled={carregandoBiblioteca}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw
+                    size={17}
+                    className={
+                      carregandoBiblioteca
+                        ? "animate-spin"
+                        : ""
+                    }
+                  />
+                  Atualizar atividades
+                </button>
+              </div>
+
+              <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="relative w-full xl:max-w-xl">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    value={buscaBiblioteca}
+                    onChange={(event) =>
+                      setBuscaBiblioteca(
+                        event.target.value
+                      )
+                    }
+                    placeholder="Buscar título, conteúdo, série ou disciplina..."
+                    className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ["todas", "Todas"],
+                    ["nao-publicadas", "Não publicadas"],
+                    ["publicadas", "Publicadas"],
+                  ].map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() =>
+                        setFiltroBiblioteca(
+                          valor as
+                            | "todas"
+                            | "publicadas"
+                            | "nao-publicadas"
+                        )
+                      }
+                      className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                        filtroBiblioteca === valor
+                          ? "bg-emerald-600 text-white"
+                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {carregandoBiblioteca ? (
+              <div className="py-16 text-center">
+                <LoaderCircle
+                  size={38}
+                  className="mx-auto animate-spin text-emerald-600"
+                />
+                <p className="mt-3 font-semibold text-slate-600">
+                  Carregando atividades...
+                </p>
+              </div>
+            ) : (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {atividadesBibliotecaFiltradas.length}{" "}
+                    atividade(s) exibida(s)
+                  </p>
+
+                  <p className="text-xs text-slate-400">
+                    A imagem completa só é carregada ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                  {atividadesBibliotecaFiltradas.map(
+                    (atividade) => {
+                      const publicada =
+                        atividade.publicar_biblioteca === true;
+
+                      const alterando =
+                        alterandoBiblioteca ===
+                        atividade.id;
+
+                      return (
+                        <article
+                          key={atividade.id}
+                          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                        >
+                          <div className="flex items-start justify-between gap-3">
+                            <span
+                              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                                publicada
+                                  ? "bg-emerald-100 text-emerald-700"
+                                  : "bg-slate-100 text-slate-600"
+                              }`}
+                            >
+                              {publicada
+                                ? "Na Biblioteca"
+                                : "Não publicada"}
+                            </span>
+
+                            <span className="text-xs text-slate-400">
+                              {atividade.quantidade_questoes
+                                ? `${atividade.quantidade_questoes} questão(ões)`
+                                : atividade.tipo_atividade ||
+                                  "Atividade"}
+                            </span>
+                          </div>
+
+                          <h3 className="mt-4 line-clamp-2 min-h-[48px] text-base font-extrabold text-slate-900">
+                            {atividade.titulo ||
+                              "Atividade sem título"}
+                          </h3>
+
+                          <div className="mt-3 space-y-1 text-sm text-slate-500">
+                            <p>
+                              <strong className="text-slate-700">
+                                Série:
+                              </strong>{" "}
+                              {atividade.serie || "-"}
+                            </p>
+                            <p>
+                              <strong className="text-slate-700">
+                                Disciplina:
+                              </strong>{" "}
+                              {atividade.disciplina || "-"}
+                            </p>
+                          </div>
+
+                          {atividade.pedido && (
+                            <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                              {atividade.pedido}
+                            </p>
+                          )}
+
+                          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                visualizarAtividade(
+                                  atividade
+                                )
+                              }
+                              disabled={
+                                carregandoPreview
+                              }
+                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Eye size={17} />
+                              Visualizar
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                alterarPublicacaoBiblioteca(
+                                  atividade,
+                                  !publicada
+                                )
+                              }
+                              disabled={alterando}
+                              className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                                publicada
+                                  ? "bg-red-600 hover:bg-red-700"
+                                  : "bg-emerald-600 hover:bg-emerald-700"
+                              }`}
+                            >
+                              {alterando
+                                ? "Alterando..."
+                                : publicada
+                                  ? "Retirar"
+                                  : "Publicar"}
+                            </button>
+                          </div>
+                        </article>
+                      );
+                    }
+                  )}
+                </div>
+
+                {
+                  atividadesBibliotecaFiltradas.length ===
+                    0 && (
+                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                      <BookOpen
+                        size={34}
+                        className="mx-auto text-slate-400"
+                      />
+                      <p className="mt-3 font-bold text-slate-700">
+                        Nenhuma atividade encontrada
+                      </p>
+                      <p className="mt-1 text-sm text-slate-500">
+                        Tente mudar a busca ou o filtro.
+                      </p>
+                    </div>
+                  )
+                }
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
           <ShieldCheck
             size={15}
@@ -1254,6 +1844,100 @@ export default function AdminPage() {
           Área administrativa protegida
         </div>
       </section>
+
+      {atividadeSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-emerald-600">
+                  Prévia da atividade
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {atividadeSelecionada.titulo ||
+                    "Atividade"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {atividadeSelecionada.serie || "-"}{" "}
+                  •{" "}
+                  {atividadeSelecionada.disciplina || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAtividadeSelecionada(null)
+                }
+                disabled={Boolean(
+                  alterandoBiblioteca
+                )}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] overflow-auto bg-slate-100 p-4 sm:p-6">
+              {atividadeSelecionada.imagem ? (
+                <img
+                  src={atividadeSelecionada.imagem}
+                  alt={
+                    atividadeSelecionada.titulo ||
+                    "Prévia da atividade"
+                  }
+                  className="mx-auto h-auto max-w-full rounded-xl bg-white shadow-sm"
+                />
+              ) : (
+                <div className="py-16 text-center text-slate-500">
+                  A imagem desta atividade não está disponível.
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoBiblioteca(
+                    atividadeSelecionada,
+                    atividadeSelecionada.publicar_biblioteca !==
+                      true
+                  )
+                }
+                disabled={
+                  alterandoBiblioteca ===
+                  atividadeSelecionada.id
+                }
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  atividadeSelecionada.publicar_biblioteca ===
+                  true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+              >
+                {alterandoBiblioteca ===
+                atividadeSelecionada.id
+                  ? "Alterando..."
+                  : atividadeSelecionada.publicar_biblioteca ===
+                      true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAtividadeSelecionada(null)
+                }
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {usuarioSelecionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
