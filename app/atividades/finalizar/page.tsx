@@ -500,15 +500,21 @@ export default function FinalizarAtividadePage() {
         }
       `}</style>
 
-      <header className="border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-r from-emerald-50 via-emerald-200 to-emerald-500">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-white/30" />
+        <div className="pointer-events-none absolute left-1/2 top-2 hidden -translate-x-1/2 rotate-[-4deg] text-center text-lg font-medium italic text-emerald-800/70 xl:block">
+          Educação hoje,<br />
+          um futuro melhor amanhã. ♡
+        </div>
+
+        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-sm">
-              <FileCheck2 size={23} strokeWidth={2.2} />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300 bg-white/90 text-emerald-800 shadow-sm">
+              <FileCheck2 size={24} strokeWidth={2.2} />
             </div>
 
             <div>
-              <div className="mb-0.5 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-600">
+              <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-700">
                 PlanejAI
               </div>
 
@@ -516,7 +522,7 @@ export default function FinalizarAtividadePage() {
                 Finalizar atividade
               </h1>
 
-              <p className="mt-0.5 text-sm text-slate-500">
+              <p className="mt-0.5 text-sm font-medium text-slate-700">
                 Edite o cabeçalho e baixe a atividade em Word ou PDF.
               </p>
             </div>
@@ -529,7 +535,7 @@ export default function FinalizarAtividadePage() {
                 "/atividades/resultado"
               )
             }
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 font-bold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-white px-4 py-2.5 font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
           >
             <ArrowLeft size={18} />
             Voltar para a atividade
@@ -540,14 +546,14 @@ export default function FinalizarAtividadePage() {
       <section className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
         {resumo && (
           <div className="mb-4 flex justify-center">
-            <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-bold text-emerald-700">
+            <div className="rounded-full border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-extrabold text-emerald-700 shadow-sm">
               {resumo}
             </div>
           </div>
         )}
 
-        <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-5">
+        <div className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_12px_40px_rgba(15,23,42,0.08)]">
+          <div className="border-b border-slate-200 bg-white p-5 sm:p-6">
             <CabecalhoEscolar
               storageKey="cabecalhoAtividade"
               fallbackStorageKeys={[
@@ -560,9 +566,9 @@ export default function FinalizarAtividadePage() {
             />
           </div>
 
-          <div className="bg-slate-100 p-4 sm:p-6">
+          <div className="bg-slate-100/80 p-4 sm:p-6">
             <div
-              className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white shadow-md"
+              className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white shadow-[0_18px_50px_rgba(15,23,42,0.14)]"
               style={{
                 boxSizing:
                   "border-box",
@@ -601,7 +607,7 @@ export default function FinalizarAtividadePage() {
             </div>
           </div>
 
-          <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-end">
+          <div className="flex flex-col gap-3 border-t border-slate-200 bg-white p-5 sm:flex-row sm:items-center sm:justify-end">
             <button
               type="button"
               onClick={baixarWord}

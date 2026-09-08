@@ -19,6 +19,7 @@ import {
   BookOpenText,
   ListOrdered,
   Check,
+  Lightbulb,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/app/lib/supabase";
@@ -561,19 +562,24 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
 
   return (
     <main className="min-h-screen bg-slate-50">
-      <header className="border-b border-emerald-200 bg-gradient-to-r from-emerald-100 via-emerald-200 to-emerald-600">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-4 sm:px-6">
+      <header className="relative overflow-hidden border-b border-emerald-200 bg-gradient-to-r from-emerald-50 via-emerald-200 to-emerald-500">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-white/30" />
+        <div className="pointer-events-none absolute left-1/2 top-2 hidden -translate-x-1/2 rotate-[-4deg] text-center text-lg font-medium italic text-emerald-800/70 xl:block">
+          Educação hoje,<br />
+          um futuro melhor amanhã. ♡
+        </div>
+
+        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border-2 border-emerald-500 bg-white font-bold text-slate-900 shadow-sm">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl border border-emerald-300 bg-white/90 font-extrabold text-emerald-800 shadow-sm">
               P
             </div>
 
             <div>
-              <h1 className="text-xl font-bold text-emerald-900">
+              <h1 className="text-2xl font-extrabold leading-none text-slate-950">
                 PlanejAI
               </h1>
-
-              <p className="text-sm text-slate-700">
+              <p className="mt-1 text-sm font-medium text-slate-700">
                 Escreva o que precisa e receba a atividade pronta.
               </p>
             </div>
@@ -583,9 +589,9 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
             <button
               type="button"
               onClick={() => router.back()}
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-white px-4 py-2.5 font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
-              <ArrowLeft size={19} />
+              <ArrowLeft size={18} />
               Voltar
             </button>
 
@@ -596,41 +602,53 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   "/atividades/minhas-atividades"
                 )
               }
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm"
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-white px-4 py-2.5 font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
-              <ClipboardList size={19} />
+              <ClipboardList size={18} />
               Minhas atividades
             </button>
 
             <button
               type="button"
               onClick={sair}
-              className="flex cursor-pointer items-center gap-2 rounded-xl bg-white px-4 py-3 font-semibold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
+              className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-white px-4 py-2.5 font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
             >
-              <LogOut size={19} />
+              <LogOut size={18} />
               Sair
             </button>
           </div>
         </div>
       </header>
 
-      <div className="mx-auto max-w-5xl px-4 py-7 sm:px-6">
-        <div className="rounded-3xl border border-slate-200 bg-white p-5 shadow-sm sm:p-8">
-          <div className="flex items-start gap-4 border-b border-slate-200 pb-6">
-            <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
-              <MessageSquareText size={29} />
+      <div className="relative mx-auto max-w-6xl px-4 py-6 sm:px-6">
+        <div className="rounded-[28px] border border-slate-200 bg-white p-5 shadow-[0_12px_40px_rgba(15,23,42,0.08)] sm:p-7">
+          <div className="flex flex-col gap-4 border-b border-slate-200 pb-5 lg:flex-row lg:items-center lg:justify-between">
+            <div className="flex items-start gap-4">
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700">
+                <MessageSquareText size={28} />
+              </div>
+
+              <div>
+                <h2 className="text-2xl font-extrabold text-slate-950 sm:text-[28px]">
+                  O que você deseja <span className="text-emerald-700">criar?</span>
+                </h2>
+
+                <p className="mt-1 max-w-2xl text-sm leading-6 text-slate-600">
+                  Escreva como falaria com uma assistente. O PlanejAI criará a folha completa e mostrará a atividade pronta na próxima página.
+                </p>
+              </div>
             </div>
 
-            <div>
-              <h2 className="text-2xl font-bold text-slate-950">
-                O que você deseja criar?
-              </h2>
-
-              <p className="mt-1 text-sm leading-6 text-slate-600">
-                Escreva como falaria com uma assistente. O
-                PlanejAI criará a folha completa e mostrará a
-                atividade pronta na próxima página.
-              </p>
+            <div className="flex shrink-0 items-center gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 lg:max-w-[300px]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-emerald-700 shadow-sm">
+                <Lightbulb size={22} />
+              </div>
+              <div>
+                <div className="text-sm font-extrabold text-emerald-900">Dica</div>
+                <p className="text-xs leading-5 text-emerald-800">
+                  Seja específico no tema e nos tipos de questões que deseja.
+                </p>
+              </div>
             </div>
           </div>
 
@@ -651,7 +669,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setDisciplina("");
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-3 outline-none transition focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               >
                 <option value="">
                   Selecione
@@ -685,7 +703,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setSerie(event.target.value);
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-3 outline-none transition disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               >
                 <option value="">
                   Selecione
@@ -719,7 +737,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                   setDisciplina(event.target.value);
                   setErro("");
                 }}
-                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-white px-4 py-3 outline-none disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500"
+                className="w-full cursor-pointer rounded-xl border border-slate-300 bg-slate-50/50 px-4 py-3 outline-none transition disabled:cursor-not-allowed disabled:bg-slate-100 focus:border-emerald-500 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               >
                 <option value="">
                   Selecione
@@ -740,19 +758,18 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
           </div>
 
           <div className="mt-6">
-            <div className="mb-3 flex flex-wrap items-end justify-between gap-2">
-              <div>
-                <label className="block text-lg font-bold text-slate-950">
+            <div className="mb-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="block text-xl font-extrabold text-slate-950">
                   Tipo de atividade
                 </label>
-                <p className="mt-0.5 text-sm text-slate-500">
-                  Escolha um formato ou deixe o PlanejAI decidir.
-                </p>
+                <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-500">
+                  Opcional
+                </span>
               </div>
-
-              <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-500">
-                Opcional
-              </span>
+              <p className="mt-1 text-sm text-slate-500">
+                Escolha um formato ou deixe o PlanejAI decidir.
+              </p>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
@@ -760,6 +777,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "mista",
                   rotulo: "Atividade mista",
+                  descricao: "Vários tipos de questões",
                   Icone: Shapes,
                   borda: "border-emerald-200",
                   fundoIcone: "bg-emerald-100",
@@ -769,6 +787,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "caca_palavras",
                   rotulo: "Caça-palavras",
+                  descricao: "Encontre as palavras",
                   Icone: Search,
                   borda: "border-blue-200",
                   fundoIcone: "bg-blue-100",
@@ -778,6 +797,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "cruzadinha",
                   rotulo: "Cruzadinha",
+                  descricao: "Complete a cruzadinha",
                   Icone: Grid3X3,
                   borda: "border-violet-200",
                   fundoIcone: "bg-violet-100",
@@ -787,6 +807,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "autoditado",
                   rotulo: "Autoditado",
+                  descricao: "Escreva os nomes",
                   Icone: Image,
                   borda: "border-amber-200",
                   fundoIcone: "bg-amber-100",
@@ -796,6 +817,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "complete",
                   rotulo: "Complete",
+                  descricao: "Complete as lacunas",
                   Icone: Pencil,
                   borda: "border-orange-200",
                   fundoIcone: "bg-orange-100",
@@ -805,6 +827,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "ligue",
                   rotulo: "Ligue",
+                  descricao: "Relacione as colunas",
                   Icone: Link2,
                   borda: "border-cyan-200",
                   fundoIcone: "bg-cyan-100",
@@ -814,6 +837,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "multipla_escolha",
                   rotulo: "Múltipla escolha",
+                  descricao: "Escolha a alternativa",
                   Icone: ListChecks,
                   borda: "border-indigo-200",
                   fundoIcone: "bg-indigo-100",
@@ -823,6 +847,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "verdadeiro_falso",
                   rotulo: "Verdadeiro ou falso",
+                  descricao: "Identifique as afirmativas",
                   Icone: BadgeCheck,
                   borda: "border-teal-200",
                   fundoIcone: "bg-teal-100",
@@ -832,6 +857,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "leitura_escrita",
                   rotulo: "Leitura e escrita",
+                  descricao: "Com texto de apoio",
                   Icone: BookOpenText,
                   borda: "border-fuchsia-200",
                   fundoIcone: "bg-fuchsia-100",
@@ -841,6 +867,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 {
                   valor: "ordene",
                   rotulo: "Ordene",
+                  descricao: "Organize na sequência",
                   Icone: ListOrdered,
                   borda: "border-rose-200",
                   fundoIcone: "bg-rose-100",
@@ -851,6 +878,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 ({
                   valor,
                   rotulo,
+                  descricao,
                   Icone,
                   borda,
                   fundoIcone,
@@ -869,7 +897,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                         );
                         setErro("");
                       }}
-                      className={`group relative min-h-[104px] cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
+                      className={`group relative min-h-[112px] cursor-pointer overflow-hidden rounded-2xl border bg-white p-3 text-left shadow-sm transition duration-200 hover:-translate-y-0.5 hover:shadow-md ${
                         estaSelecionado
                           ? selecionado
                           : `${borda} hover:bg-slate-50`
@@ -887,8 +915,11 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                         </div>
                       )}
 
-                      <div className="mt-3 text-sm font-extrabold leading-tight text-slate-900">
+                      <div className="mt-2.5 text-sm font-extrabold leading-tight text-slate-900">
                         {rotulo}
+                      </div>
+                      <div className="mt-1 text-xs leading-4 text-slate-500">
+                        {descricao}
                       </div>
                     </button>
                   );
@@ -1158,7 +1189,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 }}
                 maxLength={1200}
                 placeholder="Ex.: Trabalhar animais vertebrados com o 3º ano, com atividades simples e adequadas à turma."
-                className="min-h-36 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
+                className="min-h-32 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/20 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
 
               <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
@@ -1240,7 +1271,7 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
               type="button"
               onClick={gerarAtividade}
               disabled={gerando}
-              className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-8 py-4 text-lg font-bold text-white shadow-sm transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:bg-emerald-400"
+              className="flex min-w-72 cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-8 py-3.5 text-lg font-extrabold text-white shadow-md transition hover:bg-emerald-800 disabled:cursor-not-allowed disabled:bg-emerald-400"
             >
               {gerando ? (
                 <>

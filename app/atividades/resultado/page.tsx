@@ -621,15 +621,21 @@ export default function ResultadoAtividadePage() {
         }
       `}</style>
 
-      <header className="nao-imprimir border-b border-slate-200 bg-white shadow-sm">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
+      <header className="nao-imprimir relative overflow-hidden border-b border-emerald-200 bg-gradient-to-r from-emerald-50 via-emerald-200 to-emerald-500">
+        <div className="pointer-events-none absolute -left-20 -top-24 h-56 w-56 rounded-full bg-white/30" />
+        <div className="pointer-events-none absolute left-1/2 top-2 hidden -translate-x-1/2 rotate-[-4deg] text-center text-lg font-medium italic text-emerald-800/70 xl:block">
+          Educação hoje,<br />
+          um futuro melhor amanhã. ♡
+        </div>
+
+        <div className="relative mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-3 px-4 py-3 sm:px-6">
           <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-sm">
-              <ClipboardCheck size={23} strokeWidth={2.2} />
+            <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-emerald-300 bg-white/90 text-emerald-800 shadow-sm">
+              <ClipboardCheck size={24} strokeWidth={2.2} />
             </div>
 
             <div>
-              <div className="mb-0.5 text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-600">
+              <div className="text-[11px] font-extrabold uppercase tracking-[0.22em] text-emerald-700">
                 PlanejAI
               </div>
 
@@ -637,7 +643,7 @@ export default function ResultadoAtividadePage() {
                 Atividade gerada
               </h1>
 
-              <p className="mt-0.5 text-sm text-slate-500">
+              <p className="mt-0.5 text-sm font-medium text-slate-700">
                 Confira a atividade antes de adicionar o cabeçalho.
               </p>
             </div>
@@ -650,7 +656,7 @@ export default function ResultadoAtividadePage() {
                 "/atividades"
               )
             }
-            className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-4 py-2.5 font-bold text-emerald-700 shadow-sm transition hover:border-emerald-300 hover:bg-emerald-50"
+            className="flex cursor-pointer items-center gap-2 rounded-xl border border-white/70 bg-white px-4 py-2.5 font-bold text-emerald-800 shadow-sm transition hover:bg-emerald-50"
           >
             <ArrowLeft size={18} />
             Voltar
@@ -658,9 +664,9 @@ export default function ResultadoAtividadePage() {
         </div>
       </header>
 
-      <section className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
+      <section className="mx-auto max-w-6xl px-4 py-5 sm:px-6">
 
-        <div className="nao-imprimir mb-4 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
+        <div className="nao-imprimir mb-4 rounded-[24px] border border-slate-200 bg-white p-4 shadow-[0_10px_30px_rgba(15,23,42,0.08)]">
 
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
@@ -693,7 +699,7 @@ export default function ResultadoAtividadePage() {
                 onClick={
                   abrirCorrecao
                 }
-                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-700 px-5 py-2.5 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-800"
               >
                 <Sparkles
                   size={18}
@@ -770,7 +776,7 @@ export default function ResultadoAtividadePage() {
           )}
         </div>
 
-        <div className="folha-imagem mx-auto w-full max-w-[794px] overflow-hidden bg-white shadow-xl">
+        <div className="folha-imagem mx-auto w-full max-w-[794px] overflow-hidden rounded-sm bg-white shadow-[0_18px_50px_rgba(15,23,42,0.16)]">
           <img
             src={imagemAtual}
             alt={
