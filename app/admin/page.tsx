@@ -15,6 +15,7 @@ import {
   Handshake,
   LayoutDashboard,
   LoaderCircle,
+  Pencil,
   RefreshCw,
   Search,
   ShieldCheck,
@@ -152,7 +153,7 @@ export default function AdminPage() {
     setFiltroBiblioteca,
   ] = useState<
     "todas" | "publicadas" | "nao-publicadas"
-  >("todas");
+  >("nao-publicadas");
 
   const [
     atividadeSelecionada,
@@ -488,6 +489,114 @@ export default function AdminPage() {
         error instanceof Error
           ? error.message
           : "Não foi possível alterar a publicação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function editarTituloAtividade(
+    atividade: AtividadeBiblioteca
+  ) {
+    const tituloAtual =
+      atividade.titulo?.trim() || "";
+
+    const novoTitulo = window.prompt(
+      "Edite o título da atividade:",
+      tituloAtual
+    );
+
+    if (novoTitulo === null) {
+      return;
+    }
+
+    const tituloLimpo = novoTitulo.trim();
+
+    if (!tituloLimpo) {
+      alert("O título não pode ficar vazio.");
+      return;
+    }
+
+    if (tituloLimpo === tituloAtual) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            acao: "editar_titulo",
+            titulo: tituloLimpo,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível editar o título."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === atividade.id
+            ? {
+                ...item,
+                titulo: tituloLimpo,
+              }
+            : item
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? {
+              ...atual,
+              titulo: tituloLimpo,
+            }
+          : atual
+      );
+
+      alert("Título atualizado com sucesso!");
+    } catch (error) {
+      console.error(
+        "Erro ao editar título da atividade:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível editar o título."
       );
     } finally {
       setAlterandoBiblioteca(null);
@@ -1304,7 +1413,7 @@ export default function AdminPage() {
                                 usuario.plano ===
                                 "premium"
                                   ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
+                                  : "bg-amber-100 text-amber-700"
                               }`}
                             >
                               {usuario.plano ===
@@ -1656,9 +1765,9 @@ export default function AdminPage() {
 
                 <div className="flex flex-wrap gap-2">
                   {[
+                    ["nao-publicadas", "Pendentes"],
+                    ["publicadas", "Revisadas / Publicadas"],
                     ["todas", "Todas"],
-                    ["nao-publicadas", "Não publicadas"],
-                    ["publicadas", "Publicadas"],
                   ].map(([valor, rotulo]) => (
                     <button
                       key={valor}
@@ -1707,7 +1816,7 @@ export default function AdminPage() {
                   </p>
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
                   {atividadesBibliotecaFiltradas.map(
                     (atividade) => {
                       const publicada =
@@ -1720,7 +1829,7 @@ export default function AdminPage() {
                       return (
                         <article
                           key={atividade.id}
-                          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                          className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
                         >
                           <div className="flex items-start justify-between gap-3">
                             <span
@@ -1731,8 +1840,8 @@ export default function AdminPage() {
                               }`}
                             >
                               {publicada
-                                ? "Na Biblioteca"
-                                : "Não publicada"}
+                                ? "✓ Revisada / Publicada"
+                                : "Pendente de revisão"}
                             </span>
 
                             <span className="text-xs text-slate-400">
@@ -1743,12 +1852,12 @@ export default function AdminPage() {
                             </span>
                           </div>
 
-                          <h3 className="mt-4 line-clamp-2 min-h-[48px] text-base font-extrabold text-slate-900">
+                          <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
                             {atividade.titulo ||
                               "Atividade sem título"}
                           </h3>
 
-                          <div className="mt-3 space-y-1 text-sm text-slate-500">
+                          <div className="mt-2 space-y-0.5 text-xs text-slate-500">
                             <p>
                               <strong className="text-slate-700">
                                 Série:
@@ -1764,26 +1873,34 @@ export default function AdminPage() {
                           </div>
 
                           {atividade.pedido && (
-                            <p className="mt-3 line-clamp-3 text-sm leading-6 text-slate-500">
+                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
                               {atividade.pedido}
                             </p>
                           )}
 
-                          <div className="mt-5 grid gap-2 sm:grid-cols-2">
+                          <div className="mt-3 grid grid-cols-3 gap-2">
                             <button
                               type="button"
                               onClick={() =>
-                                visualizarAtividade(
-                                  atividade
-                                )
+                                visualizarAtividade(atividade)
                               }
-                              disabled={
-                                carregandoPreview
-                              }
-                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                              disabled={carregandoPreview}
+                              className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
                             >
-                              <Eye size={17} />
-                              Visualizar
+                              <Eye size={15} />
+                              Ver
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                editarTituloAtividade(atividade)
+                              }
+                              disabled={alterando}
+                              className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Pencil size={14} />
+                              Editar
                             </button>
 
                             <button
@@ -1795,14 +1912,14 @@ export default function AdminPage() {
                                 )
                               }
                               disabled={alterando}
-                              className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
                                 publicada
                                   ? "bg-red-600 hover:bg-red-700"
                                   : "bg-emerald-600 hover:bg-emerald-700"
                               }`}
                             >
                               {alterando
-                                ? "Alterando..."
+                                ? "..."
                                 : publicada
                                   ? "Retirar"
                                   : "Publicar"}
@@ -1896,6 +2013,21 @@ export default function AdminPage() {
             </div>
 
             <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  editarTituloAtividade(atividadeSelecionada)
+                }
+                disabled={
+                  alterandoBiblioteca ===
+                  atividadeSelecionada.id
+                }
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Pencil size={17} />
+                Editar título
+              </button>
+
               <button
                 type="button"
                 onClick={() =>

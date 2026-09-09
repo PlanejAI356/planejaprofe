@@ -214,8 +214,10 @@ export async function POST(
         body?.atividadeId || ""
       ).trim();
 
-    const publicar =
-      body?.publicar === true;
+    const acao =
+      String(
+        body?.acao || ""
+      ).trim();
 
     if (!atividadeId) {
       return NextResponse.json(
@@ -226,6 +228,93 @@ export async function POST(
         { status: 400 }
       );
     }
+
+    /*
+     * EDITAR TÍTULO
+     */
+    if (acao === "editar_titulo") {
+      const novoTitulo =
+        String(
+          body?.titulo || ""
+        ).trim();
+
+      if (!novoTitulo) {
+        return NextResponse.json(
+          {
+            erro:
+              "Informe um título para a atividade.",
+          },
+          { status: 400 }
+        );
+      }
+
+      if (novoTitulo.length > 150) {
+        return NextResponse.json(
+          {
+            erro:
+              "O título deve ter no máximo 150 caracteres.",
+          },
+          { status: 400 }
+        );
+      }
+
+      const {
+        data: atividadeAtualizada,
+        error: erroAtualizacao,
+      } = await supabaseAdmin
+        .from("atividades")
+        .update({
+          titulo: novoTitulo,
+        })
+        .eq("id", atividadeId)
+        .select(
+          `
+          id,
+          titulo,
+          etapa_ensino,
+          serie,
+          disciplina,
+          pedido,
+          tipo_atividade,
+          quantidade_questoes,
+          created_at,
+          publicar_biblioteca
+          `
+        )
+        .single();
+
+      if (erroAtualizacao) {
+        console.error(
+          "Erro ao editar título da atividade:",
+          erroAtualizacao
+        );
+
+        return NextResponse.json(
+          {
+            erro:
+              "Não foi possível editar o título da atividade.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        sucesso: true,
+        atividade:
+          atividadeAtualizada,
+        mensagem:
+          "Título atualizado com sucesso.",
+      });
+    }
+
+    /*
+     * PUBLICAR / RETIRAR
+     *
+     * Mantemos compatibilidade com o código
+     * que já existe no painel.
+     */
+    const publicar =
+      body?.publicar === true;
 
     const {
       data: atividadeAtualizada,
