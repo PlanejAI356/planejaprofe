@@ -113,6 +113,9 @@ export default function BibliotecaPage() {
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
 
+  const [limite, setLimite] = useState(24);
+  const [temMais, setTemMais] = useState(true);
+
   useEffect(() => {
     async function carregarMateriais() {
       setCarregando(true);
@@ -136,7 +139,7 @@ export default function BibliotecaPage() {
           )
           .eq("publicar_biblioteca", true)
 .order("created_at", { ascending: false })
-.limit(24);
+.limit(limite);
 
         if (error) {
           console.error(
@@ -179,6 +182,7 @@ export default function BibliotecaPage() {
           }));
 
         setMateriais(materiaisConvertidos);
+        setTemMais(atividades.length >= limite);
       } catch (error) {
         console.error(
           "Erro inesperado ao carregar biblioteca:",
@@ -194,7 +198,7 @@ export default function BibliotecaPage() {
     }
 
     carregarMateriais();
-  }, []);
+  }, [limite]);
 
   const materiaisFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -566,6 +570,23 @@ export default function BibliotecaPage() {
                       </article>
                     )
                   )}
+                </div>
+              )}
+
+            {!carregando &&
+              !erro &&
+              materiaisFiltrados.length > 0 &&
+              temMais && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setLimite((valorAtual) => valorAtual + 24)
+                    }
+                    className="cursor-pointer rounded-xl border border-emerald-300 bg-white px-6 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+                  >
+                    Carregar mais materiais
+                  </button>
                 </div>
               )}
 
