@@ -113,8 +113,10 @@ export default function BibliotecaPage() {
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
 
-  const [limite, setLimite] = useState(24);
+  const [proximaPagina, setProximaPagina] = useState(1);
   const [temMais, setTemMais] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
+  const [erroMais, setErroMais] = useState("");
 
   useEffect(() => {
     async function carregarMateriais() {
@@ -138,8 +140,8 @@ export default function BibliotecaPage() {
             `
           )
           .eq("publicar_biblioteca", true)
-.order("created_at", { ascending: false })
-.limit(limite);
+          .order("created_at", { ascending: false })
+          .range(0, 23);
 
         if (error) {
           console.error(
@@ -182,7 +184,7 @@ export default function BibliotecaPage() {
           }));
 
         setMateriais(materiaisConvertidos);
-        setTemMais(atividades.length >= limite);
+        setTemMais(atividades.length === 24);
       } catch (error) {
         console.error(
           "Erro inesperado ao carregar biblioteca:",
@@ -198,7 +200,102 @@ export default function BibliotecaPage() {
     }
 
     carregarMateriais();
-  }, [limite]);
+  }, []);
+
+  async function carregarMaisMateriais() {
+    if (carregandoMais || !temMais) return;
+
+    setCarregandoMais(true);
+    setErroMais("");
+
+    const inicio = proximaPagina * 24;
+    const fim = inicio + 23;
+
+    try {
+      const { data, error } = await supabase
+        .from("atividades")
+        .select(
+          `
+            id,
+            titulo,
+            etapa_ensino,
+            serie,
+            disciplina,
+            tipo_atividade,
+            imagem,
+            created_at,
+            publicar_biblioteca
+          `
+        )
+        .eq("publicar_biblioteca", true)
+        .order("created_at", { ascending: false })
+        .range(inicio, fim);
+
+      if (error) {
+        console.error(
+          "Erro ao carregar mais materiais da biblioteca:",
+          error
+        );
+        setErroMais(
+          "Não foi possível carregar mais materiais. Tente novamente."
+        );
+        return;
+      }
+
+      const atividades =
+        (data as AtividadeBanco[] | null) ?? [];
+
+      const novosMateriais: Material[] =
+        atividades.map((atividade) => ({
+          id: atividade.id,
+          tipo: "Atividade",
+          titulo:
+            atividade.titulo?.trim() ||
+            atividade.tipo_atividade?.trim() ||
+            "Atividade sem título",
+          etapa:
+            atividade.etapa_ensino?.trim() ||
+            "Não informado",
+          serie:
+            atividade.serie?.trim() ||
+            "Não informado",
+          disciplina:
+            atividade.disciplina?.trim() ||
+            "Não informado",
+          emoji: escolherEmoji(
+            atividade.tipo_atividade
+          ),
+          imagem: atividade.imagem || null,
+          criadoEm: atividade.created_at || null,
+        }));
+
+      setMateriais((atuais) => {
+        const idsAtuais = new Set(
+          atuais.map((material) => String(material.id))
+        );
+
+        const semDuplicados = novosMateriais.filter(
+          (material) =>
+            !idsAtuais.has(String(material.id))
+        );
+
+        return [...atuais, ...semDuplicados];
+      });
+
+      setProximaPagina((paginaAtual) => paginaAtual + 1);
+      setTemMais(atividades.length === 24);
+    } catch (error) {
+      console.error(
+        "Erro inesperado ao carregar mais materiais:",
+        error
+      );
+      setErroMais(
+        "Não foi possível carregar mais materiais. Tente novamente."
+      );
+    } finally {
+      setCarregandoMais(false);
+    }
+  }
 
   const materiaisFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -575,18 +672,25 @@ export default function BibliotecaPage() {
 
             {!carregando &&
               !erro &&
-              materiaisFiltrados.length > 0 &&
+              materiais.length > 0 &&
               temMais && (
-                <div className="mt-6 flex justify-center">
+                <div className="mt-6 flex flex-col items-center gap-2">
                   <button
                     type="button"
-                    onClick={() =>
-                      setLimite((valorAtual) => valorAtual + 24)
-                    }
-                    className="cursor-pointer rounded-xl border border-emerald-300 bg-white px-6 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50"
+                    onClick={carregarMaisMateriais}
+                    disabled={carregandoMais}
+                    className="cursor-pointer rounded-xl border border-emerald-300 bg-white px-6 py-3 text-sm font-bold text-emerald-700 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Carregar mais materiais
+                    {carregandoMais
+                      ? "Carregando mais materiais..."
+                      : "Carregar mais materiais"}
                   </button>
+
+                  {erroMais && (
+                    <p className="text-sm font-semibold text-red-600">
+                      {erroMais}
+                    </p>
+                  )}
                 </div>
               )}
 
