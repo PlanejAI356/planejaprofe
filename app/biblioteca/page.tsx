@@ -135,7 +135,8 @@ export default function BibliotecaPage() {
             `
           )
           .eq("publicar_biblioteca", true)
-          .order("created_at", { ascending: false });
+.order("created_at", { ascending: false })
+.limit(24);
 
         if (error) {
           console.error(
