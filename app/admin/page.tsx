@@ -2815,10 +2815,38 @@ export default function AdminPage() {
                   </div>
                 )}
 
-                <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
-                  {avaliacaoSelecionada.avaliacao_completa ||
-                    "O conteúdo desta avaliação não está disponível."}
-                </div>
+                {avaliacaoSelecionada.avaliacao_completa ? (
+                  <iframe
+                    title={`Prévia - ${avaliacaoSelecionada.titulo || "Avaliação"}`}
+                    sandbox=""
+                    srcDoc={`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #ffffff; }
+    body {
+      padding: 28px;
+      color: #0f172a;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    img { max-width: 100%; height: auto; }
+    table { max-width: 100%; border-collapse: collapse; }
+  </style>
+</head>
+<body>${avaliacaoSelecionada.avaliacao_completa}</body>
+</html>`}
+                    className="min-h-[900px] w-full rounded-xl border border-slate-200 bg-white"
+                  />
+                ) : (
+                  <div className="py-10 text-center text-sm text-slate-500">
+                    O conteúdo desta avaliação não está disponível.
+                  </div>
+                )}
               </div>
             </div>
 
