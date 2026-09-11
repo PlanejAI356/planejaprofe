@@ -10,6 +10,7 @@ import { useRouter } from "next/navigation";
 import {
   BadgeDollarSign,
   BookOpen,
+  ClipboardList,
   Crown,
   Download,
   Eye,
@@ -80,6 +81,21 @@ type AtividadeBiblioteca = {
   descartada_biblioteca?: boolean | null;
 };
 
+type AvaliacaoBiblioteca = {
+  id: string;
+  titulo?: string | null;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  conteudos?: string | null;
+  avaliacao_completa?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  publicar_biblioteca?: boolean | null;
+  publicado_em?: string | null;
+  descartada_biblioteca?: boolean | null;
+};
+
 type Resumo = {
   totalUsuarios: number;
   totalPremium: number;
@@ -142,6 +158,16 @@ export default function AdminPage() {
   ] = useState<AtividadeBiblioteca[]>([]);
 
   const [
+    avaliacoesBiblioteca,
+    setAvaliacoesBiblioteca,
+  ] = useState<AvaliacaoBiblioteca[]>([]);
+
+  const [
+    tipoMaterialBiblioteca,
+    setTipoMaterialBiblioteca,
+  ] = useState<"atividades" | "avaliacoes">("atividades");
+
+  const [
     carregandoBiblioteca,
     setCarregandoBiblioteca,
   ] = useState(false);
@@ -162,6 +188,11 @@ export default function AdminPage() {
     atividadeSelecionada,
     setAtividadeSelecionada,
   ] = useState<AtividadeBiblioteca | null>(null);
+
+  const [
+    avaliacaoSelecionada,
+    setAvaliacaoSelecionada,
+  ] = useState<AvaliacaoBiblioteca | null>(null);
 
   const [
     carregandoPreview,
@@ -265,31 +296,61 @@ export default function AdminPage() {
           );
         }
 
-        const resposta = await fetch(
-          "/api/admin/biblioteca",
-          {
-            method: "GET",
-            headers: {
-              Authorization:
-                `Bearer ${session.access_token}`,
-            },
-            cache: "no-store",
-          }
-        );
+        const headers = {
+          Authorization:
+            `Bearer ${session.access_token}`,
+        };
 
-        const resultado = await resposta
-          .json()
-          .catch(() => null);
+        const [
+          respostaAtividades,
+          respostaAvaliacoes,
+        ] = await Promise.all([
+          fetch(
+            "/api/admin/biblioteca",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
+          fetch(
+            "/api/admin/biblioteca?tipo=avaliacoes",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
+        ]);
 
-        if (!resposta.ok) {
+        const [
+          resultadoAtividades,
+          resultadoAvaliacoes,
+        ] = await Promise.all([
+          respostaAtividades.json().catch(() => null),
+          respostaAvaliacoes.json().catch(() => null),
+        ]);
+
+        if (!respostaAtividades.ok) {
           throw new Error(
-            resultado?.erro ||
+            resultadoAtividades?.erro ||
               "Não foi possível carregar as atividades."
           );
         }
 
+        if (!respostaAvaliacoes.ok) {
+          throw new Error(
+            resultadoAvaliacoes?.erro ||
+              "Não foi possível carregar as avaliações."
+          );
+        }
+
         setAtividadesBiblioteca(
-          resultado?.atividades || []
+          resultadoAtividades?.atividades || []
+        );
+
+        setAvaliacoesBiblioteca(
+          resultadoAvaliacoes?.avaliacoes || []
         );
       } catch (error) {
         console.error(
@@ -781,6 +842,358 @@ export default function AdminPage() {
     }
   }
 
+  async function visualizarAvaliacao(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?tipo=avaliacoes&id=${encodeURIComponent(
+          avaliacao.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir a avaliação."
+        );
+      }
+
+      setAvaliacaoSelecionada(
+        resultado?.avaliacao || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar a avaliação."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoAvaliacao(
+    avaliacao: AvaliacaoBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar esta avaliação na Biblioteca"
+      : "retirar esta avaliação da Biblioteca";
+
+    if (!window.confirm(`Tem certeza que deseja ${acao}?`)) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação da avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === avaliacao.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+                publicado_em:
+                  resultado?.avaliacao?.publicado_em ?? null,
+              }
+            : item
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+              publicado_em:
+                resultado?.avaliacao?.publicado_em ?? null,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Avaliação publicada na Biblioteca!"
+          : "Avaliação retirada da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação da avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação da avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function descartarAvaliacaoBiblioteca(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar esta avaliação da curadoria da Biblioteca?\n\n${
+        avaliacao.titulo || "Avaliação sem título"
+      }\n\nEla continuará normalmente na conta do professor e não será excluída.`
+    );
+
+    if (!confirmou) return;
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar a avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== avaliacao.id
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Avaliação retirada da fila de revisão. Ela continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar avaliação da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar a avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function editarTituloAvaliacao(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    const tituloAtual =
+      avaliacao.titulo?.trim() || "";
+
+    const novoTitulo = window.prompt(
+      "Edite o título da avaliação:",
+      tituloAtual
+    );
+
+    if (novoTitulo === null) return;
+
+    const tituloLimpo = novoTitulo.trim();
+
+    if (!tituloLimpo) {
+      alert("O título não pode ficar vazio.");
+      return;
+    }
+
+    if (tituloLimpo === tituloAtual) return;
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            acao: "editar_titulo",
+            titulo: tituloLimpo,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível editar o título da avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === avaliacao.id
+            ? { ...item, titulo: tituloLimpo }
+            : item
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? { ...atual, titulo: tituloLimpo }
+          : atual
+      );
+
+      alert("Título atualizado com sucesso!");
+    } catch (error) {
+      console.error(
+        "Erro ao editar título da avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível editar o título da avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
   async function alterarPlanoUsuario(
     usuario: Usuario,
     novoPlano: "premium" | "gratuito"
@@ -974,6 +1387,48 @@ export default function AdminPage() {
       );
     }, [
       atividadesBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
+    ]);
+
+  const avaliacoesBibliotecaFiltradas =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return avaliacoesBiblioteca.filter(
+        (avaliacao) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? avaliacao.publicar_biblioteca === true
+                : avaliacao.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          return [
+            avaliacao.titulo,
+            avaliacao.conteudos,
+            avaliacao.disciplina,
+            avaliacao.serie,
+            avaliacao.etapa_ensino,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      avaliacoesBiblioteca,
       buscaBiblioteca,
       filtroBiblioteca,
     ]);
@@ -1900,7 +2355,7 @@ export default function AdminPage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Escolha quais atividades já geradas no PlanejAI ficarão disponíveis na Biblioteca.
+                    Revise atividades e avaliações antes de disponibilizá-las na Biblioteca.
                   </p>
                 </div>
 
@@ -1918,11 +2373,43 @@ export default function AdminPage() {
                         : ""
                     }
                   />
-                  Atualizar atividades
+                  Atualizar materiais
                 </button>
               </div>
 
-              <div className="mt-5 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("atividades")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "atividades"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  Atividades
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("avaliacoes")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "avaliacoes"
+                      ? "bg-blue-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <ClipboardList size={16} />
+                  Avaliações
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
                 <div className="relative w-full xl:max-w-xl">
                   <Search
                     size={18}
@@ -1932,9 +2419,7 @@ export default function AdminPage() {
                   <input
                     value={buscaBiblioteca}
                     onChange={(event) =>
-                      setBuscaBiblioteca(
-                        event.target.value
-                      )
+                      setBuscaBiblioteca(event.target.value)
                     }
                     placeholder="Buscar título, conteúdo, série ou disciplina..."
                     className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
@@ -1978,168 +2463,164 @@ export default function AdminPage() {
                   className="mx-auto animate-spin text-emerald-600"
                 />
                 <p className="mt-3 font-semibold text-slate-600">
-                  Carregando atividades...
+                  Carregando materiais...
                 </p>
               </div>
-            ) : (
+            ) : tipoMaterialBiblioteca === "atividades" ? (
               <div className="p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-600">
                     {atividadesBibliotecaFiltradas.length}{" "}
                     atividade(s) exibida(s)
                   </p>
-
                   <p className="text-xs text-slate-400">
                     A imagem completa só é carregada ao visualizar.
                   </p>
                 </div>
 
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
-                  {atividadesBibliotecaFiltradas.map(
-                    (atividade) => {
-                      const publicada =
-                        atividade.publicar_biblioteca === true;
+                  {atividadesBibliotecaFiltradas.map((atividade) => {
+                    const publicada =
+                      atividade.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === atividade.id;
 
-                      const alterando =
-                        alterandoBiblioteca ===
-                        atividade.id;
+                    return (
+                      <article
+                        key={atividade.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisada / Publicada"
+                              : "Pendente de revisão"}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {atividade.quantidade_questoes
+                              ? `${atividade.quantidade_questoes} questão(ões)`
+                              : atividade.tipo_atividade || "Atividade"}
+                          </span>
+                        </div>
 
-                      return (
-                        <article
-                          key={atividade.id}
-                          className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
-                        >
-                          <div className="flex items-start justify-between gap-3">
-                            <span
-                              className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
-                                publicada
-                                  ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
-                              }`}
-                            >
-                              {publicada
-                                ? "✓ Revisada / Publicada"
-                                : "Pendente de revisão"}
-                            </span>
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {atividade.titulo || "Atividade sem título"}
+                        </h3>
 
-                            <span className="text-xs text-slate-400">
-                              {atividade.quantidade_questoes
-                                ? `${atividade.quantidade_questoes} questão(ões)`
-                                : atividade.tipo_atividade ||
-                                  "Atividade"}
-                            </span>
-                          </div>
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p><strong className="text-slate-700">Série:</strong>{" "}{atividade.serie || "-"}</p>
+                          <p><strong className="text-slate-700">Disciplina:</strong>{" "}{atividade.disciplina || "-"}</p>
+                        </div>
 
-                          <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
-                            {atividade.titulo ||
-                              "Atividade sem título"}
-                          </h3>
+                        {atividade.pedido && (
+                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                            {atividade.pedido}
+                          </p>
+                        )}
 
-                          <div className="mt-2 space-y-0.5 text-xs text-slate-500">
-                            <p>
-                              <strong className="text-slate-700">
-                                Série:
-                              </strong>{" "}
-                              {atividade.serie || "-"}
-                            </p>
-                            <p>
-                              <strong className="text-slate-700">
-                                Disciplina:
-                              </strong>{" "}
-                              {atividade.disciplina || "-"}
-                            </p>
-                          </div>
-
-                          {atividade.pedido && (
-                            <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
-                              {atividade.pedido}
-                            </p>
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => visualizarAtividade(atividade)} disabled={carregandoPreview} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><Eye size={15} />Ver</button>
+                          <button type="button" onClick={() => editarTituloAtividade(atividade)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"><Pencil size={14} />Editar</button>
+                          <button type="button" onClick={() => alterarPublicacaoBiblioteca(atividade, !publicada)} disabled={alterando} className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${publicada ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>{alterando ? "..." : publicada ? "Retirar" : "Publicar"}</button>
+                          {!publicada && (
+                            <button type="button" onClick={() => descartarAtividadeBiblioteca(atividade)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"><Trash2 size={14} />Descartar</button>
                           )}
-
-                          <div className="mt-3 grid grid-cols-2 gap-2">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                visualizarAtividade(atividade)
-                              }
-                              disabled={carregandoPreview}
-                              className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Eye size={15} />
-                              Ver
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                editarTituloAtividade(atividade)
-                              }
-                              disabled={alterando}
-                              className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
-                            >
-                              <Pencil size={14} />
-                              Editar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                alterarPublicacaoBiblioteca(
-                                  atividade,
-                                  !publicada
-                                )
-                              }
-                              disabled={alterando}
-                              className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
-                                publicada
-                                  ? "bg-red-600 hover:bg-red-700"
-                                  : "bg-emerald-600 hover:bg-emerald-700"
-                              }`}
-                            >
-                              {alterando
-                                ? "..."
-                                : publicada
-                                  ? "Retirar"
-                                  : "Publicar"}
-                            </button>
-
-                            {!publicada && (
-                              <button
-                                type="button"
-                                onClick={() =>
-                                  descartarAtividadeBiblioteca(atividade)
-                                }
-                                disabled={alterando}
-                                className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
-                              >
-                                <Trash2 size={14} />
-                                Descartar
-                              </button>
-                            )}
-                          </div>
-                        </article>
-                      );
-                    }
-                  )}
+                        </div>
+                      </article>
+                    );
+                  })}
                 </div>
 
-                {
-                  atividadesBibliotecaFiltradas.length ===
-                    0 && (
-                    <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
-                      <BookOpen
-                        size={34}
-                        className="mx-auto text-slate-400"
-                      />
-                      <p className="mt-3 font-bold text-slate-700">
-                        Nenhuma atividade encontrada
-                      </p>
-                      <p className="mt-1 text-sm text-slate-500">
-                        Tente mudar a busca ou o filtro.
-                      </p>
-                    </div>
-                  )
-                }
+                {atividadesBibliotecaFiltradas.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <BookOpen size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">Nenhuma atividade encontrada</p>
+                    <p className="mt-1 text-sm text-slate-500">Tente mudar a busca ou o filtro.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {avaliacoesBibliotecaFiltradas.length}{" "}
+                    avaliação(ões) exibida(s)
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    O conteúdo completo é carregado ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {avaliacoesBibliotecaFiltradas.map((avaliacao) => {
+                    const publicada =
+                      avaliacao.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === avaliacao.id;
+
+                    return (
+                      <article
+                        key={avaliacao.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisada / Publicada"
+                              : "Pendente de revisão"}
+                          </span>
+                          <span className="text-xs font-semibold text-blue-600">
+                            Avaliação
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {avaliacao.titulo || "Avaliação sem título"}
+                        </h3>
+
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p><strong className="text-slate-700">Série:</strong>{" "}{avaliacao.serie || "-"}</p>
+                          <p><strong className="text-slate-700">Disciplina:</strong>{" "}{avaliacao.disciplina || "-"}</p>
+                        </div>
+
+                        {avaliacao.conteudos && (
+                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                            {avaliacao.conteudos}
+                          </p>
+                        )}
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => visualizarAvaliacao(avaliacao)} disabled={carregandoPreview} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><Eye size={15} />Ver</button>
+                          <button type="button" onClick={() => editarTituloAvaliacao(avaliacao)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"><Pencil size={14} />Editar</button>
+                          <button type="button" onClick={() => alterarPublicacaoAvaliacao(avaliacao, !publicada)} disabled={alterando} className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${publicada ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"}`}>{alterando ? "..." : publicada ? "Retirar" : "Publicar"}</button>
+                          {!publicada && (
+                            <button type="button" onClick={() => descartarAvaliacaoBiblioteca(avaliacao)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"><Trash2 size={14} />Descartar</button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {avaliacoesBibliotecaFiltradas.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <ClipboardList size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">Nenhuma avaliação encontrada</p>
+                    <p className="mt-1 text-sm text-slate-500">Tente mudar a busca ou o filtro.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -2285,6 +2766,110 @@ export default function AdminPage() {
                 onClick={() =>
                   setAtividadeSelecionada(null)
                 }
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {avaliacaoSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-blue-600">
+                  Prévia da avaliação
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {avaliacaoSelecionada.titulo || "Avaliação"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {avaliacaoSelecionada.serie || "-"}{" "}•{" "}
+                  {avaliacaoSelecionada.disciplina || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAvaliacaoSelecionada(null)}
+                disabled={Boolean(alterandoBiblioteca)}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] overflow-auto bg-slate-100 p-4 sm:p-6">
+              <div className="mx-auto max-w-4xl rounded-2xl bg-white p-5 shadow-sm">
+                {avaliacaoSelecionada.conteudos && (
+                  <div className="mb-5 rounded-xl bg-blue-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                      Conteúdos
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                      {avaliacaoSelecionada.conteudos}
+                    </p>
+                  </div>
+                )}
+
+                <div className="whitespace-pre-wrap text-sm leading-7 text-slate-800">
+                  {avaliacaoSelecionada.avaliacao_completa ||
+                    "O conteúdo desta avaliação não está disponível."}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => editarTituloAvaliacao(avaliacaoSelecionada)}
+                disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Pencil size={17} />
+                Editar título
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoAvaliacao(
+                    avaliacaoSelecionada,
+                    avaliacaoSelecionada.publicar_biblioteca !== true
+                  )
+                }
+                disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  avaliacaoSelecionada.publicar_biblioteca === true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {alterandoBiblioteca === avaliacaoSelecionada.id
+                  ? "Alterando..."
+                  : avaliacaoSelecionada.publicar_biblioteca === true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              {avaliacaoSelecionada.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() => descartarAvaliacaoBiblioteca(avaliacaoSelecionada)}
+                  disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setAvaliacaoSelecionada(null)}
                 className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 Fechar
