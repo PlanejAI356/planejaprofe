@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowLeft,
   BookOpen,
+  Download,
   Loader2,
   Search,
   Sparkles,
@@ -383,6 +384,51 @@ export default function BibliotecaPage() {
     disciplina,
     ordenacao,
   ]);
+
+  async function baixarMaterial(material: Material) {
+    if (!material.imagem) {
+      alert("Esta atividade não possui imagem disponível para download.");
+      return;
+    }
+
+    try {
+      const resposta = await fetch(material.imagem);
+
+      if (!resposta.ok) {
+        throw new Error("Não foi possível baixar a atividade.");
+      }
+
+      const blob = await resposta.blob();
+      const urlTemporaria = URL.createObjectURL(blob);
+
+      const nomeSeguro =
+        material.titulo
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .replace(/[^a-zA-Z0-9]+/g, "-")
+          .replace(/^-+|-+$/g, "")
+          .toLowerCase() || "atividade-planejai";
+
+      const extensao =
+        blob.type === "image/jpeg"
+          ? "jpg"
+          : blob.type === "image/webp"
+            ? "webp"
+            : "png";
+
+      const link = document.createElement("a");
+      link.href = urlTemporaria;
+      link.download = `${nomeSeguro}.${extensao}`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(urlTemporaria);
+    } catch (error) {
+      console.error("Erro ao baixar atividade:", error);
+      alert("Não foi possível baixar a atividade. Tente novamente.");
+    }
+  }
 
   function limparFiltros() {
     setBusca("");
@@ -801,6 +847,19 @@ export default function BibliotecaPage() {
                 </div>
               )}
             </div>
+
+            {materialAberto.imagem && (
+              <div className="mt-4 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => baixarMaterial(materialAberto)}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 text-sm font-bold text-white shadow-sm transition hover:bg-emerald-700"
+                >
+                  <Download size={18} />
+                  Baixar atividade
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}

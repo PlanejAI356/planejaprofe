@@ -19,6 +19,7 @@ import {
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   Users,
 } from "lucide-react";
@@ -75,6 +76,7 @@ type AtividadeBiblioteca = {
   imagem?: string | null;
   created_at?: string | null;
   publicar_biblioteca?: boolean | null;
+  descartada_biblioteca?: boolean | null;
 };
 
 type Resumo = {
@@ -597,6 +599,95 @@ export default function AdminPage() {
         error instanceof Error
           ? error.message
           : "Não foi possível editar o título."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+
+  async function descartarAtividadeBiblioteca(
+    atividade: AtividadeBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar esta atividade da curadoria da Biblioteca?\n\n${
+        atividade.titulo || "Atividade sem título"
+      }\n\nEla continuará normalmente na conta do professor e não será excluída.`
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar a atividade."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== atividade.id
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Atividade retirada da fila de revisão. Ela continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar atividade da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar a atividade."
       );
     } finally {
       setAlterandoBiblioteca(null);
@@ -1878,7 +1969,7 @@ export default function AdminPage() {
                             </p>
                           )}
 
-                          <div className="mt-3 grid grid-cols-3 gap-2">
+                          <div className="mt-3 grid grid-cols-2 gap-2">
                             <button
                               type="button"
                               onClick={() =>
@@ -1924,6 +2015,20 @@ export default function AdminPage() {
                                   ? "Retirar"
                                   : "Publicar"}
                             </button>
+
+                            {!publicada && (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  descartarAtividadeBiblioteca(atividade)
+                                }
+                                disabled={alterando}
+                                className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                              >
+                                <Trash2 size={14} />
+                                Descartar
+                              </button>
+                            )}
                           </div>
                         </article>
                       );
@@ -2056,6 +2161,22 @@ export default function AdminPage() {
                     ? "Retirar da Biblioteca"
                     : "Publicar na Biblioteca"}
               </button>
+
+              {atividadeSelecionada.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    descartarAtividadeBiblioteca(atividadeSelecionada)
+                  }
+                  disabled={
+                    alterandoBiblioteca === atividadeSelecionada.id
+                  }
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
 
               <button
                 type="button"

@@ -1,37 +1,61 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
-async function validarAdmin(req: NextRequest) {
+async function validarAdmin(
+  req: NextRequest
+) {
   const authorization =
     req.headers.get("authorization");
 
-  if (!authorization?.startsWith("Bearer ")) {
+  if (
+    !authorization?.startsWith(
+      "Bearer "
+    )
+  ) {
     return {
       ok: false,
-      resposta: NextResponse.json(
-        { erro: "Usuário não autenticado." },
-        { status: 401 }
-      ),
+      resposta:
+        NextResponse.json(
+          {
+            erro:
+              "Usuário não autenticado.",
+          },
+          { status: 401 }
+        ),
     };
   }
 
-  const token = authorization.replace(
-    "Bearer ",
-    ""
-  );
+  const token =
+    authorization.replace(
+      "Bearer ",
+      ""
+    );
 
   const {
     data: usuarioAuth,
     error: erroUsuario,
-  } = await supabaseAdmin.auth.getUser(token);
+  } =
+    await supabaseAdmin.auth.getUser(
+      token
+    );
 
-  if (erroUsuario || !usuarioAuth.user) {
+  if (
+    erroUsuario ||
+    !usuarioAuth.user
+  ) {
     return {
       ok: false,
-      resposta: NextResponse.json(
-        { erro: "Sessão inválida." },
-        { status: 401 }
-      ),
+      resposta:
+        NextResponse.json(
+          {
+            erro:
+              "Sessão inválida.",
+          },
+          { status: 401 }
+        ),
     };
   }
 
@@ -52,13 +76,14 @@ async function validarAdmin(req: NextRequest) {
 
     return {
       ok: false,
-      resposta: NextResponse.json(
-        {
-          erro:
-            "Painel administrativo não configurado.",
-        },
-        { status: 500 }
-      ),
+      resposta:
+        NextResponse.json(
+          {
+            erro:
+              "Painel administrativo não configurado.",
+          },
+          { status: 500 }
+        ),
     };
   }
 
@@ -68,14 +93,20 @@ async function validarAdmin(req: NextRequest) {
   ) {
     return {
       ok: false,
-      resposta: NextResponse.json(
-        { erro: "Acesso não autorizado." },
-        { status: 403 }
-      ),
+      resposta:
+        NextResponse.json(
+          {
+            erro:
+              "Acesso não autorizado.",
+          },
+          { status: 403 }
+        ),
     };
   }
 
-  return { ok: true as const };
+  return {
+    ok: true as const,
+  };
 }
 
 export async function GET(
@@ -93,33 +124,46 @@ export async function GET(
       new URL(req.url);
 
     const atividadeId =
-      searchParams.get("id")?.trim();
+      searchParams
+        .get("id")
+        ?.trim();
 
+    /*
+     * ABRIR UMA ATIVIDADE
+     */
     if (atividadeId) {
       const {
         data: atividade,
         error: erroAtividade,
-      } = await supabaseAdmin
-        .from("atividades")
-        .select(
-          `
-          id,
-          titulo,
-          etapa_ensino,
-          serie,
-          disciplina,
-          pedido,
-          tipo_atividade,
-          quantidade_questoes,
-          imagem,
-          created_at,
-          publicar_biblioteca
-          `
-        )
-        .eq("id", atividadeId)
-        .single();
+      } =
+        await supabaseAdmin
+          .from("atividades")
+          .select(
+            `
+            id,
+            titulo,
+            etapa_ensino,
+            serie,
+            disciplina,
+            pedido,
+            tipo_atividade,
+            quantidade_questoes,
+            imagem,
+            created_at,
+            publicar_biblioteca,
+            descartada_biblioteca
+            `
+          )
+          .eq(
+            "id",
+            atividadeId
+          )
+          .single();
 
-      if (erroAtividade || !atividade) {
+      if (
+        erroAtividade ||
+        !atividade
+      ) {
         console.error(
           "Erro ao buscar atividade:",
           erroAtividade
@@ -139,29 +183,42 @@ export async function GET(
       });
     }
 
+    /*
+     * LISTAGEM DO PAINEL
+     *
+     * Mostra somente atividades
+     * que ainda fazem parte
+     * da curadoria da Biblioteca.
+     */
     const {
       data: atividades,
       error: erroAtividades,
-    } = await supabaseAdmin
-      .from("atividades")
-      .select(
-        `
-        id,
-        titulo,
-        etapa_ensino,
-        serie,
-        disciplina,
-        pedido,
-        tipo_atividade,
-        quantidade_questoes,
-        created_at,
-        publicar_biblioteca
-        `
-      )
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(500);
+    } =
+      await supabaseAdmin
+        .from("atividades")
+        .select(
+          `
+          id,
+          titulo,
+          etapa_ensino,
+          serie,
+          disciplina,
+          pedido,
+          tipo_atividade,
+          quantidade_questoes,
+          created_at,
+          publicar_biblioteca,
+          descartada_biblioteca
+          `
+        )
+        .eq(
+          "descartada_biblioteca",
+          false
+        )
+        .order("created_at", {
+          ascending: false,
+        })
+        .limit(500);
 
     if (erroAtividades) {
       console.error(
@@ -179,7 +236,8 @@ export async function GET(
     }
 
     return NextResponse.json({
-      atividades: atividades || [],
+      atividades:
+        atividades || [],
     });
   } catch (error) {
     console.error(
@@ -189,7 +247,8 @@ export async function GET(
 
     return NextResponse.json(
       {
-        erro: "Erro interno do servidor.",
+        erro:
+          "Erro interno do servidor.",
       },
       { status: 500 }
     );
@@ -207,7 +266,8 @@ export async function POST(
       return validacao.resposta;
     }
 
-    const body = await req.json();
+    const body =
+      await req.json();
 
     const atividadeId =
       String(
@@ -232,7 +292,10 @@ export async function POST(
     /*
      * EDITAR TÍTULO
      */
-    if (acao === "editar_titulo") {
+    if (
+      acao ===
+      "editar_titulo"
+    ) {
       const novoTitulo =
         String(
           body?.titulo || ""
@@ -248,7 +311,9 @@ export async function POST(
         );
       }
 
-      if (novoTitulo.length > 150) {
+      if (
+        novoTitulo.length > 150
+      ) {
         return NextResponse.json(
           {
             erro:
@@ -261,27 +326,33 @@ export async function POST(
       const {
         data: atividadeAtualizada,
         error: erroAtualizacao,
-      } = await supabaseAdmin
-        .from("atividades")
-        .update({
-          titulo: novoTitulo,
-        })
-        .eq("id", atividadeId)
-        .select(
-          `
-          id,
-          titulo,
-          etapa_ensino,
-          serie,
-          disciplina,
-          pedido,
-          tipo_atividade,
-          quantidade_questoes,
-          created_at,
-          publicar_biblioteca
-          `
-        )
-        .single();
+      } =
+        await supabaseAdmin
+          .from("atividades")
+          .update({
+            titulo:
+              novoTitulo,
+          })
+          .eq(
+            "id",
+            atividadeId
+          )
+          .select(
+            `
+            id,
+            titulo,
+            etapa_ensino,
+            serie,
+            disciplina,
+            pedido,
+            tipo_atividade,
+            quantidade_questoes,
+            created_at,
+            publicar_biblioteca,
+            descartada_biblioteca
+            `
+          )
+          .single();
 
       if (erroAtualizacao) {
         console.error(
@@ -308,10 +379,78 @@ export async function POST(
     }
 
     /*
-     * PUBLICAR / RETIRAR
+     * DESCARTAR DA CURADORIA
      *
-     * Mantemos compatibilidade com o código
-     * que já existe no painel.
+     * Não exclui a atividade.
+     * Ela continua normalmente
+     * para o professor.
+     *
+     * Apenas deixa de aparecer
+     * no painel administrativo
+     * da Biblioteca.
+     */
+    if (
+      acao === "descartar"
+    ) {
+      const {
+        data: atividadeAtualizada,
+        error: erroAtualizacao,
+      } =
+        await supabaseAdmin
+          .from("atividades")
+          .update({
+            descartada_biblioteca:
+              true,
+            publicar_biblioteca:
+              false,
+          })
+          .eq(
+            "id",
+            atividadeId
+          )
+          .select(
+            `
+            id,
+            titulo,
+            etapa_ensino,
+            serie,
+            disciplina,
+            pedido,
+            tipo_atividade,
+            quantidade_questoes,
+            created_at,
+            publicar_biblioteca,
+            descartada_biblioteca
+            `
+          )
+          .single();
+
+      if (erroAtualizacao) {
+        console.error(
+          "Erro ao descartar atividade da curadoria:",
+          erroAtualizacao
+        );
+
+        return NextResponse.json(
+          {
+            erro:
+              "Não foi possível descartar a atividade da Biblioteca.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        sucesso: true,
+        atividade:
+          atividadeAtualizada,
+        mensagem:
+          "Atividade retirada da fila de revisão.",
+      });
+    }
+
+    /*
+     * PUBLICAR / RETIRAR
      */
     const publicar =
       body?.publicar === true;
@@ -319,28 +458,41 @@ export async function POST(
     const {
       data: atividadeAtualizada,
       error: erroAtualizacao,
-    } = await supabaseAdmin
-      .from("atividades")
-      .update({
-        publicar_biblioteca:
-          publicar,
-      })
-      .eq("id", atividadeId)
-      .select(
-        `
-        id,
-        titulo,
-        etapa_ensino,
-        serie,
-        disciplina,
-        pedido,
-        tipo_atividade,
-        quantidade_questoes,
-        created_at,
-        publicar_biblioteca
-        `
-      )
-      .single();
+    } =
+      await supabaseAdmin
+        .from("atividades")
+        .update({
+          publicar_biblioteca:
+            publicar,
+
+          /*
+           * Ao publicar ou retirar,
+           * a atividade continua
+           * fazendo parte da curadoria.
+           */
+          descartada_biblioteca:
+            false,
+        })
+        .eq(
+          "id",
+          atividadeId
+        )
+        .select(
+          `
+          id,
+          titulo,
+          etapa_ensino,
+          serie,
+          disciplina,
+          pedido,
+          tipo_atividade,
+          quantidade_questoes,
+          created_at,
+          publicar_biblioteca,
+          descartada_biblioteca
+          `
+        )
+        .single();
 
     if (erroAtualizacao) {
       console.error(
@@ -373,7 +525,8 @@ export async function POST(
 
     return NextResponse.json(
       {
-        erro: "Erro interno do servidor.",
+        erro:
+          "Erro interno do servidor.",
       },
       { status: 500 }
     );
