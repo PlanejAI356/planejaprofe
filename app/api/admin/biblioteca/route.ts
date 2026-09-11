@@ -77,6 +77,89 @@ export async function GET(req: NextRequest) {
     const tipo = searchParams.get("tipo")?.trim();
     const itemId = searchParams.get("id")?.trim();
 
+    if (tipo === "planos") {
+      if (itemId) {
+        const {
+          data: plano,
+          error: erroPlano,
+        } = await supabaseAdmin
+          .from("planos")
+          .select(
+            `
+            id,
+            etapa_ensino,
+            serie,
+            disciplina,
+            tipo_planejamento,
+            periodo,
+            plano_completo,
+            created_at,
+            updated_at,
+            publicar_biblioteca,
+            publicado_em,
+            descartada_biblioteca
+            `
+          )
+          .eq("id", itemId)
+          .single();
+
+        if (erroPlano || !plano) {
+          console.error(
+            "Erro ao buscar plano:",
+            erroPlano
+          );
+
+          return NextResponse.json(
+            { erro: "Não foi possível abrir o plano." },
+            { status: 404 }
+          );
+        }
+
+        return NextResponse.json({ plano });
+      }
+
+      const {
+        data: planos,
+        error: erroPlanos,
+      } = await supabaseAdmin
+        .from("planos")
+        .select(
+          `
+          id,
+          etapa_ensino,
+          serie,
+          disciplina,
+          tipo_planejamento,
+          periodo,
+          plano_completo,
+          created_at,
+          updated_at,
+          publicar_biblioteca,
+          publicado_em,
+          descartada_biblioteca
+          `
+        )
+        .eq("descartada_biblioteca", false)
+        .order("created_at", { ascending: false })
+        .limit(500);
+
+      if (erroPlanos) {
+        console.error(
+          "Erro ao buscar planos para a biblioteca:",
+          erroPlanos
+        );
+
+        return NextResponse.json(
+          { erro: "Não foi possível carregar os planos." },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        planos: planos || [],
+      });
+    }
+
     if (tipo === "avaliacoes") {
       if (itemId) {
         const {
@@ -261,6 +344,130 @@ export async function POST(req: NextRequest) {
 
     const body = await req.json();
     const tipo = String(body?.tipo || "atividade").trim();
+    const acao = String(body?.acao || "").trim();
+
+    if (tipo === "plano") {
+      const planoId = String(
+        body?.planoId || ""
+      ).trim();
+
+      if (!planoId) {
+        return NextResponse.json(
+          { erro: "Plano não informado." },
+          { status: 400 }
+        );
+      }
+
+      if (acao === "descartar") {
+        const {
+          data: planoAtualizado,
+          error: erroAtualizacao,
+        } = await supabaseAdmin
+          .from("planos")
+          .update({
+            descartada_biblioteca: true,
+            publicar_biblioteca: false,
+            publicado_em: null,
+          })
+          .eq("id", planoId)
+          .select(
+            `
+            id,
+            etapa_ensino,
+            serie,
+            disciplina,
+            tipo_planejamento,
+            periodo,
+            plano_completo,
+            created_at,
+            updated_at,
+            publicar_biblioteca,
+            publicado_em,
+            descartada_biblioteca
+            `
+          )
+          .single();
+
+        if (erroAtualizacao) {
+          console.error(
+            "Erro ao descartar plano da curadoria:",
+            erroAtualizacao
+          );
+
+          return NextResponse.json(
+            {
+              erro:
+                "Não foi possível descartar o plano da Biblioteca.",
+            },
+            { status: 500 }
+          );
+        }
+
+        return NextResponse.json({
+          sucesso: true,
+          plano: planoAtualizado,
+          mensagem:
+            "Plano retirado da fila de revisão.",
+        });
+      }
+
+      const publicar =
+        body?.publicar === true;
+
+      const {
+        data: planoAtualizado,
+        error: erroAtualizacao,
+      } = await supabaseAdmin
+        .from("planos")
+        .update({
+          publicar_biblioteca: publicar,
+          publicado_em: publicar
+            ? new Date().toISOString()
+            : null,
+          descartada_biblioteca: false,
+        })
+        .eq("id", planoId)
+        .select(
+          `
+          id,
+          etapa_ensino,
+          serie,
+          disciplina,
+          tipo_planejamento,
+          periodo,
+          plano_completo,
+          created_at,
+          updated_at,
+          publicar_biblioteca,
+          publicado_em,
+          descartada_biblioteca
+          `
+        )
+        .single();
+
+      if (erroAtualizacao) {
+        console.error(
+          "Erro ao alterar publicação do plano:",
+          erroAtualizacao
+        );
+
+        return NextResponse.json(
+          {
+            erro:
+              "Não foi possível alterar a publicação do plano.",
+          },
+          { status: 500 }
+        );
+      }
+
+      return NextResponse.json({
+        sucesso: true,
+        plano: planoAtualizado,
+        mensagem: publicar
+          ? "Plano publicado na biblioteca."
+          : "Plano retirado da biblioteca.",
+      });
+    }
 
     if (tipo === "avaliacao") {
       const avaliacaoId = String(
@@ -441,9 +648,7 @@ export async function POST(req: NextRequest) {
 
     const atividadeId = String(
       body?.atividadeId || ""
-    ).trim();
-
-    const acao = String(body?.acao || "").trim();
+    ).trim(); 
 
     if (!atividadeId) {
       return NextResponse.json(

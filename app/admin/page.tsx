@@ -96,6 +96,91 @@ type AvaliacaoBiblioteca = {
   descartada_biblioteca?: boolean | null;
 };
 
+type PlanoBiblioteca = {
+  id: string;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  tipo_planejamento?: string | null;
+  periodo?: string | null;
+  plano_completo?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  publicar_biblioteca?: boolean | null;
+  publicado_em?: string | null;
+  descartada_biblioteca?: boolean | null;
+};
+
+type ConteudoPlanoBiblioteca = {
+  temas: string;
+  objetivos: string;
+  recursos: string;
+  metodologia: string;
+  avaliacao: string;
+  referencias: string;
+  atividade: string;
+};
+
+const conteudoPlanoVazio: ConteudoPlanoBiblioteca = {
+  temas: "",
+  objetivos: "",
+  recursos: "",
+  metodologia: "",
+  avaliacao: "",
+  referencias: "",
+  atividade: "",
+};
+
+function lerConteudoPlanoBiblioteca(
+  planoCompleto?: string | null
+): ConteudoPlanoBiblioteca {
+  if (!planoCompleto) {
+    return { ...conteudoPlanoVazio };
+  }
+
+  try {
+    const conteudo = JSON.parse(planoCompleto);
+
+    return {
+      temas: String(conteudo?.temas || ""),
+      objetivos: String(conteudo?.objetivos || ""),
+      recursos: String(conteudo?.recursos || ""),
+      metodologia: String(conteudo?.metodologia || ""),
+      avaliacao: String(conteudo?.avaliacao || ""),
+      referencias: String(conteudo?.referencias || ""),
+      atividade: String(conteudo?.atividade || ""),
+    };
+  } catch {
+    return {
+      ...conteudoPlanoVazio,
+      temas: planoCompleto,
+    };
+  }
+}
+
+function obterTituloPlanoBiblioteca(
+  plano: PlanoBiblioteca
+) {
+  const conteudo = lerConteudoPlanoBiblioteca(
+    plano.plano_completo
+  );
+
+  const primeiraLinha = conteudo.temas
+    .split("\n")
+    .find((linha) => linha.trim());
+
+  if (primeiraLinha) {
+    return primeiraLinha
+      .replace(
+        /^AULA\s*\d+\s*[-–—:]?\s*/i,
+        ""
+      )
+      .trim();
+  }
+
+  return plano.disciplina || "Planejamento";
+}
+
 type Resumo = {
   totalUsuarios: number;
   totalPremium: number;
@@ -163,9 +248,16 @@ export default function AdminPage() {
   ] = useState<AvaliacaoBiblioteca[]>([]);
 
   const [
+    planosBiblioteca,
+    setPlanosBiblioteca,
+  ] = useState<PlanoBiblioteca[]>([]);
+
+  const [
     tipoMaterialBiblioteca,
     setTipoMaterialBiblioteca,
-  ] = useState<"atividades" | "avaliacoes">("atividades");
+  ] = useState<
+    "atividades" | "avaliacoes" | "planos"
+  >("atividades");
 
   const [
     carregandoBiblioteca,
@@ -193,6 +285,11 @@ export default function AdminPage() {
     avaliacaoSelecionada,
     setAvaliacaoSelecionada,
   ] = useState<AvaliacaoBiblioteca | null>(null);
+
+  const [
+    planoSelecionado,
+    setPlanoSelecionado,
+  ] = useState<PlanoBiblioteca | null>(null);
 
   const [
     carregandoPreview,
@@ -304,6 +401,7 @@ export default function AdminPage() {
         const [
           respostaAtividades,
           respostaAvaliacoes,
+          respostaPlanos,
         ] = await Promise.all([
           fetch(
             "/api/admin/biblioteca",
@@ -321,14 +419,24 @@ export default function AdminPage() {
               cache: "no-store",
             }
           ),
+          fetch(
+            "/api/admin/biblioteca?tipo=planos",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
         ]);
 
         const [
           resultadoAtividades,
           resultadoAvaliacoes,
+          resultadoPlanos,
         ] = await Promise.all([
           respostaAtividades.json().catch(() => null),
           respostaAvaliacoes.json().catch(() => null),
+          respostaPlanos.json().catch(() => null),
         ]);
 
         if (!respostaAtividades.ok) {
@@ -345,12 +453,23 @@ export default function AdminPage() {
           );
         }
 
+        if (!respostaPlanos.ok) {
+          throw new Error(
+            resultadoPlanos?.erro ||
+              "Não foi possível carregar os planos."
+          );
+        }
+
         setAtividadesBiblioteca(
           resultadoAtividades?.atividades || []
         );
 
         setAvaliacoesBiblioteca(
           resultadoAvaliacoes?.avaliacoes || []
+        );
+
+        setPlanosBiblioteca(
+          resultadoPlanos?.planos || []
         );
       } catch (error) {
         console.error(
@@ -1194,6 +1313,259 @@ export default function AdminPage() {
     }
   }
 
+  async function visualizarPlano(
+    plano: PlanoBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?tipo=planos&id=${encodeURIComponent(
+          plano.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir o plano."
+        );
+      }
+
+      setPlanoSelecionado(
+        resultado?.plano || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar plano:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar o plano."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoPlano(
+    plano: PlanoBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar este plano na Biblioteca"
+      : "retirar este plano da Biblioteca";
+
+    if (!window.confirm(`Tem certeza que deseja ${acao}?`)) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(plano.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "plano",
+            planoId: plano.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação do plano."
+        );
+      }
+
+      setPlanosBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === plano.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+                publicado_em:
+                  resultado?.plano?.publicado_em ?? null,
+              }
+            : item
+        )
+      );
+
+      setPlanoSelecionado((atual) =>
+        atual?.id === plano.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+              publicado_em:
+                resultado?.plano?.publicado_em ?? null,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Plano publicado na Biblioteca!"
+          : "Plano retirado da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação do plano:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação do plano."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function descartarPlanoBiblioteca(
+    plano: PlanoBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar este plano da curadoria da Biblioteca?\n\n${obterTituloPlanoBiblioteca(
+        plano
+      )}\n\nEle continuará normalmente na conta do professor e não será excluído.`
+    );
+
+    if (!confirmou) return;
+
+    try {
+      setAlterandoBiblioteca(plano.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "plano",
+            planoId: plano.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar o plano."
+        );
+      }
+
+      setPlanosBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== plano.id
+        )
+      );
+
+      setPlanoSelecionado((atual) =>
+        atual?.id === plano.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Plano retirado da fila de revisão. Ele continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar plano da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar o plano."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
   async function alterarPlanoUsuario(
     usuario: Usuario,
     novoPlano: "premium" | "gratuito"
@@ -1429,6 +1801,56 @@ export default function AdminPage() {
       );
     }, [
       avaliacoesBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
+    ]);
+
+  const planosBibliotecaFiltrados =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return planosBiblioteca.filter(
+        (plano) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? plano.publicar_biblioteca === true
+                : plano.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          const conteudo =
+            lerConteudoPlanoBiblioteca(
+              plano.plano_completo
+            );
+
+          return [
+            obterTituloPlanoBiblioteca(plano),
+            plano.disciplina,
+            plano.serie,
+            plano.etapa_ensino,
+            plano.tipo_planejamento,
+            plano.periodo,
+            conteudo.temas,
+            conteudo.objetivos,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      planosBiblioteca,
       buscaBiblioteca,
       filtroBiblioteca,
     ]);
@@ -2355,7 +2777,7 @@ export default function AdminPage() {
                   </h2>
 
                   <p className="mt-1 text-sm text-slate-500">
-                    Revise atividades e avaliações antes de disponibilizá-las na Biblioteca.
+                    Revise atividades, avaliações e planos antes de disponibilizá-los na Biblioteca.
                   </p>
                 </div>
 
@@ -2406,6 +2828,21 @@ export default function AdminPage() {
                 >
                   <ClipboardList size={16} />
                   Avaliações
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("planos")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "planos"
+                      ? "bg-violet-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  Planos
                 </button>
               </div>
 
@@ -2545,7 +2982,7 @@ export default function AdminPage() {
                   </div>
                 )}
               </div>
-            ) : (
+            ) : tipoMaterialBiblioteca === "avaliacoes" ? (
               <div className="p-5">
                 <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
                   <p className="text-sm font-semibold text-slate-600">
@@ -2619,6 +3056,133 @@ export default function AdminPage() {
                     <ClipboardList size={34} className="mx-auto text-slate-400" />
                     <p className="mt-3 font-bold text-slate-700">Nenhuma avaliação encontrada</p>
                     <p className="mt-1 text-sm text-slate-500">Tente mudar a busca ou o filtro.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {planosBibliotecaFiltrados.length}{" "}
+                    plano(s) exibido(s)
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    O planejamento completo é carregado ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {planosBibliotecaFiltrados.map((plano) => {
+                    const publicada =
+                      plano.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === plano.id;
+
+                    return (
+                      <article
+                        key={plano.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-violet-100 text-violet-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisado / Publicado"
+                              : "Pendente de revisão"}
+                          </span>
+
+                          <span className="text-xs font-semibold text-violet-600">
+                            {plano.tipo_planejamento || "Plano"}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {obterTituloPlanoBiblioteca(plano)}
+                        </h3>
+
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p>
+                            <strong className="text-slate-700">Série:</strong>{" "}
+                            {plano.serie || "-"}
+                          </p>
+                          <p>
+                            <strong className="text-slate-700">Disciplina:</strong>{" "}
+                            {plano.disciplina || "-"}
+                          </p>
+                          {plano.periodo && (
+                            <p>
+                              <strong className="text-slate-700">Período:</strong>{" "}
+                              {plano.periodo}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => visualizarPlano(plano)}
+                            disabled={carregandoPreview}
+                            className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Eye size={15} />
+                            Ver
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              alterarPublicacaoPlano(
+                                plano,
+                                !publicada
+                              )
+                            }
+                            disabled={alterando}
+                            className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              publicada
+                                ? "bg-red-600 hover:bg-red-700"
+                                : "bg-violet-600 hover:bg-violet-700"
+                            }`}
+                          >
+                            {alterando
+                              ? "..."
+                              : publicada
+                                ? "Retirar"
+                                : "Publicar"}
+                          </button>
+
+                          {!publicada && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                descartarPlanoBiblioteca(plano)
+                              }
+                              disabled={alterando}
+                              className="col-span-2 flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Trash2 size={14} />
+                              Descartar
+                            </button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {planosBibliotecaFiltrados.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <BookOpen size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">
+                      Nenhum plano encontrado
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Tente mudar a busca ou o filtro.
+                    </p>
                   </div>
                 )}
               </div>
@@ -2898,6 +3462,128 @@ export default function AdminPage() {
               <button
                 type="button"
                 onClick={() => setAvaliacaoSelecionada(null)}
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {planoSelecionado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-violet-600">
+                  Prévia do plano
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {obterTituloPlanoBiblioteca(planoSelecionado)}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {planoSelecionado.serie || "-"}{" "}•{" "}
+                  {planoSelecionado.disciplina || "-"}
+                  {planoSelecionado.periodo
+                    ? ` • ${planoSelecionado.periodo}`
+                    : ""}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPlanoSelecionado(null)}
+                disabled={Boolean(alterandoBiblioteca)}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="overflow-y-auto bg-slate-100 p-4 sm:p-6">
+              <div className="mx-auto max-w-4xl space-y-4">
+                {(
+                  [
+                    ["temas", "Temas"],
+                    ["objetivos", "Objetivos e Habilidades"],
+                    ["recursos", "Recursos e Materiais"],
+                    ["metodologia", "Metodologia"],
+                    ["avaliacao", "Avaliação"],
+                    ["referencias", "Referências"],
+                    ["atividade", "Atividade para Casa"],
+                  ] as const
+                ).map(([campo, titulo]) => {
+                  const conteudo =
+                    lerConteudoPlanoBiblioteca(
+                      planoSelecionado.plano_completo
+                    )[campo];
+
+                  if (!conteudo.trim()) {
+                    return null;
+                  }
+
+                  return (
+                    <section
+                      key={campo}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                    >
+                      <h3 className="mb-3 text-lg font-extrabold text-violet-700">
+                        {titulo}
+                      </h3>
+                      <div className="whitespace-pre-wrap leading-7 text-slate-700">
+                        {conteudo}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoPlano(
+                    planoSelecionado,
+                    planoSelecionado.publicar_biblioteca !== true
+                  )
+                }
+                disabled={
+                  alterandoBiblioteca === planoSelecionado.id
+                }
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  planoSelecionado.publicar_biblioteca === true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-violet-600 hover:bg-violet-700"
+                }`}
+              >
+                {alterandoBiblioteca === planoSelecionado.id
+                  ? "Alterando..."
+                  : planoSelecionado.publicar_biblioteca === true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              {planoSelecionado.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    descartarPlanoBiblioteca(planoSelecionado)
+                  }
+                  disabled={
+                    alterandoBiblioteca === planoSelecionado.id
+                  }
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPlanoSelecionado(null)}
                 className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
               >
                 Fechar
