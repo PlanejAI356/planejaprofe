@@ -697,18 +697,34 @@ export default function BibliotecaPage() {
                             </span>
                           </div>
 
-                          <button
-                            type="button"
-                            onClick={() =>
-                              setMaterialAberto(
-                                material
-                              )
-                            }
-                            className="mt-4 flex w-full cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
-                          >
-                            Ver material
-                            <span>→</span>
-                          </button>
+                          <div className="mt-4 grid grid-cols-2 gap-2">
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setMaterialAberto(
+                                  material
+                                )
+                              }
+                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-sm font-semibold text-emerald-700 transition hover:bg-emerald-100"
+                            >
+                              Ver material
+                              <span>→</span>
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={() =>
+                                baixarMaterial(
+                                  material
+                                )
+                              }
+                              disabled={!material.imagem}
+                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                            >
+                              <Download size={17} />
+                              Baixar imagem
+                            </button>
+                          </div>
                         </div>
                       </article>
                     )
