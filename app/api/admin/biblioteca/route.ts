@@ -93,6 +93,7 @@ export async function GET(req: NextRequest) {
             tipo_planejamento,
             periodo,
             plano_completo,
+            titulo_biblioteca,
             created_at,
             updated_at,
             publicar_biblioteca,
@@ -357,6 +358,60 @@ export async function POST(req: NextRequest) {
           { status: 400 }
         );
       }
+      if (acao === "editar_titulo") {
+  const novoTitulo = String(body?.titulo || "").trim();
+
+  if (!novoTitulo) {
+    return NextResponse.json(
+      { erro: "Informe um título para o plano." },
+      { status: 400 }
+    );
+  }
+
+  if (novoTitulo.length > 150) {
+    return NextResponse.json(
+      { erro: "O título deve ter no máximo 150 caracteres." },
+      { status: 400 }
+    );
+  }
+
+  const { data: planoAtualizado, error: erroAtualizacao } =
+    await supabaseAdmin
+      .from("planos")
+      .update({ titulo_biblioteca: novoTitulo })
+      .eq("id", planoId)
+      .select(`
+        id,
+        etapa_ensino,
+        serie,
+        disciplina,
+        tipo_planejamento,
+        periodo,
+        plano_completo,
+        titulo_biblioteca,
+        created_at,
+        updated_at,
+        publicar_biblioteca,
+        publicado_em,
+        descartada_biblioteca
+      `)
+      .single();
+
+  if (erroAtualizacao) {
+    console.error("Erro ao editar título do plano:", erroAtualizacao);
+
+    return NextResponse.json(
+      { erro: "Não foi possível editar o título do plano." },
+      { status: 500 }
+    );
+  }
+
+  return NextResponse.json({
+    sucesso: true,
+    plano: planoAtualizado,
+    mensagem: "Título atualizado com sucesso.",
+  });
+}
 
       if (acao === "descartar") {
         const {

@@ -109,6 +109,7 @@ type PlanoBiblioteca = {
   publicar_biblioteca?: boolean | null;
   publicado_em?: string | null;
   descartada_biblioteca?: boolean | null;
+  titulo_biblioteca?: string | null;
 };
 
 type ConteudoPlanoBiblioteca = {
@@ -157,10 +158,16 @@ function lerConteudoPlanoBiblioteca(
     };
   }
 }
-
 function obterTituloPlanoBiblioteca(
   plano: PlanoBiblioteca
 ) {
+  const tituloBiblioteca =
+    plano.titulo_biblioteca?.trim();
+
+  if (tituloBiblioteca) {
+    return tituloBiblioteca;
+  }
+
   const conteudo = lerConteudoPlanoBiblioteca(
     plano.plano_completo
   );
@@ -1478,6 +1485,107 @@ export default function AdminPage() {
       setAlterandoBiblioteca(null);
     }
   }
+  async function editarTituloPlano(
+  plano: PlanoBiblioteca
+) {
+  const tituloAtual =
+    plano.titulo_biblioteca?.trim() ||
+    obterTituloPlanoBiblioteca(plano);
+
+  const novoTitulo = window.prompt(
+    "Edite o título do plano para a Biblioteca:",
+    tituloAtual
+  );
+
+  if (novoTitulo === null) return;
+
+  const tituloLimpo = novoTitulo.trim();
+
+  if (!tituloLimpo) {
+    alert("O título não pode ficar vazio.");
+    return;
+  }
+
+  if (tituloLimpo === tituloAtual) return;
+
+  try {
+    setAlterandoBiblioteca(plano.id);
+
+    const {
+      data: { session },
+      error: erroSessao,
+    } = await supabase.auth.getSession();
+
+    if (erroSessao || !session?.access_token) {
+      throw new Error(
+        "Sua sessão expirou. Entre novamente."
+      );
+    }
+
+    const resposta = await fetch(
+      "/api/admin/biblioteca",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "plano",
+          planoId: plano.id,
+          acao: "editar_titulo",
+          titulo: tituloLimpo,
+        }),
+      }
+    );
+
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
+
+    if (!resposta.ok) {
+      throw new Error(
+        resultado?.erro ||
+          "Não foi possível editar o título do plano."
+      );
+    }
+
+    setPlanosBiblioteca((listaAtual) =>
+      listaAtual.map((item) =>
+        item.id === plano.id
+          ? {
+              ...item,
+              titulo_biblioteca: tituloLimpo,
+            }
+          : item
+      )
+    );
+
+    setPlanoSelecionado((atual) =>
+      atual?.id === plano.id
+        ? {
+            ...atual,
+            titulo_biblioteca: tituloLimpo,
+          }
+        : atual
+    );
+
+    alert("Título atualizado com sucesso!");
+  } catch (error) {
+    console.error(
+      "Erro ao editar título do plano:",
+      error
+    );
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Não foi possível editar o título do plano."
+    );
+  } finally {
+    setAlterandoBiblioteca(null);
+  }
+}
 
   async function descartarPlanoBiblioteca(
     plano: PlanoBiblioteca
@@ -3131,6 +3239,16 @@ export default function AdminPage() {
                           >
                             <Eye size={15} />
                             Ver
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => editarTituloPlano(plano)}
+                            disabled={alterando}
+                            className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Pencil size={14} />
+                            Editar
                           </button>
 
                           <button
