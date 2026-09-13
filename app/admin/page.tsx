@@ -9,13 +9,19 @@ import {
 import { useRouter } from "next/navigation";
 import {
   BadgeDollarSign,
+  BookOpen,
+  ClipboardList,
   Crown,
+  Download,
+  Eye,
   Handshake,
   LayoutDashboard,
   LoaderCircle,
+  Pencil,
   RefreshCw,
   Search,
   ShieldCheck,
+  Trash2,
   UserRound,
   Users,
 } from "lucide-react";
@@ -59,6 +65,128 @@ type Indicacao = {
   valor_comissao?: number | null;
   mercado_pago_id?: string | null;
 };
+
+type AtividadeBiblioteca = {
+  id: string;
+  titulo?: string | null;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  pedido?: string | null;
+  tipo_atividade?: string | null;
+  quantidade_questoes?: number | null;
+  imagem?: string | null;
+  created_at?: string | null;
+  publicar_biblioteca?: boolean | null;
+  descartada_biblioteca?: boolean | null;
+};
+
+type AvaliacaoBiblioteca = {
+  id: string;
+  titulo?: string | null;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  conteudos?: string | null;
+  avaliacao_completa?: string | null;
+  status?: string | null;
+  created_at?: string | null;
+  publicar_biblioteca?: boolean | null;
+  publicado_em?: string | null;
+  descartada_biblioteca?: boolean | null;
+};
+
+type PlanoBiblioteca = {
+  id: string;
+  etapa_ensino?: string | null;
+  serie?: string | null;
+  disciplina?: string | null;
+  tipo_planejamento?: string | null;
+  periodo?: string | null;
+  plano_completo?: string | null;
+  created_at?: string | null;
+  updated_at?: string | null;
+  publicar_biblioteca?: boolean | null;
+  publicado_em?: string | null;
+  descartada_biblioteca?: boolean | null;
+  titulo_biblioteca?: string | null;
+};
+
+type ConteudoPlanoBiblioteca = {
+  temas: string;
+  objetivos: string;
+  recursos: string;
+  metodologia: string;
+  avaliacao: string;
+  referencias: string;
+  atividade: string;
+};
+
+const conteudoPlanoVazio: ConteudoPlanoBiblioteca = {
+  temas: "",
+  objetivos: "",
+  recursos: "",
+  metodologia: "",
+  avaliacao: "",
+  referencias: "",
+  atividade: "",
+};
+
+function lerConteudoPlanoBiblioteca(
+  planoCompleto?: string | null
+): ConteudoPlanoBiblioteca {
+  if (!planoCompleto) {
+    return { ...conteudoPlanoVazio };
+  }
+
+  try {
+    const conteudo = JSON.parse(planoCompleto);
+
+    return {
+      temas: String(conteudo?.temas || ""),
+      objetivos: String(conteudo?.objetivos || ""),
+      recursos: String(conteudo?.recursos || ""),
+      metodologia: String(conteudo?.metodologia || ""),
+      avaliacao: String(conteudo?.avaliacao || ""),
+      referencias: String(conteudo?.referencias || ""),
+      atividade: String(conteudo?.atividade || ""),
+    };
+  } catch {
+    return {
+      ...conteudoPlanoVazio,
+      temas: planoCompleto,
+    };
+  }
+}
+function obterTituloPlanoBiblioteca(
+  plano: PlanoBiblioteca
+) {
+  const tituloBiblioteca =
+    plano.titulo_biblioteca?.trim();
+
+  if (tituloBiblioteca) {
+    return tituloBiblioteca;
+  }
+
+  const conteudo = lerConteudoPlanoBiblioteca(
+    plano.plano_completo
+  );
+
+  const primeiraLinha = conteudo.temas
+    .split("\n")
+    .find((linha) => linha.trim());
+
+  if (primeiraLinha) {
+    return primeiraLinha
+      .replace(
+        /^AULA\s*\d+\s*[-–—:]?\s*/i,
+        ""
+      )
+      .trim();
+  }
+
+  return plano.disciplina || "Planejamento";
+}
 
 type Resumo = {
   totalUsuarios: number;
@@ -113,8 +241,72 @@ export default function AdminPage() {
   >("nao-premium");
 
   const [aba, setAba] = useState<
-    "usuarios" | "parceiros" | "indicacoes"
+    "usuarios" | "parceiros" | "indicacoes" | "biblioteca"
   >("usuarios");
+
+  const [
+    atividadesBiblioteca,
+    setAtividadesBiblioteca,
+  ] = useState<AtividadeBiblioteca[]>([]);
+
+  const [
+    avaliacoesBiblioteca,
+    setAvaliacoesBiblioteca,
+  ] = useState<AvaliacaoBiblioteca[]>([]);
+
+  const [
+    planosBiblioteca,
+    setPlanosBiblioteca,
+  ] = useState<PlanoBiblioteca[]>([]);
+
+  const [
+    tipoMaterialBiblioteca,
+    setTipoMaterialBiblioteca,
+  ] = useState<
+    "atividades" | "avaliacoes" | "planos"
+  >("atividades");
+
+  const [
+    carregandoBiblioteca,
+    setCarregandoBiblioteca,
+  ] = useState(false);
+
+  const [
+    buscaBiblioteca,
+    setBuscaBiblioteca,
+  ] = useState("");
+
+  const [
+    filtroBiblioteca,
+    setFiltroBiblioteca,
+  ] = useState<
+    "todas" | "publicadas" | "nao-publicadas"
+  >("nao-publicadas");
+
+  const [
+    atividadeSelecionada,
+    setAtividadeSelecionada,
+  ] = useState<AtividadeBiblioteca | null>(null);
+
+  const [
+    avaliacaoSelecionada,
+    setAvaliacaoSelecionada,
+  ] = useState<AvaliacaoBiblioteca | null>(null);
+
+  const [
+    planoSelecionado,
+    setPlanoSelecionado,
+  ] = useState<PlanoBiblioteca | null>(null);
+
+  const [
+    carregandoPreview,
+    setCarregandoPreview,
+  ] = useState(false);
+
+  const [
+    alterandoBiblioteca,
+    setAlterandoBiblioteca,
+  ] = useState<string | null>(null);
 
   const [
     usuarioSelecionado,
@@ -189,13 +381,1297 @@ export default function AdminPage() {
       }
     }, []);
 
+  const carregarBiblioteca =
+    useCallback(async () => {
+      try {
+        setCarregandoBiblioteca(true);
+
+        const {
+          data: { session },
+          error: erroSessao,
+        } = await supabase.auth.getSession();
+
+        if (
+          erroSessao ||
+          !session?.access_token
+        ) {
+          throw new Error(
+            "Sua sessão expirou. Entre novamente."
+          );
+        }
+
+        const headers = {
+          Authorization:
+            `Bearer ${session.access_token}`,
+        };
+
+        const [
+          respostaAtividades,
+          respostaAvaliacoes,
+          respostaPlanos,
+        ] = await Promise.all([
+          fetch(
+            "/api/admin/biblioteca",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
+          fetch(
+            "/api/admin/biblioteca?tipo=avaliacoes",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
+          fetch(
+            "/api/admin/biblioteca?tipo=planos",
+            {
+              method: "GET",
+              headers,
+              cache: "no-store",
+            }
+          ),
+        ]);
+
+        const [
+          resultadoAtividades,
+          resultadoAvaliacoes,
+          resultadoPlanos,
+        ] = await Promise.all([
+          respostaAtividades.json().catch(() => null),
+          respostaAvaliacoes.json().catch(() => null),
+          respostaPlanos.json().catch(() => null),
+        ]);
+
+        if (!respostaAtividades.ok) {
+          throw new Error(
+            resultadoAtividades?.erro ||
+              "Não foi possível carregar as atividades."
+          );
+        }
+
+        if (!respostaAvaliacoes.ok) {
+          throw new Error(
+            resultadoAvaliacoes?.erro ||
+              "Não foi possível carregar as avaliações."
+          );
+        }
+
+        if (!respostaPlanos.ok) {
+          throw new Error(
+            resultadoPlanos?.erro ||
+              "Não foi possível carregar os planos."
+          );
+        }
+
+        setAtividadesBiblioteca(
+          resultadoAtividades?.atividades || []
+        );
+
+        setAvaliacoesBiblioteca(
+          resultadoAvaliacoes?.avaliacoes || []
+        );
+
+        setPlanosBiblioteca(
+          resultadoPlanos?.planos || []
+        );
+      } catch (error) {
+        console.error(
+          "Erro ao carregar biblioteca no admin:",
+          error
+        );
+
+        alert(
+          error instanceof Error
+            ? error.message
+            : "Não foi possível carregar a biblioteca."
+        );
+      } finally {
+        setCarregandoBiblioteca(false);
+      }
+    }, []);
+
   useEffect(() => {
     carregarPainel();
   }, [carregarPainel]);
 
+  useEffect(() => {
+    if (
+      aba === "biblioteca" &&
+      atividadesBiblioteca.length === 0
+    ) {
+      carregarBiblioteca();
+    }
+  }, [
+    aba,
+    atividadesBiblioteca.length,
+    carregarBiblioteca,
+  ]);
+
   async function atualizar() {
     setAtualizando(true);
     await carregarPainel();
+
+    if (aba === "biblioteca") {
+      await carregarBiblioteca();
+    }
+  }
+
+  async function visualizarAtividade(
+    atividade: AtividadeBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?id=${encodeURIComponent(
+          atividade.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir a atividade."
+        );
+      }
+
+      setAtividadeSelecionada(
+        resultado?.atividade || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar atividade:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar a atividade."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoBiblioteca(
+    atividade: AtividadeBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar esta atividade na Biblioteca"
+      : "retirar esta atividade da Biblioteca";
+
+    const confirmou = window.confirm(
+      `Tem certeza que deseja ${acao}?`
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === atividade.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+              }
+            : item
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Atividade publicada na Biblioteca!"
+          : "Atividade retirada da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function editarTituloAtividade(
+    atividade: AtividadeBiblioteca
+  ) {
+    const tituloAtual =
+      atividade.titulo?.trim() || "";
+
+    const novoTitulo = window.prompt(
+      "Edite o título da atividade:",
+      tituloAtual
+    );
+
+    if (novoTitulo === null) {
+      return;
+    }
+
+    const tituloLimpo = novoTitulo.trim();
+
+    if (!tituloLimpo) {
+      alert("O título não pode ficar vazio.");
+      return;
+    }
+
+    if (tituloLimpo === tituloAtual) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            acao: "editar_titulo",
+            titulo: tituloLimpo,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível editar o título."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === atividade.id
+            ? {
+                ...item,
+                titulo: tituloLimpo,
+              }
+            : item
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? {
+              ...atual,
+              titulo: tituloLimpo,
+            }
+          : atual
+      );
+
+      alert("Título atualizado com sucesso!");
+    } catch (error) {
+      console.error(
+        "Erro ao editar título da atividade:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível editar o título."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+
+  async function descartarAtividadeBiblioteca(
+    atividade: AtividadeBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar esta atividade da curadoria da Biblioteca?\n\n${
+        atividade.titulo || "Atividade sem título"
+      }\n\nEla continuará normalmente na conta do professor e não será excluída.`
+    );
+
+    if (!confirmou) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(atividade.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            atividadeId: atividade.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar a atividade."
+        );
+      }
+
+      setAtividadesBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== atividade.id
+        )
+      );
+
+      setAtividadeSelecionada((atual) =>
+        atual?.id === atividade.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Atividade retirada da fila de revisão. Ela continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar atividade da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar a atividade."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function baixarAtividadeAdmin(
+    atividade: AtividadeBiblioteca
+  ) {
+    if (!atividade.imagem) {
+      alert(
+        "Esta atividade não possui imagem disponível para download."
+      );
+      return;
+    }
+
+    try {
+      const resposta = await fetch(
+        atividade.imagem
+      );
+
+      if (!resposta.ok) {
+        throw new Error(
+          "Não foi possível baixar a atividade."
+        );
+      }
+
+      const blob =
+        await resposta.blob();
+
+      const urlTemporaria =
+        URL.createObjectURL(blob);
+
+      const nomeSeguro =
+        (
+          atividade.titulo ||
+          "atividade-planejai"
+        )
+          .normalize("NFD")
+          .replace(
+            /[\u0300-\u036f]/g,
+            ""
+          )
+          .replace(
+            /[^a-zA-Z0-9]+/g,
+            "-"
+          )
+          .replace(
+            /^-+|-+$/g,
+            ""
+          )
+          .toLowerCase() ||
+        "atividade-planejai";
+
+      const extensao =
+        blob.type ===
+        "image/jpeg"
+          ? "jpg"
+          : blob.type ===
+              "image/webp"
+            ? "webp"
+            : "png";
+
+      const link =
+        document.createElement("a");
+
+      link.href = urlTemporaria;
+      link.download =
+        `${nomeSeguro}.${extensao}`;
+
+      document.body.appendChild(
+        link
+      );
+
+      link.click();
+      link.remove();
+
+      URL.revokeObjectURL(
+        urlTemporaria
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao baixar atividade:",
+        error
+      );
+
+      alert(
+        "Não foi possível baixar a atividade. Tente novamente."
+      );
+    }
+  }
+
+  async function visualizarAvaliacao(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?tipo=avaliacoes&id=${encodeURIComponent(
+          avaliacao.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir a avaliação."
+        );
+      }
+
+      setAvaliacaoSelecionada(
+        resultado?.avaliacao || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar a avaliação."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoAvaliacao(
+    avaliacao: AvaliacaoBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar esta avaliação na Biblioteca"
+      : "retirar esta avaliação da Biblioteca";
+
+    if (!window.confirm(`Tem certeza que deseja ${acao}?`)) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação da avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === avaliacao.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+                publicado_em:
+                  resultado?.avaliacao?.publicado_em ?? null,
+              }
+            : item
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+              publicado_em:
+                resultado?.avaliacao?.publicado_em ?? null,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Avaliação publicada na Biblioteca!"
+          : "Avaliação retirada da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação da avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação da avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function descartarAvaliacaoBiblioteca(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar esta avaliação da curadoria da Biblioteca?\n\n${
+        avaliacao.titulo || "Avaliação sem título"
+      }\n\nEla continuará normalmente na conta do professor e não será excluída.`
+    );
+
+    if (!confirmou) return;
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar a avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== avaliacao.id
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Avaliação retirada da fila de revisão. Ela continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar avaliação da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar a avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function editarTituloAvaliacao(
+    avaliacao: AvaliacaoBiblioteca
+  ) {
+    const tituloAtual =
+      avaliacao.titulo?.trim() || "";
+
+    const novoTitulo = window.prompt(
+      "Edite o título da avaliação:",
+      tituloAtual
+    );
+
+    if (novoTitulo === null) return;
+
+    const tituloLimpo = novoTitulo.trim();
+
+    if (!tituloLimpo) {
+      alert("O título não pode ficar vazio.");
+      return;
+    }
+
+    if (tituloLimpo === tituloAtual) return;
+
+    try {
+      setAlterandoBiblioteca(avaliacao.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "avaliacao",
+            avaliacaoId: avaliacao.id,
+            acao: "editar_titulo",
+            titulo: tituloLimpo,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível editar o título da avaliação."
+        );
+      }
+
+      setAvaliacoesBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === avaliacao.id
+            ? { ...item, titulo: tituloLimpo }
+            : item
+        )
+      );
+
+      setAvaliacaoSelecionada((atual) =>
+        atual?.id === avaliacao.id
+          ? { ...atual, titulo: tituloLimpo }
+          : atual
+      );
+
+      alert("Título atualizado com sucesso!");
+    } catch (error) {
+      console.error(
+        "Erro ao editar título da avaliação:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível editar o título da avaliação."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+
+  async function visualizarPlano(
+    plano: PlanoBiblioteca
+  ) {
+    try {
+      setCarregandoPreview(true);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        `/api/admin/biblioteca?tipo=planos&id=${encodeURIComponent(
+          plano.id
+        )}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+          },
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível abrir o plano."
+        );
+      }
+
+      setPlanoSelecionado(
+        resultado?.plano || null
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao visualizar plano:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível visualizar o plano."
+      );
+    } finally {
+      setCarregandoPreview(false);
+    }
+  }
+
+  async function alterarPublicacaoPlano(
+    plano: PlanoBiblioteca,
+    publicar: boolean
+  ) {
+    const acao = publicar
+      ? "publicar este plano na Biblioteca"
+      : "retirar este plano da Biblioteca";
+
+    if (!window.confirm(`Tem certeza que deseja ${acao}?`)) {
+      return;
+    }
+
+    try {
+      setAlterandoBiblioteca(plano.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "plano",
+            planoId: plano.id,
+            publicar,
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível alterar a publicação do plano."
+        );
+      }
+
+      setPlanosBiblioteca((listaAtual) =>
+        listaAtual.map((item) =>
+          item.id === plano.id
+            ? {
+                ...item,
+                publicar_biblioteca: publicar,
+                publicado_em:
+                  resultado?.plano?.publicado_em ?? null,
+              }
+            : item
+        )
+      );
+
+      setPlanoSelecionado((atual) =>
+        atual?.id === plano.id
+          ? {
+              ...atual,
+              publicar_biblioteca: publicar,
+              publicado_em:
+                resultado?.plano?.publicado_em ?? null,
+            }
+          : atual
+      );
+
+      alert(
+        publicar
+          ? "Plano publicado na Biblioteca!"
+          : "Plano retirado da Biblioteca."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao alterar publicação do plano:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível alterar a publicação do plano."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
+  }
+  async function editarTituloPlano(
+  plano: PlanoBiblioteca
+) {
+  const tituloAtual =
+    plano.titulo_biblioteca?.trim() ||
+    obterTituloPlanoBiblioteca(plano);
+
+  const novoTitulo = window.prompt(
+    "Edite o título do plano para a Biblioteca:",
+    tituloAtual
+  );
+
+  if (novoTitulo === null) return;
+
+  const tituloLimpo = novoTitulo.trim();
+
+  if (!tituloLimpo) {
+    alert("O título não pode ficar vazio.");
+    return;
+  }
+
+  if (tituloLimpo === tituloAtual) return;
+
+  try {
+    setAlterandoBiblioteca(plano.id);
+
+    const {
+      data: { session },
+      error: erroSessao,
+    } = await supabase.auth.getSession();
+
+    if (erroSessao || !session?.access_token) {
+      throw new Error(
+        "Sua sessão expirou. Entre novamente."
+      );
+    }
+
+    const resposta = await fetch(
+      "/api/admin/biblioteca",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          tipo: "plano",
+          planoId: plano.id,
+          acao: "editar_titulo",
+          titulo: tituloLimpo,
+        }),
+      }
+    );
+
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
+
+    if (!resposta.ok) {
+      throw new Error(
+        resultado?.erro ||
+          "Não foi possível editar o título do plano."
+      );
+    }
+
+    setPlanosBiblioteca((listaAtual) =>
+      listaAtual.map((item) =>
+        item.id === plano.id
+          ? {
+              ...item,
+              titulo_biblioteca: tituloLimpo,
+            }
+          : item
+      )
+    );
+
+    setPlanoSelecionado((atual) =>
+      atual?.id === plano.id
+        ? {
+            ...atual,
+            titulo_biblioteca: tituloLimpo,
+          }
+        : atual
+    );
+
+    alert("Título atualizado com sucesso!");
+  } catch (error) {
+    console.error(
+      "Erro ao editar título do plano:",
+      error
+    );
+
+    alert(
+      error instanceof Error
+        ? error.message
+        : "Não foi possível editar o título do plano."
+    );
+  } finally {
+    setAlterandoBiblioteca(null);
+  }
+}
+
+  async function descartarPlanoBiblioteca(
+    plano: PlanoBiblioteca
+  ) {
+    const confirmou = window.confirm(
+      `Descartar este plano da curadoria da Biblioteca?\n\n${obterTituloPlanoBiblioteca(
+        plano
+      )}\n\nEle continuará normalmente na conta do professor e não será excluído.`
+    );
+
+    if (!confirmou) return;
+
+    try {
+      setAlterandoBiblioteca(plano.id);
+
+      const {
+        data: { session },
+        error: erroSessao,
+      } = await supabase.auth.getSession();
+
+      if (
+        erroSessao ||
+        !session?.access_token
+      ) {
+        throw new Error(
+          "Sua sessão expirou. Entre novamente."
+        );
+      }
+
+      const resposta = await fetch(
+        "/api/admin/biblioteca",
+        {
+          method: "POST",
+          headers: {
+            Authorization:
+              `Bearer ${session.access_token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            tipo: "plano",
+            planoId: plano.id,
+            acao: "descartar",
+          }),
+        }
+      );
+
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro ||
+            "Não foi possível descartar o plano."
+        );
+      }
+
+      setPlanosBiblioteca((listaAtual) =>
+        listaAtual.filter(
+          (item) => item.id !== plano.id
+        )
+      );
+
+      setPlanoSelecionado((atual) =>
+        atual?.id === plano.id
+          ? null
+          : atual
+      );
+
+      alert(
+        "Plano retirado da fila de revisão. Ele continua normalmente para o professor."
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao descartar plano da curadoria:",
+        error
+      );
+
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível descartar o plano."
+      );
+    } finally {
+      setAlterandoBiblioteca(null);
+    }
   }
 
   async function alterarPlanoUsuario(
@@ -351,6 +1827,140 @@ export default function AdminPage() {
       buscaUsuario,
       dados?.usuarios,
       filtroPlano,
+    ]);
+
+  const atividadesBibliotecaFiltradas =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return atividadesBiblioteca.filter(
+        (atividade) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? atividade.publicar_biblioteca === true
+                : atividade.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          return [
+            atividade.titulo,
+            atividade.pedido,
+            atividade.disciplina,
+            atividade.serie,
+            atividade.etapa_ensino,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      atividadesBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
+    ]);
+
+  const avaliacoesBibliotecaFiltradas =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return avaliacoesBiblioteca.filter(
+        (avaliacao) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? avaliacao.publicar_biblioteca === true
+                : avaliacao.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          return [
+            avaliacao.titulo,
+            avaliacao.conteudos,
+            avaliacao.disciplina,
+            avaliacao.serie,
+            avaliacao.etapa_ensino,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      avaliacoesBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
+    ]);
+
+  const planosBibliotecaFiltrados =
+    useMemo(() => {
+      const busca = buscaBiblioteca
+        .trim()
+        .toLowerCase();
+
+      return planosBiblioteca.filter(
+        (plano) => {
+          const correspondeStatus =
+            filtroBiblioteca === "todas"
+              ? true
+              : filtroBiblioteca === "publicadas"
+                ? plano.publicar_biblioteca === true
+                : plano.publicar_biblioteca !== true;
+
+          if (!correspondeStatus) {
+            return false;
+          }
+
+          if (!busca) {
+            return true;
+          }
+
+          const conteudo =
+            lerConteudoPlanoBiblioteca(
+              plano.plano_completo
+            );
+
+          return [
+            obterTituloPlanoBiblioteca(plano),
+            plano.disciplina,
+            plano.serie,
+            plano.etapa_ensino,
+            plano.tipo_planejamento,
+            plano.periodo,
+            conteudo.temas,
+            conteudo.objetivos,
+          ].some((valor) =>
+            String(valor || "")
+              .toLowerCase()
+              .includes(busca)
+          );
+        }
+      );
+    }, [
+      planosBiblioteca,
+      buscaBiblioteca,
+      filtroBiblioteca,
     ]);
 
   const parceirosPorId =
@@ -712,6 +2322,21 @@ export default function AdminPage() {
           >
             Indicações
           </button>
+
+          <button
+            type="button"
+            onClick={() =>
+              setAba("biblioteca")
+            }
+            className={`flex cursor-pointer items-center gap-2 rounded-xl px-5 py-3 text-sm font-bold transition ${
+              aba === "biblioteca"
+                ? "bg-emerald-600 text-white"
+                : "border border-slate-300 bg-white text-slate-700"
+            }`}
+          >
+            <BookOpen size={17} />
+            Biblioteca
+          </button>
         </div>
 
         {aba === "usuarios" && (
@@ -951,7 +2576,7 @@ export default function AdminPage() {
                                 usuario.plano ===
                                 "premium"
                                   ? "bg-emerald-100 text-emerald-700"
-                                  : "bg-slate-100 text-slate-600"
+                                  : "bg-amber-100 text-amber-700"
                               }`}
                             >
                               {usuario.plano ===
@@ -1246,6 +2871,443 @@ export default function AdminPage() {
           </div>
         )}
 
+        {aba === "biblioteca" && (
+          <div className="mt-4 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+            <div className="border-b border-slate-200 p-5">
+              <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                <div>
+                  <h2 className="flex items-center gap-2 text-lg font-extrabold text-slate-900">
+                    <BookOpen
+                      size={21}
+                      className="text-emerald-600"
+                    />
+                    Biblioteca de Materiais
+                  </h2>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    Revise atividades, avaliações e planos antes de disponibilizá-los na Biblioteca.
+                  </p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={carregarBiblioteca}
+                  disabled={carregandoBiblioteca}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <RefreshCw
+                    size={17}
+                    className={
+                      carregandoBiblioteca
+                        ? "animate-spin"
+                        : ""
+                    }
+                  />
+                  Atualizar materiais
+                </button>
+              </div>
+
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("atividades")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "atividades"
+                      ? "bg-emerald-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  Atividades
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("avaliacoes")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "avaliacoes"
+                      ? "bg-blue-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <ClipboardList size={16} />
+                  Avaliações
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() =>
+                    setTipoMaterialBiblioteca("planos")
+                  }
+                  className={`flex cursor-pointer items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                    tipoMaterialBiblioteca === "planos"
+                      ? "bg-violet-600 text-white"
+                      : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                  }`}
+                >
+                  <BookOpen size={16} />
+                  Planos
+                </button>
+              </div>
+
+              <div className="mt-4 flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
+                <div className="relative w-full xl:max-w-xl">
+                  <Search
+                    size={18}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
+                  />
+
+                  <input
+                    value={buscaBiblioteca}
+                    onChange={(event) =>
+                      setBuscaBiblioteca(event.target.value)
+                    }
+                    placeholder="Buscar título, conteúdo, série ou disciplina..."
+                    className="w-full rounded-xl border border-slate-300 py-2.5 pl-10 pr-4 text-sm outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    ["nao-publicadas", "Pendentes"],
+                    ["publicadas", "Revisadas / Publicadas"],
+                    ["todas", "Todas"],
+                  ].map(([valor, rotulo]) => (
+                    <button
+                      key={valor}
+                      type="button"
+                      onClick={() =>
+                        setFiltroBiblioteca(
+                          valor as
+                            | "todas"
+                            | "publicadas"
+                            | "nao-publicadas"
+                        )
+                      }
+                      className={`cursor-pointer rounded-xl px-4 py-2.5 text-sm font-bold transition ${
+                        filtroBiblioteca === valor
+                          ? "bg-emerald-600 text-white"
+                          : "border border-slate-300 bg-white text-slate-700 hover:bg-slate-50"
+                      }`}
+                    >
+                      {rotulo}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {carregandoBiblioteca ? (
+              <div className="py-16 text-center">
+                <LoaderCircle
+                  size={38}
+                  className="mx-auto animate-spin text-emerald-600"
+                />
+                <p className="mt-3 font-semibold text-slate-600">
+                  Carregando materiais...
+                </p>
+              </div>
+            ) : tipoMaterialBiblioteca === "atividades" ? (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {atividadesBibliotecaFiltradas.length}{" "}
+                    atividade(s) exibida(s)
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    A imagem completa só é carregada ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {atividadesBibliotecaFiltradas.map((atividade) => {
+                    const publicada =
+                      atividade.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === atividade.id;
+
+                    return (
+                      <article
+                        key={atividade.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-emerald-100 text-emerald-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisada / Publicada"
+                              : "Pendente de revisão"}
+                          </span>
+                          <span className="text-xs text-slate-400">
+                            {atividade.quantidade_questoes
+                              ? `${atividade.quantidade_questoes} questão(ões)`
+                              : atividade.tipo_atividade || "Atividade"}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {atividade.titulo || "Atividade sem título"}
+                        </h3>
+
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p><strong className="text-slate-700">Série:</strong>{" "}{atividade.serie || "-"}</p>
+                          <p><strong className="text-slate-700">Disciplina:</strong>{" "}{atividade.disciplina || "-"}</p>
+                        </div>
+
+                        {atividade.pedido && (
+                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                            {atividade.pedido}
+                          </p>
+                        )}
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => visualizarAtividade(atividade)} disabled={carregandoPreview} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><Eye size={15} />Ver</button>
+                          <button type="button" onClick={() => editarTituloAtividade(atividade)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"><Pencil size={14} />Editar</button>
+                          <button type="button" onClick={() => alterarPublicacaoBiblioteca(atividade, !publicada)} disabled={alterando} className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${publicada ? "bg-red-600 hover:bg-red-700" : "bg-emerald-600 hover:bg-emerald-700"}`}>{alterando ? "..." : publicada ? "Retirar" : "Publicar"}</button>
+                          {!publicada && (
+                            <button type="button" onClick={() => descartarAtividadeBiblioteca(atividade)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"><Trash2 size={14} />Descartar</button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {atividadesBibliotecaFiltradas.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <BookOpen size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">Nenhuma atividade encontrada</p>
+                    <p className="mt-1 text-sm text-slate-500">Tente mudar a busca ou o filtro.</p>
+                  </div>
+                )}
+              </div>
+            ) : tipoMaterialBiblioteca === "avaliacoes" ? (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {avaliacoesBibliotecaFiltradas.length}{" "}
+                    avaliação(ões) exibida(s)
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    O conteúdo completo é carregado ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {avaliacoesBibliotecaFiltradas.map((avaliacao) => {
+                    const publicada =
+                      avaliacao.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === avaliacao.id;
+
+                    return (
+                      <article
+                        key={avaliacao.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-blue-100 text-blue-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisada / Publicada"
+                              : "Pendente de revisão"}
+                          </span>
+                          <span className="text-xs font-semibold text-blue-600">
+                            Avaliação
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {avaliacao.titulo || "Avaliação sem título"}
+                        </h3>
+
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p><strong className="text-slate-700">Série:</strong>{" "}{avaliacao.serie || "-"}</p>
+                          <p><strong className="text-slate-700">Disciplina:</strong>{" "}{avaliacao.disciplina || "-"}</p>
+                        </div>
+
+                        {avaliacao.conteudos && (
+                          <p className="mt-2 line-clamp-2 text-xs leading-5 text-slate-500">
+                            {avaliacao.conteudos}
+                          </p>
+                        )}
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button type="button" onClick={() => visualizarAvaliacao(avaliacao)} disabled={carregandoPreview} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"><Eye size={15} />Ver</button>
+                          <button type="button" onClick={() => editarTituloAvaliacao(avaliacao)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"><Pencil size={14} />Editar</button>
+                          <button type="button" onClick={() => alterarPublicacaoAvaliacao(avaliacao, !publicada)} disabled={alterando} className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${publicada ? "bg-red-600 hover:bg-red-700" : "bg-blue-600 hover:bg-blue-700"}`}>{alterando ? "..." : publicada ? "Retirar" : "Publicar"}</button>
+                          {!publicada && (
+                            <button type="button" onClick={() => descartarAvaliacaoBiblioteca(avaliacao)} disabled={alterando} className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"><Trash2 size={14} />Descartar</button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {avaliacoesBibliotecaFiltradas.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <ClipboardList size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">Nenhuma avaliação encontrada</p>
+                    <p className="mt-1 text-sm text-slate-500">Tente mudar a busca ou o filtro.</p>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="p-5">
+                <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm font-semibold text-slate-600">
+                    {planosBibliotecaFiltrados.length}{" "}
+                    plano(s) exibido(s)
+                  </p>
+                  <p className="text-xs text-slate-400">
+                    O planejamento completo é carregado ao visualizar.
+                  </p>
+                </div>
+
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+                  {planosBibliotecaFiltrados.map((plano) => {
+                    const publicada =
+                      plano.publicar_biblioteca === true;
+                    const alterando =
+                      alterandoBiblioteca === plano.id;
+
+                    return (
+                      <article
+                        key={plano.id}
+                        className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm"
+                      >
+                        <div className="flex items-start justify-between gap-3">
+                          <span
+                            className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${
+                              publicada
+                                ? "bg-violet-100 text-violet-700"
+                                : "bg-slate-100 text-slate-600"
+                            }`}
+                          >
+                            {publicada
+                              ? "✓ Revisado / Publicado"
+                              : "Pendente de revisão"}
+                          </span>
+
+                          <span className="text-xs font-semibold text-violet-600">
+                            {plano.tipo_planejamento || "Plano"}
+                          </span>
+                        </div>
+
+                        <h3 className="mt-3 line-clamp-2 min-h-[40px] text-sm font-extrabold leading-5 text-slate-900">
+                          {obterTituloPlanoBiblioteca(plano)}
+                        </h3>
+
+                        <div className="mt-2 space-y-0.5 text-xs text-slate-500">
+                          <p>
+                            <strong className="text-slate-700">Série:</strong>{" "}
+                            {plano.serie || "-"}
+                          </p>
+                          <p>
+                            <strong className="text-slate-700">Disciplina:</strong>{" "}
+                            {plano.disciplina || "-"}
+                          </p>
+                          {plano.periodo && (
+                            <p>
+                              <strong className="text-slate-700">Período:</strong>{" "}
+                              {plano.periodo}
+                            </p>
+                          )}
+                        </div>
+
+                        <div className="mt-3 grid grid-cols-2 gap-2">
+                          <button
+                            type="button"
+                            onClick={() => visualizarPlano(plano)}
+                            disabled={carregandoPreview}
+                            className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-slate-300 bg-white px-2 py-2 text-[11px] font-bold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Eye size={15} />
+                            Ver
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => editarTituloPlano(plano)}
+                            disabled={alterando}
+                            className="flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-blue-200 bg-blue-50 px-2 py-2 text-[11px] font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+                          >
+                            <Pencil size={14} />
+                            Editar
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() =>
+                              alterarPublicacaoPlano(
+                                plano,
+                                !publicada
+                              )
+                            }
+                            disabled={alterando}
+                            className={`cursor-pointer rounded-lg px-2 py-2 text-[11px] font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                              publicada
+                                ? "bg-red-600 hover:bg-red-700"
+                                : "bg-violet-600 hover:bg-violet-700"
+                            }`}
+                          >
+                            {alterando
+                              ? "..."
+                              : publicada
+                                ? "Retirar"
+                                : "Publicar"}
+                          </button>
+
+                          {!publicada && (
+                            <button
+                              type="button"
+                              onClick={() =>
+                                descartarPlanoBiblioteca(plano)
+                              }
+                              disabled={alterando}
+                              className="col-span-2 flex cursor-pointer items-center justify-center gap-1 rounded-lg border border-amber-200 bg-amber-50 px-2 py-2 text-[11px] font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                            >
+                              <Trash2 size={14} />
+                              Descartar
+                            </button>
+                          )}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+
+                {planosBibliotecaFiltrados.length === 0 && (
+                  <div className="rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-14 text-center">
+                    <BookOpen size={34} className="mx-auto text-slate-400" />
+                    <p className="mt-3 font-bold text-slate-700">
+                      Nenhum plano encontrado
+                    </p>
+                    <p className="mt-1 text-sm text-slate-500">
+                      Tente mudar a busca ou o filtro.
+                    </p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400">
           <ShieldCheck
             size={15}
@@ -1254,6 +3316,400 @@ export default function AdminPage() {
           Área administrativa protegida
         </div>
       </section>
+
+      {atividadeSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-emerald-600">
+                  Prévia da atividade
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {atividadeSelecionada.titulo ||
+                    "Atividade"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {atividadeSelecionada.serie || "-"}{" "}
+                  •{" "}
+                  {atividadeSelecionada.disciplina || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAtividadeSelecionada(null)
+                }
+                disabled={Boolean(
+                  alterandoBiblioteca
+                )}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] overflow-auto bg-slate-100 p-4 sm:p-6">
+              {atividadeSelecionada.imagem ? (
+                <img
+                  src={atividadeSelecionada.imagem}
+                  alt={
+                    atividadeSelecionada.titulo ||
+                    "Prévia da atividade"
+                  }
+                  className="mx-auto h-auto max-w-full rounded-xl bg-white shadow-sm"
+                />
+              ) : (
+                <div className="py-16 text-center text-slate-500">
+                  A imagem desta atividade não está disponível.
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              {atividadeSelecionada.imagem && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    baixarAtividadeAdmin(
+                      atividadeSelecionada
+                    )
+                  }
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl bg-emerald-600 px-5 py-3 font-bold text-white transition hover:bg-emerald-700"
+                >
+                  <Download size={17} />
+                  Baixar imagem
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  editarTituloAtividade(atividadeSelecionada)
+                }
+                disabled={
+                  alterandoBiblioteca ===
+                  atividadeSelecionada.id
+                }
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Pencil size={17} />
+                Editar título
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoBiblioteca(
+                    atividadeSelecionada,
+                    atividadeSelecionada.publicar_biblioteca !==
+                      true
+                  )
+                }
+                disabled={
+                  alterandoBiblioteca ===
+                  atividadeSelecionada.id
+                }
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  atividadeSelecionada.publicar_biblioteca ===
+                  true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-emerald-600 hover:bg-emerald-700"
+                }`}
+              >
+                {alterandoBiblioteca ===
+                atividadeSelecionada.id
+                  ? "Alterando..."
+                  : atividadeSelecionada.publicar_biblioteca ===
+                      true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              {atividadeSelecionada.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    descartarAtividadeBiblioteca(atividadeSelecionada)
+                  }
+                  disabled={
+                    alterandoBiblioteca === atividadeSelecionada.id
+                  }
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() =>
+                  setAtividadeSelecionada(null)
+                }
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {avaliacaoSelecionada && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-blue-600">
+                  Prévia da avaliação
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {avaliacaoSelecionada.titulo || "Avaliação"}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {avaliacaoSelecionada.serie || "-"}{" "}•{" "}
+                  {avaliacaoSelecionada.disciplina || "-"}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setAvaliacaoSelecionada(null)}
+                disabled={Boolean(alterandoBiblioteca)}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="max-h-[68vh] overflow-auto bg-slate-100 p-4 sm:p-6">
+              <div className="mx-auto max-w-4xl rounded-2xl bg-white p-5 shadow-sm">
+                {avaliacaoSelecionada.conteudos && (
+                  <div className="mb-5 rounded-xl bg-blue-50 p-4">
+                    <p className="text-xs font-bold uppercase tracking-wide text-blue-600">
+                      Conteúdos
+                    </p>
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-slate-700">
+                      {avaliacaoSelecionada.conteudos}
+                    </p>
+                  </div>
+                )}
+
+                {avaliacaoSelecionada.avaliacao_completa ? (
+                  <iframe
+                    title={`Prévia - ${avaliacaoSelecionada.titulo || "Avaliação"}`}
+                    sandbox=""
+                    srcDoc={`<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    * { box-sizing: border-box; }
+    html, body { margin: 0; padding: 0; background: #ffffff; }
+    body {
+      padding: 28px;
+      color: #0f172a;
+      font-family: "Times New Roman", Times, serif;
+      font-size: 16px;
+      line-height: 1.55;
+    }
+    img { max-width: 100%; height: auto; }
+    table { max-width: 100%; border-collapse: collapse; }
+  </style>
+</head>
+<body>${avaliacaoSelecionada.avaliacao_completa}</body>
+</html>`}
+                    className="min-h-[900px] w-full rounded-xl border border-slate-200 bg-white"
+                  />
+                ) : (
+                  <div className="py-10 text-center text-sm text-slate-500">
+                    O conteúdo desta avaliação não está disponível.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() => editarTituloAvaliacao(avaliacaoSelecionada)}
+                disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-5 py-3 font-bold text-blue-700 transition hover:bg-blue-100 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                <Pencil size={17} />
+                Editar título
+              </button>
+
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoAvaliacao(
+                    avaliacaoSelecionada,
+                    avaliacaoSelecionada.publicar_biblioteca !== true
+                  )
+                }
+                disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  avaliacaoSelecionada.publicar_biblioteca === true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-blue-600 hover:bg-blue-700"
+                }`}
+              >
+                {alterandoBiblioteca === avaliacaoSelecionada.id
+                  ? "Alterando..."
+                  : avaliacaoSelecionada.publicar_biblioteca === true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              {avaliacaoSelecionada.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() => descartarAvaliacaoBiblioteca(avaliacaoSelecionada)}
+                  disabled={alterandoBiblioteca === avaliacaoSelecionada.id}
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setAvaliacaoSelecionada(null)}
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {planoSelecionado && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="flex max-h-[94vh] w-full max-w-5xl flex-col overflow-hidden rounded-3xl bg-white shadow-2xl">
+            <div className="flex items-start justify-between gap-4 border-b border-slate-200 p-5">
+              <div>
+                <p className="text-sm font-semibold text-violet-600">
+                  Prévia do plano
+                </p>
+                <h2 className="mt-1 text-xl font-extrabold text-slate-900">
+                  {obterTituloPlanoBiblioteca(planoSelecionado)}
+                </h2>
+                <p className="mt-1 text-sm text-slate-500">
+                  {planoSelecionado.serie || "-"}{" "}•{" "}
+                  {planoSelecionado.disciplina || "-"}
+                  {planoSelecionado.periodo
+                    ? ` • ${planoSelecionado.periodo}`
+                    : ""}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setPlanoSelecionado(null)}
+                disabled={Boolean(alterandoBiblioteca)}
+                className="cursor-pointer rounded-lg px-3 py-2 text-xl font-bold text-slate-400 hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                ×
+              </button>
+            </div>
+
+            <div className="overflow-y-auto bg-slate-100 p-4 sm:p-6">
+              <div className="mx-auto max-w-4xl space-y-4">
+                {(
+                  [
+                    ["temas", "Temas"],
+                    ["objetivos", "Objetivos e Habilidades"],
+                    ["recursos", "Recursos e Materiais"],
+                    ["metodologia", "Metodologia"],
+                    ["avaliacao", "Avaliação"],
+                    ["referencias", "Referências"],
+                    ["atividade", "Atividade para Casa"],
+                  ] as const
+                ).map(([campo, titulo]) => {
+                  const conteudo =
+                    lerConteudoPlanoBiblioteca(
+                      planoSelecionado.plano_completo
+                    )[campo];
+
+                  if (!conteudo.trim()) {
+                    return null;
+                  }
+
+                  return (
+                    <section
+                      key={campo}
+                      className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                    >
+                      <h3 className="mb-3 text-lg font-extrabold text-violet-700">
+                        {titulo}
+                      </h3>
+                      <div className="whitespace-pre-wrap leading-7 text-slate-700">
+                        {conteudo}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="flex flex-col gap-3 border-t border-slate-200 p-5 sm:flex-row sm:justify-end">
+              <button
+                type="button"
+                onClick={() =>
+                  alterarPublicacaoPlano(
+                    planoSelecionado,
+                    planoSelecionado.publicar_biblioteca !== true
+                  )
+                }
+                disabled={
+                  alterandoBiblioteca === planoSelecionado.id
+                }
+                className={`cursor-pointer rounded-xl px-5 py-3 font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-60 ${
+                  planoSelecionado.publicar_biblioteca === true
+                    ? "bg-red-600 hover:bg-red-700"
+                    : "bg-violet-600 hover:bg-violet-700"
+                }`}
+              >
+                {alterandoBiblioteca === planoSelecionado.id
+                  ? "Alterando..."
+                  : planoSelecionado.publicar_biblioteca === true
+                    ? "Retirar da Biblioteca"
+                    : "Publicar na Biblioteca"}
+              </button>
+
+              {planoSelecionado.publicar_biblioteca !== true && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    descartarPlanoBiblioteca(planoSelecionado)
+                  }
+                  disabled={
+                    alterandoBiblioteca === planoSelecionado.id
+                  }
+                  className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-amber-200 bg-amber-50 px-5 py-3 font-bold text-amber-700 transition hover:bg-amber-100 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  <Trash2 size={17} />
+                  Descartar da revisão
+                </button>
+              )}
+
+              <button
+                type="button"
+                onClick={() => setPlanoSelecionado(null)}
+                className="cursor-pointer rounded-xl border border-slate-300 px-5 py-3 font-bold text-slate-700 transition hover:bg-slate-50"
+              >
+                Fechar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {usuarioSelecionado && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">

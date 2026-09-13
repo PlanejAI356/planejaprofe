@@ -139,6 +139,7 @@ export default function AtividadesPage() {
 
   const [erro, setErro] = useState("");
   const [gerando, setGerando] = useState(false);
+  const [melhorandoDescricao, setMelhorandoDescricao] = useState(false);
 
   const seriesDisponiveis = etapaEnsino
     ? seriesPorEtapa[etapaEnsino] || []
@@ -182,6 +183,76 @@ export default function AtividadesPage() {
     setQuantidadeAutoditado("6");
     setPalavrasAutoditado("");
     setErro("");
+  }
+
+  async function melhorarDescricao() {
+    setErro("");
+
+    if (!etapaEnsino || !serie || !disciplina) {
+      setErro(
+        "Selecione a etapa de ensino, a série ou turma e a disciplina antes de melhorar a descrição."
+      );
+      return;
+    }
+
+    if (!pedido.trim()) {
+      setErro("Escreva primeiro uma descrição, mesmo que seja bem simples.");
+      return;
+    }
+
+    try {
+      setMelhorandoDescricao(true);
+
+      const resposta = await fetch("/api/melhorar-descricao-atividade", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          etapaEnsino,
+          serie,
+          disciplina,
+          tipoAtividade: tipoAtividade || null,
+          pedido: pedido.trim(),
+          quantidadeQuestoes:
+            quantidadeQuestoes.trim() === ""
+              ? null
+              : Number(quantidadeQuestoes),
+        }),
+      });
+
+      const tipoResposta = resposta.headers.get("content-type") || "";
+
+      if (!tipoResposta.includes("application/json")) {
+        throw new Error("O servidor não retornou uma resposta válida.");
+      }
+
+      const resultado = await resposta.json();
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado.erro || "Não foi possível melhorar a descrição."
+        );
+      }
+
+      if (!resultado.descricao || typeof resultado.descricao !== "string") {
+        throw new Error(
+          "A descrição melhorada não foi retornada corretamente."
+        );
+      }
+
+      setPedido(resultado.descricao.slice(0, 1200));
+    } catch (error) {
+      console.error("Erro ao melhorar descrição:", error);
+
+      setErro(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível melhorar a descrição."
+      );
+    } finally {
+      setMelhorandoDescricao(false);
+    }
   }
 
   async function gerarAtividade() {
@@ -975,8 +1046,33 @@ Não produza questões acima nem abaixo do nível adequado para ${serie}.
                 className="min-h-36 w-full resize-y rounded-2xl border-2 border-emerald-200 bg-emerald-50/30 px-5 py-4 text-base leading-7 outline-none transition focus:border-emerald-600 focus:bg-white focus:ring-4 focus:ring-emerald-100"
               />
 
-              <p className="mt-1 text-right text-sm text-slate-500">
-                {pedido.length}/1200
+              <div className="mt-2 flex flex-wrap items-center justify-between gap-3">
+                <button
+                  type="button"
+                  onClick={melhorarDescricao}
+                  disabled={melhorandoDescricao || gerando || !pedido.trim()}
+                  className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-500 bg-emerald-50 px-4 py-2.5 text-sm font-bold text-emerald-700 transition hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {melhorandoDescricao ? (
+                    <>
+                      <Loader2 size={17} className="animate-spin" />
+                      Melhorando...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles size={17} />
+                      Melhorar minha descrição
+                    </>
+                  )}
+                </button>
+
+                <span className="text-sm text-slate-500">
+                  {pedido.length}/1200
+                </span>
+              </div>
+
+              <p className="mt-2 text-sm text-slate-500">
+                Escreva do seu jeito. A IA pode deixar seu pedido mais detalhado e você poderá editar antes de gerar.
               </p>
             </div>
 
