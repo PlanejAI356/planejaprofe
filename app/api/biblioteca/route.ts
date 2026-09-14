@@ -205,7 +205,7 @@ export async function GET(req: NextRequest) {
         )
         .eq("publicar_biblioteca", true)
         .order("created_at", { ascending: false })
-        .limit(500),
+        .limit(24),
 
       supabaseAdmin
         .from("avaliacoes")
@@ -267,7 +267,8 @@ export async function GET(req: NextRequest) {
         etapa: item.etapa_ensino?.trim() || "Não informado",
         serie: item.serie?.trim() || "Não informado",
         disciplina: item.disciplina?.trim() || "Não informado",
-        subtitulo: item.tipo_atividade?.trim() || "Atividade pedagógica",
+        subtitulo:
+          item.tipo_atividade?.trim() || "Atividade pedagógica",
         imagem: item.imagem || null,
         criadoEm: item.created_at || null,
       })),
