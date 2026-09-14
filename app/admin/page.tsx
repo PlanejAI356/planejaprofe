@@ -2486,16 +2486,12 @@ export default function AdminPage() {
                           .split(" ")[0] ||
                         "";
 
-                      const mensagemWhatsApp =
-                        `Oi${
-                          primeiroNome
-                            ? `, ${primeiroNome}`
-                            : ""
-                        }! Vi que você se cadastrou no PlanejAI através do cupom AYANNE e estou passando para te avisar que estamos nas últimas oportunidades de testar a plataforma gratuitamente.\n\n` +
-                        `Se você ainda não chegou a experimentar de verdade, aproveite para entrar e criar algo que esteja precisando para suas aulas — pode ser um planejamento, uma avaliação ou uma atividade.\n\n` +
-                        `A ideia é você conhecer o PlanejAI na prática e ver se ele realmente pode facilitar sua rotina.\n\n` +
-                        `Acesse: https://planejaioficial.com.br\n\n` +
-                        `Aproveite essa oportunidade para testar antes de decidir se quer continuar.`;
+                     const mensagemWhatsApp =
+  `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! 😊 Tudo bem?\n\n` +
+  `Aqui é do PlanejAI. 💚\n\n` +
+  `Você conheceu nossa plataforma através da Ayane, e passamos para te mostrar uma novidade.\n\n` +
+  `O PlanejAI está ainda mais completo e agora também conta com materiais prontos para visualizar, baixar e usar em sala de aula. 📚✨\n\n` +
+  `Dá uma olhadinha 👇`;
 
                       const assuntoEmail =
                         "Cupom AYANNE: últimas oportunidades para testar o PlanejAI";
