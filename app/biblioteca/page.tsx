@@ -174,7 +174,9 @@ export default function BibliotecaPage() {
   const [serie, setSerie] = useState("Todos");
   const [disciplina, setDisciplina] = useState("Todas");
   const [ordenacao, setOrdenacao] = useState("recentes");
-  const [quantidadeVisivel, setQuantidadeVisivel] = useState(12);
+  const [paginaAtividades, setPaginaAtividades] = useState(1);
+  const [temMaisAtividades, setTemMaisAtividades] = useState(true);
+  const [carregandoMais, setCarregandoMais] = useState(false);
 
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
@@ -204,6 +206,8 @@ export default function BibliotecaPage() {
         }
 
         setMateriais(resultado?.materiais || []);
+        setPaginaAtividades(1);
+        setTemMaisAtividades(resultado?.temMaisAtividades === true);
       } catch (error) {
         console.error("Erro ao carregar Biblioteca:", error);
         setErro(
@@ -287,10 +291,6 @@ export default function BibliotecaPage() {
     ordenacao,
   ]);
 
-  useEffect(() => {
-    setQuantidadeVisivel(12);
-  }, [busca, categoria, etapa, serie, disciplina, ordenacao]);
-
   function limparFiltros() {
     setBusca("");
     setCategoria("Atividade");
@@ -298,6 +298,61 @@ export default function BibliotecaPage() {
     setSerie("Todos");
     setDisciplina("Todas");
     setOrdenacao("recentes");
+  }
+
+  async function carregarMaisAtividades() {
+    if (carregandoMais || !temMaisAtividades) return;
+
+    const proximaPagina = paginaAtividades + 1;
+    setCarregandoMais(true);
+
+    try {
+      const resposta = await fetch(
+        `/api/biblioteca?pagina=${proximaPagina}`,
+        {
+          method: "GET",
+          cache: "no-store",
+        }
+      );
+
+      const resultado = await resposta.json().catch(() => null);
+
+      if (!resposta.ok) {
+        throw new Error(
+          resultado?.erro || "Não foi possível carregar mais atividades."
+        );
+      }
+
+      const novasAtividades: Material[] = (resultado?.materiais || []).filter(
+        (material: Material) => material.tipo === "Atividade"
+      );
+
+      setMateriais((atuais) => {
+        const idsExistentes = new Set(
+          atuais
+            .filter((material) => material.tipo === "Atividade")
+            .map((material) => String(material.id))
+        );
+
+        const atividadesSemDuplicar = novasAtividades.filter(
+          (material) => !idsExistentes.has(String(material.id))
+        );
+
+        return [...atuais, ...atividadesSemDuplicar];
+      });
+
+      setPaginaAtividades(proximaPagina);
+      setTemMaisAtividades(resultado?.temMaisAtividades === true);
+    } catch (error) {
+      console.error("Erro ao carregar mais atividades:", error);
+      alert(
+        error instanceof Error
+          ? error.message
+          : "Não foi possível carregar mais atividades."
+      );
+    } finally {
+      setCarregandoMais(false);
+    }
   }
 
   async function visualizarMaterial(material: Material) {
@@ -676,9 +731,7 @@ ${corpo}
               !erro &&
               materiaisFiltrados.length > 0 && (
                 <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {materiaisFiltrados
-                    .slice(0, quantidadeVisivel)
-                    .map((material) => {
+                  {materiaisFiltrados.map((material) => {
                     const estilo = classeTipo(material.tipo);
 
                     return (
@@ -770,16 +823,21 @@ ${corpo}
 
             {!carregando &&
               !erro &&
-              materiaisFiltrados.length > quantidadeVisivel && (
+              categoria === "Atividade" &&
+              temMaisAtividades && (
                 <div className="mt-6 flex justify-center">
                   <button
                     type="button"
-                    onClick={() =>
-                      setQuantidadeVisivel((quantidade) => quantidade + 12)
-                    }
-                    className="cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700"
+                    onClick={carregarMaisAtividades}
+                    disabled={carregandoMais}
+                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    Carregar mais atividades
+                    {carregandoMais && (
+                      <Loader2 size={17} className="animate-spin" />
+                    )}
+                    {carregandoMais
+                      ? "Carregando atividades..."
+                      : "Carregar mais atividades"}
                   </button>
                 </div>
               )}

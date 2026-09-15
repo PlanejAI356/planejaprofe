@@ -58,6 +58,7 @@ function tituloPlano(plano: {
   if (tituloSalvo) return tituloSalvo;
 
   const conteudo = lerPlano(plano.plano_completo);
+
   const primeiraLinha = conteudo.temas
     .split("\n")
     .map((linha) => linha.trim())
@@ -75,8 +76,22 @@ function tituloPlano(plano: {
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url);
+
     const tipo = searchParams.get("tipo")?.trim();
     const id = searchParams.get("id")?.trim();
+
+    const paginaRecebida = Number(searchParams.get("pagina") || "1");
+
+    const pagina =
+      Number.isFinite(paginaRecebida) && paginaRecebida > 0
+        ? Math.floor(paginaRecebida)
+        : 1;
+
+    const porPagina = 24;
+    const inicio = (pagina - 1) * porPagina;
+
+    // Busca 25 para sabermos se existe outra página.
+    const fim = inicio + porPagina;
 
     if (tipo === "atividade" && id) {
       const { data, error } = await supabaseAdmin
@@ -185,7 +200,7 @@ export async function GET(req: NextRequest) {
     }
 
     const [
-      { data: atividades, error: erroAtividades },
+      { data: atividadesBrutas, error: erroAtividades },
       { data: avaliacoes, error: erroAvaliacoes },
       { data: planos, error: erroPlanos },
     ] = await Promise.all([
@@ -205,7 +220,7 @@ export async function GET(req: NextRequest) {
         )
         .eq("publicar_biblioteca", true)
         .order("created_at", { ascending: false })
-        .limit(500),
+        .range(inicio, fim),
 
       supabaseAdmin
         .from("avaliacoes")
@@ -256,8 +271,17 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    const listaAtividades = atividadesBrutas || [];
+
+    // Como buscamos até 25 registros, o 25º serve apenas
+    // para informar que ainda existem atividades.
+    const temMaisAtividades = listaAtividades.length > porPagina;
+
+    // A página recebe somente 24.
+    const atividades = listaAtividades.slice(0, porPagina);
+
     const materiais = [
-      ...(atividades || []).map((item) => ({
+      ...atividades.map((item) => ({
         id: item.id,
         tipo: "Atividade" as const,
         titulo:
@@ -300,7 +324,12 @@ export async function GET(req: NextRequest) {
       })),
     ];
 
-    return NextResponse.json({ materiais });
+    return NextResponse.json({
+      materiais,
+      pagina,
+      porPagina,
+      temMaisAtividades,
+    });
   } catch (error) {
     console.error("Erro inesperado na Biblioteca pública:", error);
 
