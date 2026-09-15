@@ -205,7 +205,7 @@ export async function GET(req: NextRequest) {
         )
         .eq("publicar_biblioteca", true)
         .order("created_at", { ascending: false })
-        .limit(24),
+        .limit(500),
 
       supabaseAdmin
         .from("avaliacoes")
