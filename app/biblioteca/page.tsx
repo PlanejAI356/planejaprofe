@@ -54,10 +54,9 @@ type DetalheMaterial = {
 };
 
 const categorias = [
-  "Todos",
+  "Atividade",
   "Planejamento",
   "Avaliação",
-  "Atividade",
 ] as const;
 
 const etapas = [
@@ -170,11 +169,12 @@ export default function BibliotecaPage() {
 
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] =
-    useState<(typeof categorias)[number]>("Todos");
+  useState<(typeof categorias)[number]>("Atividade");
   const [etapa, setEtapa] = useState("Todas");
   const [serie, setSerie] = useState("Todos");
   const [disciplina, setDisciplina] = useState("Todas");
   const [ordenacao, setOrdenacao] = useState("recentes");
+  const [quantidadeVisivel, setQuantidadeVisivel] = useState(12);
 
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
@@ -223,8 +223,7 @@ export default function BibliotecaPage() {
     const termo = busca.trim().toLowerCase();
 
     const lista = materiais.filter((material) => {
-      const passaCategoria =
-        categoria === "Todos" || material.tipo === categoria;
+      const passaCategoria = material.tipo === categoria;
 
       const passaEtapa =
         etapa === "Todas" || material.etapa === etapa;
@@ -288,9 +287,13 @@ export default function BibliotecaPage() {
     ordenacao,
   ]);
 
+  useEffect(() => {
+    setQuantidadeVisivel(12);
+  }, [busca, categoria, etapa, serie, disciplina, ordenacao]);
+
   function limparFiltros() {
     setBusca("");
-    setCategoria("Todos");
+    setCategoria("Atividade");
     setEtapa("Todas");
     setSerie("Todos");
     setDisciplina("Todas");
@@ -563,11 +566,7 @@ ${corpo}
                               : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200"
                     }`}
                   >
-                    {item === "Todos" ? (
-                      <BookOpen size={17} />
-                    ) : (
-                      <IconeTipo tipo={item} size={17} />
-                    )}
+                    <IconeTipo tipo={item} size={17} />
                     {item === "Planejamento"
                       ? "Planejamentos"
                       : item === "Avaliação"
@@ -677,7 +676,9 @@ ${corpo}
               !erro &&
               materiaisFiltrados.length > 0 && (
                 <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {materiaisFiltrados.map((material) => {
+                  {materiaisFiltrados
+                    .slice(0, quantidadeVisivel)
+                    .map((material) => {
                     const estilo = classeTipo(material.tipo);
 
                     return (
@@ -764,6 +765,22 @@ ${corpo}
                       </article>
                     );
                   })}
+                </div>
+              )}
+
+            {!carregando &&
+              !erro &&
+              materiaisFiltrados.length > quantidadeVisivel && (
+                <div className="mt-6 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setQuantidadeVisivel((quantidade) => quantidade + 12)
+                    }
+                    className="cursor-pointer rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700"
+                  >
+                    Carregar mais atividades
+                  </button>
                 </div>
               )}
 
