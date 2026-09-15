@@ -16,8 +16,15 @@ import {
 
 import { saveAs } from "file-saver";
 
+type AjusteImagemAtividade = {
+  larguraPercentual?: number;
+  posicaoXPercentual?: number;
+  posicaoYPercentual?: number;
+};
+
 type OpcoesExportarAtividadeWord = {
   tituloArquivo?: string;
+  ajusteImagem?: AjusteImagemAtividade;
 };
 
 type DimensoesImagem = {
@@ -849,6 +856,44 @@ export async function exportarAtividadeWord(
     );
 
   /*
+   * Ajustes feitos pelo professor na tela.
+   * Os limites impedem que a atividade saia
+   * completamente da área útil da folha.
+   */
+  const larguraPercentual =
+    Math.min(
+      100,
+      Math.max(
+        45,
+        opcoes.ajusteImagem
+          ?.larguraPercentual ?? 100
+      )
+    );
+
+  const metadeImagem =
+    larguraPercentual / 2;
+
+  const posicaoXPercentual =
+    Math.min(
+      100 - metadeImagem,
+      Math.max(
+        metadeImagem,
+        opcoes.ajusteImagem
+          ?.posicaoXPercentual ?? 50
+      )
+    );
+
+  const posicaoYPercentual =
+    Math.min(
+      85,
+      Math.max(
+        0,
+        opcoes.ajusteImagem
+          ?.posicaoYPercentual ?? 0
+      )
+    );
+
+  /*
    * ==================================================
    * MESMAS REGRAS DA TELA/PDF
    * ==================================================
@@ -943,21 +988,18 @@ export async function exportarAtividadeWord(
     );
 
   /*
-   * Encaixe automático:
-   *
-   * usa a menor proporção possível
-   * para a atividade entrar inteira.
+   * O tamanho agora acompanha o ajuste feito
+   * na tela. A proporção original é mantida.
    */
-  const escalaAtividade =
-    Math.min(
-      larguraDisponivelAtividade /
-        dimensoesAtividade.largura,
+  const larguraDesejada =
+    larguraDisponivelAtividade *
+    (larguraPercentual / 100);
 
-      alturaDisponivelAtividade /
-        dimensoesAtividade.altura
-    );
+  let escalaAtividade =
+    larguraDesejada /
+    dimensoesAtividade.largura;
 
-  const larguraAtividade =
+  let larguraAtividade =
     Math.max(
       1,
       Math.floor(
@@ -966,13 +1008,98 @@ export async function exportarAtividadeWord(
       )
     );
 
-  const alturaAtividade =
+  let alturaAtividade =
     Math.max(
       1,
       Math.floor(
         dimensoesAtividade.altura *
           escalaAtividade
       )
+    );
+
+  /*
+   * Segurança para a imagem continuar inteira
+   * mesmo quando for muito alta.
+   */
+  if (
+    alturaAtividade >
+    alturaDisponivelAtividade
+  ) {
+    escalaAtividade =
+      alturaDisponivelAtividade /
+      dimensoesAtividade.altura;
+
+    larguraAtividade =
+      Math.max(
+        1,
+        Math.floor(
+          dimensoesAtividade.largura *
+            escalaAtividade
+        )
+      );
+
+    alturaAtividade =
+      Math.max(
+        1,
+        Math.floor(
+          dimensoesAtividade.altura *
+            escalaAtividade
+        )
+      );
+  }
+
+  /*
+   * Converte a posição escolhida na prévia
+   * para recuo horizontal e vertical no Word.
+   */
+  const espacoHorizontalLivre =
+    Math.max(
+      0,
+      larguraDisponivelAtividade -
+        larguraAtividade
+    );
+
+  const centroDesejadoPx =
+    larguraDisponivelAtividade *
+    (posicaoXPercentual / 100);
+
+  const esquerdaPx =
+    Math.min(
+      espacoHorizontalLivre,
+      Math.max(
+        0,
+        centroDesejadoPx -
+          larguraAtividade / 2
+      )
+    );
+
+  /*
+   * Aproximação de pixels para DXA/twips
+   * usando a largura útil da página como base.
+   */
+  const larguraUtilDxa = 10300;
+
+  const recuoEsquerdoDxa =
+    Math.round(
+      (esquerdaPx /
+        larguraDisponivelAtividade) *
+        larguraUtilDxa
+    );
+
+  const espacoVerticalDisponivel =
+    Math.max(
+      0,
+      alturaDisponivelAtividade -
+        alturaAtividade
+    );
+
+  const deslocamentoVerticalPx =
+    espacoVerticalDisponivel *
+    (posicaoYPercentual / 100);
+
+  const deslocamentoVerticalDxa =
+    Math.round(
+      deslocamentoVerticalPx * 15
     );
 
   const atividadeRun =
@@ -1000,10 +1127,15 @@ export async function exportarAtividadeWord(
   const paragrafoAtividade =
     new Paragraph({
       alignment:
-        AlignmentType.CENTER,
+        AlignmentType.LEFT,
+
+      indent: {
+        left: recuoEsquerdoDxa,
+      },
 
       spacing: {
-        before: 0,
+        before:
+          deslocamentoVerticalDxa,
         after: 0,
       },
 

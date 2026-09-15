@@ -5,11 +5,14 @@ import {
   useMemo,
   useRef,
   useState,
+  type PointerEvent as ReactPointerEvent,
 } from "react";
 
 import {
   ArrowLeft,
   Download,
+  Move,
+  RotateCcw,
 } from "lucide-react";
 
 import { useRouter } from "next/navigation";
@@ -34,6 +37,16 @@ export default function FinalizarAtividadePage() {
   const cabecalhoRef =
     useRef<HTMLDivElement>(null);
 
+  const areaImagemRef =
+    useRef<HTMLDivElement>(null);
+
+  const arrastoRef = useRef<{
+    x: number;
+    y: number;
+    posicaoX: number;
+    posicaoY: number;
+  } | null>(null);
+
   const [imagem, setImagem] =
     useState("");
 
@@ -50,6 +63,15 @@ export default function FinalizarAtividadePage() {
 
   const [carregando, setCarregando] =
     useState(true);
+
+  const [larguraImagem, setLarguraImagem] =
+    useState(100);
+
+  const [posicaoX, setPosicaoX] =
+    useState(50);
+
+  const [posicaoY, setPosicaoY] =
+    useState(0);
 
   const [
     versaoSelecionada,
@@ -343,6 +365,133 @@ export default function FinalizarAtividadePage() {
       .join(" • ");
   }, [configuracao]);
 
+
+  function limitar(
+    valor: number,
+    minimo: number,
+    maximo: number
+  ) {
+    return Math.min(
+      maximo,
+      Math.max(minimo, valor)
+    );
+  }
+
+  function alterarLarguraImagem(
+    novaLargura: number
+  ) {
+    const largura = limitar(
+      novaLargura,
+      45,
+      100
+    );
+
+    const metade = largura / 2;
+
+    setLarguraImagem(largura);
+    setPosicaoX((atual) =>
+      limitar(
+        atual,
+        metade,
+        100 - metade
+      )
+    );
+  }
+
+  function centralizarImagem() {
+    setPosicaoX(50);
+  }
+
+  function restaurarImagem() {
+    setLarguraImagem(100);
+    setPosicaoX(50);
+    setPosicaoY(0);
+  }
+
+  function iniciarArrasto(
+    event: ReactPointerEvent<HTMLImageElement>
+  ) {
+    if (!areaImagemRef.current) return;
+
+    event.preventDefault();
+
+    event.currentTarget.setPointerCapture(
+      event.pointerId
+    );
+
+    arrastoRef.current = {
+      x: event.clientX,
+      y: event.clientY,
+      posicaoX,
+      posicaoY,
+    };
+  }
+
+  function moverImagem(
+    event: ReactPointerEvent<HTMLImageElement>
+  ) {
+    const inicio = arrastoRef.current;
+    const area = areaImagemRef.current;
+
+    if (!inicio || !area) return;
+
+    event.preventDefault();
+
+    const retangulo =
+      area.getBoundingClientRect();
+
+    if (
+      retangulo.width <= 0 ||
+      retangulo.height <= 0
+    ) {
+      return;
+    }
+
+    const deslocamentoX =
+      ((event.clientX - inicio.x) /
+        retangulo.width) *
+      100;
+
+    const deslocamentoY =
+      ((event.clientY - inicio.y) /
+        retangulo.height) *
+      100;
+
+    const metade = larguraImagem / 2;
+
+    setPosicaoX(
+      limitar(
+        inicio.posicaoX + deslocamentoX,
+        metade,
+        100 - metade
+      )
+    );
+
+    setPosicaoY(
+      limitar(
+        inicio.posicaoY + deslocamentoY,
+        0,
+        85
+      )
+    );
+  }
+
+  function finalizarArrasto(
+    event: ReactPointerEvent<HTMLImageElement>
+  ) {
+    if (
+      event.currentTarget.hasPointerCapture(
+        event.pointerId
+      )
+    ) {
+      event.currentTarget.releasePointerCapture(
+        event.pointerId
+      );
+    }
+
+    arrastoRef.current = null;
+  }
+
   async function baixarPDF() {
     if (!imagem) {
       alert(
@@ -362,6 +511,11 @@ export default function FinalizarAtividadePage() {
             "professor"
               ? "atividade-planejai-gabarito"
               : "atividade-planejai",
+          ajusteImagem: {
+            larguraPercentual: larguraImagem,
+            posicaoXPercentual: posicaoX,
+            posicaoYPercentual: posicaoY,
+          },
         }
       );
     } catch (error) {
@@ -395,6 +549,11 @@ export default function FinalizarAtividadePage() {
             "professor"
               ? "atividade-planejai-gabarito"
               : "atividade-planejai",
+          ajusteImagem: {
+            larguraPercentual: larguraImagem,
+            posicaoXPercentual: posicaoX,
+            posicaoYPercentual: posicaoY,
+          },
         }
       );
     } catch (error) {
@@ -491,11 +650,19 @@ export default function FinalizarAtividadePage() {
         }
 
         .conteudo-atividade-tela {
-          display: flex !important;
+          position: relative !important;
+          display: block !important;
           width: 100% !important;
           max-width: 100% !important;
           clear: both !important;
           float: none !important;
+          touch-action: none;
+        }
+
+        .imagem-atividade-editavel {
+          user-select: none;
+          -webkit-user-drag: none;
+          touch-action: none;
         }
       `}</style>
 
@@ -536,20 +703,76 @@ export default function FinalizarAtividadePage() {
         )}
 
         <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 p-5">
-            <CabecalhoEscolar
-              storageKey="cabecalhoAtividade"
-              fallbackStorageKeys={[
-                "cabecalhoAvaliacao",
-              ]}
-              titulo="Cabeçalho da escola"
-              descricao="Cole o cabeçalho usado pela escola. Você pode editar, adicionar a logo e salvar para reutilizar nas próximas atividades."
-              valor={cabecalho}
-              onChange={setCabecalho}
-            />
+          <div className="border-b border-slate-200 bg-slate-100 p-4 sm:p-6">
+            <div className="mx-auto w-full max-w-[794px]">
+              <CabecalhoEscolar
+                storageKey="cabecalhoAtividade"
+                fallbackStorageKeys={[
+                  "cabecalhoAvaliacao",
+                ]}
+                titulo="Cabeçalho da escola"
+                descricao="Cole o cabeçalho usado pela escola. Você pode editar, adicionar a logo e salvar para reutilizar nas próximas atividades."
+                valor={cabecalho}
+                onChange={setCabecalho}
+              />
+            </div>
           </div>
 
           <div className="bg-slate-100 p-4 sm:p-6">
+            <div className="mx-auto mb-4 w-full max-w-[794px] rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="flex items-center gap-2 font-extrabold text-slate-800">
+                    <Move size={18} className="text-emerald-700" />
+                    Ajustar atividade na folha
+                  </div>
+                  <p className="mt-1 text-xs leading-5 text-slate-500">
+                    Arraste a atividade dentro da folha e ajuste o tamanho.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <button
+                    type="button"
+                    onClick={centralizarImagem}
+                    className="rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    Centralizar
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={restaurarImagem}
+                    className="flex items-center gap-1.5 rounded-xl border border-slate-300 bg-white px-3 py-2 text-xs font-bold text-slate-700 transition hover:bg-slate-50"
+                  >
+                    <RotateCcw size={14} />
+                    Restaurar
+                  </button>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <div className="mb-2 flex items-center justify-between text-xs font-bold text-slate-600">
+                  <span>Tamanho</span>
+                  <span>{larguraImagem}%</span>
+                </div>
+
+                <input
+                  type="range"
+                  min="45"
+                  max="100"
+                  step="1"
+                  value={larguraImagem}
+                  onChange={(event) =>
+                    alterarLarguraImagem(
+                      Number(event.target.value)
+                    )
+                  }
+                  className="w-full accent-emerald-600"
+                />
+              </div>
+            </div>
+
             <div
               className="mx-auto flex aspect-[210/297] w-full max-w-[794px] flex-col overflow-hidden bg-white px-[4.76%] py-[3.37%] shadow-md"
               style={{
@@ -569,7 +792,10 @@ export default function FinalizarAtividadePage() {
                   />
                 )}
 
-                <div className="conteudo-atividade-tela flex min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]">
+                <div
+                  ref={areaImagemRef}
+                  className="conteudo-atividade-tela min-h-0 flex-1 overflow-hidden bg-white p-[1.5%]"
+                >
                   <img
                     src={imagem}
                     alt={
@@ -578,14 +804,22 @@ export default function FinalizarAtividadePage() {
                         ? "Atividade pedagógica com gabarito"
                         : "Atividade pedagógica final"
                     }
-                    className="block h-full w-full bg-white object-contain object-top"
+                    onPointerDown={iniciarArrasto}
+                    onPointerMove={moverImagem}
+                    onPointerUp={finalizarArrasto}
+                    onPointerCancel={finalizarArrasto}
+                    draggable={false}
+                    className="imagem-atividade-editavel absolute block cursor-grab bg-white active:cursor-grabbing"
                     style={{
+                      width: `${larguraImagem}%`,
+                      height: "auto",
+                      maxWidth: "none",
+                      maxHeight: "none",
+                      left: `${posicaoX}%`,
+                      top: `${posicaoY}%`,
+                      transform: "translateX(-50%)",
                       filter:
                         "brightness(1.02) contrast(1.01)",
-                      transform:
-                        "scale(1.08)",
-                      transformOrigin:
-                        "top center",
                     }}
                   />
                 </div>

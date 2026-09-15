@@ -1,5 +1,12 @@
+type AjusteImagemAtividade = {
+  larguraPercentual?: number;
+  posicaoXPercentual?: number;
+  posicaoYPercentual?: number;
+};
+
 type OpcoesExportarAtividade = {
   tituloArquivo?: string;
+  ajusteImagem?: AjusteImagemAtividade;
 };
 
 function limparNomeArquivo(nome: string) {
@@ -190,6 +197,37 @@ export async function exportarAtividade(
     );
 
   /*
+   * Ajustes escolhidos na tela de finalização.
+   * Mantemos limites seguros para a atividade
+   * não sair da folha A4.
+   */
+  const larguraImagem = Math.min(
+    100,
+    Math.max(
+      45,
+      opcoes.ajusteImagem?.larguraPercentual ?? 100
+    )
+  );
+
+  const metadeImagem = larguraImagem / 2;
+
+  const posicaoX = Math.min(
+    100 - metadeImagem,
+    Math.max(
+      metadeImagem,
+      opcoes.ajusteImagem?.posicaoXPercentual ?? 50
+    )
+  );
+
+  const posicaoY = Math.min(
+    85,
+    Math.max(
+      0,
+      opcoes.ajusteImagem?.posicaoYPercentual ?? 0
+    )
+  );
+
+  /*
    * Em vez de apenas copiar o HTML imediatamente,
    * preparamos o cabeçalho completo, inclusive a logo.
    */
@@ -339,26 +377,28 @@ body {
 }
 
 .atividade {
+  position: relative;
   width: 100%;
   flex: 1 1 0;
   min-height: 0;
   padding: 3mm;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
   overflow: hidden;
   background: #ffffff !important;
 }
 
 .atividade img {
+  position: absolute;
   display: block;
-  width: auto;
+  width: ${larguraImagem}%;
   height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  max-width: none;
+  max-height: none;
+  left: ${posicaoX}%;
+  top: ${posicaoY}%;
+  transform: translateX(-50%);
   object-fit: contain;
   object-position: top center;
-  margin: 0 auto;
+  margin: 0;
   background: #ffffff !important;
   filter:
     brightness(1.02)
@@ -477,30 +517,61 @@ body {
       return;
     }
 
-    const escala =
-      Math.min(
-        larguraDisponivel /
-          larguraOriginal,
+    /*
+     * A largura escolhida pelo professor é aplicada
+     * sobre a área útil da atividade.
+     */
+    const larguraDesejada =
+      larguraDisponivel *
+      (${larguraImagem} / 100);
+
+    const proporcao =
+      larguraDesejada /
+      larguraOriginal;
+
+    let larguraFinal =
+      larguraOriginal * proporcao;
+
+    let alturaFinal =
+      alturaOriginal * proporcao;
+
+    /*
+     * Segurança: se a imagem ficar alta demais,
+     * reduzimos proporcionalmente para caber.
+     */
+    if (alturaFinal > alturaDisponivel) {
+      const ajusteAltura =
         alturaDisponivel /
-          alturaOriginal
-      );
+        alturaFinal;
+
+      larguraFinal *= ajusteAltura;
+      alturaFinal *= ajusteAltura;
+    }
 
     imagem.style.width =
-      Math.floor(
-        larguraOriginal * escala
+      Math.max(
+        1,
+        Math.floor(larguraFinal)
       ) + "px";
 
     imagem.style.height =
-      Math.floor(
-        alturaOriginal * escala
+      Math.max(
+        1,
+        Math.floor(alturaFinal)
       ) + "px";
 
-    imagem.style.maxWidth = "100%";
-    imagem.style.maxHeight = "100%";
+    imagem.style.maxWidth = "none";
+    imagem.style.maxHeight = "none";
+    imagem.style.left =
+      "${posicaoX}%";
+    imagem.style.top =
+      "${posicaoY}%";
+    imagem.style.transform =
+      "translateX(-50%)";
     imagem.style.objectFit = "contain";
     imagem.style.objectPosition =
       "top center";
-    imagem.style.margin = "0 auto";
+    imagem.style.margin = "0";
   }
 
   window.__planejaiAjustarImagem =
