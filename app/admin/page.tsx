@@ -1673,6 +1673,113 @@ export default function AdminPage() {
       setAlterandoBiblioteca(null);
     }
   }
+  async function tornarParceiro(usuario: Usuario) {
+  const nome =
+    usuario.nome?.trim() ||
+    usuario.email ||
+    "Usuário";
+
+  const cupomDigitado = window.prompt(
+    `Digite o cupom para ${nome}:`,
+    usuario.nome
+      ?.normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .toUpperCase() || ""
+  );
+
+  if (cupomDigitado === null) return;
+
+  const cupom = cupomDigitado
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9]/g, "")
+    .trim()
+    .toUpperCase();
+
+  if (!cupom) {
+    window.alert("Informe um cupom válido.");
+    return;
+  }
+
+  const comissaoDigitada = window.prompt(
+    "Qual será a comissão deste parceiro? (%)",
+    "30"
+  );
+
+  if (comissaoDigitada === null) return;
+
+  const comissaoPercentual = Number(
+    comissaoDigitada.replace(",", ".")
+  );
+
+  if (
+    !Number.isFinite(comissaoPercentual) ||
+    comissaoPercentual < 0 ||
+    comissaoPercentual > 100
+  ) {
+    window.alert(
+      "Informe uma comissão entre 0 e 100."
+    );
+    return;
+  }
+
+  const confirmou = window.confirm(
+    `Tornar ${nome} parceiro?\n\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%`
+  );
+
+  if (!confirmou) return;
+
+  try {
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session?.access_token) {
+      window.alert(
+        "Sua sessão expirou. Entre novamente."
+      );
+      return;
+    }
+
+    const resposta = await fetch(
+      "/api/admin/parceiros",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          usuarioId: usuario.id,
+          cupom,
+          comissaoPercentual,
+        }),
+      }
+    );
+
+    const resultado = await resposta.json();
+
+    if (!resposta.ok) {
+      throw new Error(
+        resultado?.erro ||
+          "Não foi possível criar o parceiro."
+      );
+    }
+
+    await carregarPainel();
+
+    window.alert(
+      `${nome} agora é parceiro.\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%`
+    );
+  } catch (error) {
+    window.alert(
+      error instanceof Error
+        ? error.message
+        : "Não foi possível criar o parceiro."
+    );
+  }
+}
 
   async function alterarPlanoUsuario(
     usuario: Usuario,
@@ -1981,6 +2088,18 @@ export default function AdminPage() {
 
       return mapa;
     }, [dados?.parceiros]);
+    const parceirosPorUsuarioId =
+  useMemo(() => {
+    const mapa = new Map<string, Parceiro>();
+
+    dados?.parceiros.forEach((parceiro) => {
+      if (parceiro.user_id) {
+        mapa.set(parceiro.user_id, parceiro);
+      }
+    });
+
+    return mapa;
+  }, [dados?.parceiros]);
 
   const percentualPremium =
     dados?.resumo.totalUsuarios
@@ -3855,6 +3974,23 @@ export default function AdminPage() {
                     : "Liberar Premium"}
                 </button>
               )}
+              {!parceirosPorUsuarioId.has(
+  usuarioSelecionado.id
+) ? (
+  <button
+    type="button"
+    onClick={() =>
+      tornarParceiro(usuarioSelecionado)
+    }
+    className="cursor-pointer rounded-xl bg-blue-600 px-5 py-3 font-bold text-white transition hover:bg-blue-700"
+  >
+    Tornar parceiro
+  </button>
+) : (
+  <div className="rounded-xl bg-blue-50 px-5 py-3 text-center font-bold text-blue-700">
+    ✓ Este usuário já é parceiro
+  </div>
+)}
 
               <button
                 type="button"
