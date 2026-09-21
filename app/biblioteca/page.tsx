@@ -11,11 +11,13 @@ import {
   FileText,
   GraduationCap,
   Loader2,
+  LockKeyhole,
   Search,
   Sparkles,
   X,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { supabase } from "@/app/lib/supabase";
 
 type TipoMaterial = "Planejamento" | "Avaliação" | "Atividade";
 
@@ -178,12 +180,56 @@ export default function BibliotecaPage() {
   const [temMaisAtividades, setTemMaisAtividades] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
 
+  const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [usuarioPremium, setUsuarioPremium] = useState(false);
+  const [carregandoAcesso, setCarregandoAcesso] = useState(true);
+
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
   const [detalheAberto, setDetalheAberto] =
     useState<DetalheMaterial | null>(null);
   const [carregandoDetalhe, setCarregandoDetalhe] =
     useState(false);
+
+  useEffect(() => {
+    async function carregarAcesso() {
+      try {
+        const { data, error } = await supabase.auth.getUser();
+
+        if (error || !data.user) {
+          setUsuarioLogado(false);
+          setUsuarioPremium(false);
+          return;
+        }
+
+        setUsuarioLogado(true);
+
+        const { data: perfil, error: erroPerfil } = await supabase
+          .from("profiles")
+          .select("plano")
+          .eq("id", data.user.id)
+          .maybeSingle();
+
+        if (erroPerfil) {
+          console.error("Erro ao verificar plano do usuário:", erroPerfil);
+          setUsuarioPremium(false);
+          return;
+        }
+
+        setUsuarioPremium(
+          String(perfil?.plano || "").toLowerCase() === "premium"
+        );
+      } catch (error) {
+        console.error("Erro ao verificar acesso à Biblioteca:", error);
+        setUsuarioLogado(false);
+        setUsuarioPremium(false);
+      } finally {
+        setCarregandoAcesso(false);
+      }
+    }
+
+    carregarAcesso();
+  }, []);
 
   useEffect(() => {
     async function carregarMateriais() {
@@ -290,6 +336,29 @@ export default function BibliotecaPage() {
     disciplina,
     ordenacao,
   ]);
+
+  const idsAtividadesGratis = useMemo(() => {
+    return materiais
+      .filter((material) => material.tipo === "Atividade")
+      .slice(0, 4)
+      .map((material) => String(material.id));
+  }, [materiais]);
+
+  function atividadeGratis(material: Material) {
+    return (
+      material.tipo === "Atividade" &&
+      idsAtividadesGratis.includes(String(material.id))
+    );
+  }
+
+  function podeBaixar(material: Material) {
+    if (usuarioPremium) return true;
+    return atividadeGratis(material);
+  }
+
+  function pedirPremium() {
+    router.push("/assinatura");
+  }
 
   function limparFiltros() {
     setBusca("");
@@ -505,6 +574,18 @@ ${corpo}
   }
 
   async function baixarMaterial(material: Material) {
+    if (carregandoAcesso) return;
+
+    if (!usuarioLogado) {
+      router.push("/login");
+      return;
+    }
+
+    if (!podeBaixar(material)) {
+      pedirPremium();
+      return;
+    }
+
     if (material.tipo === "Atividade") {
       await baixarAtividade(material);
       return;
@@ -600,6 +681,30 @@ ${corpo}
           </div>
 
           <div className="px-5 py-6 sm:px-8 lg:px-10">
+            <div className="mb-5 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-amber-50 p-4 sm:p-5">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <p className="text-base font-black text-emerald-800">
+                    🎁 Seu acesso gratuito ao PlanejAI
+                  </p>
+                  <p className="mt-1 text-sm leading-6 text-slate-600">
+                    Cadastre-se e experimente 3 testes grátis nas ferramentas do PlanejAI.
+                    Na Biblioteca, as 4 primeiras atividades ficam liberadas para baixar.
+                  </p>
+                </div>
+
+                {!usuarioPremium && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/assinatura")}
+                    className="shrink-0 cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700"
+                  >
+                    Conhecer Premium
+                  </button>
+                )}
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
               {categorias.map((item) => {
                 const ativo = categoria === item;
@@ -768,6 +873,20 @@ ${corpo}
                             />
                             {material.tipo}
                           </span>
+
+                          {material.tipo === "Atividade" && (
+                            <span
+                              className={`absolute right-3 top-3 rounded-lg border px-2.5 py-1 text-xs font-extrabold ${
+                                usuarioPremium || atividadeGratis(material)
+                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                                  : "border-amber-200 bg-amber-50 text-amber-700"
+                              }`}
+                            >
+                              {usuarioPremium || atividadeGratis(material)
+                                ? "GRÁTIS"
+                                : "PREMIUM 🔒"}
+                            </span>
+                          )}
                         </div>
 
                         <div className="flex flex-1 flex-col p-4">
@@ -810,8 +929,16 @@ ${corpo}
                               }
                               className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-extrabold text-white transition ${estilo.botao}`}
                             >
-                              <Download size={16} />
-                              Baixar
+                              {!carregandoAcesso &&
+                              !podeBaixar(material) ? (
+                                <LockKeyhole size={16} />
+                              ) : (
+                                <Download size={16} />
+                              )}
+                              {!carregandoAcesso &&
+                              !podeBaixar(material)
+                                ? "Premium"
+                                : "Baixar"}
                             </button>
                           </div>
                         </div>
@@ -1067,8 +1194,16 @@ ${corpo}
                 disabled={carregandoDetalhe || !detalheAberto}
                 className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
-                <Download size={17} />
-                Baixar
+                {!carregandoAcesso &&
+                !podeBaixar(materialAberto) ? (
+                  <LockKeyhole size={17} />
+                ) : (
+                  <Download size={17} />
+                )}
+                {!carregandoAcesso &&
+                !podeBaixar(materialAberto)
+                  ? "Assinar Premium"
+                  : "Baixar"}
               </button>
             </div>
           </div>

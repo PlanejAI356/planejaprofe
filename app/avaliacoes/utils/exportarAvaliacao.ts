@@ -80,20 +80,29 @@ function prepararDocumentoClonado(
     }
   }
 
-  const editaveis = Array.from(
-    documentoClonado.querySelectorAll<HTMLElement>(
-      "[contenteditable='true']"
-    )
-  );
-
   const conteudoAvaliacao =
-    editaveis.find(
-      (item) => item !== cabecalho
-    ) || null;
+    documentoClonado.querySelector<HTMLElement>(
+      "[data-conteudo-avaliacao='true']"
+    ) ||
+    Array.from(
+      documentoClonado.querySelectorAll<HTMLElement>(
+        "[contenteditable='true']"
+      )
+    ).find((item) => item !== cabecalho) ||
+    null;
 
   if (conteudoAvaliacao) {
     conteudoAvaliacao.classList.add(
       "conteudo-avaliacao-exportacao"
+    );
+
+    conteudoAvaliacao.style.removeProperty("height");
+    conteudoAvaliacao.style.removeProperty("max-height");
+    conteudoAvaliacao.style.removeProperty("min-height");
+    conteudoAvaliacao.style.setProperty(
+      "overflow",
+      "visible",
+      "important"
     );
   }
 
@@ -213,6 +222,18 @@ export async function exportarAvaliacao(
 
   documentoClonado.style.minHeight =
     "0";
+
+  documentoClonado.style.height =
+    "auto";
+
+  documentoClonado.style.maxHeight =
+    "none";
+
+  documentoClonado.style.overflow =
+    "visible";
+
+  documentoClonado.style.display =
+    "block";
 
   documentoClonado.style.margin =
     "0 auto";
@@ -340,11 +361,19 @@ export async function exportarAvaliacao(
           }
 
           .conteudo-avaliacao-exportacao {
+            display: block !important;
             width: 100% !important;
             max-width: 100% !important;
+            min-width: 0 !important;
+
+            height: auto !important;
+            min-height: 0 !important;
+            max-height: none !important;
 
             margin: 0 !important;
             padding: 0 !important;
+
+            overflow: visible !important;
 
             color: #000000 !important;
 
