@@ -881,6 +881,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       { erro: "Erro interno do servidor." },
       { status: 500 }
+      
     );
   }
 }

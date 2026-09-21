@@ -177,7 +177,15 @@ export default function PlanoCompleto({
   }, []);
 
   async function salvarPlanoCompleto(
-    atividadeGerada: string
+    alteracoes: Partial<{
+      temas: string;
+      objetivos: string;
+      recursos: string;
+      metodologia: string;
+      avaliacao: string;
+      referencias: string;
+      atividade: string;
+    }> = {}
   ) {
     const {
       data: { user },
@@ -185,81 +193,33 @@ export default function PlanoCompleto({
     } = await supabase.auth.getUser();
 
     if (erroUsuario) {
-      console.error(
-        "Erro ao identificar o professor:",
-        erroUsuario
-      );
+      console.error("Erro ao identificar o professor:", erroUsuario);
       return;
     }
 
     if (!user) {
-      console.log(
-        "O plano não foi salvo porque não há usuário conectado."
-      );
+      console.log("O plano não foi salvo porque não há usuário conectado.");
       return;
     }
 
-    const etapa =
-      localStorage.getItem("etapaEnsino") ||
-      localStorage.getItem("etapaSelecionada") ||
-      "";
-
-    const serie =
-      localStorage.getItem("turmaInfantilDetalhe") ||
-      localStorage.getItem("serieSelecionada") ||
-      "";
-
-    const disciplina =
-      localStorage.getItem("disciplinaSelecionada") || "";
-
-    const tipoPlanejamento =
-      localStorage.getItem("tipoPlanejamento") || "aula";
-
-    const dataInicio =
-      localStorage.getItem("dataInicio") ||
-      localStorage.getItem("dataInicial") ||
-      "";
-
-    const dataFim =
-      localStorage.getItem("dataFim") ||
-      localStorage.getItem("dataFinal") ||
-      "";
-
-    const periodoSalvo =
-      localStorage.getItem("periodoPlanejamento") ||
-      localStorage.getItem("periodoSelecionado") ||
-      "";
-
-    const periodo =
-      periodoSalvo ||
-      (dataInicio && dataFim
-        ? `${dataInicio} a ${dataFim}`
-        : dataInicio || dataFim || "");
+    const etapa = localStorage.getItem("etapaEnsino") || localStorage.getItem("etapaSelecionada") || "";
+    const serie = localStorage.getItem("turmaInfantilDetalhe") || localStorage.getItem("serieSelecionada") || "";
+    const disciplina = localStorage.getItem("disciplinaSelecionada") || "";
+    const tipoPlanejamento = localStorage.getItem("tipoPlanejamento") || "aula";
+    const dataInicio = localStorage.getItem("dataInicio") || localStorage.getItem("dataInicial") || "";
+    const dataFim = localStorage.getItem("dataFim") || localStorage.getItem("dataFinal") || "";
+    const periodoSalvo = localStorage.getItem("periodoPlanejamento") || localStorage.getItem("periodoSelecionado") || "";
+    const periodo = periodoSalvo || (dataInicio && dataFim ? `${dataInicio} a ${dataFim}` : dataInicio || dataFim || "");
 
     const planoCompleto = {
-      temas: ajustarEspacamento(temasSalvos),
-      objetivos: ajustarEspacamento(objetivos),
-      recursos: ajustarEspacamento(recursos),
-      metodologia: ajustarEspacamento(metodologia),
-      avaliacao: ajustarEspacamento(avaliacao),
-      referencias: ajustarEspacamento(referencias),
-      atividade: ajustarEspacamento(atividadeGerada),
+      temas: ajustarEspacamento(alteracoes.temas ?? temasSalvos),
+      objetivos: ajustarEspacamento(alteracoes.objetivos ?? objetivos),
+      recursos: ajustarEspacamento(alteracoes.recursos ?? recursos),
+      metodologia: ajustarEspacamento(alteracoes.metodologia ?? metodologia),
+      avaliacao: ajustarEspacamento(alteracoes.avaliacao ?? avaliacao),
+      referencias: ajustarEspacamento(alteracoes.referencias ?? referencias),
+      atividade: ajustarEspacamento(alteracoes.atividade ?? atividade),
     };
-
-    const chaveAtual = [
-      user.id,
-      etapa,
-      serie,
-      disciplina,
-      tipoPlanejamento,
-      ajustarEspacamento(temasSalvos),
-    ].join("|");
-
-    const planoSalvoId =
-      localStorage.getItem("planoSalvoId");
-
-    const planoSalvoChave =
-      localStorage.getItem("planoSalvoChave");
 
     const dadosPlano = {
       user_id: user.id,
@@ -272,10 +232,9 @@ export default function PlanoCompleto({
       updated_at: new Date().toISOString(),
     };
 
-    if (
-      planoSalvoId &&
-      planoSalvoChave === chaveAtual
-    ) {
+    const planoSalvoId = localStorage.getItem("planoSalvoId");
+
+    if (planoSalvoId) {
       const { error: erroAtualizacao } = await supabase
         .from("planos")
         .update(dadosPlano)
@@ -283,39 +242,24 @@ export default function PlanoCompleto({
         .eq("user_id", user.id);
 
       if (erroAtualizacao) {
-        throw new Error(
-          `A atividade foi gerada, mas não foi possível atualizar o plano: ${erroAtualizacao.message}`
-        );
+        throw new Error(`Não foi possível atualizar o plano: ${erroAtualizacao.message}`);
       }
 
       return;
     }
 
-    const {
-      data: planoCriado,
-      error: erroCriacao,
-    } = await supabase
+    const { data: planoCriado, error: erroCriacao } = await supabase
       .from("planos")
       .insert(dadosPlano)
       .select("id")
       .single();
 
     if (erroCriacao) {
-      throw new Error(
-        `A atividade foi gerada, mas não foi possível salvar o plano: ${erroCriacao.message}`
-      );
+      throw new Error(`Não foi possível salvar o plano: ${erroCriacao.message}`);
     }
 
     if (planoCriado?.id) {
-      localStorage.setItem(
-        "planoSalvoId",
-        planoCriado.id
-      );
-
-      localStorage.setItem(
-        "planoSalvoChave",
-        chaveAtual
-      );
+      localStorage.setItem("planoSalvoId", planoCriado.id);
     }
   }
 
@@ -395,66 +339,45 @@ export default function PlanoCompleto({
 
       if (tipo === "objetivos") {
         setObjetivos(textoLimpo);
-
-        localStorage.setItem(
-          "objetivosPlano",
-          textoLimpo
-        );
+        localStorage.setItem("objetivosPlano", textoLimpo);
       }
 
       if (tipo === "recursos") {
         setRecursos(textoLimpo);
-
-        localStorage.setItem(
-          "recursosPlano",
-          textoLimpo
-        );
+        localStorage.setItem("recursosPlano", textoLimpo);
       }
 
       if (tipo === "metodologia") {
         setMetodologia(textoLimpo);
-
-        localStorage.setItem(
-          "metodologiaPlano",
-          textoLimpo
-        );
+        localStorage.setItem("metodologiaPlano", textoLimpo);
       }
 
       if (tipo === "avaliacao") {
         setAvaliacao(textoLimpo);
-
-        localStorage.setItem(
-          "avaliacaoPlano",
-          textoLimpo
-        );
+        localStorage.setItem("avaliacaoPlano", textoLimpo);
       }
 
       if (tipo === "referencias") {
         setReferencias(textoLimpo);
-
-        localStorage.setItem(
-          "referenciasPlano",
-          textoLimpo
-        );
+        localStorage.setItem("referenciasPlano", textoLimpo);
       }
 
       if (tipo === "atividade") {
         setAtividade(textoLimpo);
-
-        localStorage.setItem(
-          "atividadePlano",
-          textoLimpo
-        );
-
-        salvarPlanoCompleto(textoLimpo).catch(
-          (erro) => {
-            console.error(
-              "Erro ao salvar o plano completo:",
-              erro
-            );
-          }
-        );
+        localStorage.setItem("atividadePlano", textoLimpo);
       }
+
+      const campoGerado =
+        tipo === "objetivos" ||
+        tipo === "recursos" ||
+        tipo === "metodologia" ||
+        tipo === "avaliacao" ||
+        tipo === "referencias" ||
+        tipo === "atividade"
+          ? { [tipo]: textoLimpo }
+          : {};
+
+      await salvarPlanoCompleto(campoGerado);
 
       // Limpa o campo "Meu estilo" depois de gerar esta parte do plano.
       setSugestoesMetodologia("");
@@ -780,13 +703,12 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                   )
                 );
               }}
-              onBlur={() =>
-                setTemasSalvos(
-                  ajustarEspacamento(
-                    temasSalvos
-                  )
-                )
-              }
+              onBlur={() => {
+                const textoLimpo = ajustarEspacamento(temasSalvos);
+                setTemasSalvos(textoLimpo);
+                localStorage.setItem("temasPlano", textoLimpo);
+                salvarPlanoCompleto({ temas: textoLimpo }).catch(console.error);
+              }}
               className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder="Temas das aulas..."
             />
@@ -805,13 +727,12 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                   )
                 );
               }}
-              onBlur={() =>
-                setObjetivos(
-                  ajustarEspacamento(
-                    objetivos
-                  )
-                )
-              }
+              onBlur={() => {
+                const textoLimpo = ajustarEspacamento(objetivos);
+                setObjetivos(textoLimpo);
+                localStorage.setItem("objetivosPlano", textoLimpo);
+                salvarPlanoCompleto({ objetivos: textoLimpo }).catch(console.error);
+              }}
               className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder={
                 ehCreche
@@ -851,13 +772,12 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                     )
                   );
                 }}
-                onBlur={() =>
-                  setRecursos(
-                    ajustarEspacamento(
-                      recursos
-                    )
-                  )
-                }
+                onBlur={() => {
+                  const textoLimpo = ajustarEspacamento(recursos);
+                  setRecursos(textoLimpo);
+                  localStorage.setItem("recursosPlano", textoLimpo);
+                  salvarPlanoCompleto({ recursos: textoLimpo }).catch(console.error);
+                }}
                 className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-green-600 focus:ring-4 focus:ring-green-100"
                 placeholder="Opcional: clique em Gerar com IA ou escreva aqui os recursos e materiais."
               />
@@ -877,13 +797,12 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                   )
                 );
               }}
-              onBlur={() =>
-                setMetodologia(
-                  ajustarEspacamento(
-                    metodologia
-                  )
-                )
-              }
+              onBlur={() => {
+                const textoLimpo = ajustarEspacamento(metodologia);
+                setMetodologia(textoLimpo);
+                localStorage.setItem("metodologiaPlano", textoLimpo);
+                salvarPlanoCompleto({ metodologia: textoLimpo }).catch(console.error);
+              }}
               className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder={
                 ehCreche
@@ -906,13 +825,12 @@ Proponha atividades curtas relacionadas ao conteúdo trabalhado.`
                   )
                 );
               }}
-              onBlur={() =>
-                setAvaliacao(
-                  ajustarEspacamento(
-                    avaliacao
-                  )
-                )
-              }
+              onBlur={() => {
+                const textoLimpo = ajustarEspacamento(avaliacao);
+                setAvaliacao(textoLimpo);
+                localStorage.setItem("avaliacaoPlano", textoLimpo);
+                salvarPlanoCompleto({ avaliacao: textoLimpo }).catch(console.error);
+              }}
               className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
               placeholder={
                 ehCreche
@@ -994,13 +912,12 @@ Materiais complementares utilizados pelo professor.`}
                       )
                     );
                   }}
-                  onBlur={() =>
-                    setReferencias(
-                      ajustarEspacamento(
-                        referencias
-                      )
-                    )
-                  }
+                  onBlur={() => {
+                    const textoLimpo = ajustarEspacamento(referencias);
+                    setReferencias(textoLimpo);
+                    localStorage.setItem("referenciasPlano", textoLimpo);
+                    salvarPlanoCompleto({ referencias: textoLimpo }).catch(console.error);
+                  }}
                   className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                   placeholder="Clique em Gerar com IA para criar as referências..."
                 />
@@ -1021,13 +938,12 @@ Materiais complementares utilizados pelo professor.`}
                     )
                   );
                 }}
-                onBlur={() =>
-                  setAtividade(
-                    ajustarEspacamento(
-                      atividade
-                    )
-                  )
-                }
+                onBlur={() => {
+                  const textoLimpo = ajustarEspacamento(atividade);
+                  setAtividade(textoLimpo);
+                  localStorage.setItem("atividadePlano", textoLimpo);
+                  salvarPlanoCompleto({ atividade: textoLimpo }).catch(console.error);
+                }}
                 className="min-h-[350px] w-full rounded-2xl border-2 border-slate-200 bg-white px-5 py-4 text-[15px] leading-7 text-slate-700 shadow-sm outline-none transition-all duration-200 placeholder:text-slate-400 focus:border-blue-500 focus:ring-4 focus:ring-blue-100"
                 placeholder="Clique em Gerar com IA para criar a atividade para casa..."
               />

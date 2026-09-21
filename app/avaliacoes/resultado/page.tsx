@@ -212,60 +212,41 @@ export default function ResultadoAvaliacaoPage() {
     useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    /*
+     * A página de revisão salva a avaliação completa nesta chave.
+     * Ela deve ser a primeira fonte usada no resultado.
+     */
+    const provaEditadaDireta =
+      localStorage.getItem("provaGeradaEditada") || "";
+
     const provaGerada =
       localStorage.getItem("provaGerada") || "";
 
-    let provaEditada = "";
+    let conteudoInicial = provaEditadaDireta;
 
-    try {
-      const provaSalva = provaGerada
-        ? JSON.parse(provaGerada)
-        : null;
-
-      const avaliacaoId =
-        provaSalva &&
-        typeof provaSalva === "object"
-          ? provaSalva.id
-          : null;
-
-      if (avaliacaoId) {
-        provaEditada =
-          localStorage.getItem(
-            `provaGeradaEditada:${avaliacaoId}`
-          ) || "";
-      }
-    } catch {
-      provaEditada = "";
-    }
-
-    const cabecalhoBruto =
-      localStorage.getItem(
-        "cabecalhoAvaliacao"
-      ) || "";
-
-    const cabecalhoSalvoLocal =
-      sanitizarHtmlCabecalho(
-        cabecalhoBruto
-      );
-
-    if (
-      cabecalhoSalvoLocal &&
-      cabecalhoSalvoLocal !==
-        cabecalhoBruto
-    ) {
-      localStorage.setItem(
-        "cabecalhoAvaliacao",
-        cabecalhoSalvoLocal
-      );
-    }
-
-    let conteudoInicial = provaEditada;
-
+    /*
+     * Compatibilidade com avaliações antigas que foram salvas
+     * no formato com id ou avaliacaoCompleta dentro de provaGerada.
+     */
     if (!conteudoInicial && provaGerada) {
       try {
         const provaSalva = JSON.parse(provaGerada);
 
+        const avaliacaoId =
+          provaSalva &&
+          typeof provaSalva === "object"
+            ? provaSalva.id
+            : null;
+
+        if (avaliacaoId) {
+          conteudoInicial =
+            localStorage.getItem(
+              `provaGeradaEditada:${avaliacaoId}`
+            ) || "";
+        }
+
         if (
+          !conteudoInicial &&
           provaSalva &&
           typeof provaSalva === "object" &&
           typeof provaSalva.avaliacaoCompleta === "string"
@@ -273,25 +254,27 @@ export default function ResultadoAvaliacaoPage() {
           conteudoInicial =
             provaSalva.avaliacaoCompleta;
         } else if (
+          !conteudoInicial &&
           typeof provaSalva === "string"
         ) {
           conteudoInicial =
             textoParaHtml(provaSalva);
-        } else {
+        }
+      } catch {
+        /*
+         * No fluxo atual, provaGerada pode conter apenas o título.
+         * Só usamos esse valor como último recurso.
+         */
+        if (!conteudoInicial) {
           conteudoInicial =
             textoParaHtml(provaGerada);
         }
-      } catch {
-        conteudoInicial =
-          textoParaHtml(provaGerada);
       }
     }
 
     setConteudoAluno(conteudoInicial);
-    setCabecalho(cabecalhoSalvoLocal);
-    setCabecalhoSalvo(
-      Boolean(cabecalhoSalvoLocal.trim())
-    );
+    setCabecalho("");
+    setCabecalhoSalvo(false);
     setCarregando(false);
   }, []);
 
@@ -610,49 +593,6 @@ export default function ResultadoAvaliacaoPage() {
       valor
     );
     editorRef.current?.focus();
-  }
-
-  function salvarCabecalho() {
-    const novoCabecalho =
-      sanitizarHtmlCabecalho(
-        cabecalhoRef.current
-          ?.innerHTML || ""
-      );
-
-    if (cabecalhoRef.current) {
-      cabecalhoRef.current.innerHTML =
-        novoCabecalho;
-    }
-
-    const cabecalhoSomenteTexto =
-      cabecalhoRef.current?.innerText.trim() ||
-      "";
-
-    const possuiImagem = Boolean(
-      cabecalhoRef.current?.querySelector(
-        "img"
-      )
-    );
-
-    if (
-      !cabecalhoSomenteTexto &&
-      !possuiImagem
-    ) {
-      localStorage.removeItem(
-        "cabecalhoAvaliacao"
-      );
-      setCabecalho("");
-      setCabecalhoSalvo(false);
-      return;
-    }
-
-    localStorage.setItem(
-      "cabecalhoAvaliacao",
-      novoCabecalho
-    );
-
-    setCabecalho(novoCabecalho);
-    setCabecalhoSalvo(true);
   }
 
   function salvarConteudoAtual() {
@@ -1312,7 +1252,11 @@ elementoImagem.addEventListener("blur", () => {
                   setCabecalho(html);
                   setCabecalhoSalvo(false);
                 }}
-                chaveLocalStorage="cabecalhoAvaliacao"
+                chaveLocalStorage="cabecalhoPadrao"
+                fallbackStorageKeys={[
+                  "cabecalhoAtividade",
+                  "cabecalhoAvaliacao",
+                ]}
                 titulo="Cabeçalho da escola"
                 descricao="Cole o cabeçalho usado pela escola e edite antes de salvar."
                 onSalvar={(html) => {

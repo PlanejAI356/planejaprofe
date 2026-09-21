@@ -18,6 +18,8 @@ import type {
   CabecalhoEscolarProps,
 } from "./tipos";
 
+import { supabase } from "../../lib/supabase";
+
 import {
   arquivoParaDataUrl,
   normalizarImagensCabecalho,
@@ -60,40 +62,50 @@ export default function CabecalhoEscolar({
 
     carregouCabecalhoRef.current = true;
 
-    if (!chaveArmazenamento) {
-      return;
-    }
+    async function carregarCabecalho() {
+      let cabecalhoSalvo = "";
 
-    const chaves = [
-      chaveArmazenamento,
-      ...fallbackStorageKeys,
-    ];
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
 
-    let cabecalhoSalvo = "";
+        if (user) {
+          const { data: perfil, error } = await supabase
+            .from("profiles")
+            .select("cabecalho_padrao")
+            .eq("id", user.id)
+            .maybeSingle();
 
-    for (const chave of chaves) {
-      const salvoLocal =
-        localStorage.getItem(chave);
+          if (error) {
+            console.error("Erro ao carregar cabeçalho do perfil:", error);
+          } else if (perfil?.cabecalho_padrao?.trim()) {
+            cabecalhoSalvo = sanitizarHtmlCabecalho(perfil.cabecalho_padrao);
+          }
+        }
+      } catch (error) {
+        console.error("Erro ao acessar cabeçalho do perfil:", error);
+      }
 
-      if (salvoLocal?.trim()) {
-        cabecalhoSalvo =
-          sanitizarHtmlCabecalho(
-            salvoLocal
-          );
+      // Compatibilidade com cabeçalhos salvos antes da integração com o perfil.
+      if (!cabecalhoSalvo && chaveArmazenamento) {
+        const chaves = [chaveArmazenamento, ...fallbackStorageKeys];
+        for (const chave of chaves) {
+          const salvoLocal = localStorage.getItem(chave);
+          if (salvoLocal?.trim()) {
+            cabecalhoSalvo = sanitizarHtmlCabecalho(salvoLocal);
+            break;
+          }
+        }
+      }
 
-        break;
+      if (cabecalhoSalvo.trim()) {
+        onChange(cabecalhoSalvo);
+        if (chaveArmazenamento) {
+          localStorage.setItem(chaveArmazenamento, cabecalhoSalvo);
+        }
       }
     }
 
-    /*
-     * O cabeçalho salvo é carregado apenas uma vez
-     * quando o componente é aberto. Depois disso,
-     * o conteúdo só muda pela edição do usuário,
-     * pelo botão Salvar ou pelo botão Limpar.
-     */
-    if (cabecalhoSalvo.trim()) {
-      onChange(cabecalhoSalvo);
-    }
+    void carregarCabecalho();
   }, []);
 
   useEffect(() => {
@@ -516,7 +528,7 @@ export default function CabecalhoEscolar({
     );
   }
 
-  function limparCabecalho() {
+  async function limparCabecalho() {
     if (!editorRef.current) {
       return;
     }
@@ -536,17 +548,21 @@ export default function CabecalhoEscolar({
     onChange("");
 
     if (chaveArmazenamento) {
-      localStorage.removeItem(
-        chaveArmazenamento
-      );
+      localStorage.removeItem(chaveArmazenamento);
+      fallbackStorageKeys.forEach((chave) => localStorage.removeItem(chave));
+    }
 
-      fallbackStorageKeys.forEach(
-        (chave) => {
-          localStorage.removeItem(
-            chave
-          );
-        }
-      );
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ cabecalho_padrao: null })
+          .eq("id", user.id);
+        if (error) console.error("Erro ao remover cabeçalho do perfil:", error);
+      }
+    } catch (error) {
+      console.error("Erro ao remover cabeçalho do perfil:", error);
     }
 
     setSalvo(false);
@@ -576,7 +592,7 @@ export default function CabecalhoEscolar({
     atualizarEstado();
   }
 
-  function salvarCabecalho() {
+  async function salvarCabecalho() {
     if (!editorRef.current) {
       return;
     }
@@ -622,13 +638,34 @@ export default function CabecalhoEscolar({
       }
     }
 
+    try {
+      const { data: { user }, error: erroUsuario } = await supabase.auth.getUser();
+
+      if (erroUsuario) {
+        console.error("Erro ao identificar professor:", erroUsuario);
+      }
+
+      if (user) {
+        const { error } = await supabase
+          .from("profiles")
+          .update({ cabecalho_padrao: html.trim() ? html : null })
+          .eq("id", user.id);
+
+        if (error) {
+          console.error("Erro ao salvar cabeçalho no perfil:", error);
+          setSalvo(false);
+          setMensagem("Cabeçalho salvo neste dispositivo, mas não foi possível sincronizar com o perfil.");
+          onSalvar?.(html);
+          return;
+        }
+      }
+    } catch (error) {
+      console.error("Erro ao sincronizar cabeçalho com o perfil:", error);
+    }
+
     onSalvar?.(html);
-
     setSalvo(true);
-
-    setMensagem(
-      "Cabeçalho salvo."
-    );
+    setMensagem("Cabeçalho salvo no perfil.");
   }
 
   return (
@@ -708,7 +745,7 @@ export default function CabecalhoEscolar({
           onPaste={processarColagem}
           onInput={atualizarEstado}
           onClick={moverLogoParaCelula}
-          className="cabecalho-escolar-editor mt-4 h-[220px] w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-dashed border-slate-300 bg-white px-2 py-3 text-sm leading-6 text-slate-900 outline-none transition sm:px-4 sm:py-4 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
+          className="cabecalho-escolar-editor mt-4 h-[130px] w-full overflow-y-auto overflow-x-hidden rounded-xl border-2 border-dashed border-slate-300 bg-white px-2 py-3 text-sm leading-6 text-slate-900 outline-none transition sm:px-4 sm:py-4 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-100"
         />
 
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">

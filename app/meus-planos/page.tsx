@@ -505,9 +505,9 @@ export default function MeusPlanosPage() {
                 </h2>
 
                 <p className="mt-3 max-w-lg text-slate-600">
-                  Depois que você gerar a Atividade
-                  para Casa, o planejamento completo
-                  aparecerá aqui.
+                  Seus planejamentos aparecem aqui assim que você
+                  avança para o Plano Completo e continuam sendo
+                  atualizados conforme você preenche cada etapa.
                 </p>
 
                 <Link
