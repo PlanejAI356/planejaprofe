@@ -273,8 +273,6 @@ export default function ResultadoAvaliacaoPage() {
     }
 
     setConteudoAluno(conteudoInicial);
-    setCabecalho("");
-    setCabecalhoSalvo(false);
     setCarregando(false);
   }, []);
 

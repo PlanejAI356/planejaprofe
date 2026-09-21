@@ -147,7 +147,7 @@ function montarHtmlQuestao(
         <img
           src="${questao.imagemUrl}"
           alt="${escaparHtml(questao.descricaoImagem || "Imagem da questão")}"
-          style="display:block;max-width:100%;width:420px;height:auto;margin:0 auto;border:1px solid #cbd5e1;border-radius:8px;"
+          style="display:block;max-width:100%;width:210px;height:auto;margin:0 auto;border:1px solid #cbd5e1;border-radius:8px;"
         />
       </div>
     `

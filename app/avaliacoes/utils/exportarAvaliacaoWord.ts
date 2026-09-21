@@ -138,17 +138,17 @@ function ajustarDimensoesImagem(
   modoCabecalho = false
 ) {
   const larguraMaxima = modoCabecalho
-    ? 105
-    : duasColunas
-      ? 225
-      : 420;
+  ? 105
+  : duasColunas
+    ? 110
+    : 210;
 
-  const alturaMaxima = modoCabecalho
-    ? 82
-    : duasColunas
-      ? 190
-      : 280;
-
+const alturaMaxima = modoCabecalho
+  ? 82
+  : duasColunas
+    ? 95
+    : 140;
+    
   const proporcao = Math.min(
     larguraMaxima / larguraOriginal,
     alturaMaxima / alturaOriginal,
