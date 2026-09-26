@@ -40,6 +40,43 @@ function respostaErroCritico(
   );
 }
 
+/*
+ * Acrescenta 1 mês mantendo corretamente
+ * datas como dia 28, 29, 30 e 31.
+ */
+function adicionarUmMes(
+  dataBase: Date
+) {
+  const novaData = new Date(dataBase);
+
+  const diaOriginal =
+    novaData.getUTCDate();
+
+  novaData.setUTCDate(1);
+
+  novaData.setUTCMonth(
+    novaData.getUTCMonth() + 1
+  );
+
+  const ultimoDiaDoNovoMes =
+    new Date(
+      Date.UTC(
+        novaData.getUTCFullYear(),
+        novaData.getUTCMonth() + 1,
+        0
+      )
+    ).getUTCDate();
+
+  novaData.setUTCDate(
+    Math.min(
+      diaOriginal,
+      ultimoDiaDoNovoMes
+    )
+  );
+
+  return novaData;
+}
+
 export async function POST(req: Request) {
   try {
     const body = await req.json();
@@ -47,13 +84,14 @@ export async function POST(req: Request) {
     console.log(
       "=== WEBHOOK MERCADO PAGO RECEBIDO ==="
     );
+
     console.log("Body:", body);
 
     const paymentId = body?.data?.id;
 
     /*
      * Ignora notificações sem ID válido
-     * e também a simulação padrão 123456.
+     * e a simulação padrão 123456.
      */
     if (
       !paymentId ||
@@ -71,7 +109,8 @@ export async function POST(req: Request) {
      * 1. CONSULTA O PAGAMENTO
      * DIRETAMENTE NO MERCADO PAGO
      */
-    const payment = new Payment(client);
+    const payment =
+      new Payment(client);
 
     let pagamento;
 
@@ -102,11 +141,8 @@ export async function POST(req: Request) {
     });
 
     /*
-     * Se ainda não foi aprovado,
-     * não existe Premium para liberar.
-     *
-     * Neste caso a notificação foi
-     * processada corretamente.
+     * Somente pagamento aprovado
+     * pode ativar ou renovar Premium.
      */
     if (
       pagamento.status !== "approved"
@@ -120,28 +156,22 @@ export async function POST(req: Request) {
     }
 
     /*
-     * 2. DESCOBRE O EMAIL DO CLIENTE
+     * 2. DESCOBRE O EMAIL
      */
     const emailBruto =
       pagamento.external_reference ||
       pagamento.payer?.email;
 
-    /*
-     * PAGAMENTO APROVADO SEM EMAIL:
-     *
-     * Aqui NÃO respondemos sucesso.
-     * O cliente pagou e ainda não
-     * conseguimos identificar a conta.
-     */
     if (!emailBruto) {
       return respostaErroCritico(
         `Pagamento ${paymentId} foi aprovado, mas nenhum email foi encontrado.`
       );
     }
 
-    const email = String(emailBruto)
-      .trim()
-      .toLowerCase();
+    const email =
+      String(emailBruto)
+        .trim()
+        .toLowerCase();
 
     console.log(
       "Email do cliente:",
@@ -157,18 +187,11 @@ export async function POST(req: Request) {
     } = await supabaseAdmin
       .from("profiles")
       .select(
-        "id, email, plano, planos_restantes, mercado_pago_id"
+        "id, email, plano, planos_restantes, mercado_pago_id, premium_ate, tipo_premium"
       )
       .eq("email", email)
       .maybeSingle();
 
-    /*
-     * PAGAMENTO APROVADO,
-     * MAS HOUVE ERRO NO SUPABASE.
-     *
-     * Responde 500 para permitir
-     * uma nova tentativa do webhook.
-     */
     if (erroBuscarPerfil) {
       console.error(
         "Erro ao procurar perfil:",
@@ -180,13 +203,6 @@ export async function POST(req: Request) {
       );
     }
 
-    /*
-     * PAGAMENTO APROVADO,
-     * MAS PERFIL NÃO ENCONTRADO.
-     *
-     * Também não podemos confirmar
-     * o webhook como concluído.
-     */
     if (!perfil) {
       return respostaErroCritico(
         `Pagamento ${paymentId} aprovado, mas nenhum perfil foi encontrado para ${email}.`
@@ -199,90 +215,157 @@ export async function POST(req: Request) {
     );
 
     /*
-     * 4. GARANTE O PREMIUM
+     * 4. VERIFICA SE O PAGAMENTO
+     * JÁ FOI APLICADO AO PERFIL
      *
-     * Mesmo que o Mercado Pago envie
-     * o webhook novamente, atualizar
-     * o perfil para Premium outra vez
-     * não causa problema.
+     * Isso evita acrescentar outro mês
+     * caso o Mercado Pago envie o mesmo
+     * webhook novamente.
      */
-    const {
-      data: perfilAtualizado,
-      error: erroAtualizarPerfil,
-    } = await supabaseAdmin
-      .from("profiles")
-      .update({
-        plano: "premium",
-        planos_restantes: 999999,
+    const pagamentoJaAplicadoNoPerfil =
+      Boolean(perfil.mercado_pago_id) &&
+      String(perfil.mercado_pago_id) ===
+        String(paymentId);
+
+    if (pagamentoJaAplicadoNoPerfil) {
+      console.log(
+        "Pagamento já processado no perfil. Validade não será duplicada."
+      );
+    }
+
+    /*
+     * 5. ATIVA OU RENOVA O PREMIUM
+     *
+     * Só entra aqui se este pagamento
+     * ainda não tiver sido aplicado.
+     */
+    if (!pagamentoJaAplicadoNoPerfil) {
+      const agora = new Date();
+
+      let dataBase = agora;
+
+      /*
+       * Se o Premium ainda estiver válido,
+       * acrescenta 1 mês ao vencimento atual.
+       *
+       * Se estiver vencido ou sem vencimento,
+       * começa 1 mês a partir de agora.
+       */
+      if (perfil.premium_ate) {
+        const vencimentoAtual =
+          new Date(perfil.premium_ate);
+
+        if (
+          !Number.isNaN(
+            vencimentoAtual.getTime()
+          ) &&
+          vencimentoAtual > agora
+        ) {
+          dataBase =
+            vencimentoAtual;
+        }
+      }
+
+      const novoVencimento =
+        adicionarUmMes(dataBase);
+
+      /*
+       * Parceiro e cortesia continuam
+       * com a classificação que já possuem.
+       *
+       * Usuário comum que realizou pagamento
+       * fica marcado como "pagamento".
+       */
+      const tipoPremium =
+        perfil.tipo_premium === "parceiro" ||
+        perfil.tipo_premium === "cortesia"
+          ? perfil.tipo_premium
+          : "pagamento";
+
+      const {
+        data: perfilAtualizado,
+        error: erroAtualizarPerfil,
+      } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          plano: "premium",
+          planos_restantes: 999999,
+
+          mercado_pago_id:
+            String(paymentId),
+
+          premium_ate:
+            novoVencimento.toISOString(),
+
+          tipo_premium:
+            tipoPremium,
+        })
+        .eq("id", perfil.id)
+        .select(
+          "id, email, plano, planos_restantes, mercado_pago_id, premium_ate, tipo_premium"
+        )
+        .single();
+
+      if (erroAtualizarPerfil) {
+        console.error(
+          "Erro ao ativar/renovar Premium:",
+          erroAtualizarPerfil
+        );
+
+        return respostaErroCritico(
+          `Pagamento ${paymentId} aprovado, mas não foi possível ativar/renovar o Premium para ${email}.`
+        );
+      }
+
+      if (
+        !perfilAtualizado ||
+        perfilAtualizado.plano !==
+          "premium"
+      ) {
+        return respostaErroCritico(
+          `Pagamento ${paymentId} aprovado, mas o perfil de ${email} não foi confirmado como Premium.`
+        );
+      }
+
+      console.log(
+        "=== PREMIUM ATIVADO/RENOVADO COM SUCESSO ==="
+      );
+
+      console.log({
+        email:
+          perfilAtualizado.email,
+
+        plano:
+          perfilAtualizado.plano,
+
+        planos_restantes:
+          perfilAtualizado.planos_restantes,
+
         mercado_pago_id:
-          String(paymentId),
-      })
-      .eq("id", perfil.id)
-      .select(
-        "id, email, plano, planos_restantes, mercado_pago_id"
-      )
-      .single();
+          perfilAtualizado.mercado_pago_id,
 
-    /*
-     * PAGAMENTO APROVADO,
-     * MAS O PREMIUM NÃO FOI LIBERADO.
-     *
-     * Este é justamente o caso que
-     * queremos impedir de ficar perdido.
-     */
-    if (erroAtualizarPerfil) {
-      console.error(
-        "Erro ao liberar Premium:",
-        erroAtualizarPerfil
-      );
+        premium_ate:
+          perfilAtualizado.premium_ate,
 
-      return respostaErroCritico(
-        `Pagamento ${paymentId} aprovado, mas não foi possível liberar o Premium para ${email}.`
-      );
+        tipo_premium:
+          perfilAtualizado.tipo_premium,
+      });
     }
 
     /*
-     * Confirma que o banco realmente
-     * devolveu o perfil como Premium.
-     */
-    if (
-      !perfilAtualizado ||
-      perfilAtualizado.plano !==
-        "premium"
-    ) {
-      return respostaErroCritico(
-        `Pagamento ${paymentId} aprovado, mas o perfil de ${email} não foi confirmado como Premium.`
-      );
-    }
-
-    console.log(
-      "=== PREMIUM LIBERADO COM SUCESSO ==="
-    );
-
-    console.log({
-      email: perfilAtualizado.email,
-      plano: perfilAtualizado.plano,
-      planos_restantes:
-        perfilAtualizado.planos_restantes,
-      mercado_pago_id:
-        perfilAtualizado.mercado_pago_id,
-    });
-
-    /*
-     * A PARTIR DAQUI O CLIENTE
-     * JÁ ESTÁ PREMIUM.
+     * A PARTIR DAQUI:
      *
-     * Problemas relacionados a parceiro
-     * ou comissão NÃO devem tirar o
-     * acesso do cliente.
+     * O Premium já foi ativado/renovado
+     * ou este pagamento já havia sido
+     * aplicado anteriormente.
+     *
+     * Mesmo assim continuamos para verificar
+     * a comissão do parceiro.
      */
 
     /*
-     * 5. VERIFICA SE ESTE PAGAMENTO
+     * 6. VERIFICA SE O PAGAMENTO
      * JÁ FOI REGISTRADO EM INDICAÇÕES
-     *
-     * Isso evita comissão duplicada
-     * se o webhook for recebido novamente.
      */
     const {
       data: pagamentoJaRegistrado,
@@ -304,11 +387,6 @@ export async function POST(req: Request) {
         erroPagamentoRegistrado
       );
 
-      /*
-       * Premium já foi liberado.
-       * Não bloqueamos o cliente
-       * por problema de comissão.
-       */
       return respostaSucesso();
     }
 
@@ -321,7 +399,7 @@ export async function POST(req: Request) {
     }
 
     /*
-     * 6. PROCURA UMA INDICAÇÃO
+     * 7. PROCURA INDICAÇÃO
      * ASSOCIADA AO CLIENTE
      */
     const {
@@ -348,11 +426,6 @@ export async function POST(req: Request) {
         erroBuscarIndicacao
       );
 
-      /*
-       * Premium já está ativo.
-       * Erro de parceiro não bloqueia
-       * o acesso do cliente.
-       */
       return respostaSucesso();
     }
 
@@ -379,7 +452,7 @@ export async function POST(req: Request) {
     );
 
     /*
-     * 7. CALCULA A COMISSÃO
+     * 8. CALCULA A COMISSÃO
      */
     const valorAssinatura =
       Number(
@@ -392,9 +465,6 @@ export async function POST(req: Request) {
         "Não foi possível identificar o valor da assinatura."
       );
 
-      /*
-       * Premium já está liberado.
-       */
       return respostaSucesso();
     }
 
@@ -419,7 +489,7 @@ export async function POST(req: Request) {
     );
 
     /*
-     * 8. MARCA A INDICAÇÃO
+     * 9. MARCA A INDICAÇÃO
      * COMO PAGA
      */
     const {
@@ -430,10 +500,13 @@ export async function POST(req: Request) {
       .from("indicacoes")
       .update({
         status: "pago",
+
         valor_assinatura:
           valorAssinatura,
+
         valor_comissao:
           valorComissao,
+
         mercado_pago_id:
           String(paymentId),
       })
@@ -452,11 +525,6 @@ export async function POST(req: Request) {
         erroAtualizarIndicacao
       );
 
-      /*
-       * Cliente já está Premium.
-       * Não tiramos o acesso dele
-       * por problema na comissão.
-       */
       return respostaSucesso();
     }
 
@@ -467,16 +535,22 @@ export async function POST(req: Request) {
     console.log({
       parceiro_id:
         indicacaoAtualizada.parceiro_id,
+
       cupom:
         indicacaoAtualizada.cupom,
+
       cliente:
         indicacaoAtualizada.email_cliente,
+
       status:
         indicacaoAtualizada.status,
+
       valor_assinatura:
         indicacaoAtualizada.valor_assinatura,
+
       valor_comissao:
         indicacaoAtualizada.valor_comissao,
+
       mercado_pago_id:
         indicacaoAtualizada.mercado_pago_id,
     });
@@ -488,12 +562,6 @@ export async function POST(req: Request) {
       error
     );
 
-    /*
-     * Como não sabemos se um pagamento
-     * aprovado deixou de ser processado,
-     * não confirmamos o webhook como
-     * recebido com sucesso.
-     */
     return respostaErroCritico(
       "Erro inesperado ao processar o webhook do Mercado Pago."
     );
