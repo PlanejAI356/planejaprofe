@@ -38,6 +38,44 @@ function promocaoEstaAtiva(perfil: any) {
   return agora >= inicio && agora <= fim;
 }
 
+/*
+ * Verifica se o acesso Premium ainda está válido.
+ *
+ * Parceiro e cortesia:
+ * continuam com acesso sem depender de vencimento.
+ *
+ * Premium por pagamento:
+ * precisa ter premium_ate e a data ainda não pode ter vencido.
+ */
+function premiumEstaAtivo(perfil: any) {
+  if (perfil?.plano !== "premium") {
+    return false;
+  }
+
+  if (
+    perfil?.tipo_premium === "parceiro" ||
+    perfil?.tipo_premium === "cortesia"
+  ) {
+    return true;
+  }
+
+  if (!perfil?.premium_ate) {
+    return false;
+  }
+
+  const vencimento = new Date(
+    perfil.premium_ate
+  );
+
+  if (
+    Number.isNaN(vencimento.getTime())
+  ) {
+    return false;
+  }
+
+  return vencimento > new Date();
+}
+
 export async function buscarPerfil() {
   try {
     const {
@@ -81,12 +119,6 @@ export async function buscarPerfil() {
     /*
      * Se o usuário está autenticado, mas o registro em profiles
      * não existe, tenta sincronizar o perfil pelo servidor.
-     *
-     * A rota /api/perfil/sincronizar:
-     * - valida o usuário pelo token;
-     * - preserva perfis existentes;
-     * - não altera Premium;
-     * - cria apenas perfis realmente ausentes.
      */
     const {
       data: { session },
@@ -170,14 +202,31 @@ export async function usarPlanejamentoGratis(): Promise<ResultadoPermissao> {
   }
 
   /*
-   * Usuário Premium continua com acesso normal
-   * e não consome teste promocional.
+   * Premium válido:
+   * pagamento vigente, parceiro ou cortesia.
    */
-  if (perfil.plano === "premium") {
+  if (premiumEstaAtivo(perfil)) {
     return {
       permitido: true,
       mensagem: "Plano Premium ativo.",
       usaTestePromocional: false,
+    };
+  }
+
+  /*
+   * Continua marcado como Premium,
+   * mas não passou na validação.
+   *
+   * Nesse caso é um Premium vencido
+   * ou um Premium antigo sem data de validade.
+   */
+  if (perfil.plano === "premium") {
+    return {
+      permitido: false,
+      mensagem:
+        "Sua assinatura Premium venceu. Renove sua assinatura para continuar criando no PlanejAI.",
+      usaTestePromocional: false,
+      testesRestantes: 0,
     };
   }
 
@@ -189,8 +238,7 @@ export async function usarPlanejamentoGratis(): Promise<ResultadoPermissao> {
   );
 
   /*
-   * Usuário gratuito com promoção ativa:
-   * pode gerar enquanto houver saldo.
+   * Usuário gratuito com promoção ativa.
    */
   if (
     promocaoEstaAtiva(perfil) &&
@@ -205,11 +253,6 @@ export async function usarPlanejamentoGratis(): Promise<ResultadoPermissao> {
     };
   }
 
-  /*
-   * Fora do período, sem promoção configurada
-   * ou sem testes restantes, volta ao bloqueio
-   * normal do Plano Premium.
-   */
   return {
     permitido: false,
     mensagem:
@@ -236,17 +279,20 @@ export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste>
 
     /*
      * Faz até 3 tentativas para evitar descontar
-     * um valor desatualizado caso duas ações ocorram
-     * quase ao mesmo tempo.
+     * um valor desatualizado.
      */
-    for (let tentativa = 0; tentativa < 3; tentativa += 1) {
+    for (
+      let tentativa = 0;
+      tentativa < 3;
+      tentativa += 1
+    ) {
       const {
         data: perfil,
         error: erroPerfil,
       } = await supabase
         .from("profiles")
         .select(
-          "id, plano, testes_promocionais_restantes, testes_promocionais_inicio_em, testes_promocionais_expiram_em"
+          "id, plano, tipo_premium, premium_ate, testes_promocionais_restantes, testes_promocionais_inicio_em, testes_promocionais_expiram_em"
         )
         .eq("id", user.id)
         .maybeSingle();
@@ -265,12 +311,26 @@ export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste>
       }
 
       /*
-       * Premium nunca consome teste promocional.
+       * Premium válido nunca consome teste.
+       */
+      if (premiumEstaAtivo(perfil)) {
+        return {
+          consumido: false,
+          mensagem:
+            "Usuário Premium: nenhum teste promocional foi consumido.",
+        };
+      }
+
+      /*
+       * Premium vencido também não utiliza
+       * os testes promocionais.
+       * Precisa renovar a assinatura.
        */
       if (perfil.plano === "premium") {
         return {
           consumido: false,
-          mensagem: "Usuário Premium: nenhum teste promocional foi consumido.",
+          mensagem:
+            "Sua assinatura Premium precisa ser renovada.",
         };
       }
 
@@ -289,11 +349,13 @@ export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste>
           consumido: false,
           mensagem:
             "Não há teste promocional ativo para descontar.",
-          testesRestantes: testesAtuais,
+          testesRestantes:
+            testesAtuais,
         };
       }
 
-      const novoSaldo = testesAtuais - 1;
+      const novoSaldo =
+        testesAtuais - 1;
 
       const {
         data: perfilAtualizado,
@@ -327,11 +389,6 @@ export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste>
         };
       }
 
-      /*
-       * Se nenhuma linha foi atualizada, o saldo pode
-       * ter mudado entre a leitura e a atualização.
-       * Nesse caso, tenta novamente.
-       */
       if (!perfilAtualizado) {
         continue;
       }
@@ -342,7 +399,8 @@ export async function consumirTestePromocional(): Promise<ResultadoConsumoTeste>
           "Teste promocional utilizado com sucesso.",
         testesRestantes:
           Number(
-            perfilAtualizado.testes_promocionais_restantes ??
+            perfilAtualizado
+              .testes_promocionais_restantes ??
               novoSaldo
           ),
       };

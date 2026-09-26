@@ -1,4 +1,4 @@
-"use client"
+"use client";
 
 import { useEffect, useState } from "react";
 import Inicio from "./componentes/Inicio";
@@ -24,6 +24,7 @@ export default function Home() {
   const [usuarioLogado, setUsuarioLogado] = useState(false);
   const [contabilizandoPlano, setContabilizandoPlano] = useState(false);
   const [mostrarModalPremium, setMostrarModalPremium] = useState(false);
+  const [mostrarModalRenovacao, setMostrarModalRenovacao] = useState(false);
   const [
     mostrarModalTesteConcluido,
     setMostrarModalTesteConcluido,
@@ -32,16 +33,16 @@ export default function Home() {
   const [etapa, setEtapa] = useState("inicio");
 
   const [ano, setAno] = useState("2026");
-  const [mesSelecionado, setMesSelecionado] =
-    useState<number | null>(null);
+  const [mesSelecionado, setMesSelecionado] = useState<number | null>(null);
   const [nomeMes, setNomeMes] = useState("");
   const [tipoPlanejamento, setTipoPlanejamento] = useState("");
-  const [datasSelecionadas, setDatasSelecionadas] =
-    useState<DataAula[]>([]);
+  const [datasSelecionadas, setDatasSelecionadas] = useState<DataAula[]>([]);
 
   useEffect(() => {
     async function registrarIndicacaoParceiro() {
-      const params = new URLSearchParams(window.location.search);
+      const params = new URLSearchParams(
+        window.location.search
+      );
 
       const refRecebida =
         params.get("ref")?.trim().toUpperCase() || "";
@@ -50,11 +51,15 @@ export default function Home() {
         return;
       }
 
-      localStorage.setItem("parceiro_ref", refRecebida);
-
-      let visitanteId = localStorage.getItem(
-        "parceiro_visitante_id"
+      localStorage.setItem(
+        "parceiro_ref",
+        refRecebida
       );
+
+      let visitanteId =
+        localStorage.getItem(
+          "parceiro_visitante_id"
+        );
 
       if (!visitanteId) {
         visitanteId = crypto.randomUUID();
@@ -71,7 +76,8 @@ export default function Home() {
           {
             method: "POST",
             headers: {
-              "Content-Type": "application/json",
+              "Content-Type":
+                "application/json",
             },
             body: JSON.stringify({
               cupom: refRecebida,
@@ -81,9 +87,10 @@ export default function Home() {
         );
 
         if (!resposta.ok) {
-          const resultado = await resposta
-            .json()
-            .catch(() => null);
+          const resultado =
+            await resposta.json().catch(
+              () => null
+            );
 
           console.error(
             "Não foi possível registrar a indicação:",
@@ -102,46 +109,102 @@ export default function Home() {
   }, []);
 
   useEffect(() => {
-    async function verificarLogin() {
-      const { data, error } =
-        await supabase.auth.getSession();
+  async function verificarLogin() {
+    const { data, error } =
+      await supabase.auth.getSession();
 
-      if (error) {
-        console.error("Erro ao verificar login:", error);
-      }
-
-      if (data.session) {
-        setUsuarioLogado(true);
-
-        localStorage.removeItem(
-          "testeGratisConcluido"
-        );
-
-        // O professor entra primeiro no novo painel.
-        setEtapa("painel");
-
-        setCarregandoAuth(false);
-        return;
-      }
-
-      setUsuarioLogado(false);
-
-      const testeConcluido =
-        localStorage.getItem(
-          "testeGratisConcluido"
-        ) === "true";
-
-      if (testeConcluido) {
-        window.location.replace("/cadastro");
-        return;
-      }
-
-      setEtapa("inicio");
-      setCarregandoAuth(false);
+    if (error) {
+      console.error(
+        "Erro ao verificar login:",
+        error
+      );
     }
 
-    verificarLogin();
-  }, []);
+    if (data.session) {
+      setUsuarioLogado(true);
+
+      localStorage.removeItem(
+        "testeGratisConcluido"
+      );
+
+      setEtapa("painel");
+
+      const usuario =
+        data.session.user;
+
+      const {
+        data: perfil,
+        error: erroPerfil,
+      } = await supabase
+        .from("profiles")
+        .select(
+          "plano, tipo_premium, premium_ate"
+        )
+        .eq("id", usuario.id)
+        .maybeSingle();
+
+      if (erroPerfil) {
+        console.error(
+          "Erro ao verificar assinatura:",
+          erroPerfil
+        );
+      }
+
+      if (perfil) {
+        const acessoEspecial =
+          perfil.tipo_premium ===
+            "parceiro" ||
+          perfil.tipo_premium ===
+            "cortesia";
+
+        if (
+          perfil.plano === "premium" &&
+          !acessoEspecial
+        ) {
+          let assinaturaVencida = false;
+
+          if (!perfil.premium_ate) {
+            assinaturaVencida = true;
+          } else {
+            const vencimento = new Date(
+              perfil.premium_ate
+            );
+
+            assinaturaVencida =
+              Number.isNaN(
+                vencimento.getTime()
+              ) ||
+              vencimento <= new Date();
+          }
+
+          if (assinaturaVencida) {
+            setMostrarModalRenovacao(true);
+          }
+        }
+      }
+
+      setCarregandoAuth(false);
+      return;
+    }
+
+    setUsuarioLogado(false);
+
+    const testeConcluido =
+      localStorage.getItem(
+        "testeGratisConcluido"
+      ) === "true";
+
+    if (testeConcluido) {
+      window.location.replace("/cadastro");
+      return;
+    }
+
+    setEtapa("inicio");
+    setCarregandoAuth(false);
+  }
+
+  verificarLogin();
+}, []);
 
   function limparPlanoAnterior() {
     const chaves = [
@@ -204,10 +267,7 @@ export default function Home() {
     } = await supabase.auth.getUser();
 
     if (erroUsuario) {
-      console.error(
-        "Erro ao identificar usuário:",
-        erroUsuario
-      );
+      console.error("Erro ao identificar usuário:", erroUsuario);
       throw erroUsuario;
     }
 
@@ -216,31 +276,20 @@ export default function Home() {
       return;
     }
 
-    const {
-      data: perfil,
-      error: erroBusca,
-    } = await supabase
+    const { data: perfil, error: erroBusca } = await supabase
       .from("profiles")
       .select("planos_feitos")
       .eq("id", user.id)
       .single();
 
     if (erroBusca) {
-      console.error(
-        "Erro ao buscar quantidade de planos:",
-        erroBusca
-      );
+      console.error("Erro ao buscar quantidade de planos:", erroBusca);
       throw erroBusca;
     }
 
-    const quantidadeAtual = Number(
-      perfil?.planos_feitos ?? 0
-    );
+    const quantidadeAtual = Number(perfil?.planos_feitos ?? 0);
 
-    const {
-      data: perfilAtualizado,
-      error: erroAtualizacao,
-    } = await supabase
+    const { data: perfilAtualizado, error: erroAtualizacao } = await supabase
       .from("profiles")
       .update({
         planos_feitos: quantidadeAtual + 1,
@@ -250,10 +299,7 @@ export default function Home() {
       .maybeSingle();
 
     if (erroAtualizacao) {
-      console.error(
-        "Erro ao contabilizar plano:",
-        erroAtualizacao
-      );
+      console.error("Erro ao contabilizar plano:", erroAtualizacao);
       throw erroAtualizacao;
     }
 
@@ -291,33 +337,38 @@ export default function Home() {
   }
 
   function iniciarTesteGratis() {
-    limparPlanoAnterior();
-    localStorage.setItem(
-      "testeGratisAtivo",
-      "true"
-    );
-    setEtapa("painel");
-  }
+  limparPlanoAnterior();
+  localStorage.setItem("testeGratisAtivo", "true");
+  setEtapa("painel");
+}
 
   async function iniciarNovoPlanejamento() {
-    const permissao =
-      await usarPlanejamentoGratis();
+  const permissao =
+    await usarPlanejamentoGratis();
 
-    if (!permissao.permitido) {
+  if (!permissao.permitido) {
+    const mensagem =
+      permissao.mensagem.toLowerCase();
+
+    if (
+      mensagem.includes("venceu") ||
+      mensagem.includes("renov")
+    ) {
+      setMostrarModalRenovacao(true);
+    } else {
       setMostrarModalPremium(true);
-      return;
     }
 
-    limparPlanoAnterior();
-    setEtapa("configuracao");
+    return;
   }
+
+  limparPlanoAnterior();
+  setEtapa("configuracao");
+}
 
   async function abrirPlanoCompleto() {
     if (!usuarioLogado) {
-      localStorage.setItem(
-        "testeGratisConcluido",
-        "true"
-      );
+      localStorage.setItem("testeGratisConcluido", "true");
       setEtapa("planoCompleto");
       return;
     }
@@ -362,7 +413,7 @@ export default function Home() {
   }
 
   if (etapa === "inicio" && !usuarioLogado) {
-    return <Inicio />;
+   return <Inicio />;
   }
 
   return (
@@ -374,10 +425,7 @@ export default function Home() {
           {/* LOGO / NOME */}
           <div className="flex items-center gap-2">
             <span className="text-xl font-extrabold text-slate-900">
-              Planej
-              <span className="text-green-600">
-                AI
-              </span>
+              Planej<span className="text-green-600">AI</span>
             </span>
           </div>
 
@@ -386,8 +434,7 @@ export default function Home() {
             <button
               type="button"
               onClick={() => {
-                window.location.href =
-                  "/assinatura";
+                window.location.href = "/assinatura";
               }}
               className="shrink-0 rounded-lg bg-gradient-to-r from-blue-600 to-green-600 px-3 py-2 text-xs font-bold text-white shadow-sm transition hover:scale-[1.02] sm:px-4 sm:text-sm"
             >
@@ -410,59 +457,32 @@ export default function Home() {
       {!usuarioLogado && (
         <div className="border-b border-green-200 bg-green-50 px-3 py-2 text-center">
           <p className="text-sm font-semibold text-green-800">
-            🎁 Experimente o PlanejAI
-            gratuitamente, sem cadastro.
+            🎁 Experimente o PlanejAI gratuitamente, sem cadastro.
           </p>
         </div>
       )}
 
-      {/* PAINEL PRINCIPAL */}
       {etapa === "painel" && (
-        <section className="relative flex min-h-[calc(100vh-70px)] items-start overflow-hidden px-4 py-7 sm:py-9">
+        <section className="relative flex min-h-[calc(100vh-70px)] items-center overflow-hidden px-4 py-8">
           <div className="pointer-events-none absolute -left-40 top-10 h-80 w-[520px] rounded-[50%] bg-green-100/60 blur-3xl" />
           <div className="pointer-events-none absolute -right-44 top-24 h-96 w-[580px] rounded-[50%] bg-emerald-100/50 blur-3xl" />
           <div className="pointer-events-none absolute bottom-[-180px] left-[20%] h-80 w-[650px] rounded-[50%] bg-blue-50/70 blur-3xl" />
 
-          <div className="pointer-events-none absolute left-5 top-28 hidden rotate-[-8deg] text-center text-sm font-medium italic leading-6 text-emerald-700/55 2xl:block">
-            Ideias de hoje,<br />
-            grandes conquistas<br />
-            amanhã. ♡
-          </div>
-
-          <div className="pointer-events-none absolute right-7 top-32 hidden rotate-[5deg] text-center text-sm font-medium italic leading-6 text-emerald-700/55 2xl:block">
-            Professores<br />
-            que inspiram ♡
-          </div>
-
-          <div className="pointer-events-none absolute bottom-8 right-8 hidden rotate-[-4deg] text-center text-sm font-medium italic leading-6 text-emerald-700/45 2xl:block">
-            Planejamento também é<br />
-            cuidar de pessoas. ♡
-          </div>
-
-          <div className="relative z-10 mx-auto w-full max-w-7xl">
-            <div className="mb-7 text-center">
+          <div className="relative z-10 mx-auto w-full max-w-6xl">
+            <div className="mb-9 text-center">
               <p className="mb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-green-600">
                 PlanejAI
               </p>
-
               <h1 className="text-3xl font-black tracking-[-0.035em] text-[#071c4d] sm:text-4xl md:text-5xl">
-                O que você deseja{" "}
-                <span className="text-green-600">
-                  criar hoje?
-                </span>
+                O que você deseja <span className="text-green-600">criar hoje?</span>
               </h1>
-
               <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-green-500" />
-
               <p className="mt-4 text-sm text-slate-600 sm:text-base">
-                Escolha uma das ferramentas e
-                comece a criar.
+                Escolha uma das ferramentas e comece a criar.
               </p>
             </div>
 
-            {/* QUATRO CARDS */}
-            <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-2 xl:grid-cols-4">
-              {/* PLANEJAMENTO */}
+            <div className="grid gap-5 md:grid-cols-3">
               <button
                 type="button"
                 onClick={() => {
@@ -473,126 +493,52 @@ export default function Home() {
                     setEtapa("configuracao");
                   }
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-green-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-green-100/60" />
-
-                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-green-100 text-3xl shadow-sm">
-                  📚
-                </div>
-
-                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
-                  Planejamento de Aula
-                </h2>
-
-                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
-                  Crie planos de aula completos,
-                  mensais ou organizados por aula.
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-green-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">📚</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Planejamento de Aula</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie planos de aula completos, mensais ou organizados por aula.
                 </p>
-
-                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-green-700">
-                  Criar planejamento
-                  <span className="transition group-hover:translate-x-1">
-                    →
-                  </span>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-green-700">
+                  Criar planejamento <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
 
-              {/* AVALIAÇÕES */}
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href =
-                    "/avaliacoes";
+                  window.location.href = "/avaliacoes";
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-blue-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-blue-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-blue-100/60" />
-
-                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-3xl shadow-sm">
-                  📝
-                </div>
-
-                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
-                  Avaliações
-                </h2>
-
-                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
-                  Crie provas, simulados,
-                  avaliações diagnósticas e
-                  recuperações.
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-blue-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-4xl shadow-sm">📝</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Avaliações</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie provas, simulados, avaliações diagnósticas e recuperações.
                 </p>
-
-                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-blue-700">
-                  Criar avaliação
-                  <span className="transition group-hover:translate-x-1">
-                    →
-                  </span>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-blue-700">
+                  Criar avaliação <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
 
-              {/* ATIVIDADES */}
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href =
-                    "/atividades";
+                  window.location.href = "/atividades";
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-amber-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-amber-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
               >
-                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-amber-100/60" />
-
-                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-amber-100 text-3xl shadow-sm">
-                  ✏️
-                </div>
-
-                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
-                  Atividades
-                </h2>
-
-                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
-                  Crie exercícios, revisões e
-                  atividades personalizadas.
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-amber-100/60" />
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">✏️</div>
+                <h2 className="relative text-2xl font-black text-[#071c4d]">Atividades</h2>
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Crie exercícios, revisões e atividades personalizadas.
                 </p>
-
-                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-amber-700">
-                  Criar atividade
-                  <span className="transition group-hover:translate-x-1">
-                    →
-                  </span>
-                </div>
-              </button>
-
-              {/* BIBLIOTECA DE MATERIAIS */}
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href =
-                    "/biblioteca";
-                }}
-                className="group relative cursor-pointer overflow-hidden rounded-[24px] border border-violet-200 bg-white/95 p-5 text-left shadow-[0_12px_32px_rgba(15,23,42,0.07)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
-              >
-                <div className="absolute right-[-24px] top-[-26px] h-24 w-24 rounded-full bg-violet-100/60" />
-
-                <div className="relative mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-violet-100 text-3xl shadow-sm">
-                  📂
-                </div>
-
-                <h2 className="relative text-xl font-black leading-tight text-[#071c4d]">
-                  Biblioteca de Materiais
-                </h2>
-
-                <p className="relative mt-2 min-h-[58px] text-sm leading-5 text-slate-600">
-                  Encontre planejamentos,
-                  atividades e avaliações prontas
-                  para usar.
-                </p>
-
-                <div className="relative mt-4 inline-flex items-center gap-2 text-sm font-extrabold text-violet-700">
-                  Explorar biblioteca
-                  <span className="transition group-hover:translate-x-1">
-                    →
-                  </span>
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-amber-700">
+                  Criar atividade <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
             </div>
@@ -600,29 +546,20 @@ export default function Home() {
         </section>
       )}
 
-      {/* CONFIGURAÇÃO DO PLANEJAMENTO */}
       {etapa === "configuracao" && (
         <ConfiguracaoPlano
           ano={ano}
           setAno={setAno}
           mesSelecionado={mesSelecionado}
-          setMesSelecionado={
-            setMesSelecionado
-          }
+          setMesSelecionado={setMesSelecionado}
           nomeMes={nomeMes}
           setNomeMes={setNomeMes}
-          tipoPlanejamento={
-            tipoPlanejamento
-          }
-          setTipoPlanejamento={
-            setTipoPlanejamento
-          }
-          onSelecionarSerie={
-            clicarEmSerie
-          }
+          tipoPlanejamento={tipoPlanejamento}
+          setTipoPlanejamento={setTipoPlanejamento}
+          onSelecionarSerie={clicarEmSerie}
           onVoltar={() => {
-            setEtapa("painel");
-          }}
+  setEtapa("painel");
+}}
           onContinuar={() => {
             setDatasSelecionadas([]);
             setEtapa("calendario");
@@ -630,79 +567,47 @@ export default function Home() {
         />
       )}
 
-      {/* CALENDÁRIO */}
-      {etapa === "calendario" &&
-        mesSelecionado !== null && (
-          <Calendario
-            ano={ano}
-            mesSelecionado={
-              mesSelecionado
-            }
-            nomeMes={nomeMes}
-            tipoPlanejamento={
-              tipoPlanejamento
-            }
-            onVoltar={() =>
-              setEtapa("configuracao")
-            }
-            onContinuar={(
-              datas: DataAula[]
-            ) => {
-              setDatasSelecionadas(datas);
-              setEtapa("conteudos");
-            }}
-          />
-        )}
+      {etapa === "calendario" && mesSelecionado !== null && (
+        <Calendario
+          ano={ano}
+          mesSelecionado={mesSelecionado}
+          nomeMes={nomeMes}
+          tipoPlanejamento={tipoPlanejamento}
+          onVoltar={() => setEtapa("configuracao")}
+          onContinuar={(datas: DataAula[]) => {
+            setDatasSelecionadas(datas);
+            setEtapa("conteudos");
+          }}
+        />
+      )}
 
-      {/* CONTEÚDOS */}
       {etapa === "conteudos" && (
         <Conteudos
-          datasSelecionadas={
-            datasSelecionadas
-          }
-          tipoPlanejamento={
-            tipoPlanejamento
-          }
-          onVoltar={() =>
-            setEtapa("calendario")
-          }
-          onContinuar={
-            abrirPlanoCompleto
-          }
+          datasSelecionadas={datasSelecionadas}
+          tipoPlanejamento={tipoPlanejamento}
+          onVoltar={() => setEtapa("calendario")}
+          onContinuar={abrirPlanoCompleto}
         />
       )}
 
-      {/* PLANO COMPLETO */}
       {etapa === "planoCompleto" && (
         <PlanoCompleto
-          onVoltar={() =>
-            setEtapa("conteudos")
-          }
-          onExportar={
-            irParaExportacao
-          }
+          onVoltar={() => setEtapa("conteudos")}
+          onExportar={irParaExportacao}
         />
       )}
 
-      {/* EXPORTAÇÃO */}
       {etapa === "exportacao" && (
-        <Exportacao
-          onVoltar={() =>
-            setEtapa("planoCompleto")
-          }
-        />
+        <Exportacao onVoltar={() => setEtapa("planoCompleto")} />
       )}
 
-      {/* MODAL DO TESTE GRATUITO */}
       {mostrarModalTesteConcluido && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-[2px]">
           <div className="relative w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
             <button
               type="button"
               onClick={() =>
-                setMostrarModalTesteConcluido(
-                  false
-                )
+                setMostrarModalTesteConcluido(false)
               }
               aria-label="Fechar"
               className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xl font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
@@ -710,7 +615,7 @@ export default function Home() {
               ×
             </button>
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-3xl shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl shadow-sm">
               🎉
             </div>
 
@@ -719,18 +624,15 @@ export default function Home() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600 sm:text-base">
-              Você já conheceu como o PlanejAI
-              cria seus materiais. Crie sua conta
-              para continuar usando e liberar
-              todos os recursos.
+              Você já conheceu como o PlanejAI cria seus materiais.
+              Crie sua conta para continuar usando e liberar todos os recursos.
             </p>
 
             <div className="mt-7 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href =
-                    "/cadastro";
+                  window.location.href = "/cadastro";
                 }}
                 className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl"
               >
@@ -740,9 +642,7 @@ export default function Home() {
               <button
                 type="button"
                 onClick={() =>
-                  setMostrarModalTesteConcluido(
-                    false
-                  )
+                  setMostrarModalTesteConcluido(false)
                 }
                 className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
               >
@@ -757,22 +657,19 @@ export default function Home() {
         </div>
       )}
 
-      {/* MODAL PREMIUM */}
       {mostrarModalPremium && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 px-4 backdrop-blur-[2px]">
           <div className="relative w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
             <button
               type="button"
-              onClick={() =>
-                setMostrarModalPremium(false)
-              }
+              onClick={() => setMostrarModalPremium(false)}
               aria-label="Fechar"
               className="absolute right-4 top-4 flex h-9 w-9 cursor-pointer items-center justify-center rounded-full text-xl font-bold text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
             >
               ×
             </button>
 
-            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-3xl shadow-sm">
+            <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl shadow-sm">
               👑
             </div>
 
@@ -784,18 +681,15 @@ export default function Home() {
             </h2>
 
             <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600 sm:text-base">
-              Tenha acesso completo ao PlanejAI e
-              continue criando planejamentos,
-              avaliações e atividades com mais
-              praticidade.
+              Tenha acesso completo ao PlanejAI e continue criando
+              planejamentos, avaliações e atividades com mais praticidade.
             </p>
 
             <div className="mt-7 flex flex-col gap-3">
               <button
                 type="button"
                 onClick={() => {
-                  window.location.href =
-                    "/assinatura";
+                  window.location.href = "/assinatura";
                 }}
                 className="w-full cursor-pointer rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg transition hover:scale-[1.01] hover:shadow-xl"
               >
@@ -804,9 +698,7 @@ export default function Home() {
 
               <button
                 type="button"
-                onClick={() =>
-                  setMostrarModalPremium(false)
-                }
+                onClick={() => setMostrarModalPremium(false)}
                 className="w-full cursor-pointer rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-600 transition hover:bg-slate-50"
               >
                 Agora não
@@ -819,6 +711,76 @@ export default function Home() {
           </div>
         </div>
       )}
+      {mostrarModalRenovacao && (
+  <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-950/60 px-4 backdrop-blur-[2px]">
+    <div className="relative w-full max-w-lg rounded-3xl border border-emerald-200 bg-white p-6 text-center shadow-2xl sm:p-8">
+
+      <button
+        type="button"
+        onClick={() =>
+          setMostrarModalRenovacao(false)
+        }
+        aria-label="Fechar"
+        className="absolute right-4 top-4 flex h-9 w-9 items-center justify-center rounded-full text-xl font-bold text-slate-400 hover:bg-slate-100"
+      >
+        ×
+      </button>
+
+      <div className="mx-auto flex h-20 w-20 items-center justify-center rounded-2xl bg-emerald-50 text-4xl">
+        👑
+      </div>
+
+      <p className="mt-5 text-sm font-extrabold uppercase tracking-wider text-emerald-600">
+        PlanejAI Premium
+      </p>
+
+      <h2 className="mt-2 text-2xl font-extrabold text-slate-950 sm:text-3xl">
+        Renove seu PlanejAI Premium
+      </h2>
+
+      <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-slate-600 sm:text-base">
+        Sua assinatura chegou ao fim. Renove para continuar criando planejamentos, avaliações e atividades.
+      </p>
+
+      <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+        <p className="text-sm font-semibold text-slate-500">
+          Renovação mensal
+        </p>
+
+        <p className="mt-1 text-3xl font-black text-emerald-600">
+          R$ 29,90
+        </p>
+      </div>
+
+      <div className="mt-6 flex flex-col gap-3">
+        <button
+          type="button"
+          onClick={() => {
+            window.location.href = "/assinatura";
+          }}
+          className="w-full rounded-2xl bg-gradient-to-r from-blue-600 to-emerald-600 px-6 py-4 text-lg font-extrabold text-white shadow-lg"
+        >
+          Renovar assinatura
+        </button>
+
+        <button
+          type="button"
+          onClick={() =>
+            setMostrarModalRenovacao(false)
+          }
+          className="w-full rounded-2xl border border-slate-200 bg-white px-6 py-3 font-bold text-slate-600"
+        >
+          Agora não
+        </button>
+      </div>
+
+      <p className="mt-4 text-xs font-medium text-slate-400">
+        Após a confirmação do pagamento, seu acesso Premium será renovado.
+      </p>
+
+    </div>
+  </div>
+)}
     </main>
   );
 }
