@@ -1698,12 +1698,12 @@ export default function AdminPage() {
     .toUpperCase();
 
   if (!cupom) {
-    window.alert("Informe um cupom válido.");
+    alert("Informe um cupom para o parceiro.");
     return;
   }
 
   const comissaoDigitada = window.prompt(
-    "Qual será a comissão deste parceiro? (%)",
+    "Qual será a comissão do parceiro (%)?",
     "30"
   );
 
@@ -1718,14 +1718,12 @@ export default function AdminPage() {
     comissaoPercentual < 0 ||
     comissaoPercentual > 100
   ) {
-    window.alert(
-      "Informe uma comissão entre 0 e 100."
-    );
+    alert("Informe uma comissão entre 0 e 100.");
     return;
   }
 
   const confirmou = window.confirm(
-    `Tornar ${nome} parceiro?\n\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%`
+    `Criar parceria para ${nome}?\n\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%`
   );
 
   if (!confirmou) return;
@@ -1733,13 +1731,16 @@ export default function AdminPage() {
   try {
     const {
       data: { session },
+      error: erroSessao,
     } = await supabase.auth.getSession();
 
-    if (!session?.access_token) {
-      window.alert(
+    if (
+      erroSessao ||
+      !session?.access_token
+    ) {
+      throw new Error(
         "Sua sessão expirou. Entre novamente."
       );
-      return;
     }
 
     const resposta = await fetch(
@@ -1747,7 +1748,8 @@ export default function AdminPage() {
       {
         method: "POST",
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization:
+            `Bearer ${session.access_token}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
@@ -1758,7 +1760,9 @@ export default function AdminPage() {
       }
     );
 
-    const resultado = await resposta.json();
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
 
     if (!resposta.ok) {
       throw new Error(
@@ -1769,11 +1773,16 @@ export default function AdminPage() {
 
     await carregarPainel();
 
-    window.alert(
-      `${nome} agora é parceiro.\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%`
+    alert(
+      `Parceiro criado com sucesso!\n\nCupom: ${cupom}\nComissão: ${comissaoPercentual}%\n\nLink: ${resultado?.link || "Link não disponível"}`
     );
   } catch (error) {
-    window.alert(
+    console.error(
+      "Erro ao tornar usuário parceiro:",
+      error
+    );
+
+    alert(
       error instanceof Error
         ? error.message
         : "Não foi possível criar o parceiro."
@@ -2791,6 +2800,9 @@ export default function AdminPage() {
                     <th className="px-5 py-4">
                       Status
                     </th>
+                    <th className="px-5 py-4">
+                      Premium
+                      </th>
                   </tr>
                 </thead>
 
@@ -2866,6 +2878,49 @@ export default function AdminPage() {
                               : "Inativo"}
                           </span>
                         </td>
+                        <td className="px-5 py-4">
+  {(() => {
+    const usuarioParceiro = dados.usuarios.find(
+      (usuario) => usuario.id === parceiro.user_id
+    );
+
+    if (!usuarioParceiro) {
+      return (
+        <span className="text-xs font-semibold text-slate-400">
+          Sem cadastro
+        </span>
+      );
+    }
+
+    const ehPremium =
+      String(usuarioParceiro.plano || "").toLowerCase() ===
+      "premium";
+
+    return (
+      <button
+        type="button"
+        disabled={alterandoPlano}
+        onClick={() =>
+          alterarPlanoUsuario(
+            usuarioParceiro,
+            ehPremium ? "gratuito" : "premium"
+          )
+        }
+        className={`cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          ehPremium
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-emerald-600 hover:bg-emerald-700"
+        }`}
+      >
+        {alterandoPlano
+          ? "Aguarde..."
+          : ehPremium
+            ? "Retirar Premium"
+            : "Liberar Premium"}
+      </button>
+    );
+  })()}
+</td>
                       </tr>
                     )
                   )}
@@ -3991,7 +4046,6 @@ export default function AdminPage() {
     ✓ Este usuário já é parceiro
   </div>
 )}
-
               <button
                 type="button"
                 disabled={
