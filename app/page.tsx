@@ -531,94 +531,134 @@ export default function Home() {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
-              <button
-                type="button"
-                onClick={() => {
-                  if (usuarioLogado) {
-                    iniciarNovoPlanejamento();
-                  } else {
-                    limparPlanoAnterior();
-                    setEtapa("configuracao");
-                  }
-                }}
-               className="group relative min-h-[340px] cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
-              >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-green-100/60" />
-                <div className="absolute bottom-7 left-7 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">📚</div>
-                <h2 className="relative text-2xl font-black text-[#071c4d]">Planejamento de Aula</h2>
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
-                  Crie planos de aula completos, mensais ou organizados por aula.
-                </p>
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-green-700">
-                  Criar planejamento <span className="transition group-hover:translate-x-1">→</span>
-                </div>
-              </button>
+           <div className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-4">
 
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/avaliacoes";
-                }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-blue-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
-              >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-blue-100/60" />
-                <div className="absolute bottom-7 left-7 inline-flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-blue-100 text-[42px] shadow-sm">📝</div>
-                <h2 className="relative text-2xl font-black text-[#071c4d]">Avaliações</h2>
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
-                  Crie provas, simulados, avaliações diagnósticas e recuperações.
-                </p>
-                <div className="absolute bottom-7 left-7 inline-flex items-center gap-2 font-extrabold text-blue-700">
-                  Criar avaliação <span className="transition group-hover:translate-x-1">→</span>
-                </div>
-              </button>
+  {/* PLANEJAMENTO */}
+  <button
+    type="button"
+    onClick={() => {
+      if (usuarioLogado) {
+        iniciarNovoPlanejamento();
+      } else {
+        limparPlanoAnterior();
+        setEtapa("configuracao");
+      }
+    }}
+    className="group relative flex min-h-[300px] cursor-pointer flex-col overflow-hidden rounded-[26px] border-2 border-green-400 bg-white p-6 text-left shadow-[0_14px_35px_rgba(34,197,94,0.14)] transition duration-200 hover:-translate-y-1.5 hover:border-green-500 hover:shadow-[0_20px_45px_rgba(34,197,94,0.22)]"
+  >
+    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-green-100/80" />
 
-              <button
-                type="button"
-                onClick={() => {
-                  window.location.href = "/atividades";
-                }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-amber-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
-              >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-amber-100/60" />
-                <div className="absolute bottom-7 left-7 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">✏️</div>
-                <h2 className="relative text-2xl font-black text-[#071c4d]">Atividades</h2>
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
-                  Crie exercícios, revisões e atividades personalizadas.
-                </p>
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-amber-700">
-                  Criar atividade <span className="transition group-hover:translate-x-1">→</span>
-                </div>
-              </button>
-              <button
-  type="button"
-  onClick={() => {
-    window.location.href = "/biblioteca";
-  }}
-  className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-violet-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
->
-  <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-violet-100/60" />
+    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-green-100 text-3xl shadow-sm">
+      📚
+    </div>
 
-  <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-4xl shadow-sm">
-    📚
-  </div>
+    <h2 className="relative mt-4 text-[21px] font-black leading-tight text-[#071c4d]">
+      Planejamento de Aula
+    </h2>
 
-  <h2 className="relative text-2xl font-black text-[#071c4d]">
-    Biblioteca de Materiais
-  </h2>
+    <p className="relative mt-2 text-sm leading-6 text-slate-600">
+      Crie planos de aula completos, mensais ou organizados por aula.
+    </p>
 
-  <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
-    Encontre planejamentos, atividades e avaliações prontas para usar.
-  </p>
+    <div className="relative mt-auto pt-5">
+      <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-green-600 px-4 py-3 font-extrabold text-white shadow-md transition group-hover:bg-green-700 group-hover:shadow-lg">
+        Criar planejamento
+        <span className="transition group-hover:translate-x-1">→</span>
+      </div>
+    </div>
+  </button>
 
-  <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-violet-700">
-    Explorar biblioteca
-    <span className="transition group-hover:translate-x-1">
-      →
-    </span>
-  </div>
-</button>
-            </div>
+  {/* AVALIAÇÕES */}
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/avaliacoes";
+    }}
+    className="group relative flex min-h-[300px] cursor-pointer flex-col overflow-hidden rounded-[26px] border border-blue-200 bg-white p-6 text-left shadow-[0_14px_35px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
+  >
+    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-blue-100/70" />
+
+    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-100 text-3xl shadow-sm">
+      📝
+    </div>
+
+    <h2 className="relative mt-4 text-[21px] font-black leading-tight text-[#071c4d]">
+      Avaliações
+    </h2>
+
+    <p className="relative mt-2 text-sm leading-6 text-slate-600">
+      Crie provas, simulados, avaliações diagnósticas e recuperações.
+    </p>
+
+    <div className="relative mt-auto pt-5">
+      <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-blue-600 px-4 py-3 font-extrabold text-white shadow-md transition group-hover:bg-blue-700 group-hover:shadow-lg">
+        Criar avaliação
+        <span className="transition group-hover:translate-x-1">→</span>
+      </div>
+    </div>
+  </button>
+
+  {/* ATIVIDADES */}
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/atividades";
+    }}
+    className="group relative flex min-h-[300px] cursor-pointer flex-col overflow-hidden rounded-[26px] border border-amber-200 bg-white p-6 text-left shadow-[0_14px_35px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-orange-400 hover:shadow-xl"
+  >
+    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-amber-100/80" />
+
+    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-amber-100 text-3xl shadow-sm">
+      ✏️
+    </div>
+
+    <h2 className="relative mt-4 text-[21px] font-black leading-tight text-[#071c4d]">
+      Atividades
+    </h2>
+
+    <p className="relative mt-2 text-sm leading-6 text-slate-600">
+      Crie exercícios, revisões e atividades personalizadas.
+    </p>
+
+    <div className="relative mt-auto pt-5">
+      <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-orange-500 px-4 py-3 font-extrabold text-white shadow-md transition group-hover:bg-orange-600 group-hover:shadow-lg">
+        Criar atividade
+        <span className="transition group-hover:translate-x-1">→</span>
+      </div>
+    </div>
+  </button>
+
+  {/* BIBLIOTECA */}
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/biblioteca";
+    }}
+    className="group relative flex min-h-[300px] cursor-pointer flex-col overflow-hidden rounded-[26px] border border-violet-200 bg-white p-6 text-left shadow-[0_14px_35px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
+  >
+    <div className="absolute -right-7 -top-7 h-24 w-24 rounded-full bg-violet-100/80" />
+
+    <div className="relative flex h-14 w-14 items-center justify-center rounded-2xl bg-violet-100 text-3xl shadow-sm">
+      📚
+    </div>
+
+    <h2 className="relative mt-4 text-[21px] font-black leading-tight text-[#071c4d]">
+      Biblioteca de Materiais
+    </h2>
+
+    <p className="relative mt-2 text-sm leading-6 text-slate-600">
+      Encontre planejamentos, atividades e avaliações prontas para usar.
+    </p>
+
+    <div className="relative mt-auto pt-5">
+      <div className="flex w-full items-center justify-center gap-2 rounded-2xl bg-violet-600 px-4 py-3 font-extrabold text-white shadow-md transition group-hover:bg-violet-700 group-hover:shadow-lg">
+        Explorar biblioteca
+        <span className="transition group-hover:translate-x-1">→</span>
+      </div>
+    </div>
+  </button>
+
+</div>
           </div>
         </section>
       )}
