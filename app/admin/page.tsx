@@ -45,6 +45,7 @@ type Parceiro = {
   cupom?: string | null;
   comissao_percentual?: number | null;
   ativo?: boolean | null;
+  perfil?: Usuario | null;
 
   totalAcessos?: number;
   totalVisitantes?: number;
@@ -2880,9 +2881,7 @@ export default function AdminPage() {
                         </td>
                         <td className="px-5 py-4">
   {(() => {
-    const usuarioParceiro = dados.usuarios.find(
-      (usuario) => usuario.id === parceiro.user_id
-    );
+    const usuarioParceiro = parceiro.perfil;
 
     if (!usuarioParceiro) {
       return (
