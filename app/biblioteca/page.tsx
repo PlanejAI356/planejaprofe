@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import {
-  ArrowLeft,
   BookOpen,
   CalendarDays,
   CheckSquare,
@@ -171,11 +170,13 @@ export default function BibliotecaPage() {
 
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] =
-  useState<(typeof categorias)[number]>("Atividade");
+    useState<(typeof categorias)[number]>("Atividade");
+
   const [etapa, setEtapa] = useState("Todas");
   const [serie, setSerie] = useState("Todos");
   const [disciplina, setDisciplina] = useState("Todas");
   const [ordenacao, setOrdenacao] = useState("recentes");
+
   const [paginaAtividades, setPaginaAtividades] = useState(1);
   const [temMaisAtividades, setTemMaisAtividades] = useState(true);
   const [carregandoMais, setCarregandoMais] = useState(false);
@@ -186,8 +187,10 @@ export default function BibliotecaPage() {
 
   const [materialAberto, setMaterialAberto] =
     useState<Material | null>(null);
+
   const [detalheAberto, setDetalheAberto] =
     useState<DetalheMaterial | null>(null);
+
   const [carregandoDetalhe, setCarregandoDetalhe] =
     useState(false);
 
@@ -204,23 +207,31 @@ export default function BibliotecaPage() {
 
         setUsuarioLogado(true);
 
-        const { data: perfil, error: erroPerfil } = await supabase
-          .from("profiles")
-          .select("plano")
-          .eq("id", data.user.id)
-          .maybeSingle();
+        const { data: perfil, error: erroPerfil } =
+          await supabase
+            .from("profiles")
+            .select("plano")
+            .eq("id", data.user.id)
+            .maybeSingle();
 
         if (erroPerfil) {
-          console.error("Erro ao verificar plano do usuário:", erroPerfil);
+          console.error(
+            "Erro ao verificar plano do usuário:",
+            erroPerfil
+          );
           setUsuarioPremium(false);
           return;
         }
 
         setUsuarioPremium(
-          String(perfil?.plano || "").toLowerCase() === "premium"
+          String(perfil?.plano || "").toLowerCase() ===
+            "premium"
         );
       } catch (error) {
-        console.error("Erro ao verificar acesso à Biblioteca:", error);
+        console.error(
+          "Erro ao verificar acesso à Biblioteca:",
+          error
+        );
         setUsuarioLogado(false);
         setUsuarioPremium(false);
       } finally {
@@ -242,7 +253,9 @@ export default function BibliotecaPage() {
           cache: "no-store",
         });
 
-        const resultado = await resposta.json().catch(() => null);
+        const resultado = await resposta
+          .json()
+          .catch(() => null);
 
         if (!resposta.ok) {
           throw new Error(
@@ -253,9 +266,16 @@ export default function BibliotecaPage() {
 
         setMateriais(resultado?.materiais || []);
         setPaginaAtividades(1);
-        setTemMaisAtividades(resultado?.temMaisAtividades === true);
+
+        setTemMaisAtividades(
+          resultado?.temMaisAtividades === true
+        );
       } catch (error) {
-        console.error("Erro ao carregar Biblioteca:", error);
+        console.error(
+          "Erro ao carregar Biblioteca:",
+          error
+        );
+
         setErro(
           error instanceof Error
             ? error.message
@@ -273,13 +293,16 @@ export default function BibliotecaPage() {
     const termo = busca.trim().toLowerCase();
 
     const lista = materiais.filter((material) => {
-      const passaCategoria = material.tipo === categoria;
+      const passaCategoria =
+        material.tipo === categoria;
 
       const passaEtapa =
-        etapa === "Todas" || material.etapa === etapa;
+        etapa === "Todas" ||
+        material.etapa === etapa;
 
       const passaSerie =
-        serie === "Todos" || material.serie === serie;
+        serie === "Todos" ||
+        material.serie === serie;
 
       const passaDisciplina =
         disciplina === "Todas" ||
@@ -298,7 +321,8 @@ export default function BibliotecaPage() {
         .toLowerCase();
 
       const passaBusca =
-        termo === "" || textoBusca.includes(termo);
+        termo === "" ||
+        textoBusca.includes(termo);
 
       return (
         passaCategoria &&
@@ -311,12 +335,16 @@ export default function BibliotecaPage() {
 
     return [...lista].sort((a, b) => {
       if (ordenacao === "az") {
-        return a.titulo.localeCompare(b.titulo, "pt-BR");
+        return a.titulo.localeCompare(
+          b.titulo,
+          "pt-BR"
+        );
       }
 
       const dataA = a.criadoEm
         ? new Date(a.criadoEm).getTime()
         : 0;
+
       const dataB = b.criadoEm
         ? new Date(b.criadoEm).getTime()
         : 0;
@@ -339,7 +367,10 @@ export default function BibliotecaPage() {
 
   const idsAtividadesGratis = useMemo(() => {
     return materiais
-      .filter((material) => material.tipo === "Atividade")
+      .filter(
+        (material) =>
+          material.tipo === "Atividade"
+      )
       .slice(0, 4)
       .map((material) => String(material.id));
   }, [materiais]);
@@ -347,7 +378,9 @@ export default function BibliotecaPage() {
   function atividadeGratis(material: Material) {
     return (
       material.tipo === "Atividade" &&
-      idsAtividadesGratis.includes(String(material.id))
+      idsAtividadesGratis.includes(
+        String(material.id)
+      )
     );
   }
 
@@ -370,9 +403,16 @@ export default function BibliotecaPage() {
   }
 
   async function carregarMaisAtividades() {
-    if (carregandoMais || !temMaisAtividades) return;
+    if (
+      carregandoMais ||
+      !temMaisAtividades
+    ) {
+      return;
+    }
 
-    const proximaPagina = paginaAtividades + 1;
+    const proximaPagina =
+      paginaAtividades + 1;
+
     setCarregandoMais(true);
 
     try {
@@ -384,36 +424,62 @@ export default function BibliotecaPage() {
         }
       );
 
-      const resultado = await resposta.json().catch(() => null);
+      const resultado = await resposta
+        .json()
+        .catch(() => null);
 
       if (!resposta.ok) {
         throw new Error(
-          resultado?.erro || "Não foi possível carregar mais atividades."
+          resultado?.erro ||
+            "Não foi possível carregar mais atividades."
         );
       }
 
-      const novasAtividades: Material[] = (resultado?.materiais || []).filter(
-        (material: Material) => material.tipo === "Atividade"
+      const novasAtividades: Material[] = (
+        resultado?.materiais || []
+      ).filter(
+        (material: Material) =>
+          material.tipo === "Atividade"
       );
 
       setMateriais((atuais) => {
         const idsExistentes = new Set(
           atuais
-            .filter((material) => material.tipo === "Atividade")
-            .map((material) => String(material.id))
+            .filter(
+              (material) =>
+                material.tipo ===
+                "Atividade"
+            )
+            .map((material) =>
+              String(material.id)
+            )
         );
 
-        const atividadesSemDuplicar = novasAtividades.filter(
-          (material) => !idsExistentes.has(String(material.id))
-        );
+        const atividadesSemDuplicar =
+          novasAtividades.filter(
+            (material) =>
+              !idsExistentes.has(
+                String(material.id)
+              )
+          );
 
-        return [...atuais, ...atividadesSemDuplicar];
+        return [
+          ...atuais,
+          ...atividadesSemDuplicar,
+        ];
       });
 
       setPaginaAtividades(proximaPagina);
-      setTemMaisAtividades(resultado?.temMaisAtividades === true);
+
+      setTemMaisAtividades(
+        resultado?.temMaisAtividades === true
+      );
     } catch (error) {
-      console.error("Erro ao carregar mais atividades:", error);
+      console.error(
+        "Erro ao carregar mais atividades:",
+        error
+      );
+
       alert(
         error instanceof Error
           ? error.message
@@ -423,8 +489,7 @@ export default function BibliotecaPage() {
       setCarregandoMais(false);
     }
   }
-
-  async function visualizarMaterial(material: Material) {
+    async function visualizarMaterial(material: Material) {
     setMaterialAberto(material);
     setDetalheAberto(null);
     setCarregandoDetalhe(true);
@@ -451,18 +516,21 @@ export default function BibliotecaPage() {
 
       if (!resposta.ok) {
         throw new Error(
-          resultado?.erro || "Não foi possível abrir o material."
+          resultado?.erro ||
+            "Não foi possível abrir o material."
         );
       }
 
       setDetalheAberto(resultado?.material || null);
     } catch (error) {
       console.error("Erro ao abrir material:", error);
+
       alert(
         error instanceof Error
           ? error.message
           : "Não foi possível abrir o material."
       );
+
       setMaterialAberto(null);
     } finally {
       setCarregandoDetalhe(false);
@@ -479,7 +547,9 @@ export default function BibliotecaPage() {
       const resposta = await fetch(material.imagem);
 
       if (!resposta.ok) {
-        throw new Error("Não foi possível baixar a atividade.");
+        throw new Error(
+          "Não foi possível baixar a atividade."
+        );
       }
 
       const blob = await resposta.blob();
@@ -490,14 +560,23 @@ export default function BibliotecaPage() {
         blob.type === "image/jpeg" ? "jpg" : "png";
 
       link.href = url;
-      link.download = `${slugArquivo(material.titulo)}.${extensao}`;
+      link.download = `${slugArquivo(
+        material.titulo
+      )}.${extensao}`;
+
       document.body.appendChild(link);
       link.click();
       link.remove();
       URL.revokeObjectURL(url);
     } catch (error) {
-      console.error("Erro ao baixar atividade:", error);
-      alert("Não foi possível baixar a atividade.");
+      console.error(
+        "Erro ao baixar atividade:",
+        error
+      );
+
+      alert(
+        "Não foi possível baixar a atividade."
+      );
     }
   }
 
@@ -513,17 +592,44 @@ export default function BibliotecaPage() {
       corpo =
         detalheAberto.avaliacao_completa ||
         "<p>Conteúdo não disponível.</p>";
-    } else if (material.tipo === "Planejamento") {
+    } else if (
+      material.tipo === "Planejamento"
+    ) {
       const secoes = [
-        ["Temas", detalheAberto.conteudo?.temas],
-        ["Objetivos e Habilidades", detalheAberto.conteudo?.objetivos],
-        ["Recursos e Materiais", detalheAberto.conteudo?.recursos],
-        ["Metodologia", detalheAberto.conteudo?.metodologia],
-        ["Avaliação", detalheAberto.conteudo?.avaliacao],
-        ["Referências", detalheAberto.conteudo?.referencias],
-        ["Atividade para Casa", detalheAberto.conteudo?.atividade],
+        [
+          "Temas",
+          detalheAberto.conteudo?.temas,
+        ],
+        [
+          "Objetivos e Habilidades",
+          detalheAberto.conteudo?.objetivos,
+        ],
+        [
+          "Recursos e Materiais",
+          detalheAberto.conteudo?.recursos,
+        ],
+        [
+          "Metodologia",
+          detalheAberto.conteudo
+            ?.metodologia,
+        ],
+        [
+          "Avaliação",
+          detalheAberto.conteudo?.avaliacao,
+        ],
+        [
+          "Referências",
+          detalheAberto.conteudo
+            ?.referencias,
+        ],
+        [
+          "Atividade para Casa",
+          detalheAberto.conteudo?.atividade,
+        ],
       ]
-        .filter(([, conteudo]) => String(conteudo || "").trim())
+        .filter(([, conteudo]) =>
+          String(conteudo || "").trim()
+        )
         .map(
           ([titulo, conteudo]) => `
             <section style="margin:0 0 18px">
@@ -545,16 +651,36 @@ export default function BibliotecaPage() {
 <meta charset="utf-8">
 <title>${material.titulo}</title>
 <style>
-body{font-family:Arial,sans-serif;max-width:900px;margin:36px auto;padding:0 24px;color:#0f172a}
-h1{font-size:28px;margin-bottom:8px}
-.meta{color:#64748b;margin-bottom:28px}
-table{max-width:100%;border-collapse:collapse}
-img{max-width:100%;height:auto}
+body{
+  font-family:Arial,sans-serif;
+  max-width:900px;
+  margin:36px auto;
+  padding:0 24px;
+  color:#0f172a
+}
+h1{
+  font-size:28px;
+  margin-bottom:8px
+}
+.meta{
+  color:#64748b;
+  margin-bottom:28px
+}
+table{
+  max-width:100%;
+  border-collapse:collapse
+}
+img{
+  max-width:100%;
+  height:auto
+}
 </style>
 </head>
 <body>
 <h1>${material.titulo}</h1>
-<div class="meta">${material.serie} • ${material.disciplina}</div>
+<div class="meta">
+  ${material.serie} • ${material.disciplina}
+</div>
 ${corpo}
 </body>
 </html>`;
@@ -562,18 +688,24 @@ ${corpo}
     const blob = new Blob([html], {
       type: "text/html;charset=utf-8",
     });
+
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
 
     link.href = url;
-    link.download = `${slugArquivo(material.titulo)}.html`;
+    link.download = `${slugArquivo(
+      material.titulo
+    )}.html`;
+
     document.body.appendChild(link);
     link.click();
     link.remove();
     URL.revokeObjectURL(url);
   }
 
-  async function baixarMaterial(material: Material) {
+  async function baixarMaterial(
+    material: Material
+  ) {
     if (carregandoAcesso) return;
 
     if (!usuarioLogado) {
@@ -593,7 +725,8 @@ ${corpo}
 
     if (
       !materialAberto ||
-      String(materialAberto.id) !== String(material.id) ||
+      String(materialAberto.id) !==
+        String(material.id) ||
       !detalheAberto
     ) {
       await visualizarMaterial(material);
@@ -610,419 +743,487 @@ ${corpo}
   }
 
   return (
-    <main className="min-h-screen bg-gradient-to-b from-slate-50 via-white to-emerald-50/30 px-3 py-5 sm:px-5 lg:px-8">
-      <div className="mx-auto max-w-[1500px]">
-        <button
-          type="button"
-          onClick={() => router.back()}
-          className="mb-4 inline-flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-bold text-slate-700 shadow-sm transition hover:border-emerald-200 hover:text-emerald-700"
-        >
-          <ArrowLeft size={17} />
-          Voltar
-        </button>
+    <main className="min-h-screen bg-[#f8fbf9]">
+      <div className="mx-auto max-w-[1450px] px-4 py-5 sm:px-6 lg:px-8">
 
-        <section className="overflow-hidden rounded-[28px] border border-slate-200 bg-white shadow-[0_18px_60px_rgba(15,23,42,0.08)]">
-          <div className="relative overflow-hidden border-b border-slate-100 bg-gradient-to-r from-white via-emerald-50/60 to-sky-50/60 px-5 py-7 sm:px-8 lg:px-10">
-            <div className="absolute -right-16 -top-20 h-64 w-64 rounded-full bg-emerald-100/50 blur-3xl" />
-            <div className="absolute right-44 top-4 h-32 w-32 rounded-full bg-sky-100/60 blur-3xl" />
-
-            <div className="relative flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-              <div className="flex items-start gap-4">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-100 text-emerald-700 shadow-sm">
-                  <BookOpen size={31} />
-                </div>
-
-                <div>
-                  <p className="mb-1 text-xs font-extrabold uppercase tracking-[0.2em] text-emerald-600">
-                    PlanejAI
-                  </p>
-                  <h1 className="text-2xl font-black tracking-tight text-slate-950 sm:text-3xl lg:text-4xl">
-                    Biblioteca de Materiais
-                  </h1>
-                  <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-                    Encontre planejamentos, avaliações e atividades
-                    prontos para adaptar e usar em sala de aula.
-                  </p>
-                </div>
-              </div>
-
-              <div className="hidden max-w-md items-center gap-3 rounded-2xl border border-emerald-100 bg-white/80 px-5 py-4 shadow-sm backdrop-blur lg:flex">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-emerald-50 text-emerald-700">
-                  <Sparkles size={20} />
-                </div>
-                <p className="text-sm font-semibold leading-5 text-slate-600">
-                  Materiais selecionados para facilitar a rotina de quem
-                  ensina.
-                </p>
-              </div>
+        {/* CABEÇALHO COMPACTO */}
+        <header className="mb-5 flex flex-col gap-4 border-b border-slate-200 pb-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-100 text-emerald-700">
+              <BookOpen size={23} />
             </div>
 
-            <div className="relative mt-7 flex flex-col gap-3 sm:flex-row">
-              <div className="relative flex-1">
-                <Search
-                  size={20}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"
-                />
-                <input
-                  value={busca}
-                  onChange={(event) => setBusca(event.target.value)}
-                  placeholder="Buscar por tema, conteúdo, série ou disciplina..."
-                  className="h-14 w-full rounded-2xl border border-slate-200 bg-white pl-12 pr-4 text-sm text-slate-800 shadow-sm outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-4 focus:ring-emerald-100"
-                />
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-black tracking-wide text-emerald-700">
+                  PlanejAI
+                </span>
+
+                <span className="text-slate-300">
+                  •
+                </span>
+
+                <span className="text-sm font-bold text-slate-500">
+                  Biblioteca
+                </span>
               </div>
 
-              <button
-                type="button"
-                className="h-14 cursor-pointer rounded-2xl bg-emerald-600 px-7 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700"
-              >
-                Buscar
-              </button>
+              <h1 className="text-xl font-black tracking-tight text-slate-950 sm:text-2xl">
+                Biblioteca de Materiais
+              </h1>
             </div>
           </div>
 
-          <div className="px-5 py-6 sm:px-8 lg:px-10">
-            <div className="mb-5 rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-amber-50 p-4 sm:p-5">
-              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <p className="text-base font-black text-emerald-800">
-                    🎁 Seu acesso gratuito ao PlanejAI
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Cadastre-se e experimente 3 testes grátis nas ferramentas do PlanejAI.
-                    Na Biblioteca, as 4 primeiras atividades ficam liberadas para baixar.
-                  </p>
-                </div>
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="w-fit cursor-pointer rounded-xl border border-slate-200 bg-white px-4 py-2 text-sm font-bold text-slate-600 shadow-sm transition hover:border-emerald-300 hover:text-emerald-700"
+          >
+            Ir para o PlanejAI
+          </button>
+        </header>
 
-                {!usuarioPremium && (
-                  <button
-                    type="button"
-                    onClick={() => router.push("/assinatura")}
-                    className="shrink-0 cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700"
-                  >
-                    Conhecer Premium
-                  </button>
-                )}
-              </div>
+        {/* BUSCA E FILTROS */}
+        <section className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="grid gap-3 lg:grid-cols-[minmax(300px,1.8fr)_1fr_1fr_1fr_auto]">
+            <div className="relative">
+              <Search
+                size={18}
+                className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400"
+              />
+
+              <input
+                value={busca}
+                onChange={(event) =>
+                  setBusca(event.target.value)
+                }
+                placeholder="Buscar materiais..."
+                className="h-11 w-full rounded-xl border border-slate-200 bg-white pl-10 pr-3 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
+              />
             </div>
 
+            <select
+              value={etapa}
+              onChange={(event) =>
+                setEtapa(event.target.value)
+              }
+              className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-emerald-400"
+            >
+              {etapas.map((item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  Etapa: {item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={serie}
+              onChange={(event) =>
+                setSerie(event.target.value)
+              }
+              className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-emerald-400"
+            >
+              {series.map((item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  Ano/Série: {item}
+                </option>
+              ))}
+            </select>
+
+            <select
+              value={disciplina}
+              onChange={(event) =>
+                setDisciplina(
+                  event.target.value
+                )
+              }
+              className="h-11 min-w-0 rounded-xl border border-slate-200 bg-white px-3 text-sm text-slate-700 outline-none focus:border-emerald-400"
+            >
+              {disciplinas.map((item) => (
+                <option
+                  key={item}
+                  value={item}
+                >
+                  Disciplina: {item}
+                </option>
+              ))}
+            </select>
+
+            <button
+              type="button"
+              className="h-11 cursor-pointer rounded-xl bg-emerald-600 px-6 text-sm font-extrabold text-white shadow-sm transition hover:bg-emerald-700"
+            >
+              Buscar
+            </button>
+          </div>
+
+          {/* CATEGORIAS */}
+          <div className="mt-4 flex flex-col gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap gap-2">
               {categorias.map((item) => {
-                const ativo = categoria === item;
+                const ativo =
+                  categoria === item;
 
                 return (
                   <button
                     key={item}
                     type="button"
-                    onClick={() => setCategoria(item)}
-                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2.5 text-sm font-extrabold transition ${
+                    onClick={() =>
+                      setCategoria(item)
+                    }
+                    className={`flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-extrabold transition ${
                       ativo
                         ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
-                        : item === "Planejamento"
-                          ? "border-blue-100 bg-blue-50 text-blue-700 hover:border-blue-200"
-                          : item === "Avaliação"
-                            ? "border-violet-100 bg-violet-50 text-violet-700 hover:border-violet-200"
-                            : item === "Atividade"
-                              ? "border-orange-100 bg-orange-50 text-orange-700 hover:border-orange-200"
-                              : "border-slate-200 bg-white text-slate-700 hover:border-emerald-200"
+                        : "border-slate-200 bg-white text-slate-600 hover:border-emerald-300 hover:text-emerald-700"
                     }`}
                   >
-                    <IconeTipo tipo={item} size={17} />
+                    <IconeTipo
+                      tipo={item}
+                      size={16}
+                    />
+
                     {item === "Planejamento"
                       ? "Planejamentos"
                       : item === "Avaliação"
                         ? "Avaliações"
-                        : item === "Atividade"
-                          ? "Atividades"
-                          : "Todos"}
+                        : "Atividades"}
                   </button>
                 );
               })}
             </div>
 
-            <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50/80 p-4">
-              <div className="grid gap-3 md:grid-cols-3">
-                <select
-                  value={etapa}
-                  onChange={(event) => setEtapa(event.target.value)}
-                  className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-emerald-400"
-                >
-                  {etapas.map((item) => (
-                    <option key={item} value={item}>
-                      Etapa: {item}
-                    </option>
-                  ))}
-                </select>
+            <button
+              type="button"
+              onClick={limparFiltros}
+              className="w-fit cursor-pointer text-sm font-bold text-slate-500 transition hover:text-emerald-700"
+            >
+              Limpar filtros
+            </button>
+          </div>
+        </section>
 
-                <select
-                  value={serie}
-                  onChange={(event) => setSerie(event.target.value)}
-                  className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-emerald-400"
-                >
-                  {series.map((item) => (
-                    <option key={item} value={item}>
-                      Ano / Série: {item}
-                    </option>
-                  ))}
-                </select>
-
-                <select
-                  value={disciplina}
-                  onChange={(event) =>
-                    setDisciplina(event.target.value)
-                  }
-                  className="h-12 rounded-xl border border-slate-200 bg-white px-4 text-sm text-slate-700 outline-none focus:border-emerald-400"
-                >
-                  {disciplinas.map((item) => (
-                    <option key={item} value={item}>
-                      Disciplina: {item}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="mt-3 flex justify-end">
-                <button
-                  type="button"
-                  onClick={limparFiltros}
-                  className="cursor-pointer text-sm font-extrabold text-emerald-700 hover:text-emerald-800"
-                >
-                  Limpar filtros
-                </button>
-              </div>
-            </div>
-
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        {/* AVISO GRATUITO:
+            SOMENTE PARA QUEM AINDA NÃO ESTÁ CADASTRADO */}
+        {!carregandoAcesso &&
+          !usuarioLogado && (
+            <section className="mt-4 flex flex-col gap-3 rounded-xl border border-emerald-200 bg-emerald-50/70 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
-                <h2 className="text-xl font-black text-slate-950">
-                  Materiais disponíveis
-                </h2>
-                <p className="mt-1 text-sm text-slate-500">
-                  Escolha um material para visualizar antes de usar.
+                <p className="text-sm font-black text-emerald-800">
+                  🎁 Experimente o PlanejAI
+                </p>
+
+                <p className="mt-0.5 text-xs leading-5 text-slate-600">
+                  Cadastre-se gratuitamente para
+                  conhecer as ferramentas e acessar
+                  os materiais liberados.
                 </p>
               </div>
 
-              <select
-                value={ordenacao}
-                onChange={(event) =>
-                  setOrdenacao(event.target.value)
+              <button
+                type="button"
+                onClick={() =>
+                  router.push("/login")
                 }
-                className="h-11 rounded-xl border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-700 shadow-sm outline-none focus:border-emerald-400"
+                className="shrink-0 cursor-pointer rounded-lg bg-emerald-600 px-4 py-2 text-xs font-extrabold text-white transition hover:bg-emerald-700"
               >
-                <option value="recentes">Mais recentes</option>
-                <option value="antigos">Mais antigos</option>
-                <option value="az">A–Z</option>
-              </select>
-            </div>
+                Criar acesso grátis
+              </button>
+            </section>
+          )}
 
-            {carregando && (
-              <div className="mt-6 flex items-center justify-center gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/50 px-5 py-8">
-                <Loader2
-                  size={24}
-                  className="animate-spin text-emerald-600"
-                />
-                <span className="text-sm font-bold text-slate-600">
-                  Preparando a Biblioteca...
-                </span>
-              </div>
-            )}
+        {/* TÍTULO DOS MATERIAIS */}
+        <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="text-xl font-black text-slate-950">
+              Materiais disponíveis
+            </h2>
 
-            {!carregando && erro && (
-              <div className="mt-6 rounded-2xl border border-red-200 bg-red-50 px-5 py-10 text-center">
-                <p className="font-bold text-red-700">{erro}</p>
-              </div>
-            )}
+            <p className="mt-1 text-sm text-slate-500">
+              Encontre atividades, planejamentos e
+              avaliações para sua turma.
+            </p>
+          </div>
 
-            {!carregando &&
-              !erro &&
-              materiaisFiltrados.length > 0 && (
-                <div className="mt-6 grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                  {materiaisFiltrados.map((material) => {
-                    const estilo = classeTipo(material.tipo);
+          <select
+            value={ordenacao}
+            onChange={(event) =>
+              setOrdenacao(event.target.value)
+            }
+            className="h-10 rounded-xl border border-slate-200 bg-white px-3 text-sm font-semibold text-slate-600 shadow-sm outline-none focus:border-emerald-400"
+          >
+            <option value="recentes">
+              Mais recentes
+            </option>
+            <option value="antigos">
+              Mais antigos
+            </option>
+            <option value="az">
+              A–Z
+            </option>
+          </select>
+        </div>
 
-                    return (
-                      <article
-                        key={`${material.tipo}-${material.id}`}
-                        className="group flex min-h-[410px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:shadow-xl"
+        {carregando && (
+          <div className="mt-5 flex items-center justify-center gap-3 rounded-2xl border border-emerald-100 bg-white px-5 py-8 shadow-sm">
+            <Loader2
+              size={23}
+              className="animate-spin text-emerald-600"
+            />
+
+            <span className="text-sm font-bold text-slate-600">
+              Preparando a Biblioteca...
+            </span>
+          </div>
+        )}
+
+        {!carregando && erro && (
+          <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 px-5 py-8 text-center">
+            <p className="font-bold text-red-700">
+              {erro}
+            </p>
+          </div>
+        )}
+
+        {!carregando &&
+          !erro &&
+          materiaisFiltrados.length > 0 && (
+            <div className="mt-5 grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+              {materiaisFiltrados.map(
+                (material) => {
+                  const estilo =
+                    classeTipo(material.tipo);
+
+                  return (
+                    <article
+                      key={`${material.tipo}-${material.id}`}
+                      className="group flex min-h-[360px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm transition duration-200 hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg"
+                    >
+                      <div
+                        className={`relative flex h-48 items-center justify-center overflow-hidden bg-gradient-to-br ${estilo.fundo}`}
                       >
-                        <div
-                          className={`relative flex h-44 items-center justify-center overflow-hidden bg-gradient-to-br ${estilo.fundo}`}
-                        >
-                          {material.imagem ? (
-                            <img
-                              src={material.imagem}
-                              alt={material.titulo}
-                              className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-                            />
-                          ) : (
-                            <div
-                              className={`flex h-20 w-20 items-center justify-center rounded-3xl ${estilo.icone}`}
-                            >
-                              <IconeTipo
-                                tipo={material.tipo}
-                                size={38}
-                              />
-                            </div>
-                          )}
-
-                          <span
-                            className={`absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-extrabold ${estilo.selo}`}
+                        {material.imagem ? (
+                          <img
+                            src={
+                              material.imagem
+                            }
+                            alt={
+                              material.titulo
+                            }
+                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.025]"
+                          />
+                        ) : (
+                          <div
+                            className={`flex h-16 w-16 items-center justify-center rounded-2xl ${estilo.icone}`}
                           >
                             <IconeTipo
-                              tipo={material.tipo}
+                              tipo={
+                                material.tipo
+                              }
+                              size={30}
+                            />
+                          </div>
+                        )}
+
+                        <span
+                          className={`absolute left-3 top-3 flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-[11px] font-extrabold shadow-sm ${estilo.selo}`}
+                        >
+                          <IconeTipo
+                            tipo={
+                              material.tipo
+                            }
+                            size={12}
+                          />
+
+                          {material.tipo}
+                        </span>
+
+                        {material.tipo ===
+                          "Atividade" && (
+                          <span
+                            className={`absolute right-3 top-3 rounded-lg border px-2.5 py-1 text-[11px] font-extrabold shadow-sm ${
+                              usuarioPremium ||
+                              atividadeGratis(
+                                material
+                              )
+                                ? "border-emerald-200 bg-white/95 text-emerald-700"
+                                : "border-amber-200 bg-white/95 text-amber-700"
+                            }`}
+                          >
+                            {usuarioPremium ||
+                            atividadeGratis(
+                              material
+                            )
+                              ? "GRÁTIS"
+                              : "PREMIUM 🔒"}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex flex-1 flex-col p-4">
+                        <h3 className="line-clamp-2 text-[16px] font-black leading-5 text-slate-950">
+                          {material.titulo}
+                        </h3>
+
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                            <GraduationCap
                               size={13}
                             />
-                            {material.tipo}
+                            {material.serie}
                           </span>
 
-                          {material.tipo === "Atividade" && (
-                            <span
-                              className={`absolute right-3 top-3 rounded-lg border px-2.5 py-1 text-xs font-extrabold ${
-                                usuarioPremium || atividadeGratis(material)
-                                  ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                                  : "border-amber-200 bg-amber-50 text-amber-700"
-                              }`}
-                            >
-                              {usuarioPremium || atividadeGratis(material)
-                                ? "GRÁTIS"
-                                : "PREMIUM 🔒"}
-                            </span>
-                          )}
+                          <span className="inline-flex items-center gap-1 rounded-lg bg-slate-50 px-2 py-1 text-[11px] font-semibold text-slate-600">
+                            <BookOpen
+                              size={13}
+                            />
+                            {
+                              material.disciplina
+                            }
+                          </span>
                         </div>
 
-                        <div className="flex flex-1 flex-col p-4">
-                          <h3 className="line-clamp-2 text-[17px] font-black leading-6 text-slate-950">
-                            {material.titulo}
-                          </h3>
+                        <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
+                          <button
+                            type="button"
+                            onClick={() =>
+                              visualizarMaterial(
+                                material
+                              )
+                            }
+                            className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-xs font-extrabold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                          >
+                            <FileText
+                              size={15}
+                            />
+                            Visualizar
+                          </button>
 
-                          <p className="mt-2 line-clamp-2 min-h-[40px] text-sm leading-5 text-slate-500">
-                            {material.subtitulo ||
-                              "Material pedagógico pronto para usar."}
-                          </p>
+                          <button
+                            type="button"
+                            onClick={() =>
+                              baixarMaterial(
+                                material
+                              )
+                            }
+                            className={`flex cursor-pointer items-center justify-center gap-1.5 rounded-xl px-2 py-2.5 text-xs font-extrabold text-white transition ${estilo.botao}`}
+                          >
+                            {!carregandoAcesso &&
+                            !podeBaixar(
+                              material
+                            ) ? (
+                              <LockKeyhole
+                                size={15}
+                              />
+                            ) : (
+                              <Download
+                                size={15}
+                              />
+                            )}
 
-                          <div className="mt-4 flex flex-wrap gap-2">
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                              <GraduationCap size={14} />
-                              {material.serie}
-                            </span>
-                            <span className="inline-flex items-center gap-1.5 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs font-semibold text-slate-600">
-                              <BookOpen size={14} />
-                              {material.disciplina}
-                            </span>
-                          </div>
-
-                          <div className="mt-auto grid grid-cols-2 gap-2 pt-5">
-                            <button
-                              type="button"
-                              onClick={() =>
-                                visualizarMaterial(material)
-                              }
-                              className="flex cursor-pointer items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-extrabold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                            >
-                              <FileText size={16} />
-                              Visualizar
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() =>
-                                baixarMaterial(material)
-                              }
-                              className={`flex cursor-pointer items-center justify-center gap-2 rounded-xl px-3 py-2.5 text-sm font-extrabold text-white transition ${estilo.botao}`}
-                            >
-                              {!carregandoAcesso &&
-                              !podeBaixar(material) ? (
-                                <LockKeyhole size={16} />
-                              ) : (
-                                <Download size={16} />
-                              )}
-                              {!carregandoAcesso &&
-                              !podeBaixar(material)
-                                ? "Premium"
-                                : "Baixar"}
-                            </button>
-                          </div>
+                            {!carregandoAcesso &&
+                            !podeBaixar(
+                              material
+                            )
+                              ? "Premium"
+                              : "Baixar"}
+                          </button>
                         </div>
-                      </article>
-                    );
-                  })}
-                </div>
+                      </div>
+                    </article>
+                  );
+                }
               )}
-
-            {!carregando &&
-              !erro &&
-              categoria === "Atividade" &&
-              temMaisAtividades && (
-                <div className="mt-6 flex justify-center">
-                  <button
-                    type="button"
-                    onClick={carregarMaisAtividades}
-                    disabled={carregandoMais}
-                    className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-6 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {carregandoMais && (
-                      <Loader2 size={17} className="animate-spin" />
-                    )}
-                    {carregandoMais
-                      ? "Carregando atividades..."
-                      : "Carregar mais atividades"}
-                  </button>
-                </div>
-              )}
-
-            {!carregando &&
-              !erro &&
-              materiaisFiltrados.length === 0 && (
-                <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 py-16 text-center">
-                  <BookOpen
-                    size={42}
-                    className="mx-auto text-slate-300"
+            </div>
+          )}
+                  {/* CARREGAR MAIS ATIVIDADES */}
+        {!carregando &&
+          !erro &&
+          categoria === "Atividade" &&
+          temMaisAtividades && (
+            <div className="mt-6 flex justify-center">
+              <button
+                type="button"
+                onClick={carregarMaisAtividades}
+                disabled={carregandoMais}
+                className="flex cursor-pointer items-center gap-2 rounded-xl border border-emerald-200 bg-white px-6 py-3 text-sm font-extrabold text-emerald-700 shadow-sm transition hover:bg-emerald-50 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {carregandoMais && (
+                  <Loader2
+                    size={17}
+                    className="animate-spin"
                   />
-                  <p className="mt-4 text-lg font-black text-slate-700">
-                    Nenhum material encontrado
-                  </p>
-                  <p className="mt-1 text-sm text-slate-500">
-                    Tente ajustar os filtros ou fazer outra busca.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={limparFiltros}
-                    className="mt-5 cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700"
-                  >
-                    Limpar filtros
-                  </button>
-                </div>
-              )}
+                )}
 
-            <section className="mt-8 overflow-hidden rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-white to-sky-50 p-5 sm:p-6">
-              <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-emerald-700 shadow-sm">
-                    <Sparkles size={22} />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-slate-950">
-                      Não encontrou o que precisa?
-                    </h3>
-                    <p className="mt-1 text-sm leading-6 text-slate-600">
-                      Crie um material personalizado no PlanejAI e
-                      adapte à realidade da sua turma.
-                    </p>
-                  </div>
-                </div>
+                {carregandoMais
+                  ? "Carregando atividades..."
+                  : "Carregar mais atividades"}
+              </button>
+            </div>
+          )}
 
-                <button
-                  type="button"
-                  onClick={() => router.push("/")}
-                  className="cursor-pointer rounded-xl bg-emerald-600 px-5 py-3 text-sm font-extrabold text-white transition hover:bg-emerald-700"
-                >
-                  Criar material →
-                </button>
-              </div>
-            </section>
+        {/* NENHUM MATERIAL */}
+        {!carregando &&
+          !erro &&
+          materiaisFiltrados.length === 0 && (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white py-14 text-center">
+              <BookOpen
+                size={38}
+                className="mx-auto text-slate-300"
+              />
+
+              <p className="mt-3 text-lg font-black text-slate-700">
+                Nenhum material encontrado
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                Tente ajustar os filtros ou fazer outra busca.
+              </p>
+
+              <button
+                type="button"
+                onClick={limparFiltros}
+                className="mt-4 cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700"
+              >
+                Limpar filtros
+              </button>
+            </div>
+          )}
+
+        {/* BLOCO FINAL */}
+        <section className="mt-7 mb-4 flex flex-col gap-4 rounded-2xl border border-emerald-100 bg-white p-5 shadow-sm sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-emerald-700">
+              <Sparkles size={19} />
+            </div>
+
+            <div>
+              <h3 className="font-black text-slate-900">
+                Não encontrou o que precisa?
+              </h3>
+
+              <p className="mt-0.5 text-sm text-slate-500">
+                Crie um material personalizado no PlanejAI para a sua turma.
+              </p>
+            </div>
           </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="shrink-0 cursor-pointer rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700"
+          >
+            Criar material →
+          </button>
         </section>
       </div>
 
+      {/* MODAL DE VISUALIZAÇÃO */}
       {materialAberto && (
         <div
           className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/60 p-3 backdrop-blur-sm sm:p-5"
@@ -1030,19 +1231,25 @@ ${corpo}
         >
           <div
             className="max-h-[94vh] w-full max-w-5xl overflow-hidden rounded-3xl bg-white shadow-2xl"
-            onClick={(event) => event.stopPropagation()}
+            onClick={(event) =>
+              event.stopPropagation()
+            }
           >
+            {/* CABEÇALHO DO MODAL */}
             <div className="flex items-start justify-between gap-4 border-b border-slate-200 px-5 py-4 sm:px-6">
               <div>
                 <span
                   className={`inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-extrabold ${
-                    classeTipo(materialAberto.tipo).selo
+                    classeTipo(
+                      materialAberto.tipo
+                    ).selo
                   }`}
                 >
                   <IconeTipo
                     tipo={materialAberto.tipo}
                     size={13}
                   />
+
                   {materialAberto.tipo}
                 </span>
 
@@ -1059,12 +1266,13 @@ ${corpo}
               <button
                 type="button"
                 onClick={fecharModal}
-                className="flex h-10 w-10 cursor-pointer items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
+                className="flex h-10 w-10 shrink-0 cursor-pointer items-center justify-center rounded-full text-slate-500 transition hover:bg-slate-100"
               >
                 <X size={21} />
               </button>
             </div>
 
+            {/* CONTEÚDO DO MODAL */}
             <div className="max-h-[calc(94vh-170px)] overflow-y-auto bg-slate-50 p-4 sm:p-6">
               {carregandoDetalhe && (
                 <div className="flex min-h-[300px] items-center justify-center gap-3">
@@ -1072,20 +1280,27 @@ ${corpo}
                     size={26}
                     className="animate-spin text-emerald-600"
                   />
+
                   <span className="font-bold text-slate-600">
                     Abrindo material...
                   </span>
                 </div>
               )}
 
+              {/* ATIVIDADE */}
               {!carregandoDetalhe &&
                 detalheAberto &&
-                materialAberto.tipo === "Atividade" && (
+                materialAberto.tipo ===
+                  "Atividade" && (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-3 shadow-sm">
                     {detalheAberto.imagem ? (
                       <img
-                        src={detalheAberto.imagem}
-                        alt={materialAberto.titulo}
+                        src={
+                          detalheAberto.imagem
+                        }
+                        alt={
+                          materialAberto.titulo
+                        }
                         className="mx-auto max-h-[70vh] w-auto max-w-full object-contain"
                       />
                     ) : (
@@ -1096,9 +1311,11 @@ ${corpo}
                   </div>
                 )}
 
+              {/* AVALIAÇÃO */}
               {!carregandoDetalhe &&
                 detalheAberto &&
-                materialAberto.tipo === "Avaliação" && (
+                materialAberto.tipo ===
+                  "Avaliação" && (
                   <div className="overflow-hidden rounded-2xl border border-slate-200 bg-white p-2 shadow-sm">
                     {detalheAberto.avaliacao_completa ? (
                       <iframe
@@ -1115,11 +1332,19 @@ ${corpo}
     color: #111827;
     background: white;
   }
-  img { max-width: 100%; height: auto; }
-  table { max-width: 100%; border-collapse: collapse; }
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+  table {
+    max-width: 100%;
+    border-collapse: collapse;
+  }
 </style>
 </head>
-<body>${detalheAberto.avaliacao_completa}</body>
+<body>
+${detalheAberto.avaliacao_completa}
+</body>
 </html>`}
                         className="min-h-[760px] w-full rounded-xl bg-white"
                       />
@@ -1131,54 +1356,80 @@ ${corpo}
                   </div>
                 )}
 
+              {/* PLANEJAMENTO */}
               {!carregandoDetalhe &&
                 detalheAberto &&
-                materialAberto.tipo === "Planejamento" && (
+                materialAberto.tipo ===
+                  "Planejamento" && (
                   <div className="mx-auto max-w-4xl space-y-4">
                     {[
-                      ["Temas", detalheAberto.conteudo?.temas],
+                      [
+                        "Temas",
+                        detalheAberto.conteudo
+                          ?.temas,
+                      ],
                       [
                         "Objetivos e Habilidades",
-                        detalheAberto.conteudo?.objetivos,
+                        detalheAberto.conteudo
+                          ?.objetivos,
                       ],
                       [
                         "Recursos e Materiais",
-                        detalheAberto.conteudo?.recursos,
+                        detalheAberto.conteudo
+                          ?.recursos,
                       ],
                       [
                         "Metodologia",
-                        detalheAberto.conteudo?.metodologia,
+                        detalheAberto.conteudo
+                          ?.metodologia,
                       ],
-                      ["Avaliação", detalheAberto.conteudo?.avaliacao],
+                      [
+                        "Avaliação",
+                        detalheAberto.conteudo
+                          ?.avaliacao,
+                      ],
                       [
                         "Referências",
-                        detalheAberto.conteudo?.referencias,
+                        detalheAberto.conteudo
+                          ?.referencias,
                       ],
                       [
                         "Atividade para Casa",
-                        detalheAberto.conteudo?.atividade,
+                        detalheAberto.conteudo
+                          ?.atividade,
                       ],
                     ]
                       .filter(([, conteudo]) =>
-                        String(conteudo || "").trim()
+                        String(
+                          conteudo || ""
+                        ).trim()
                       )
-                      .map(([titulo, conteudo]) => (
-                        <section
-                          key={String(titulo)}
-                          className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
-                        >
-                          <h3 className="mb-3 text-lg font-black text-blue-700">
-                            {titulo}
-                          </h3>
-                          <div className="whitespace-pre-wrap leading-7 text-slate-700">
-                            {conteudo}
-                          </div>
-                        </section>
-                      ))}
+                      .map(
+                        ([
+                          titulo,
+                          conteudo,
+                        ]) => (
+                          <section
+                            key={String(
+                              titulo
+                            )}
+                            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm"
+                          >
+                            <h3 className="mb-3 text-lg font-black text-blue-700">
+                              {titulo}
+                            </h3>
+
+                            <div className="whitespace-pre-wrap leading-7 text-slate-700">
+                              {conteudo}
+                            </div>
+                          </section>
+                        )
+                      )}
                   </div>
                 )}
             </div>
 
+            {/* RODAPÉ DO MODAL */}
             <div className="flex justify-end gap-3 border-t border-slate-200 bg-white px-5 py-4 sm:px-6">
               <button
                 type="button"
@@ -1190,18 +1441,32 @@ ${corpo}
 
               <button
                 type="button"
-                onClick={() => baixarMaterial(materialAberto)}
-                disabled={carregandoDetalhe || !detalheAberto}
+                onClick={() =>
+                  baixarMaterial(
+                    materialAberto
+                  )
+                }
+                disabled={
+                  carregandoDetalhe ||
+                  !detalheAberto
+                }
                 className="flex cursor-pointer items-center gap-2 rounded-xl bg-emerald-600 px-5 py-2.5 text-sm font-extrabold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {!carregandoAcesso &&
-                !podeBaixar(materialAberto) ? (
-                  <LockKeyhole size={17} />
+                !podeBaixar(
+                  materialAberto
+                ) ? (
+                  <LockKeyhole
+                    size={17}
+                  />
                 ) : (
                   <Download size={17} />
                 )}
+
                 {!carregandoAcesso &&
-                !podeBaixar(materialAberto)
+                !podeBaixar(
+                  materialAberto
+                )
                   ? "Assinar Premium"
                   : "Baixar"}
               </button>
