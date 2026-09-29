@@ -541,6 +541,38 @@ export default function Home() {
                   Criar atividade <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
+              {/* BIBLIOTECA DE MATERIAIS */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.location.href =
+                    "/biblioteca";
+                }}
+                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-violet-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
+              >
+                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-violet-100/60" />
+
+                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-4xl shadow-sm">
+                  ­ƒôé
+                </div>
+
+                <h2 className="relative text-2xl font-black text-[#071c4d]">
+                  Biblioteca de Materiais
+                </h2>
+
+                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+                  Encontre planejamentos,
+                  atividades e avalia├º├Áes prontas
+                  para usar.
+                </p>
+
+                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-violet-700">
+                  Explorar biblioteca
+                  <span className="transition group-hover:translate-x-1">
+                    ÔåÆ
+                  </span>
+                </div>
+              </button>
             </div>
           </div>
         </section>
