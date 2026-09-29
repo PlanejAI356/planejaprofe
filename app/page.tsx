@@ -463,26 +463,75 @@ export default function Home() {
       )}
 
       {etapa === "painel" && (
-        <section className="relative flex min-h-[calc(100vh-70px)] items-center overflow-hidden px-4 py-8">
+        <section className="relative flex min-h-[calc(100vh-70px)] items-center overflow-hidden bg-gradient-to-b from-white via-emerald-50/50 to-white px-4 py-8">
+          {/* Livros decorativos */}
+<div className="pointer-events-none absolute left-5 top-20 z-0 hidden lg:block xl:left-10">
+  <div className="-rotate-6 text-[78px] leading-none drop-shadow-md">
+    📚
+  </div>
+
+  <div className="absolute -right-5 -top-3 text-3xl">
+    ✨
+  </div>
+
+  <div className="ml-14 mt-2 h-10 w-24 rounded-[50%] border-t-2 border-dashed border-green-500/70" />
+</div>
           <div className="pointer-events-none absolute -left-40 top-10 h-80 w-[520px] rounded-[50%] bg-green-100/60 blur-3xl" />
+          {/* Avião decorativo */}
+<div className="pointer-events-none absolute right-6 top-16 z-0 hidden lg:block xl:right-12">
+  <div className="relative h-40 w-52">
+
+    <svg
+      viewBox="0 0 220 160"
+      className="absolute inset-0 h-full w-full"
+      aria-hidden="true"
+    >
+      <path
+        d="M8 135 C50 150 45 90 85 98 C125 106 112 145 150 132 C178 122 170 75 198 58"
+        fill="none"
+        stroke="#3b82f6"
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeDasharray="7 10"
+        opacity="0.75"
+      />
+    </svg>
+
+    <div className="absolute right-0 top-0 -rotate-12 text-6xl drop-shadow-sm">
+      ✈️
+    </div>
+
+  </div>
+</div>
           <div className="pointer-events-none absolute -right-44 top-24 h-96 w-[580px] rounded-[50%] bg-emerald-100/50 blur-3xl" />
           <div className="pointer-events-none absolute bottom-[-180px] left-[20%] h-80 w-[650px] rounded-[50%] bg-blue-50/70 blur-3xl" />
+          {/* Formas decorativas inferiores */}
+<div className="pointer-events-none absolute -bottom-24 -left-24 h-64 w-80 rotate-12 rounded-[45%] bg-emerald-100/60" />
 
-          <div className="relative z-10 mx-auto w-full max-w-6xl">
-            <div className="mb-9 text-center">
+<div className="pointer-events-none absolute -bottom-28 -right-20 h-64 w-80 -rotate-12 rounded-[45%] bg-green-100/60" />
+
+<div className="pointer-events-none absolute bottom-8 left-12 hidden text-2xl lg:block">
+  ⭐
+</div>
+
+<div className="pointer-events-none absolute bottom-10 right-16 hidden text-3xl lg:block">
+  ✨
+</div>
+          <div className="relative z-10 mx-auto w-full max-w-[1220px]">
+           <div className="mb-10 text-center">
               <p className="mb-2 text-sm font-extrabold uppercase tracking-[0.18em] text-green-600">
                 PlanejAI
               </p>
-              <h1 className="text-3xl font-black tracking-[-0.035em] text-[#071c4d] sm:text-4xl md:text-5xl">
+            <h1 className="text-3xl font-black tracking-[-0.035em] text-[#071c4d] sm:text-4xl lg:text-5xl">
                 O que você deseja <span className="text-green-600">criar hoje?</span>
               </h1>
-              <div className="mx-auto mt-3 h-1 w-20 rounded-full bg-green-500" />
+              <div className="mx-auto mt-3 h-1 w-24 rounded-full bg-green-500" />
               <p className="mt-4 text-sm text-slate-600 sm:text-base">
                 Escolha uma das ferramentas e comece a criar.
               </p>
             </div>
 
-            <div className="grid gap-5 md:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
               <button
                 type="button"
                 onClick={() => {
@@ -493,10 +542,10 @@ export default function Home() {
                     setEtapa("configuracao");
                   }
                 }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
+               className="group relative min-h-[340px] cursor-pointer overflow-hidden rounded-[28px] border border-green-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-green-400 hover:shadow-xl"
               >
                 <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-green-100/60" />
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">📚</div>
+                <div className="absolute bottom-7 left-7 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-green-100 text-4xl shadow-sm">📚</div>
                 <h2 className="relative text-2xl font-black text-[#071c4d]">Planejamento de Aula</h2>
                 <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
                   Crie planos de aula completos, mensais ou organizados por aula.
@@ -514,12 +563,12 @@ export default function Home() {
                 className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-blue-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-blue-400 hover:shadow-xl"
               >
                 <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-blue-100/60" />
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-100 text-4xl shadow-sm">📝</div>
+                <div className="absolute bottom-7 left-7 inline-flex h-[72px] w-[72px] items-center justify-center rounded-2xl bg-blue-100 text-[42px] shadow-sm">📝</div>
                 <h2 className="relative text-2xl font-black text-[#071c4d]">Avaliações</h2>
                 <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
                   Crie provas, simulados, avaliações diagnósticas e recuperações.
                 </p>
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-blue-700">
+                <div className="absolute bottom-7 left-7 inline-flex items-center gap-2 font-extrabold text-blue-700">
                   Criar avaliação <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
@@ -532,7 +581,7 @@ export default function Home() {
                 className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-amber-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-amber-400 hover:shadow-xl"
               >
                 <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-amber-100/60" />
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">✏️</div>
+                <div className="absolute bottom-7 left-7 inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-amber-100 text-4xl shadow-sm">✏️</div>
                 <h2 className="relative text-2xl font-black text-[#071c4d]">Atividades</h2>
                 <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
                   Crie exercícios, revisões e atividades personalizadas.
@@ -541,38 +590,34 @@ export default function Home() {
                   Criar atividade <span className="transition group-hover:translate-x-1">→</span>
                 </div>
               </button>
-              {/* BIBLIOTECA DE MATERIAIS */}
               <button
-                type="button"
-                onClick={() => {
-                  window.location.href =
-                    "/biblioteca";
-                }}
-                className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-violet-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
-              >
-                <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-violet-100/60" />
+  type="button"
+  onClick={() => {
+    window.location.href = "/biblioteca";
+  }}
+  className="group relative cursor-pointer overflow-hidden rounded-[28px] border border-violet-200 bg-white/95 p-7 text-left shadow-[0_16px_45px_rgba(15,23,42,0.08)] transition duration-200 hover:-translate-y-1.5 hover:border-violet-400 hover:shadow-xl"
+>
+  <div className="absolute right-[-28px] top-[-30px] h-28 w-28 rounded-full bg-violet-100/60" />
 
-                <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-4xl shadow-sm">
-                  ­ƒôé
-                </div>
+  <div className="relative mb-5 flex h-16 w-16 items-center justify-center rounded-2xl bg-violet-100 text-4xl shadow-sm">
+    📚
+  </div>
 
-                <h2 className="relative text-2xl font-black text-[#071c4d]">
-                  Biblioteca de Materiais
-                </h2>
+  <h2 className="relative text-2xl font-black text-[#071c4d]">
+    Biblioteca de Materiais
+  </h2>
 
-                <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
-                  Encontre planejamentos,
-                  atividades e avalia├º├Áes prontas
-                  para usar.
-                </p>
+  <p className="relative mt-3 min-h-[72px] text-sm leading-6 text-slate-600">
+    Encontre planejamentos, atividades e avaliações prontas para usar.
+  </p>
 
-                <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-violet-700">
-                  Explorar biblioteca
-                  <span className="transition group-hover:translate-x-1">
-                    ÔåÆ
-                  </span>
-                </div>
-              </button>
+  <div className="relative mt-5 inline-flex items-center gap-2 font-extrabold text-violet-700">
+    Explorar biblioteca
+    <span className="transition group-hover:translate-x-1">
+      →
+    </span>
+  </div>
+</button>
             </div>
           </div>
         </section>
