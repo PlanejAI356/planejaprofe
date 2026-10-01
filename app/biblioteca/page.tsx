@@ -271,52 +271,67 @@ setBibliotecaAtiva(
     carregarAcesso();
   }, []);
 
-  useEffect(() => {
-    async function carregarMateriais() {
-      setCarregando(true);
-      setErro("");
+  async function carregarCategoria(
+  novaCategoria: TipoMaterial
+) {
+  setCarregando(true);
+  setErro("");
 
-      try {
-        const resposta = await fetch("/api/biblioteca", {
-          method: "GET",
-          cache: "no-store",
-        });
+  try {
+    let endereco = "/api/biblioteca";
 
-        const resultado = await resposta
-          .json()
-          .catch(() => null);
-
-        if (!resposta.ok) {
-          throw new Error(
-            resultado?.erro ||
-              "Não foi possível carregar a Biblioteca."
-          );
-        }
-
-        setMateriais(resultado?.materiais || []);
-        setPaginaAtividades(1);
-
-        setTemMaisAtividades(
-          resultado?.temMaisAtividades === true
-        );
-      } catch (error) {
-        console.error(
-          "Erro ao carregar Biblioteca:",
-          error
-        );
-
-        setErro(
-          error instanceof Error
-            ? error.message
-            : "Não foi possível carregar a Biblioteca."
-        );
-      } finally {
-        setCarregando(false);
-      }
+    if (novaCategoria === "Planejamento") {
+      endereco = "/api/biblioteca?tipo=planos";
     }
 
-    carregarMateriais();
-  }, []);
+    if (novaCategoria === "Avaliação") {
+      endereco = "/api/biblioteca?tipo=avaliacoes";
+    }
+
+    const resposta = await fetch(endereco, {
+      method: "GET",
+      cache: "no-store",
+    });
+
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
+
+    if (!resposta.ok) {
+      throw new Error(
+        resultado?.erro ||
+          "Não foi possível carregar a Biblioteca."
+      );
+    }
+
+    setMateriais(resultado?.materiais || []);
+
+    if (novaCategoria === "Atividade") {
+      setPaginaAtividades(1);
+
+      setTemMaisAtividades(
+        resultado?.temMaisAtividades === true
+      );
+    }
+  } catch (error) {
+    console.error(
+      "Erro ao carregar Biblioteca:",
+      error
+    );
+
+    setErro(
+      error instanceof Error
+        ? error.message
+        : "Não foi possível carregar a Biblioteca."
+    );
+  } finally {
+    setCarregando(false);
+  }
+}
+
+useEffect(() => {
+  void carregarCategoria("Atividade");
+}, []);
 
   const materiaisFiltrados = useMemo(() => {
     const termo = busca.trim().toLowerCase();
@@ -426,13 +441,15 @@ setBibliotecaAtiva(
   }
 
   function limparFiltros() {
-    setBusca("");
-    setCategoria("Atividade");
-    setEtapa("Todas");
-    setSerie("Todos");
-    setDisciplina("Todas");
-    setOrdenacao("recentes");
-  }
+  setBusca("");
+  setCategoria("Atividade");
+  setEtapa("Todas");
+  setSerie("Todos");
+  setDisciplina("Todas");
+  setOrdenacao("recentes");
+
+  void carregarCategoria("Atividade");
+}
 
   async function carregarMaisAtividades() {
     if (
@@ -926,9 +943,16 @@ return;
                   <button
                     key={item}
                     type="button"
-                    onClick={() =>
-                      setCategoria(item)
-                    }
+                   onClick={() => {
+  setCategoria(item);
+
+  setBusca("");
+  setEtapa("Todas");
+  setSerie("Todos");
+  setDisciplina("Todas");
+
+  void carregarCategoria(item);
+}}
                     className={`flex cursor-pointer items-center gap-2 rounded-xl border px-4 py-2 text-sm font-extrabold transition ${
                       ativo
                         ? "border-emerald-600 bg-emerald-600 text-white shadow-sm"
@@ -1061,14 +1085,12 @@ return;
                       >
                         {material.imagem ? (
                           <img
-                            src={
-                              material.imagem
-                            }
-                            alt={
-                              material.titulo
-                            }
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.025]"
-                          />
+  src={material.imagem}
+  alt={material.titulo}
+  loading="lazy"
+  decoding="async"
+  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.025]"
+/>
                         ) : (
                           <div
                             className={`flex h-16 w-16 items-center justify-center rounded-2xl ${estilo.icone}`}
@@ -1104,12 +1126,11 @@ return;
                                 : "border-amber-200 bg-white/95 text-amber-700"
                             }`}
                           >
-                            {usuarioPremium ||
-                            atividadeGratis(
-                              material
-                            )
-                              ? "GRÁTIS"
-                              : "PREMIUM 🔒"}
+                            {usuarioPremium || bibliotecaAtiva
+  ? "LIBERADO"
+  : atividadeGratis(material)
+    ? "GRÁTIS"
+    : "PREMIUM 🔒"}
                           </span>
                         )}
                       </div>
