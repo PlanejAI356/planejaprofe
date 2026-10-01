@@ -27,18 +27,15 @@ export default function LoginPage() {
       {
         method: "POST",
         headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-          "Content-Type":
-            "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
-    const resultado =
-      await resposta
-        .json()
-        .catch(() => null);
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
 
     if (!resposta.ok) {
       throw new Error(
@@ -76,15 +73,10 @@ export default function LoginPage() {
     setCarregando(true);
 
     try {
-      const {
-        data,
-        error,
-      } =
+      const { data, error } =
         await supabase.auth.signInWithPassword({
-          email:
-            emailNormalizado,
-          password:
-            senhaNormalizada,
+          email: emailNormalizado,
+          password: senhaNormalizada,
         });
 
       if (error) {
@@ -172,9 +164,7 @@ export default function LoginPage() {
 
       await supabase.auth
         .signOut()
-        .catch(
-          () => undefined
-        );
+        .catch(() => undefined);
 
       alert(
         error instanceof Error
@@ -195,21 +185,25 @@ export default function LoginPage() {
 
       {/* PONTOS */}
       <div className="pointer-events-none absolute left-8 top-[40%] hidden grid-cols-3 gap-3 opacity-35 lg:grid">
-        {Array.from({ length: 9 }).map((_, index) => (
-          <span
-            key={`ponto-esquerda-${index}`}
-            className="h-1.5 w-1.5 rounded-full bg-green-500"
-          />
-        ))}
+        {Array.from({ length: 9 }).map(
+          (_, index) => (
+            <span
+              key={`ponto-esquerda-${index}`}
+              className="h-1.5 w-1.5 rounded-full bg-green-500"
+            />
+          )
+        )}
       </div>
 
       <div className="pointer-events-none absolute right-10 top-[22%] hidden grid-cols-3 gap-3 opacity-30 lg:grid">
-        {Array.from({ length: 9 }).map((_, index) => (
-          <span
-            key={`ponto-direita-${index}`}
-            className="h-1.5 w-1.5 rounded-full bg-green-500"
-          />
-        ))}
+        {Array.from({ length: 9 }).map(
+          (_, index) => (
+            <span
+              key={`ponto-direita-${index}`}
+              className="h-1.5 w-1.5 rounded-full bg-green-500"
+            />
+          )
+        )}
       </div>
 
       <span className="pointer-events-none absolute left-[12%] top-[48%] hidden text-3xl text-green-500 lg:block">
@@ -237,7 +231,10 @@ export default function LoginPage() {
             />
 
             <span className="text-2xl font-black tracking-tight text-[#071c4d] sm:text-3xl">
-              Planej<span className="text-green-600">AI</span>
+              Planej
+              <span className="text-green-600">
+                AI
+              </span>
             </span>
           </button>
 
@@ -252,7 +249,8 @@ export default function LoginPage() {
               </p>
 
               <p className="text-xs text-slate-500">
-                Privacidade e segurança em primeiro lugar.
+                Privacidade e segurança em
+                primeiro lugar.
               </p>
             </div>
           </div>
@@ -272,7 +270,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <div className="absolute left-0 bottom-20 z-20 hidden rotate-[3deg] rounded-[24px] border border-blue-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
+            <div className="absolute bottom-20 left-0 z-20 hidden rotate-[3deg] rounded-[24px] border border-blue-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
                 📝
               </div>
@@ -296,7 +294,10 @@ export default function LoginPage() {
             <div className="mx-auto w-full max-w-lg">
               <div className="mb-3 text-center">
                 <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
-                  <LogIn size={30} strokeWidth={2.3} />
+                  <LogIn
+                    size={30}
+                    strokeWidth={2.3}
+                  />
                 </div>
 
                 <h1 className="text-3xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-4xl md:text-[2.7rem]">
@@ -309,7 +310,8 @@ export default function LoginPage() {
                 <div className="mx-auto mt-2 h-1 w-16 rounded-full bg-green-500" />
 
                 <p className="mx-auto mt-3 max-w-lg text-sm leading-relaxed text-slate-600 sm:text-base">
-                  Entre para continuar criando seus materiais no PlanejAI.
+                  Entre para continuar criando seus
+                  materiais no PlanejAI.
                 </p>
               </div>
 
@@ -369,9 +371,7 @@ export default function LoginPage() {
                       type="button"
                       onClick={() =>
                         setMostrarSenha(
-                          (
-                            valorAtual
-                          ) =>
+                          (valorAtual) =>
                             !valorAtual
                         )
                       }
@@ -383,13 +383,9 @@ export default function LoginPage() {
                       }
                     >
                       {mostrarSenha ? (
-                        <EyeOff
-                          size={21}
-                        />
+                        <EyeOff size={21} />
                       ) : (
-                        <Eye
-                          size={21}
-                        />
+                        <Eye size={21} />
                       )}
                     </button>
                   </div>
@@ -421,16 +417,43 @@ export default function LoginPage() {
                 {/* CRIAR CONTA */}
                 <div className="mt-4 flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
+
                   <p className="text-sm text-slate-600">
                     Ainda não possui uma conta?
                   </p>
+
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    window.location.href = "/cadastro";
+                    const params =
+                      new URLSearchParams(
+                        window.location.search
+                      );
+
+                    const destinoRecebido =
+                      params.get("next");
+
+                    if (
+                      destinoRecebido &&
+                      destinoRecebido.startsWith(
+                        "/"
+                      ) &&
+                      !destinoRecebido.startsWith(
+                        "//"
+                      )
+                    ) {
+                      window.location.href =
+                        `/cadastro?next=${encodeURIComponent(
+                          destinoRecebido
+                        )}`;
+                      return;
+                    }
+
+                    window.location.href =
+                      "/cadastro";
                   }}
                   className="mx-auto mt-2.5 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
                 >

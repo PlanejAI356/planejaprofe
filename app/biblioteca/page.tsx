@@ -164,6 +164,17 @@ function IconeTipo({
 export default function BibliotecaPage() {
   const router = useRouter();
 
+  const [campanhaDiaDasCriancas, setCampanhaDiaDasCriancas] =
+  useState(false);
+
+useEffect(() => {
+  const parametros = new URLSearchParams(window.location.search);
+
+  setCampanhaDiaDasCriancas(
+    parametros.get("campanha") === "dia-das-criancas"
+  );
+}, []);
+
   const [materiais, setMateriais] = useState<Material[]>([]);
   const [carregando, setCarregando] = useState(true);
   const [erro, setErro] = useState("");
@@ -182,6 +193,7 @@ export default function BibliotecaPage() {
   const [carregandoMais, setCarregandoMais] = useState(false);
 
   const [usuarioLogado, setUsuarioLogado] = useState(false);
+  const [bibliotecaAtiva, setBibliotecaAtiva] = useState(false);
   const [usuarioPremium, setUsuarioPremium] = useState(false);
   const [carregandoAcesso, setCarregandoAcesso] = useState(true);
 
@@ -210,7 +222,7 @@ export default function BibliotecaPage() {
         const { data: perfil, error: erroPerfil } =
           await supabase
             .from("profiles")
-            .select("plano")
+            .select("plano, biblioteca_ate")
             .eq("id", data.user.id)
             .maybeSingle();
 
@@ -227,6 +239,23 @@ export default function BibliotecaPage() {
           String(perfil?.plano || "").toLowerCase() ===
             "premium"
         );
+        const bibliotecaAte =
+  (perfil as any)?.biblioteca_ate;
+
+const vencimentoBiblioteca =
+  bibliotecaAte
+    ? new Date(bibliotecaAte)
+    : null;
+
+setBibliotecaAtiva(
+  Boolean(
+    vencimentoBiblioteca &&
+      !Number.isNaN(
+        vencimentoBiblioteca.getTime()
+      ) &&
+      vencimentoBiblioteca > new Date()
+  )
+);
       } catch (error) {
         console.error(
           "Erro ao verificar acesso à Biblioteca:",
@@ -366,14 +395,14 @@ export default function BibliotecaPage() {
   ]);
 
   const idsAtividadesGratis = useMemo(() => {
-    return materiais
-      .filter(
-        (material) =>
-          material.tipo === "Atividade"
-      )
-      .slice(0, 4)
-      .map((material) => String(material.id));
-  }, [materiais]);
+  return materiais
+    .filter(
+      (material) =>
+        material.tipo === "Atividade"
+    )
+    .slice(0, campanhaDiaDasCriancas ? 8 : 4)
+    .map((material) => String(material.id));
+}, [materiais, campanhaDiaDasCriancas]);
 
   function atividadeGratis(material: Material) {
     return (
@@ -385,9 +414,12 @@ export default function BibliotecaPage() {
   }
 
   function podeBaixar(material: Material) {
-    if (usuarioPremium) return true;
-    return atividadeGratis(material);
+  if (usuarioPremium || bibliotecaAtiva) {
+    return true;
   }
+
+  return atividadeGratis(material);
+}
 
   function pedirPremium() {
     router.push("/assinatura");
@@ -703,38 +735,58 @@ ${corpo}
     URL.revokeObjectURL(url);
   }
 
-  async function baixarMaterial(
-    material: Material
+ async function baixarMaterial(
+  material: Material
+) {
+  if (carregandoAcesso) return;
+
+  if (
+    !usuarioLogado &&
+    !(
+      campanhaDiaDasCriancas &&
+      atividadeGratis(material)
+    )
   ) {
-    if (carregandoAcesso) return;
-
-    if (!usuarioLogado) {
+    if (campanhaDiaDasCriancas) {
+      router.push(
+        `/login?next=${encodeURIComponent(
+          "/biblioteca?campanha=dia-das-criancas"
+        )}`
+      );
+    } else {
       router.push("/login");
-      return;
     }
 
-    if (!podeBaixar(material)) {
-      pedirPremium();
-      return;
-    }
-
-    if (material.tipo === "Atividade") {
-      await baixarAtividade(material);
-      return;
-    }
-
-    if (
-      !materialAberto ||
-      String(materialAberto.id) !==
-        String(material.id) ||
-      !detalheAberto
-    ) {
-      await visualizarMaterial(material);
-      return;
-    }
-
-    baixarComoHtml(material);
+    return;
   }
+
+  if (!podeBaixar(material)) {
+    if (campanhaDiaDasCriancas) {
+      router.push("/assinatura");
+return;
+    }
+
+    pedirPremium();
+    return;
+  }
+
+  if (material.tipo === "Atividade") {
+    await baixarAtividade(material);
+    return;
+  }
+
+  if (
+    !materialAberto ||
+    String(materialAberto.id) !==
+      String(material.id) ||
+    !detalheAberto
+  ) {
+    await visualizarMaterial(material);
+    return;
+  }
+
+  baixarComoHtml(material);
+}
 
   function fecharModal() {
     setMaterialAberto(null);
@@ -1047,10 +1099,7 @@ ${corpo}
                           "Atividade" && (
                           <span
                             className={`absolute right-3 top-3 rounded-lg border px-2.5 py-1 text-[11px] font-extrabold shadow-sm ${
-                              usuarioPremium ||
-                              atividadeGratis(
-                                material
-                              )
+                             podeBaixar(material)
                                 ? "border-emerald-200 bg-white/95 text-emerald-700"
                                 : "border-amber-200 bg-white/95 text-amber-700"
                             }`}
@@ -1091,11 +1140,25 @@ ${corpo}
                         <div className="mt-auto grid grid-cols-2 gap-2 pt-4">
                           <button
                             type="button"
-                            onClick={() =>
-                              visualizarMaterial(
-                                material
-                              )
-                            }
+                            onClick={() => {
+                              if (
+  campanhaDiaDasCriancas &&
+  !podeBaixar(material)
+) {
+  if (!usuarioLogado) {
+    router.push(
+      `/login?next=${encodeURIComponent(
+        "/biblioteca?campanha=dia-das-criancas"
+      )}`
+    );
+    return;
+  }
+
+  router.push("/assinatura");
+return;
+}
+  visualizarMaterial(material);
+}}
                             className="flex cursor-pointer items-center justify-center gap-1.5 rounded-xl border border-slate-200 bg-white px-2 py-2.5 text-xs font-extrabold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                           >
                             <FileText

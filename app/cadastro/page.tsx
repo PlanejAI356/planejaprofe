@@ -22,6 +22,28 @@ export default function CadastroPage() {
   const [senha, setSenha] = useState("");
   const [mostrarSenha, setMostrarSenha] = useState(false);
   const [carregando, setCarregando] = useState(false);
+  function irParaLogin() {
+  const params = new URLSearchParams(
+    window.location.search
+  );
+
+  const destinoRecebido =
+    params.get("next");
+
+  if (
+    destinoRecebido &&
+    destinoRecebido.startsWith("/") &&
+    !destinoRecebido.startsWith("//")
+  ) {
+    window.location.href =
+      `/login?next=${encodeURIComponent(
+        destinoRecebido
+      )}`;
+    return;
+  }
+
+  window.location.href = "/login";
+}
 
   function obterParceiroRef() {
     if (typeof window === "undefined") {
@@ -221,7 +243,7 @@ export default function CadastroPage() {
           "Este e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
         );
 
-        window.location.href = "/login";
+       irParaLogin();
         return;
       }
 
@@ -255,7 +277,7 @@ export default function CadastroPage() {
             "Este e-mail já está cadastrado. Entre na sua conta ou recupere sua senha."
           );
 
-          window.location.href = "/login";
+         irParaLogin();
           return;
         }
 
@@ -272,7 +294,7 @@ export default function CadastroPage() {
           "A conta foi criada, mas não foi possível concluir todas as informações do cadastro."
         );
 
-        window.location.href = "/login";
+        irParaLogin();
         return;
       }
 
@@ -296,7 +318,7 @@ export default function CadastroPage() {
         "Cadastro realizado com sucesso! Você ganhou 3 testes gratuitos. Agora faça login para acessar o PlanejAI."
       );
 
-      window.location.href = "/login";
+      irParaLogin();
     } catch (error) {
       console.error(
         "Erro inesperado ao criar conta:",
@@ -587,8 +609,8 @@ export default function CadastroPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    window.location.href = "/login";
-                  }}
+  irParaLogin();
+}}
                   className="mx-auto mt-2 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
                 >
                   <LogIn size={19} />
