@@ -793,8 +793,16 @@ export async function GET(req: NextRequest) {
                 )
               : 0;
 
+              const perfilParceiro =
+  (perfis || []).find(
+    (perfil) =>
+      String(perfil.id) ===
+      String(parceiro.user_id)
+  ) || null;
+
           return {
             ...parceiro,
+            perfil: perfilParceiro,
 
             totalAcessos,
             totalVisitantes,

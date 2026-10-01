@@ -45,6 +45,7 @@ type Parceiro = {
   cupom?: string | null;
   comissao_percentual?: number | null;
   ativo?: boolean | null;
+  perfil?: Usuario | null;
 
   totalAcessos?: number;
   totalVisitantes?: number;
@@ -2800,6 +2801,9 @@ export default function AdminPage() {
                     <th className="px-5 py-4">
                       Status
                     </th>
+                    <th className="px-5 py-4">
+                      Premium
+                      </th>
                   </tr>
                 </thead>
 
@@ -2875,6 +2879,47 @@ export default function AdminPage() {
                               : "Inativo"}
                           </span>
                         </td>
+                        <td className="px-5 py-4">
+  {(() => {
+    const usuarioParceiro = parceiro.perfil;
+
+    if (!usuarioParceiro) {
+      return (
+        <span className="text-xs font-semibold text-slate-400">
+          Sem cadastro
+        </span>
+      );
+    }
+
+    const ehPremium =
+      String(usuarioParceiro.plano || "").toLowerCase() ===
+      "premium";
+
+    return (
+      <button
+        type="button"
+        disabled={alterandoPlano}
+        onClick={() =>
+          alterarPlanoUsuario(
+            usuarioParceiro,
+            ehPremium ? "gratuito" : "premium"
+          )
+        }
+        className={`cursor-pointer rounded-xl px-3 py-2 text-xs font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+          ehPremium
+            ? "bg-red-600 hover:bg-red-700"
+            : "bg-emerald-600 hover:bg-emerald-700"
+        }`}
+      >
+        {alterandoPlano
+          ? "Aguarde..."
+          : ehPremium
+            ? "Retirar Premium"
+            : "Liberar Premium"}
+      </button>
+    );
+  })()}
+</td>
                       </tr>
                     )
                   )}

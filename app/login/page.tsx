@@ -14,10 +14,9 @@ import { supabase } from "../lib/supabase";
 export default function LoginPage() {
   const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
-  const [mostrarSenha, setMostrarSenha] =
-    useState(false);
-  const [carregando, setCarregando] =
-    useState(false);
+  const [mostrarSenha, setMostrarSenha] = useState(false);
+  const [carregando, setCarregando] = useState(false);
+  const [erroLogin, setErroLogin] = useState("");
 
   async function sincronizarPerfil(
     accessToken: string
@@ -27,18 +26,15 @@ export default function LoginPage() {
       {
         method: "POST",
         headers: {
-          Authorization:
-            `Bearer ${accessToken}`,
-          "Content-Type":
-            "application/json",
+          Authorization: `Bearer ${accessToken}`,
+          "Content-Type": "application/json",
         },
       }
     );
 
-    const resultado =
-      await resposta
-        .json()
-        .catch(() => null);
+    const resultado = await resposta
+      .json()
+      .catch(() => null);
 
     if (!resposta.ok) {
       throw new Error(
@@ -57,34 +53,32 @@ export default function LoginPage() {
 
     if (carregando) return;
 
+    setErroLogin("");
+
     const emailNormalizado =
       email.trim().toLowerCase();
 
-    const senhaNormalizada =
-      senha.trim();
-
     if (!emailNormalizado) {
-      alert("Informe seu e-mail.");
+      setErroLogin(
+        "Informe seu e-mail."
+      );
       return;
     }
 
-    if (!senhaNormalizada) {
-      alert("Informe sua senha.");
+    if (!senha) {
+      setErroLogin(
+        "Informe sua senha."
+      );
       return;
     }
 
     setCarregando(true);
 
     try {
-      const {
-        data,
-        error,
-      } =
+      const { data, error } =
         await supabase.auth.signInWithPassword({
-          email:
-            emailNormalizado,
-          password:
-            senhaNormalizada,
+          email: emailNormalizado,
+          password: senha,
         });
 
       if (error) {
@@ -104,7 +98,7 @@ export default function LoginPage() {
             "invalid credentials"
           )
         ) {
-          alert(
+          setErroLogin(
             "E-mail ou senha incorretos."
           );
           return;
@@ -115,14 +109,28 @@ export default function LoginPage() {
             "email not confirmed"
           )
         ) {
-          alert(
+          setErroLogin(
             "Seu e-mail ainda não foi confirmado. Verifique sua caixa de entrada."
           );
           return;
         }
 
-        alert(
-          "Não foi possível entrar na sua conta. Tente novamente."
+        if (
+          mensagem.includes(
+            "too many requests"
+          ) ||
+          mensagem.includes(
+            "rate limit"
+          )
+        ) {
+          setErroLogin(
+            "Muitas tentativas de acesso. Aguarde um pouco e tente novamente."
+          );
+          return;
+        }
+
+        setErroLogin(
+          `Não foi possível entrar agora. ${error.message}`
         );
         return;
       }
@@ -138,15 +146,27 @@ export default function LoginPage() {
           "Login concluído sem usuário ou sessão válida."
         );
 
-        alert(
+        setErroLogin(
           "Não foi possível concluir o acesso à sua conta. Tente novamente."
         );
         return;
       }
 
-      await sincronizarPerfil(
-        accessToken
-      );
+      /*
+       * Se o login no Supabase funcionou,
+       * uma falha temporária na sincronização
+       * do perfil não deve expulsar o usuário.
+       */
+      try {
+        await sincronizarPerfil(
+          accessToken
+        );
+      } catch (erroPerfil) {
+        console.error(
+          "Erro ao sincronizar perfil após o login:",
+          erroPerfil
+        );
+      }
 
       const params =
         new URLSearchParams(
@@ -166,20 +186,14 @@ export default function LoginPage() {
         destinoSeguro;
     } catch (error) {
       console.error(
-        "Erro ao verificar o perfil após o login:",
+        "Erro inesperado durante o login:",
         error
       );
 
-      await supabase.auth
-        .signOut()
-        .catch(
-          () => undefined
-        );
-
-      alert(
+      setErroLogin(
         error instanceof Error
-          ? error.message
-          : "Não foi possível verificar sua conta. Tente novamente."
+          ? `Não foi possível entrar agora. ${error.message}`
+          : "Não foi possível entrar agora. Tente novamente."
       );
     } finally {
       setCarregando(false);
@@ -190,12 +204,16 @@ export default function LoginPage() {
     <main className="relative min-h-screen overflow-hidden bg-[#fbfefc]">
       {/* FUNDO DECORATIVO */}
       <div className="pointer-events-none absolute -left-44 -top-28 h-[380px] w-[620px] rounded-[50%] bg-green-100/55 blur-3xl" />
+
       <div className="pointer-events-none absolute -right-52 top-16 h-[500px] w-[680px] rounded-[50%] bg-emerald-100/50 blur-3xl" />
+
       <div className="pointer-events-none absolute -bottom-52 left-[-100px] h-[420px] w-[760px] rounded-[50%] bg-gradient-to-r from-green-100/60 via-emerald-50/50 to-blue-50/40 blur-3xl" />
 
       {/* PONTOS */}
       <div className="pointer-events-none absolute left-8 top-[40%] hidden grid-cols-3 gap-3 opacity-35 lg:grid">
-        {Array.from({ length: 9 }).map((_, index) => (
+        {Array.from({
+          length: 9,
+        }).map((_, index) => (
           <span
             key={`ponto-esquerda-${index}`}
             className="h-1.5 w-1.5 rounded-full bg-green-500"
@@ -204,7 +222,9 @@ export default function LoginPage() {
       </div>
 
       <div className="pointer-events-none absolute right-10 top-[22%] hidden grid-cols-3 gap-3 opacity-30 lg:grid">
-        {Array.from({ length: 9 }).map((_, index) => (
+        {Array.from({
+          length: 9,
+        }).map((_, index) => (
           <span
             key={`ponto-direita-${index}`}
             className="h-1.5 w-1.5 rounded-full bg-green-500"
@@ -226,7 +246,8 @@ export default function LoginPage() {
           <button
             type="button"
             onClick={() => {
-              window.location.href = "/";
+              window.location.href =
+                "/";
             }}
             className="flex cursor-pointer items-center gap-3"
           >
@@ -237,13 +258,18 @@ export default function LoginPage() {
             />
 
             <span className="text-2xl font-black tracking-tight text-[#071c4d] sm:text-3xl">
-              Planej<span className="text-green-600">AI</span>
+              Planej
+              <span className="text-green-600">
+                AI
+              </span>
             </span>
           </button>
 
           <div className="hidden items-center gap-2.5 rounded-2xl border border-slate-200 bg-white/90 px-4 py-2 shadow-sm md:flex">
             <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100 text-green-600">
-              <ShieldCheck size={22} />
+              <ShieldCheck
+                size={22}
+              />
             </div>
 
             <div>
@@ -272,7 +298,7 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <div className="absolute left-0 bottom-20 z-20 hidden rotate-[3deg] rounded-[24px] border border-blue-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
+            <div className="absolute bottom-20 left-0 z-20 hidden rotate-[3deg] rounded-[24px] border border-blue-100 bg-white/95 px-5 py-3.5 text-center shadow-xl lg:block">
               <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-50 text-3xl">
                 📝
               </div>
@@ -296,7 +322,10 @@ export default function LoginPage() {
             <div className="mx-auto w-full max-w-lg">
               <div className="mb-3 text-center">
                 <div className="mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full bg-green-100 text-green-600 shadow-sm">
-                  <LogIn size={30} strokeWidth={2.3} />
+                  <LogIn
+                    size={30}
+                    strokeWidth={2.3}
+                  />
                 </div>
 
                 <h1 className="text-3xl font-black tracking-[-0.04em] text-[#071c4d] sm:text-4xl md:text-[2.7rem]">
@@ -329,11 +358,12 @@ export default function LoginPage() {
                       type="email"
                       placeholder="E-mail"
                       value={email}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setEmail(
                           e.target.value
-                        )
-                      }
+                        );
+                        setErroLogin("");
+                      }}
                       autoComplete="email"
                       className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-4 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
@@ -355,11 +385,12 @@ export default function LoginPage() {
                       }
                       placeholder="Senha"
                       value={senha}
-                      onChange={(e) =>
+                      onChange={(e) => {
                         setSenha(
                           e.target.value
-                        )
-                      }
+                        );
+                        setErroLogin("");
+                      }}
                       autoComplete="current-password"
                       className="w-full rounded-2xl border border-slate-200 bg-white py-3 pl-12 pr-12 text-sm outline-none transition focus:border-green-500 focus:ring-4 focus:ring-green-100"
                       required
@@ -404,13 +435,25 @@ export default function LoginPage() {
                     </a>
                   </div>
 
+                  {/* MENSAGEM DE ERRO */}
+                  {erroLogin && (
+                    <div
+                      role="alert"
+                      className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm font-semibold text-red-700"
+                    >
+                      {erroLogin}
+                    </div>
+                  )}
+
                   {/* BOTÃO */}
                   <button
                     type="submit"
                     disabled={carregando}
                     className="flex w-full cursor-pointer items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-blue-600 to-green-600 px-5 py-3 text-base font-extrabold text-white shadow-lg transition hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-not-allowed disabled:opacity-60"
                   >
-                    <LogIn size={23} />
+                    <LogIn
+                      size={23}
+                    />
 
                     {carregando
                       ? "Verificando sua conta..."
@@ -421,16 +464,45 @@ export default function LoginPage() {
                 {/* CRIAR CONTA */}
                 <div className="mt-4 flex items-center gap-3">
                   <div className="h-px flex-1 bg-slate-200" />
+
                   <p className="text-sm text-slate-600">
                     Ainda não possui uma conta?
                   </p>
+
                   <div className="h-px flex-1 bg-slate-200" />
                 </div>
 
                 <button
                   type="button"
                   onClick={() => {
-                    window.location.href = "/cadastro";
+                    const params =
+                      new URLSearchParams(
+                        window.location.search
+                      );
+
+                    const destinoRecebido =
+                      params.get(
+                        "next"
+                      );
+
+                    if (
+                      destinoRecebido &&
+                      destinoRecebido.startsWith(
+                        "/"
+                      ) &&
+                      !destinoRecebido.startsWith(
+                        "//"
+                      )
+                    ) {
+                      window.location.href =
+                        `/cadastro?next=${encodeURIComponent(
+                          destinoRecebido
+                        )}`;
+                      return;
+                    }
+
+                    window.location.href =
+                      "/cadastro";
                   }}
                   className="mx-auto mt-2.5 flex cursor-pointer items-center gap-2 font-extrabold text-blue-600 transition hover:text-green-600"
                 >

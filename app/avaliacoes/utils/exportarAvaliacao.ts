@@ -431,12 +431,15 @@ export async function exportarAvaliacao(
             line-height: 1.15 !important;
           }
 
-          .conteudo-avaliacao-exportacao img {
-            max-width: 100% !important;
-            height: auto !important;
-
-            object-fit: contain;
-          }
+          ..conteudo-avaliacao-exportacao img {
+  width: 210px !important;
+  max-width: 210px !important;
+  height: auto !important;
+  object-fit: contain;
+  display: block !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+}
 
           .conteudo-avaliacao-exportacao p {
             orphans: 2;
