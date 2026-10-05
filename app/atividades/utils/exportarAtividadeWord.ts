@@ -2,7 +2,6 @@ import {
   AlignmentType,
   BorderStyle,
   Document,
-  HeightRule,
   ImageRun,
   Packer,
   Paragraph,
@@ -744,7 +743,7 @@ async function criarCabecalhoWord(
         children: [
           new TableCell({
             width: {
-              size: TAMANHO_FONTE_CABECALHO,
+              size: 18,
               type:
                 WidthType.PERCENTAGE,
             },
@@ -860,38 +859,38 @@ export async function exportarAtividadeWord(
    * Os limites impedem que a atividade saia
    * completamente da área útil da folha.
    */
-  const larguraPercentual =
-    Math.min(
-      100,
-      Math.max(
-        45,
-        opcoes.ajusteImagem
-          ?.larguraPercentual ?? 100
-      )
-    );
+  const limitarAjuste = (
+  valor: number,
+  minimo: number,
+  maximo: number,
+  padrao: number
+) => {
+  if (!Number.isFinite(valor)) return padrao;
+  return Math.min(maximo, Math.max(minimo, valor));
+};
 
-  const metadeImagem =
-    larguraPercentual / 2;
+const larguraPercentual = limitarAjuste(
+  opcoes.ajusteImagem?.larguraPercentual ?? 100,
+  45,
+  150,
+  100
+);
 
-  const posicaoXPercentual =
-    Math.min(
-      100 - metadeImagem,
-      Math.max(
-        metadeImagem,
-        opcoes.ajusteImagem
-          ?.posicaoXPercentual ?? 50
-      )
-    );
+const metadeImagem = larguraPercentual / 2;
 
-  const posicaoYPercentual =
-    Math.min(
-      85,
-      Math.max(
-        0,
-        opcoes.ajusteImagem
-          ?.posicaoYPercentual ?? 0
-      )
-    );
+const posicaoXPercentual = limitarAjuste(
+  opcoes.ajusteImagem?.posicaoXPercentual ?? 50,
+  Math.min(metadeImagem, 100 - metadeImagem),
+  Math.max(metadeImagem, 100 - metadeImagem),
+  50
+);
+
+const posicaoYPercentual = limitarAjuste(
+  opcoes.ajusteImagem?.posicaoYPercentual ?? 0,
+  -100,
+  100,
+  0
+);
 
   /*
    * ==================================================
@@ -991,159 +990,103 @@ export async function exportarAtividadeWord(
    * O tamanho agora acompanha o ajuste feito
    * na tela. A proporção original é mantida.
    */
-  const larguraDesejada =
-    larguraDisponivelAtividade *
-    (larguraPercentual / 100);
+  const larguraArea = Math.floor(
+  larguraDisponivelAtividade
+);
 
-  let escalaAtividade =
-    larguraDesejada /
-    dimensoesAtividade.largura;
+const alturaArea = Math.floor(
+  alturaDisponivelAtividade
+);
 
-  let larguraAtividade =
-    Math.max(
-      1,
-      Math.floor(
-        dimensoesAtividade.largura *
-          escalaAtividade
-      )
-    );
+const larguraDesenho =
+  larguraArea * (larguraPercentual / 100);
 
-  let alturaAtividade =
-    Math.max(
-      1,
-      Math.floor(
-        dimensoesAtividade.altura *
-          escalaAtividade
-      )
-    );
+const alturaDesenho =
+  larguraDesenho *
+  (dimensoesAtividade.altura /
+    dimensoesAtividade.largura);
 
-  /*
-   * Segurança para a imagem continuar inteira
-   * mesmo quando for muito alta.
-   */
-  if (
-    alturaAtividade >
-    alturaDisponivelAtividade
-  ) {
-    escalaAtividade =
-      alturaDisponivelAtividade /
-      dimensoesAtividade.altura;
+const esquerdaDesenho =
+  larguraArea * (posicaoXPercentual / 100) -
+  larguraDesenho / 2;
 
-    larguraAtividade =
-      Math.max(
-        1,
-        Math.floor(
-          dimensoesAtividade.largura *
-            escalaAtividade
-        )
-      );
+const topoDesenho =
+  alturaArea * (posicaoYPercentual / 100);
 
-    alturaAtividade =
-      Math.max(
-        1,
-        Math.floor(
-          dimensoesAtividade.altura *
-            escalaAtividade
-        )
-      );
-  }
+const imagemOriginal = await carregarImagem(
+  atividadePng
+);
 
-  /*
-   * Converte a posição escolhida na prévia
-   * para recuo horizontal e vertical no Word.
-   */
-  const espacoHorizontalLivre =
-    Math.max(
-      0,
-      larguraDisponivelAtividade -
-        larguraAtividade
-    );
+const canvasAtividade =
+  document.createElement("canvas");
 
-  const centroDesejadoPx =
-    larguraDisponivelAtividade *
-    (posicaoXPercentual / 100);
+const resolucao = 2;
 
-  const esquerdaPx =
-    Math.min(
-      espacoHorizontalLivre,
-      Math.max(
-        0,
-        centroDesejadoPx -
-          larguraAtividade / 2
-      )
-    );
+canvasAtividade.width =
+  larguraArea * resolucao;
 
-  /*
-   * Aproximação de pixels para DXA/twips
-   * usando a largura útil da página como base.
-   */
-  const larguraUtilDxa = 10300;
+canvasAtividade.height =
+  alturaArea * resolucao;
 
-  const recuoEsquerdoDxa =
-    Math.round(
-      (esquerdaPx /
-        larguraDisponivelAtividade) *
-        larguraUtilDxa
-    );
+const contextoAtividade =
+  canvasAtividade.getContext("2d");
 
-  const espacoVerticalDisponivel =
-    Math.max(
-      0,
-      alturaDisponivelAtividade -
-        alturaAtividade
-    );
+if (!contextoAtividade) {
+  throw new Error(
+    "Não foi possível preparar os ajustes da imagem."
+  );
+}
 
-  const deslocamentoVerticalPx =
-    espacoVerticalDisponivel *
-    (posicaoYPercentual / 100);
+contextoAtividade.scale(
+  resolucao,
+  resolucao
+);
 
-  const deslocamentoVerticalDxa =
-    Math.round(
-      deslocamentoVerticalPx * 15
-    );
+contextoAtividade.fillStyle = "#ffffff";
 
-  const atividadeRun =
-    new ImageRun({
-      data:
-        dataUrlParaUint8Array(
-          atividadePng
-        ),
-      type: "png",
-      transformation: {
-        width:
-          larguraAtividade,
-        height:
-          alturaAtividade,
-      },
-    });
+contextoAtividade.fillRect(
+  0,
+  0,
+  larguraArea,
+  alturaArea
+);
 
-  /*
-   * A atividade NÃO recebe uma borda própria.
-   *
-   * Cabeçalho + atividade ficam dentro
-   * da mesma borda externa da folha,
-   * igual à tela de finalização e ao PDF.
-   */
-  const paragrafoAtividade =
-    new Paragraph({
-      alignment:
-        AlignmentType.LEFT,
+contextoAtividade.drawImage(
+  imagemOriginal,
+  esquerdaDesenho,
+  topoDesenho,
+  larguraDesenho,
+  alturaDesenho
+);
 
-      indent: {
-        left: recuoEsquerdoDxa,
-      },
+const imagemAjustada =
+  canvasAtividade.toDataURL("image/png");
 
-      spacing: {
-        before:
-          deslocamentoVerticalDxa,
-        after: 0,
-      },
+const atividadeRun = new ImageRun({
+  data: dataUrlParaUint8Array(
+    imagemAjustada
+  ),
+  type: "png",
+  transformation: {
+    width: larguraArea,
+    height: alturaArea,
+  },
+});
 
-      children: [
-        atividadeRun,
-      ],
-    });
-
+const paragrafoAtividade = new Paragraph({
+  alignment: AlignmentType.LEFT,
+  spacing: {
+    before: 0,
+    after: 0,
+  },
+  children: [
+    atividadeRun,
+    new TextRun({
+      text: "",
+      size: 2,
+    }),
+  ],
+});
   /*
    * Conteúdo que ficará dentro da
    * borda externa da A4.
@@ -1160,12 +1103,18 @@ export async function exportarAtividadeWord(
 
     conteudoFolha.push(
       new Paragraph({
-        spacing: {
-          before: 0,
-          after: 20,
-        },
-        children: [],
-      })
+  spacing: {
+    before: 0,
+    after: 0,
+    line: 20,
+  },
+  children: [
+    new TextRun({
+      text: "",
+      size: 2,
+    }),
+  ],
+})
     );
   }
 
@@ -1190,12 +1139,6 @@ export async function exportarAtividadeWord(
 
       rows: [
         new TableRow({
-          height: {
-            value: 15500,
-            rule:
-              HeightRule.ATLEAST,
-          },
-
           children: [
             new TableCell({
               verticalAlign:

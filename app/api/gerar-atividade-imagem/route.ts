@@ -180,10 +180,25 @@ function podePosicionar(
     const celula = grade[l][c];
 
     if (celula) {
-      if (celula.letra !== palavra[i]) return null;
-      cruzamentos++;
-      continue;
-    }
+  if (celula.letra !== palavra[i]) return null;
+
+  const vizinhas =
+    direcao === "H"
+      ? [grade[l]?.[c - 1], grade[l]?.[c + 1]]
+      : [grade[l - 1]?.[c], grade[l + 1]?.[c]];
+
+  const sobreposicaoParalela = vizinhas.some(
+    (vizinha) =>
+      vizinha?.palavras.some((indice) =>
+        celula.palavras.includes(indice)
+      )
+  );
+
+  if (sobreposicaoParalela) return null;
+
+  cruzamentos++;
+  continue;
+}
 
     if (direcao === "H") {
       if (
@@ -435,7 +450,7 @@ function recortarGrade(
   posicionadas: PalavraPosicionada[]
 ) {
   const limites = limitesDaGrade(grade);
-  const margem = 1;
+  const margem = 0;
   const minLinha = Math.max(0, limites.minLinha - margem);
   const maxLinha = Math.min(grade.length - 1, limites.maxLinha + margem);
   const minColuna = Math.max(0, limites.minColuna - margem);
@@ -527,19 +542,45 @@ function renderizarCruzadinhaSvg(
   // A grade usa quase toda a largura útil e cresce o máximo possível
   // sem ultrapassar a área reservada para as pistas.
   const inicioY = 108;
-  const larguraMaxGrade = 980;
-  const alturaMaxGrade = 780;
-  const tamanhoCelula = Math.max(
-    46,
-    Math.min(
-      76,
-      Math.floor(larguraMaxGrade / colunas),
-      Math.floor(alturaMaxGrade / linhas)
-    )
+
+// Reserva espaço considerando as pistas da versão do professor.
+const alturasPistas = (["H", "V"] as DirecaoCruzadinha[]).map(
+  (direcao) => {
+    const itens = posicionadas.filter(
+      (item) => item.direcao === direcao
+    );
+
+    return itens.reduce((total, item) => {
+      const texto =
+        `${item.numero}. ${item.pista} — ${item.palavra.toUpperCase()}`;
+
+      return total + quebrarTexto(texto, 32).length * 32 + 8;
+    }, 60);
+  }
+);
+
+const alturaReservadaPistas = Math.max(...alturasPistas);
+const larguraMaxGrade = 960;
+const alturaMaxGrade =
+  altura - inicioY - alturaReservadaPistas - 70;
+
+const tamanhoCelula = Math.floor(
+  Math.min(
+    84,
+    larguraMaxGrade / colunas,
+    alturaMaxGrade / linhas
+  )
+);
+
+if (tamanhoCelula < 32) {
+  throw new Error(
+    "Esta cruzadinha ficou grande demais para uma folha legível. Use pistas mais curtas ou menos palavras."
   );
-  const larguraGrade = colunas * tamanhoCelula;
-  const alturaGrade = linhas * tamanhoCelula;
-  const inicioX = Math.floor((largura - larguraGrade) / 2);
+}
+
+const larguraGrade = colunas * tamanhoCelula;
+const alturaGrade = linhas * tamanhoCelula;
+const inicioX = Math.floor((largura - larguraGrade) / 2);
 
   const mapaNumeros = new Map<string, number[]>();
   for (const palavra of posicionadas) {
@@ -560,12 +601,12 @@ function renderizarCruzadinhaSvg(
       const numeros = mapaNumeros.get(`${l}:${c}`) || [];
 
       celulasSvg.push(
-        `<rect x="${x}" y="${y}" width="${tamanhoCelula}" height="${tamanhoCelula}" fill="white" stroke="#111827" stroke-width="1.4"/>`
+        `<rect x="${x}" y="${y}" width="${tamanhoCelula}" height="${tamanhoCelula}" fill="white" stroke="#000000" stroke-width="3"/>`
       );
 
       if (numeros.length) {
         celulasSvg.push(
-          `<text x="${x + 4}" y="${y + 12}" font-family="Arial, sans-serif" font-size="${Math.max(9, Math.floor(tamanhoCelula * 0.18))}" font-weight="700" fill="#111827">${numeros.join("/")}</text>`
+          `<text x="${x + 4}" y="${y + 16}" font-family="Arial, sans-serif" font-size="${Math.max(13, Math.floor(tamanhoCelula * 0.22))}" font-weight="700" fill="#111827">${numeros.join("/")}</text>`
         );
       }
 
@@ -601,12 +642,12 @@ function renderizarCruzadinhaSvg(
 
     for (const item of itens) {
       const resposta = mostrarRespostas ? ` — ${item.palavra.toUpperCase()}` : "";
-      const linhasTexto = quebrarTexto(`${item.numero}. ${item.pista}${resposta}`, 56);
+     const linhasTexto = quebrarTexto(`${item.numero}. ${item.pista}${resposta}`, 32);
       for (const linhaTexto of linhasTexto) {
         partes.push(
-          `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="17" fill="#1f2937">${escaparXml(linhaTexto)}</text>`
+          `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="24" fill="#000000">${escaparXml(linhaTexto)}</text>`
         );
-        y += 23;
+        y += 32;
       }
       y += 8;
     }
@@ -617,13 +658,13 @@ function renderizarCruzadinhaSvg(
   const titulo = mostrarRespostas ? "CRUZADINHA — CÓPIA DO PROFESSOR" : "CRUZADINHA";
   const comando = mostrarRespostas
     ? "Mesma cruzadinha da versão do aluno, com todas as respostas preenchidas."
-    : "Leia as pistas e complete a cruzadinha. As palavras se cruzam pelas letras em comum.";
+    : "Leia as pistas. Escreva uma letra por quadrinho, sem acentos ou espaços.";
 
   return `
 <svg xmlns="http://www.w3.org/2000/svg" width="${largura}" height="${altura}" viewBox="0 0 ${largura} ${altura}">
   <rect width="100%" height="100%" fill="white"/>
   <text x="512" y="48" text-anchor="middle" font-family="Arial, sans-serif" font-size="30" font-weight="700" fill="#111827">${escaparXml(titulo)}</text>
-  <text x="512" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="15" fill="#374151">${escaparXml(comando)}</text>
+  <text x="512" y="82" text-anchor="middle" font-family="Arial, sans-serif" font-size="20" fill="#000000">${escaparXml(comando)}</text>
   ${celulasSvg.join("\n")}
   ${blocoPistas("HORIZONTAIS", horizontais, colunaEsquerdaX)}
   ${blocoPistas("VERTICAIS", verticais, colunaDireitaX)}
@@ -653,6 +694,21 @@ async function criarItensCruzadinha({
   palavrasCruzadinha: string;
 }) {
   const informadas = extrairPalavrasInformadas(palavrasCruzadinha);
+
+if (informadas.length > 20) {
+  throw new Error(
+    "Informe no máximo 20 palavras para a cruzadinha."
+  );
+}
+
+if (
+  quantidadeQuestoes !== null &&
+  informadas.length > quantidadeQuestoes
+) {
+  throw new Error(
+    "A lista tem mais palavras do que a quantidade escolhida. Ajuste a quantidade ou a lista."
+  );
+}
   const quantidade = Math.max(
     informadas.length || 0,
     quantidadeQuestoes ?? (informadas.length || 10)
@@ -738,9 +794,9 @@ REGRAS OBRIGATÓRIAS:
     itens = deduplicarItens([...obrigatoriasComPista, ...extras]);
   }
 
-  if (itens.length < 2) {
-    throw new Error("A cruzadinha precisa de pelo menos duas palavras válidas.");
-  }
+   if (itens.length < 1) {
+  throw new Error("A cruzadinha precisa de pelo menos uma palavra válida.");
+}
 
   const limite = Math.min(quantidade, 20);
   const selecionados = itens.slice(0, limite);

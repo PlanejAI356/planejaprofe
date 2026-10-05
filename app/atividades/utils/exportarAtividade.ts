@@ -34,7 +34,11 @@ async function converterImagemParaDataUrl(src: string) {
   }
 
   try {
-    const urlAbsoluta = new URL(src, window.location.href).href;
+    const urlAbsoluta = new URL(
+      src,
+      window.location.href
+    ).href;
+
     const resposta = await fetch(urlAbsoluta);
 
     if (!resposta.ok) {
@@ -55,6 +59,7 @@ async function converterImagemParaDataUrl(src: string) {
       };
 
       leitor.onerror = () => reject(leitor.error);
+
       leitor.readAsDataURL(blob);
     });
   } catch {
@@ -74,12 +79,10 @@ async function prepararHtmlCabecalho(
   ) as HTMLElement;
 
   /*
-   * Muito importante:
-   * transforma a logo/imagens do cabeçalho
+   * Transforma a logo e as imagens do cabeçalho
    * em data URL quando possível.
    *
-   * Assim a impressão não depende de blob URL,
-   * carregamento externo ou do navegador do usuário.
+   * Mantém o HTML original do cabeçalho.
    */
   const imagens = Array.from(
     clone.querySelectorAll("img")
@@ -87,8 +90,7 @@ async function prepararHtmlCabecalho(
 
   await Promise.all(
     imagens.map(async (img) => {
-      const src =
-        img.getAttribute("src") || "";
+      const src = img.getAttribute("src") || "";
 
       if (!src) {
         return;
@@ -98,30 +100,19 @@ async function prepararHtmlCabecalho(
         await converterImagemParaDataUrl(src);
 
       if (srcPreparado) {
-        img.setAttribute(
-          "src",
-          srcPreparado
-        );
+        img.setAttribute("src", srcPreparado);
       }
 
       img.removeAttribute("loading");
-      img.setAttribute(
-        "decoding",
-        "sync"
-      );
+      img.setAttribute("decoding", "sync");
     })
   );
 
   return clone.innerHTML;
 }
 
-function aguardarImagem(
-  img: HTMLImageElement
-) {
-  if (
-    img.complete &&
-    img.naturalWidth > 0
-  ) {
+function aguardarImagem(img: HTMLImageElement) {
+  if (img.complete && img.naturalWidth > 0) {
     return Promise.resolve();
   }
 
@@ -141,8 +132,8 @@ function aguardarImagem(
     );
 
     /*
-     * Segurança para não travar a exportação
-     * caso algum navegador não dispare evento.
+     * Evita travar a exportação caso o navegador
+     * não dispare os eventos da imagem.
      */
     setTimeout(finalizar, 5000);
   });
@@ -151,9 +142,7 @@ function aguardarImagem(
 async function aguardarTudoCarregar(
   documento: Document
 ) {
-  const imagens = Array.from(
-    documento.images
-  );
+  const imagens = Array.from(documento.images);
 
   await Promise.all(
     imagens.map(aguardarImagem)
@@ -190,54 +179,76 @@ export async function exportarAtividade(
     );
   }
 
-  const tituloArquivo =
-    limparNomeArquivo(
-      opcoes.tituloArquivo ||
-        "atividade-planejai"
-    );
+  const tituloArquivo = limparNomeArquivo(
+    opcoes.tituloArquivo || "atividade-planejai"
+  );
 
   /*
    * Ajustes escolhidos na tela de finalização.
-   * Mantemos limites seguros para a atividade
-   * não sair da folha A4.
+   * Permite ampliar até 150%.
+   *
+   * A imagem não será diminuída automaticamente.
+   * O conteúdo fora da área da atividade será recortado.
    */
+  const larguraInformada =
+    opcoes.ajusteImagem?.larguraPercentual ?? 100;
+
   const larguraImagem = Math.min(
-    100,
+    150,
     Math.max(
       45,
-      opcoes.ajusteImagem?.larguraPercentual ?? 100
+      Number.isFinite(larguraInformada)
+        ? larguraInformada
+        : 100
     )
   );
 
   const metadeImagem = larguraImagem / 2;
 
+  const minimoX = Math.min(
+    metadeImagem,
+    100 - metadeImagem
+  );
+
+  const maximoX = Math.max(
+    metadeImagem,
+    100 - metadeImagem
+  );
+
+  const xInformado =
+    opcoes.ajusteImagem?.posicaoXPercentual ?? 50;
+
   const posicaoX = Math.min(
-    100 - metadeImagem,
+    maximoX,
     Math.max(
-      metadeImagem,
-      opcoes.ajusteImagem?.posicaoXPercentual ?? 50
+      minimoX,
+      Number.isFinite(xInformado)
+        ? xInformado
+        : 50
     )
   );
 
+  const yInformado =
+    opcoes.ajusteImagem?.posicaoYPercentual ?? 0;
+
   const posicaoY = Math.min(
-    85,
+    100,
     Math.max(
-      0,
-      opcoes.ajusteImagem?.posicaoYPercentual ?? 0
+      -100,
+      Number.isFinite(yInformado)
+        ? yInformado
+        : 0
     )
   );
 
   /*
-   * Em vez de apenas copiar o HTML imediatamente,
-   * preparamos o cabeçalho completo, inclusive a logo.
+   * Prepara o cabeçalho completo,
+   * inclusive as imagens e a logo.
    */
   const cabecalhoHtml =
-    await prepararHtmlCabecalho(
-      cabecalhoElemento
-    );
+    await prepararHtmlCabecalho(cabecalhoElemento);
 
-  const iframe =
-    document.createElement("iframe");
+  const iframe = document.createElement("iframe");
 
   iframe.style.position = "fixed";
   iframe.style.left = "-10000px";
@@ -248,18 +259,12 @@ export async function exportarAtividade(
   iframe.style.opacity = "0";
   iframe.style.pointerEvents = "none";
 
-  iframe.setAttribute(
-    "aria-hidden",
-    "true"
-  );
+  iframe.setAttribute("aria-hidden", "true");
 
   document.body.appendChild(iframe);
 
-  const janelaImpressao =
-    iframe.contentWindow;
-
-  const documentoImpressao =
-    iframe.contentDocument;
+  const janelaImpressao = iframe.contentWindow;
+  const documentoImpressao = iframe.contentDocument;
 
   if (
     !janelaImpressao ||
@@ -283,9 +288,7 @@ export async function exportarAtividade(
   name="viewport"
   content="width=device-width, initial-scale=1"
 />
-<title>${escaparHtml(
-    tituloArquivo
-  )}</title>
+<title>${escaparHtml(tituloArquivo)}</title>
 
 <style>
 @page {
@@ -459,14 +462,10 @@ body {
 <script>
 (function () {
   const imagem =
-    document.getElementById(
-      "atividade-imagem"
-    );
+    document.getElementById("atividade-imagem");
 
   const atividade =
-    document.querySelector(
-      ".atividade"
-    );
+    document.querySelector(".atividade");
 
   function ajustarImagem() {
     if (!imagem || !atividade) {
@@ -474,39 +473,24 @@ body {
     }
 
     const estilo =
-      window.getComputedStyle(
-        atividade
-      );
+      window.getComputedStyle(atividade);
 
     const paddingHorizontal =
-      parseFloat(
-        estilo.paddingLeft || "0"
-      ) +
-      parseFloat(
-        estilo.paddingRight || "0"
-      );
+      parseFloat(estilo.paddingLeft || "0") +
+      parseFloat(estilo.paddingRight || "0");
 
     const paddingVertical =
-      parseFloat(
-        estilo.paddingTop || "0"
-      ) +
-      parseFloat(
-        estilo.paddingBottom || "0"
-      );
+      parseFloat(estilo.paddingTop || "0") +
+      parseFloat(estilo.paddingBottom || "0");
 
     const larguraDisponivel =
-      atividade.clientWidth -
-      paddingHorizontal;
+      atividade.clientWidth - paddingHorizontal;
 
     const alturaDisponivel =
-      atividade.clientHeight -
-      paddingVertical;
+      atividade.clientHeight - paddingVertical;
 
-    const larguraOriginal =
-      imagem.naturalWidth;
-
-    const alturaOriginal =
-      imagem.naturalHeight;
+    const larguraOriginal = imagem.naturalWidth;
+    const alturaOriginal = imagem.naturalHeight;
 
     if (
       larguraDisponivel <= 0 ||
@@ -518,64 +502,49 @@ body {
     }
 
     /*
-     * A largura escolhida pelo professor é aplicada
+     * Aplica a largura escolhida pelo professor
      * sobre a área útil da atividade.
      */
     const larguraDesejada =
-      larguraDisponivel *
-      (${larguraImagem} / 100);
+      larguraDisponivel * (${larguraImagem} / 100);
 
     const proporcao =
-      larguraDesejada /
-      larguraOriginal;
+      larguraDesejada / larguraOriginal;
 
-    let larguraFinal =
+    const larguraFinal =
       larguraOriginal * proporcao;
 
-    let alturaFinal =
+    const alturaFinal =
       alturaOriginal * proporcao;
 
     /*
-     * Segurança: se a imagem ficar alta demais,
-     * reduzimos proporcionalmente para caber.
+     * Preserva a ampliação escolhida.
+     * Não reduz automaticamente pela altura.
+     *
+     * A parte fora da área da atividade
+     * permanece recortada.
      */
-    if (alturaFinal > alturaDisponivel) {
-      const ajusteAltura =
-        alturaDisponivel /
-        alturaFinal;
-
-      larguraFinal *= ajusteAltura;
-      alturaFinal *= ajusteAltura;
-    }
-
     imagem.style.width =
-      Math.max(
-        1,
-        Math.floor(larguraFinal)
-      ) + "px";
+      Math.max(1, Math.floor(larguraFinal)) + "px";
 
     imagem.style.height =
-      Math.max(
-        1,
-        Math.floor(alturaFinal)
-      ) + "px";
+      Math.max(1, Math.floor(alturaFinal)) + "px";
 
     imagem.style.maxWidth = "none";
     imagem.style.maxHeight = "none";
-    imagem.style.left =
-      "${posicaoX}%";
-    imagem.style.top =
-      "${posicaoY}%";
+
+    imagem.style.left = "${posicaoX}%";
+    imagem.style.top = "${posicaoY}%";
+
     imagem.style.transform =
       "translateX(-50%)";
+
     imagem.style.objectFit = "contain";
-    imagem.style.objectPosition =
-      "top center";
+    imagem.style.objectPosition = "top center";
     imagem.style.margin = "0";
   }
 
-  window.__planejaiAjustarImagem =
-    ajustarImagem;
+  window.__planejaiAjustarImagem = ajustarImagem;
 })();
 <\/script>
 
@@ -586,20 +555,16 @@ body {
   documentoImpressao.close();
 
   /*
-   * CORREÇÃO PRINCIPAL:
-   * espera TODAS as imagens do documento,
+   * Espera todas as imagens do documento,
    * inclusive a logo do cabeçalho.
    */
-  await aguardarTudoCarregar(
-    documentoImpressao
-  );
+  await aguardarTudoCarregar(documentoImpressao);
 
-  const ajustar =
-    (
-      janelaImpressao as Window & {
-        __planejaiAjustarImagem?: () => void;
-      }
-    ).__planejaiAjustarImagem;
+  const ajustar = (
+    janelaImpressao as Window & {
+      __planejaiAjustarImagem?: () => void;
+    }
+  ).__planejaiAjustarImagem;
 
   ajustar?.();
 
@@ -613,9 +578,7 @@ body {
 
   const removerIframe = () => {
     setTimeout(() => {
-      if (
-        document.body.contains(iframe)
-      ) {
+      if (document.body.contains(iframe)) {
         iframe.remove();
       }
     }, 800);
@@ -631,14 +594,11 @@ body {
   janelaImpressao.print();
 
   /*
-   * Segurança:
-   * remove o iframe se afterprint
-   * não disparar em algum navegador.
+   * Remove o iframe caso afterprint
+   * não seja disparado pelo navegador.
    */
   setTimeout(() => {
-    if (
-      document.body.contains(iframe)
-    ) {
+    if (document.body.contains(iframe)) {
       iframe.remove();
     }
   }, 120000);
