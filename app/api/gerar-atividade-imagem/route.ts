@@ -551,8 +551,7 @@ const alturasPistas = (["H", "V"] as DirecaoCruzadinha[]).map(
     );
 
     return itens.reduce((total, item) => {
-      const texto =
-        `${item.numero}. ${item.pista} — ${item.palavra.toUpperCase()}`;
+      const texto = `${item.numero}. ${item.pista}`;
 
       return total + quebrarTexto(texto, 32).length * 32 + 8;
     }, 60);
@@ -641,8 +640,10 @@ const inicioX = Math.floor((largura - larguraGrade) / 2);
     let y = pistasY + 30;
 
     for (const item of itens) {
-      const resposta = mostrarRespostas ? ` — ${item.palavra.toUpperCase()}` : "";
-     const linhasTexto = quebrarTexto(`${item.numero}. ${item.pista}${resposta}`, 32);
+      const linhasTexto = quebrarTexto(
+  `${item.numero}. ${item.pista}`,
+  32
+);
       for (const linhaTexto of linhasTexto) {
         partes.push(
           `<text x="${x}" y="${y}" font-family="Arial, sans-serif" font-size="24" fill="#000000">${escaparXml(linhaTexto)}</text>`
