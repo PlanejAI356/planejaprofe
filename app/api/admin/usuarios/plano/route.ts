@@ -1,6 +1,21 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
+type CorpoParceiro = {
+  usuarioId?: string;
+  cupom?: string;
+  comissaoPercentual?: number;
+};
+
+function normalizarCupom(valor: unknown) {
+  return String(valor || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^A-Z0-9]/gi, "")
+    .trim()
+    .toUpperCase();
+}
+
 async function validarAdmin(req: NextRequest) {
   const authorization = req.headers.get("authorization");
 
@@ -65,76 +80,209 @@ export async function POST(req: NextRequest) {
       return validacao.resposta!;
     }
 
-    const body = await req.json();
+    const body =
+      (await req.json()) as CorpoParceiro;
 
     const usuarioId =
-      typeof body?.usuarioId === "string"
-        ? body.usuarioId.trim()
-        : "";
+      String(body.usuarioId || "").trim();
 
-    const plano =
-      body?.plano === "premium"
-        ? "premium"
-        : body?.plano === "gratuito"
-          ? "gratuito"
-          : "";
+    const cupom =
+      normalizarCupom(body.cupom);
 
-    if (!usuarioId || !plano) {
+    const comissaoPercentual =
+      Number(body.comissaoPercentual ?? 30);
+
+    if (!usuarioId) {
       return NextResponse.json(
-        { erro: "Dados inválidos." },
+        { erro: "Usuário não informado." },
         { status: 400 }
       );
     }
 
-    const atualizacao =
-      plano === "premium"
-        ? {
-            plano: "premium",
-            planos_restantes: 999999,
-          }
-        : {
-            plano: "gratuito",
-            planos_restantes: 0,
-          };
+    if (!cupom) {
+      return NextResponse.json(
+        { erro: "Informe o cupom do parceiro." },
+        { status: 400 }
+      );
+    }
+
+    if (
+      !Number.isFinite(comissaoPercentual) ||
+      comissaoPercentual < 0 ||
+      comissaoPercentual > 100
+    ) {
+      return NextResponse.json(
+        {
+          erro:
+            "A comissão deve estar entre 0% e 100%.",
+        },
+        { status: 400 }
+      );
+    }
 
     const {
-      data: perfilAtualizado,
-      error: erroAtualizar,
+      data: perfil,
+      error: erroPerfil,
     } = await supabaseAdmin
       .from("profiles")
-      .update(atualizacao)
+      .select("id, nome, email")
       .eq("id", usuarioId)
-      .select(
-        "id, nome, email, plano, planos_restantes, mercado_pago_id"
-      )
-      .single();
+      .maybeSingle();
 
-    if (erroAtualizar) {
+    if (erroPerfil) {
       console.error(
-        "Erro ao alterar plano do usuário:",
-        erroAtualizar
+        "Erro ao buscar usuário:",
+        erroPerfil
       );
 
       return NextResponse.json(
         {
-          erro: "Não foi possível alterar o plano do usuário.",
+          erro:
+            "Não foi possível localizar o usuário.",
         },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({
-      sucesso: true,
-      usuario: perfilAtualizado,
-    });
+    if (!perfil) {
+      return NextResponse.json(
+        { erro: "Usuário não encontrado." },
+        { status: 404 }
+      );
+    }
+
+    const {
+      data: parceiroExistente,
+      error: erroParceiroExistente,
+    } = await supabaseAdmin
+      .from("parceiros")
+      .select("id, cupom")
+      .eq("user_id", usuarioId)
+      .maybeSingle();
+
+    if (erroParceiroExistente) {
+      console.error(
+        "Erro ao verificar parceiro:",
+        erroParceiroExistente
+      );
+
+      return NextResponse.json(
+        {
+          erro:
+            "Não foi possível verificar a parceria.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (parceiroExistente) {
+      return NextResponse.json(
+        {
+          erro:
+            "Este usuário já está cadastrado como parceiro.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const {
+      data: cupomExistente,
+      error: erroCupom,
+    } = await supabaseAdmin
+      .from("parceiros")
+      .select("id")
+      .eq("cupom", cupom)
+      .maybeSingle();
+
+    if (erroCupom) {
+      console.error(
+        "Erro ao verificar cupom:",
+        erroCupom
+      );
+
+      return NextResponse.json(
+        {
+          erro:
+            "Não foi possível verificar o cupom.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (cupomExistente) {
+      return NextResponse.json(
+        {
+          erro:
+            "Este cupom já pertence a outro parceiro.",
+        },
+        { status: 409 }
+      );
+    }
+
+    const nome =
+      perfil.nome?.trim() ||
+      perfil.email?.split("@")[0] ||
+      "Parceiro";
+
+    const {
+      data: parceiro,
+      error: erroCriacao,
+    } = await supabaseAdmin
+      .from("parceiros")
+      .insert({
+        user_id: usuarioId,
+        nome,
+        cupom,
+        comissao_percentual:
+          comissaoPercentual,
+        ativo: true,
+      })
+      .select(
+        "id, user_id, nome, cupom, comissao_percentual, ativo"
+      )
+      .single();
+
+    if (erroCriacao) {
+      console.error(
+        "Erro ao criar parceiro:",
+        erroCriacao
+      );
+
+      return NextResponse.json(
+        {
+          erro:
+            "Não foi possível criar o parceiro.",
+        },
+        { status: 500 }
+      );
+    }
+
+    const link =
+      `https://www.planejaioficial.com.br/?ref=${encodeURIComponent(
+        cupom
+      )}`;
+
+    return NextResponse.json(
+      {
+        sucesso: true,
+        mensagem:
+          "Parceiro criado com sucesso!",
+        parceiro,
+        link,
+      },
+      { status: 201 }
+    );
   } catch (error) {
     console.error(
-      "Erro inesperado ao alterar plano:",
+      "Erro ao criar parceiro pelo Admin:",
       error
     );
 
     return NextResponse.json(
-      { erro: "Erro interno do servidor." },
+      {
+        erro:
+          "Erro interno ao criar o parceiro.",
+      },
       { status: 500 }
     );
   }

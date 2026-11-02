@@ -197,34 +197,89 @@ export default function Conteudos({
     }
   }
 
-  function continuar() {
-    if (tipoPlanejamento === "mensal") {
-      if (!resultadoIA.trim()) {
-        alert(
-          "Digite ou gere os conteúdos do mês antes de continuar."
-        );
-        return;
-      }
+  async function salvarPlanoInicial(temas: string, tipo: string) {
+    const { data: { user }, error: erroUsuario } = await supabase.auth.getUser();
 
-      localStorage.setItem("temasPlano", resultadoIA);
-      localStorage.setItem("conteudosMensais", resultadoIA);
-      localStorage.setItem("tipoPlanejamento", "mensal");
+    if (erroUsuario) throw new Error("Não foi possível identificar o professor.");
+    if (!user) return;
 
-      onContinuar();
+    const etapa = localStorage.getItem("etapaEnsino") || localStorage.getItem("etapaSelecionada") || "";
+    const serie = localStorage.getItem("turmaInfantilDetalhe") || localStorage.getItem("serieSelecionada") || "";
+    const disciplina = localStorage.getItem("disciplinaSelecionada") || "";
+    const dataInicio = localStorage.getItem("dataInicio") || localStorage.getItem("dataInicial") || "";
+    const dataFim = localStorage.getItem("dataFim") || localStorage.getItem("dataFinal") || "";
+    const periodoSalvo = localStorage.getItem("periodoPlanejamento") || localStorage.getItem("periodoSelecionado") || "";
+    const periodo = periodoSalvo || (dataInicio && dataFim ? `${dataInicio} a ${dataFim}` : dataInicio || dataFim || "");
+    const temasLimpos = temas.trim();
+
+    const chaveAtual = [user.id, etapa, serie, disciplina, tipo, temasLimpos].join("|");
+    const planoSalvoId = localStorage.getItem("planoSalvoId");
+    const planoSalvoChave = localStorage.getItem("planoSalvoChave");
+
+    const dadosPlano = {
+      user_id: user.id,
+      etapa_ensino: etapa,
+      serie,
+      disciplina,
+      tipo_planejamento: tipo,
+      periodo,
+      plano_completo: JSON.stringify({
+        temas: temasLimpos,
+        objetivos: "",
+        recursos: "",
+        metodologia: "",
+        avaliacao: "",
+        referencias: "",
+        atividade: "",
+      }),
+      updated_at: new Date().toISOString(),
+    };
+
+    if (planoSalvoId && planoSalvoChave === chaveAtual) {
+      const { error } = await supabase.from("planos").update(dadosPlano).eq("id", planoSalvoId).eq("user_id", user.id);
+      if (error) throw new Error(`Não foi possível atualizar o planejamento: ${error.message}`);
       return;
     }
 
-    const textoParaSalvar = resultadoIA || textoAulas;
+    const { data: planoCriado, error } = await supabase.from("planos").insert(dadosPlano).select("id").single();
+    if (error) throw new Error(`Não foi possível salvar o planejamento: ${error.message}`);
+
+    if (planoCriado?.id) {
+      localStorage.setItem("planoSalvoId", planoCriado.id);
+      localStorage.setItem("planoSalvoChave", chaveAtual);
+    }
+  }
+
+  async function continuar() {
+    if (carregando) return;
+
+    const ehMensal = tipoPlanejamento === "mensal";
+    const textoParaSalvar = ehMensal ? resultadoIA : resultadoIA || textoAulas;
 
     if (!textoParaSalvar.trim()) {
-      alert("Informe ou gere os temas das aulas antes de continuar.");
+      alert(ehMensal ? "Digite ou gere os conteúdos do mês antes de continuar." : "Informe ou gere os temas das aulas antes de continuar.");
       return;
     }
 
-    localStorage.setItem("temasPlano", textoParaSalvar);
-    localStorage.setItem("tipoPlanejamento", "aula");
+    if (ehMensal) {
+      localStorage.setItem("temasPlano", textoParaSalvar);
+      localStorage.setItem("conteudosMensais", textoParaSalvar);
+      localStorage.setItem("tipoPlanejamento", "mensal");
+    } else {
+      localStorage.setItem("temasPlano", textoParaSalvar);
+      localStorage.setItem("tipoPlanejamento", "aula");
+    }
 
-    onContinuar();
+    try {
+      setCarregando(true);
+      await salvarPlanoInicial(textoParaSalvar, ehMensal ? "mensal" : "aula");
+      onContinuar();
+    } catch (erro) {
+      console.error("Erro ao salvar o planejamento:", erro);
+      alert(erro instanceof Error ? erro.message : "Não foi possível salvar o planejamento.");
+    } finally {
+      setCarregando(false);
+    }
   }
 
   return (

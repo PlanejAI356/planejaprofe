@@ -1711,7 +1711,7 @@ export default function RevisaoAvaliacaoPage() {
                             questao.descricaoImagem ||
                             "Imagem da questão"
                           }
-                          className="mx-auto max-h-[340px] max-w-full object-contain"
+                          className="mx-auto max-h-[170px] max-w-[210px] object-contain"
                         />
                       </div>
                     )}

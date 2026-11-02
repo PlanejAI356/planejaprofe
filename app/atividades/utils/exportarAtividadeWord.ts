@@ -52,7 +52,7 @@ function dataUrlParaUint8Array(dataUrl: string) {
   const partes = dataUrl.split(",");
 
   if (partes.length < 2) {
-    throw new Error("Imagem inválida.");
+    throw new Error("Imagem invÃ¡lida.");
   }
 
   const base64 = partes[1];
@@ -98,7 +98,7 @@ async function origemImagemParaDataUrl(src: string) {
         leitor.onerror = () =>
           reject(
             new Error(
-              "Não foi possível ler a logo."
+              "NÃ£o foi possÃ­vel ler a logo."
             )
           );
 
@@ -123,7 +123,7 @@ async function carregarImagem(
       imagem.onerror = () =>
         reject(
           new Error(
-            "Não foi possível carregar a imagem."
+            "NÃ£o foi possÃ­vel carregar a imagem."
           )
         );
 
@@ -149,7 +149,7 @@ async function normalizarImagemParaPng(
 
   if (!largura || !altura) {
     throw new Error(
-      "A imagem não possui dimensões válidas."
+      "A imagem nÃ£o possui dimensÃµes vÃ¡lidas."
     );
   }
 
@@ -164,7 +164,7 @@ async function normalizarImagemParaPng(
 
   if (!contexto) {
     throw new Error(
-      "Não foi possível preparar a imagem para o Word."
+      "NÃ£o foi possÃ­vel preparar a imagem para o Word."
     );
   }
 
@@ -210,11 +210,11 @@ async function obterDimensoesImagem(
 }
 
 /*
- * O cabeçalho do Word é NATIVO:
- * tabela + textos editáveis.
+ * O cabeÃ§alho do Word Ã© NATIVO:
+ * tabela + textos editÃ¡veis.
  *
  * Somente a LOGO continua sendo imagem,
- * porque a logo é naturalmente uma imagem.
+ * porque a logo Ã© naturalmente uma imagem.
  */
 function textoVisivel(
   elemento: HTMLElement | null
@@ -407,7 +407,7 @@ async function criarCabecalhoWord(
   const serie =
     obterValorAposRotulo(
       elemento,
-      "Série:"
+      "SÃ©rie:"
     );
 
   const objeto =
@@ -442,7 +442,7 @@ async function criarCabecalhoWord(
   const titulo =
     (
       textoCompleto.match(
-        /ESCOLA\s+[A-ZÁÀÂÃÉÊÍÓÔÕÚÇ0-9\s.-]+?(?=Componente|Professor|Turno|Série|Objeto|Aluno|DATA|NOTA)/i
+        /ESCOLA\s+[A-ZÃÃ€Ã‚ÃƒÃ‰ÃŠÃÃ“Ã”Ã•ÃšÃ‡0-9\s.-]+?(?=Componente|Professor|Turno|SÃ©rie|Objeto|Aluno|DATA|NOTA)/i
       )?.[0] ||
       "ESCOLA MUNICIPAL AQUILES DE LISBOA"
     )
@@ -514,7 +514,7 @@ async function criarCabecalhoWord(
       }
     } catch {
       /*
-       * Se a logo falhar, o cabeçalho
+       * Se a logo falhar, o cabeÃ§alho
        * continua sendo exportado.
        */
     }
@@ -629,7 +629,7 @@ async function criarCabecalhoWord(
               borders: bordas,
               children: [
                 criarParagrafoCabecalho(
-                  "Série: ",
+                  "SÃ©rie: ",
                   serie
                 ),
               ],
@@ -844,7 +844,7 @@ export async function exportarAtividadeWord(
     )
   ) {
     throw new Error(
-      "A imagem da atividade não foi encontrada."
+      "A imagem da atividade nÃ£o foi encontrada."
     );
   }
 
@@ -857,7 +857,7 @@ export async function exportarAtividadeWord(
   /*
    * Ajustes feitos pelo professor na tela.
    * Os limites impedem que a atividade saia
-   * completamente da área útil da folha.
+   * completamente da Ã¡rea Ãºtil da folha.
    */
   const limitarAjuste = (
   valor: number,
@@ -892,6 +892,7 @@ const posicaoYPercentual = limitarAjuste(
   0
 );
 
+
   /*
    * ==================================================
    * MESMAS REGRAS DA TELA/PDF
@@ -899,13 +900,13 @@ const posicaoYPercentual = limitarAjuste(
    *
    * A4 vertical
    * margem externa ~ 8 mm
-   * cabeçalho no topo
+   * cabeÃ§alho no topo
    * atividade abaixo
-   * uma única borda envolvendo cabeçalho + atividade
+   * uma Ãºnica borda envolvendo cabeÃ§alho + atividade
    * imagem inteira
    * sem cortar
    * sem deformar
-   * maior tamanho possível
+   * maior tamanho possÃ­vel
    */
 
   const larguraPaginaPx = 794;
@@ -928,7 +929,7 @@ const posicaoYPercentual = limitarAjuste(
    * Primeiro normalizamos a atividade
    * para PNG.
    *
-   * Isso também resolve Word com SVG.
+   * Isso tambÃ©m resolve Word com SVG.
    */
   const atividadePng =
     await normalizarImagemParaPng(
@@ -942,8 +943,8 @@ const posicaoYPercentual = limitarAjuste(
     );
 
   /*
-   * Cabeçalho NATIVO do Word:
-   * tabela e textos editáveis.
+   * CabeÃ§alho NATIVO do Word:
+   * tabela e textos editÃ¡veis.
    */
   const cabecalhoWord =
     await criarCabecalhoWord(
@@ -951,7 +952,7 @@ const posicaoYPercentual = limitarAjuste(
     );
 
   /*
-   * Reserva aproximada do cabeçalho.
+   * Reserva aproximada do cabeÃ§alho.
    * A imagem da atividade continua
    * sendo encaixada proporcionalmente.
    */
@@ -988,7 +989,7 @@ const posicaoYPercentual = limitarAjuste(
 
   /*
    * O tamanho agora acompanha o ajuste feito
-   * na tela. A proporção original é mantida.
+   * na tela. A proporÃ§Ã£o original Ã© mantida.
    */
   const larguraArea = Math.floor(
   larguraDisponivelAtividade
@@ -1033,7 +1034,7 @@ const contextoAtividade =
 
 if (!contextoAtividade) {
   throw new Error(
-    "Não foi possível preparar os ajustes da imagem."
+    "NÃ£o foi possÃ­vel preparar os ajustes da imagem."
   );
 }
 
@@ -1088,7 +1089,7 @@ const paragrafoAtividade = new Paragraph({
   ],
 });
   /*
-   * Conteúdo que ficará dentro da
+   * ConteÃºdo que ficarÃ¡ dentro da
    * borda externa da A4.
    */
   const conteudoFolha: (
@@ -1123,10 +1124,10 @@ const paragrafoAtividade = new Paragraph({
   );
 
   /*
-   * Uma única célula grande cria a
+   * Uma Ãºnica cÃ©lula grande cria a
    * borda externa da folha.
    *
-   * Cabeçalho + atividade ficam
+   * CabeÃ§alho + atividade ficam
    * dentro da MESMA borda.
    */
   const quadroFolha =
@@ -1148,8 +1149,8 @@ const paragrafoAtividade = new Paragraph({
                 criarBordasPretas(6),
 
               margins: {
-                // Abaixa um pouco o cabeçalho dentro da borda.
-                // Mantém exatamente o mesmo tamanho das letras.
+                // Abaixa um pouco o cabeÃ§alho dentro da borda.
+                // MantÃ©m exatamente o mesmo tamanho das letras.
                 top: 160,
                 bottom: 80,
                 left: 80,

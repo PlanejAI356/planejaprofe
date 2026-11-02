@@ -79,10 +79,10 @@ async function prepararHtmlCabecalho(
   ) as HTMLElement;
 
   /*
-   * Transforma a logo e as imagens do cabeçalho
-   * em data URL quando possível.
+   * Transforma a logo e as imagens do cabeÃƒÂ§alho
+   * em data URL quando possÃƒÂ­vel.
    *
-   * Mantém o HTML original do cabeçalho.
+   * MantÃƒÂ©m o HTML original do cabeÃƒÂ§alho.
    */
   const imagens = Array.from(
     clone.querySelectorAll("img")
@@ -132,8 +132,8 @@ function aguardarImagem(img: HTMLImageElement) {
     );
 
     /*
-     * Evita travar a exportação caso o navegador
-     * não dispare os eventos da imagem.
+     * Evita travar a exportaÃƒÂ§ÃƒÂ£o caso o navegador
+     * nÃƒÂ£o dispare os eventos da imagem.
      */
     setTimeout(finalizar, 5000);
   });
@@ -153,7 +153,7 @@ async function aguardarTudoCarregar(
       await documento.fonts.ready;
     }
   } catch {
-    // Não impede a impressão.
+    // NÃƒÂ£o impede a impressÃƒÂ£o.
   }
 
   await new Promise<void>((resolve) => {
@@ -175,7 +175,7 @@ export async function exportarAtividade(
     !imagem.startsWith("data:image/")
   ) {
     throw new Error(
-      "A imagem da atividade não foi encontrada."
+      "A imagem da atividade nÃƒÂ£o foi encontrada."
     );
   }
 
@@ -184,11 +184,11 @@ export async function exportarAtividade(
   );
 
   /*
-   * Ajustes escolhidos na tela de finalização.
-   * Permite ampliar até 150%.
+   * Ajustes escolhidos na tela de finalizaÃƒÂ§ÃƒÂ£o.
+   * Permite ampliar atÃƒÂ© 150%.
    *
-   * A imagem não será diminuída automaticamente.
-   * O conteúdo fora da área da atividade será recortado.
+   * A imagem nÃƒÂ£o serÃƒÂ¡ diminuÃƒÂ­da automaticamente.
+   * O conteÃƒÂºdo fora da ÃƒÂ¡rea da atividade serÃƒÂ¡ recortado.
    */
   const larguraInformada =
     opcoes.ajusteImagem?.larguraPercentual ?? 100;
@@ -200,6 +200,7 @@ export async function exportarAtividade(
       Number.isFinite(larguraInformada)
         ? larguraInformada
         : 100
+
     )
   );
 
@@ -238,12 +239,14 @@ export async function exportarAtividade(
       Number.isFinite(yInformado)
         ? yInformado
         : 0
+
     )
   );
 
   /*
-   * Prepara o cabeçalho completo,
+   * Prepara o cabeÃƒÂ§alho completo,
    * inclusive as imagens e a logo.
+
    */
   const cabecalhoHtml =
     await prepararHtmlCabecalho(cabecalhoElemento);
@@ -273,7 +276,7 @@ export async function exportarAtividade(
     iframe.remove();
 
     throw new Error(
-      "Não foi possível preparar a atividade para exportação."
+      "NÃƒÂ£o foi possÃƒÂ­vel preparar a atividade para exportaÃƒÂ§ÃƒÂ£o."
     );
   }
 
@@ -452,7 +455,7 @@ body {
       <img
         id="atividade-imagem"
         src="${imagem}"
-        alt="Atividade pedagógica"
+        alt="Atividade pedagÃƒÂ³gica"
       />
     </div>
 
@@ -503,10 +506,11 @@ body {
 
     /*
      * Aplica a largura escolhida pelo professor
-     * sobre a área útil da atividade.
+     * sobre a ÃƒÂ¡rea ÃƒÂºtil da atividade.
      */
     const larguraDesejada =
       larguraDisponivel * (${larguraImagem} / 100);
+
 
     const proporcao =
       larguraDesejada / larguraOriginal;
@@ -518,10 +522,10 @@ body {
       alturaOriginal * proporcao;
 
     /*
-     * Preserva a ampliação escolhida.
-     * Não reduz automaticamente pela altura.
+     * Preserva a ampliaÃƒÂ§ÃƒÂ£o escolhida.
+     * NÃƒÂ£o reduz automaticamente pela altura.
      *
-     * A parte fora da área da atividade
+     * A parte fora da ÃƒÂ¡rea da atividade
      * permanece recortada.
      */
     imagem.style.width =
@@ -541,6 +545,7 @@ body {
 
     imagem.style.objectFit = "contain";
     imagem.style.objectPosition = "top center";
+
     imagem.style.margin = "0";
   }
 
@@ -556,7 +561,7 @@ body {
 
   /*
    * Espera todas as imagens do documento,
-   * inclusive a logo do cabeçalho.
+   * inclusive a logo do cabeÃƒÂ§alho.
    */
   await aguardarTudoCarregar(documentoImpressao);
 
@@ -595,7 +600,7 @@ body {
 
   /*
    * Remove o iframe caso afterprint
-   * não seja disparado pelo navegador.
+   * nÃƒÂ£o seja disparado pelo navegador.
    */
   setTimeout(() => {
     if (document.body.contains(iframe)) {
