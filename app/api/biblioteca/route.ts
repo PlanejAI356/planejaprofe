@@ -7,7 +7,7 @@ import { supabaseAdmin } from "@/app/lib/supabaseAdmin";
 
 export const dynamic = "force-dynamic";
 
-const POR_PAGINA = 24;
+const POR_PAGINA = 12;
 
 function lerPlano(
   planoCompleto?: string | null
