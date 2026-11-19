@@ -2625,20 +2625,17 @@ export default function AdminPage() {
                       const assuntoEmail =
                         "Cupom AYANNE: últimas oportunidades para testar o PlanejAI";
 
-                      const mensagemEmail =
-                        `Olá${
-                          primeiroNome
-                            ? `, ${primeiroNome}`
-                            : ""
-                        }!\n\n` +
-                        `Você se cadastrou no PlanejAI utilizando o cupom AYANNE e queremos te fazer um lembrete importante.\n\n` +
-                        `Estamos entrando nas últimas oportunidades para experimentar o PlanejAI gratuitamente.\n\n` +
-                        `Se você ainda não testou a plataforma ou entrou apenas para conhecer, aproveite para experimentar agora com algo que realmente precisa preparar para suas aulas.\n\n` +
-                        `No PlanejAI, você pode criar planejamentos de aula, avaliações personalizadas e atividades pedagógicas com auxílio da inteligência artificial.\n\n` +
-                        `Comece a semana colocando o PlanejAI à prova. Escolha algo que você precisa preparar e veja, na prática, se ele pode economizar seu tempo.\n\n` +
-                        `Acesse sua conta: https://planejaioficial.com.br\n\n` +
-                        `Você não precisa decidir nada agora. Primeiro experimente.\n\n` +
-                        `Equipe PlanejAI`;
+                      
+const mensagemWhatsApp =
+  `*PROFESSOR(A), ESSA OPORTUNIDADE É PARA VOCÊ!*\n\n` +
+  `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! Tudo bem?\n\n` +
+  `Que tal terminar o ano letivo com menos trabalho e mais praticidade?\n\n` +
+  `*PAGUE UMA ÚNICA VEZ R$ 29,90 EM NOVEMBRO E SÓ VOLTE A PAGAR EM FEVEREIRO DE 2027!*\n\n` +
+  `Com o *PlanejAI*, você cria planos de aula, atividades e avaliações em poucos minutos, com ajuda da inteligência artificial.\n\n` +
+  `*Mais praticidade para ensinar e mais tempo para você!*\n\n` +
+  `Aproveite essa condição especial!\n\n` +
+  `https://planejaioficial.com.br`;
+
 
                       return (
                         <tr
