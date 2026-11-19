@@ -2609,23 +2609,11 @@ export default function AdminPage() {
                             : `55${numeroLimpo}`
                           : "";
 
-                      const primeiroNome =
-                        usuario.nome
-                          ?.trim()
-                          .split(" ")[0] ||
-                        "";
-
-                     const mensagemWhatsApp =
-  `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! 😊 Tudo bem?\n\n` +
-  `Aqui é do PlanejAI. 💚\n\n` +
-  `Você conheceu nossa plataforma através da Ayane, e passamos para te mostrar uma novidade.\n\n` +
-  `O PlanejAI está ainda mais completo e agora também conta com materiais prontos para visualizar, baixar e usar em sala de aula. 📚✨\n\n` +
-  `Dá uma olhadinha 👇`;
-
-                      const assuntoEmail =
-                        "Cupom AYANNE: últimas oportunidades para testar o PlanejAI";
-
                       
+const primeiroNome =
+  usuario.nome?.trim().split(" ")[0] || "";
+
+// MENSAGEM PROMOCIONAL DO WHATSAPP
 const mensagemWhatsApp =
   `*PROFESSOR(A), ESSA OPORTUNIDADE É PARA VOCÊ!*\n\n` +
   `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! Tudo bem?\n\n` +
@@ -2636,61 +2624,72 @@ const mensagemWhatsApp =
   `Aproveite essa condição especial!\n\n` +
   `https://planejaioficial.com.br`;
 
+// ASSUNTO DO E-MAIL
+const assuntoEmail =
+  "PlanejAI: condição especial de fim de ano!";
 
-                      return (
-                        <tr
-                          key={
-                            usuario.id
-                          }
-                          className="border-t border-slate-100"
-                        >
-                          <td className="px-5 py-4 font-semibold text-slate-800">
-                            {usuario.nome ||
-                              "Sem nome"}
-                          </td>
+// MENSAGEM DO E-MAIL
+const mensagemEmail =
+  `Olá${primeiroNome ? `, ${primeiroNome}` : ""}! Tudo bem?\n\n` +
+  `Temos uma oportunidade especial para você!\n\n` +
+  `Pague uma única vez R$ 29,90 em novembro e só volte a pagar em fevereiro de 2027!\n\n` +
+  `Com o PlanejAI, você cria planos de aula, atividades e avaliações com ajuda da inteligência artificial.\n\n` +
+  `Mais praticidade para ensinar e mais tempo para você!\n\n` +
+  `Aproveite essa condição especial!\n\n` +
+  `Acesse: https://planejaioficial.com.br\n\n` +
+  `Equipe PlanejAI`;
 
-                          <td className="px-5 py-4 text-slate-600">
-                            {usuario.email ||
-                              "-"}
-                          </td>
+return (
+  <tr
+    key={usuario.id}
+    className="border-t border-slate-100"
+  >
+    <td className="px-5 py-4 font-semibold text-slate-800">
+      {usuario.nome || "Sem nome"}
+    </td>
 
-                          <td className="px-5 py-4">
-                            {numeroWhatsApp ? (
-                              <a
-                                href={`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
-                                  mensagemWhatsApp
-                                )}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700"
-                              >
-                                Chamar no WhatsApp
-                              </a>
-                            ) : (
-                              <span className="text-slate-400">
-                                Sem WhatsApp
-                              </span>
-                            )}
-                          </td>
+    <td className="px-5 py-4 text-slate-600">
+      {usuario.email || "-"}
+    </td>
 
-                          <td className="px-5 py-4">
-                            {usuario.email ? (
-                              <a
-                                href={`mailto:${usuario.email}?subject=${encodeURIComponent(
-                                  assuntoEmail
-                                )}&body=${encodeURIComponent(
-                                  mensagemEmail
-                                )}`}
-                                className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-blue-700"
-                              >
-                                Enviar e-mail
-                              </a>
-                            ) : (
-                              <span className="text-slate-400">
-                                Sem e-mail
-                              </span>
-                            )}
-                          </td>
+    <td className="px-5 py-4">
+      {numeroWhatsApp ? (
+        <a
+          href={`https://wa.me/${numeroWhatsApp}?text=${encodeURIComponent(
+            mensagemWhatsApp
+          )}`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-green-600 px-3 py-2 text-xs font-bold text-white transition hover:bg-green-700"
+        >
+          Chamar no WhatsApp
+        </a>
+      ) : (
+        <span className="text-slate-400">
+          Sem WhatsApp
+        </span>
+      )}
+    </td>
+
+    <td className="px-5 py-4">
+      {usuario.email ? (
+        <a
+          href={`mailto:${usuario.email}?subject=${encodeURIComponent(
+            assuntoEmail
+          )}&body=${encodeURIComponent(
+            mensagemEmail
+          )}`}
+          className="inline-flex cursor-pointer items-center whitespace-nowrap rounded-lg bg-blue-600 px-3 py-2 text-xs font-bold text-white hover:bg-blue-700"
+        >
+          Enviar e-mail
+        </a>
+      ) : (
+        <span className="text-slate-400">
+          Sem e-mail
+        </span>
+      )}
+    </td>
+
 
                           <td className="px-5 py-4">
                             <span
